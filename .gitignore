@@ -10,6 +10,7 @@ Makefile
 cmake_install.cmake
 install_manifest.txt
 compile_commands.json
+cmake-build-debug
 CTestTestfile.cmake
 
 # Prerequisites
