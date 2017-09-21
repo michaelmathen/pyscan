@@ -32,5 +32,8 @@ namespace pyscan {
         return (mr - br) * (mr - br) / (br * (1 - br));
     }
 
+    inline double linear(double mr, double br) {
+        return  abs(mr - br);
+    }
 };
 #endif //PYSCAN_STATISTICS_HPP

@@ -4,6 +4,7 @@
 
 #include "RectangleScan.hpp"
 #include "EpsSamples.hpp"
+#include "HalfplaneScan.hpp"
 
 
 #include <boost/iterator_adaptors.hpp>
@@ -116,6 +117,24 @@ pyscan::Grid<int> makeNetGrid(const py::object& iterable, size_t r) {
     return pyscan::Grid<int>(points.begin(), points.end(), r, true);
 }
 
+pyscan::Halfplane maxHalfplaneStat(const py::object& net, const py::object& sample, double rho) {
+    std::vector<pyscan::Point<double>> net_points = to_std_vector<pyscan::Point<double>>(net);
+    std::vector<pyscan::Point<double>> sample_points = to_std_vector<pyscan::Point<double>>(sample);
+    return maxHalfplaneStat(net_points.begin(), net_points.end(), sample_points.begin(), sample_points.end(), rho);
+}
+
+pyscan::Halfplane maxHalfplaneGamma(const py::object& net, const py::object& sample, double rho) {
+    std::vector<pyscan::Point<double>> net_points = to_std_vector<pyscan::Point<double>>(net);
+    std::vector<pyscan::Point<double>> sample_points = to_std_vector<pyscan::Point<double>>(sample);
+    return maxHalfplaneGamma(net_points.begin(), net_points.end(), sample_points.begin(), sample_points.end(), rho);
+}
+
+pyscan::Halfplane maxHalfplaneLin(const py::object& net, const py::object& sample, double rho) {
+    std::vector<pyscan::Point<double>> net_points = to_std_vector<pyscan::Point<double>>(net);
+    std::vector<pyscan::Point<double>> sample_points = to_std_vector<pyscan::Point<double>>(sample);
+    return maxHalfplaneLin(net_points.begin(), net_points.end(), sample_points.begin(), sample_points.end());
+}
+
 double local_xLoc(double a1, double a2, double a3, double a4) {
     return pyscan::xLoc(a1, a2, a3, a4);
 }
@@ -198,6 +217,11 @@ BOOST_PYTHON_MODULE(pyscan) {
             .def("__repr__", &pyscan::Trapezoid::print)
             .def_readonly("bottom_b", &pyscan::Trapezoid::bottom_b);
 
+    py::class_<pyscan::Halfplane>("Halfplane", py::init<double, double, double>())
+            .def("getSlope", &pyscan::Halfplane::getSlope)
+            .def("getIntersect", &pyscan::Halfplane::getIntersect)
+            .def("fValue", &pyscan::Halfplane::fValue);
+
     /*
      class_<pyscan::SlabTree<int>>("SlabTree", py::init<pyscan::Grid<int>, int>())
             .def("measure", &pyscan::SlabTree<int>::measure)
@@ -215,5 +239,9 @@ BOOST_PYTHON_MODULE(pyscan) {
     py::def("maxSubgridLinearSlow", &pyscan::maxSubgridLinearSlow<int>);
     py::def("maxSubgridLinearSimple", &pyscan::maxSubgridLinearSimple<int>);
     py::def("maxSubgridLinear", &pyscan::maxSubgridLinearG<int>);
+
+    py::def("maxHalfPlaneStat", &pyscan::maxHalfplaneStat);
+    py::def("maxHalfPlaneLin", &pyscan::maxHalfplaneLin);
+    py::def("maxHalfPlaneGamma", &pyscan::maxHalfplaneGamma);
 }
 
