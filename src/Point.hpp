@@ -48,7 +48,8 @@ namespace pyscan {
     };
 
 
-    using point_it= std::vector<Point<int> >::iterator;
+    using point_it = std::vector<Point<int> >::iterator;
+    using point_d_it = std::vector<Point<double>>::iterator;
 
 }
 #endif //PYSCAN_POINT_HPP
