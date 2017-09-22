@@ -243,6 +243,17 @@ BOOST_PYTHON_MODULE(pyscan) {
             .def("getIntersect", &pyscan::Halfplane::getIntersect)
             .def("fValue", &pyscan::Halfplane::fValue);
 
+
+    py::class_<pyscan::Halfspace<2>>("__halfspace2", py::init<double, double, double>())
+            .def("geta", &pyscan::Halfspace<2>::get<0>)
+            .def("getb", &pyscan::Halfspace<2>::get<1>)
+            .def("fValue", &pyscan::Halfplane::fValue);
+
+    py::class_<pyscan::Halfspace<3>>("__halfspace3", py::init<double, double, double, double>())
+            .def("geta1", &pyscan::Halfspace<3>::get<0>)
+            .def("geta2", &pyscan::Halfspace<3>::get<1>)
+            .def("getb", &pyscan::Halfspace<3>::get<2>)
+            .def("fValue", &pyscan::Halfplane::fValue);
     /*
      class_<pyscan::SlabTree<int>>("SlabTree", py::init<pyscan::Grid<int>, int>())
             .def("measure", &pyscan::SlabTree<int>::measure)

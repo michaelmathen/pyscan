@@ -79,6 +79,8 @@ namespace pyscan {
     }
 
 
+
+
     template<typename F>
     Halfplane maxHalfplane(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e, F func) {
 
