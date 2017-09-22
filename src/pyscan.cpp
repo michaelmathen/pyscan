@@ -106,13 +106,13 @@ py::list splitCellWrapper(pyscan::Trapezoid const& trap, py::object const& lines
 }
 
 pyscan::Grid<int> makeGrid(const py::object& iterable, size_t r) {
-    std::vector<pyscan::Point<int>> points = to_std_vector<pyscan::Point<int>>(iterable);
+    std::vector<pyscan::Point<>> points = to_std_vector<pyscan::Point<>>(iterable);
 
     return pyscan::Grid<int>(points.begin(), points.end(), r);
 }
 
 pyscan::Grid<int> makeNetGrid(const py::object& iterable, size_t r) {
-    std::vector<pyscan::Point<int>> points = to_std_vector<pyscan::Point<int>>(iterable);
+    std::vector<pyscan::Point<>> points = to_std_vector<pyscan::Point<>>(iterable);
 
     return pyscan::Grid<int>(points.begin(), points.end(), r, true);
 }
@@ -158,6 +158,7 @@ py::list createPartitionWrapper(const py::object& iterable, int r) {
     return cellsToList(pyscan::createPartition(points, r));
 }
 
+
 BOOST_PYTHON_MODULE(pyscan) {
     using namespace py;
 
@@ -189,14 +190,34 @@ BOOST_PYTHON_MODULE(pyscan) {
             .def("__repr__", &pyscan::Subgrid::toString)
             .def("fValue", &pyscan::Subgrid::fValue);
 
-    py::class_<pyscan::Point<int>>("Point", py::init<double, double, int, int>())
-            .def("getWeight", &pyscan::Point<int>::getWeight)
-            .def("getRedWeight", &pyscan::Point<int>::getRedWeight)
-            .def("getBlueWeight", &pyscan::Point<int>::getBlueWeight)
-            .def("getX", &pyscan::Point<int>::getX)
-            .def("getY", &pyscan::Point<int>::getY)
-            .def("__str__", &pyscan::Point<int>::toString)
-            .def("__repr__", &pyscan::Point<int>::toString);
+    py::class_<pyscan::Point<int, 2>>("__point2i", py::init<int, int, double, double>())
+            .def("getWeight", &pyscan::Point<int, 2>::getWeight)
+            .def("getRedWeight", &pyscan::Point<int, 2>::getRedWeight)
+            .def("getBlueWeight", &pyscan::Point<int, 2>::getBlueWeight)
+            .def("getX", &pyscan::Point<int, 2>::get<0>)
+            .def("getY", &pyscan::Point<int, 2>::get<1>)
+            .def("__str__", &pyscan::Point<int, 2>::toString)
+            .def("__repr__", &pyscan::Point<int, 2>::toString);
+
+
+    py::class_<pyscan::Point<double, 2>>("__point2d", py::init<double, double, double, double>())
+            .def("getWeight", &pyscan::Point<double, 2>::getWeight)
+            .def("getRedWeight", &pyscan::Point<double, 2>::getRedWeight)
+            .def("getBlueWeight", &pyscan::Point<double, 2>::getBlueWeight)
+            .def("getX", &pyscan::Point<double, 2>::get<0>)
+            .def("getY", &pyscan::Point<double, 2>::get<1>)
+            .def("__str__", &pyscan::Point<double, 2>::toString)
+            .def("__repr__", &pyscan::Point<double, 2>::toString);
+
+    py::class_<pyscan::Point<double, 3>>("__point3d", py::init<double, double, double, double, double>())
+            .def("getWeight", &pyscan::Point<double, 3>::getWeight)
+            .def("getRedWeight", &pyscan::Point<double, 3>::getRedWeight)
+            .def("getBlueWeight", &pyscan::Point<double, 3>::getBlueWeight)
+            .def("getX", &pyscan::Point<double, 3>::get<0>)
+            .def("getY", &pyscan::Point<double, 3>::get<1>)
+            .def("getZ", &pyscan::Point<double, 3>::get<1>)
+            .def("__str__", &pyscan::Point<double, 3>::toString)
+            .def("__repr__", &pyscan::Point<double, 3>::toString);
 
     py::class_<BloomFilter>("BloomFilter", py::init<int, double>())
             .def("insert", &BloomFilter::insert)

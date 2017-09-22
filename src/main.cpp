@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
       int red_blue = rand() % 2;
       float x = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
       float y = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-      points.push_back(pyscan::Point<int>(x, y, red_blue, 1 - red_blue));
+      points.push_back(pyscan::Point<int, 2>(red_blue, 1 - red_blue, x, y));
   }
   pyscan::Grid<int> grid(points.begin(), points.end(), 200);
   pyscan::Subgrid sg = pyscan::maxSubgridLinearG(grid, 200, .1, .1);

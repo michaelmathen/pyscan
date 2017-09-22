@@ -24,8 +24,8 @@ namespace pyscan {
     }
 
     double fastMonoAngle(Point<double> const& p1, Point<double> const& p2) {
-        double ax = p1.getX() - p2.getX();
-        double ay = p1.getY() - p2.getY();
+        double ax = p1.get<0>() - p2.get<0>();
+        double ay = p1.get<1>() - p2.get<1>();
         double f_val;
         if (ay > 0) {
             //Starts 1 is 0, 0 is 1, and -1 is 2 and then goes to .
@@ -69,8 +69,8 @@ namespace pyscan {
         /*
          * Finds the angle with the y-axis
          */
-        double ax = p1.getX() - p2.getX();
-        double ay = p1.getY() - p2.getY();
+        double ax = p1.get<0>() - p2.get<0>();
+        double ay = p1.get<1>() - p2.get<1>();
         if (ax > 0) {
             return acos(ay * invsqrtQuake(ax * ax + ay * ay));
         } else {
@@ -188,8 +188,8 @@ namespace pyscan {
                 if (maxF >= maxHalfplane.fValue()) {
                     auto& p1 =  *p_b;
                     auto& p2 = *(p_b + *max_it);
-                    double a = (p1.getY() - p2.getY()) / (p1.getX() - p2.getX());
-                    double b = p1.getY() - a * p1.getX();
+                    double a = (p1.get<1>() - p2.get<1>()) / (p1.get<0>() - p2.get<0>());
+                    double b = p1.get<1>() - a * p1.get<0>();
                     maxHalfplane = Halfplane(a, b, maxF);
                 }
                 //Now figure out which point the max angle corresponds to.

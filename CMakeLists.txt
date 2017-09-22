@@ -14,7 +14,6 @@ set(SOURCE_FILES
         src/EpsSamples.hpp
         src/FunctionApprox.cpp
         src/FunctionApprox.hpp
-        src/main.cpp
         src/Point.hpp
         src/pyscan.cpp
         src/RectangleScan.cpp
@@ -22,6 +21,6 @@ set(SOURCE_FILES
         src/Statistics.hpp
         src/Utilities.hpp
         src/HalfplaneScan.cpp
-        src/HalfplaneScan.hpp)
+        src/HalfplaneScan.hpp src/InOutPoint.cpp src/InOutPoint.hpp)
 
 add_library(pyscan SHARED ${SOURCE_FILES})

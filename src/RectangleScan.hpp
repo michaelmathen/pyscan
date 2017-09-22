@@ -100,7 +100,7 @@ namespace pyscan {
         }
 
         bool contains(Point<int> const& pt) {
-            return u_x >= pt.getX() && pt.getX() >= l_x && u_y >= pt.getY() && pt.getY() >= l_y;
+            return u_x >= pt.get<0>() && pt.get<0>() >= l_x && u_y >= pt.get<1>() && pt.get<1>() >= l_y;
 
         }
         Bound_t lowX() const { return l_x; }
@@ -148,14 +148,14 @@ namespace pyscan {
 
             while (red_found_count < r/2 || blue_found_count < r/2) {
                 if (b->getBlueWeight() >= 1 && blue_found_count < r/2) {
-                    x_coords.push_back(b->getX());
-                    y_coords.push_back(b->getY());
+                    x_coords.push_back(b->get<0>());
+                    y_coords.push_back(b->get<1>());
                     blue_found_count += 1;
                 }
 
                 if (b->getRedWeight() >= 1 && red_found_count < r/2) {
-                    x_coords.push_back(b->getX());
-                    y_coords.push_back(b->getY());
+                    x_coords.push_back(b->get<0>());
+                    y_coords.push_back(b->get<1>());
                     red_found_count += 1;
                 }
                 b++;
@@ -165,8 +165,8 @@ namespace pyscan {
             std::sort(x_coords.begin(), x_coords.end());
             std::sort(y_coords.begin(), y_coords.end());
             for (auto point_it = begin; point_it != end; point_it++) {
-                size_t ix = std::upper_bound(x_coords.begin(), x_coords.end(), point_it->getX()) - x_coords.begin() - 1;
-                size_t iy = std::upper_bound(y_coords.begin(), y_coords.end(), point_it->getY()) - y_coords.begin() - 1;
+                size_t ix = std::upper_bound(x_coords.begin(), x_coords.end(), point_it->get<0>()) - x_coords.begin() - 1;
+                size_t iy = std::upper_bound(y_coords.begin(), y_coords.end(), point_it->get<1>()) - y_coords.begin() - 1;
                 if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
                     red_counts[iy * r + ix] += point_it->getRedWeight();
                     blue_counts[iy * r + ix] += point_it->getBlueWeight();
@@ -184,27 +184,27 @@ namespace pyscan {
         {
             std::cout << "StandardRect constructor called" << std::endl;
             auto compX = [](Point<int> const &p1, Point<int> const &p2) {
-                return p1.getX() < p2.getX();
+                return p1.get<0>() < p2.get<0>();
             };
             auto compY = [](Point<int> const &p1, Point<int> const &p2) {
-                return p1.getY() < p2.getY();
+                return p1.get<1>() < p2.get<1>();
             };
             std::vector<int> indices(r, 0);
             quantiles(begin, end, indices.begin(), indices.end(), compX);
             x_coords.reserve(r);
             y_coords.reserve(r);
             for (auto i : indices) {
-                x_coords.push_back((begin + i)->getX());
+                x_coords.push_back((begin + i)->get<0>());
             }
             quantiles(begin, end, indices.begin(), indices.end(), compY);
             for (auto i : indices) {
-                y_coords.push_back((begin + i)->getY());
+                y_coords.push_back((begin + i)->get<1>());
             }
             std::sort(x_coords.begin(), x_coords.end());
             std::sort(y_coords.begin(), y_coords.end());
             for (auto point_it = begin; point_it != end; point_it++) {
-                size_t ix = std::upper_bound(x_coords.begin(), x_coords.end(), point_it->getX()) - x_coords.begin() - 1;
-                size_t iy = std::upper_bound(y_coords.begin(), y_coords.end(), point_it->getY()) - y_coords.begin() - 1;
+                size_t ix = std::upper_bound(x_coords.begin(), x_coords.end(), point_it->get<0>()) - x_coords.begin() - 1;
+                size_t iy = std::upper_bound(y_coords.begin(), y_coords.end(), point_it->get<1>()) - y_coords.begin() - 1;
                 if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
                     red_counts[iy * r + ix] += point_it->getRedWeight();
                     blue_counts[iy * r + ix] += point_it->getBlueWeight();
