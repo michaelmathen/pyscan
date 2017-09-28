@@ -5,7 +5,7 @@
 #include "RectangleScan.hpp"
 #include "EpsSamples.hpp"
 #include "HalfplaneScan.hpp"
-
+#include "DiskScan.hpp"
 
 #include <boost/iterator_adaptors.hpp>
 #include <boost/python.hpp>
@@ -117,22 +117,35 @@ pyscan::Grid<int> makeNetGrid(const py::object& iterable, size_t r) {
     return pyscan::Grid<int>(points.begin(), points.end(), r, true);
 }
 
-pyscan::Halfplane maxHalfplaneStat(const py::object& net, const py::object& sample, double rho) {
+pyscan::Halfspace<2> maxHalfplaneStat(const py::object& net, const py::object& sample, double rho) {
     std::vector<pyscan::Point<double>> net_points = to_std_vector<pyscan::Point<double>>(net);
     std::vector<pyscan::Point<double>> sample_points = to_std_vector<pyscan::Point<double>>(sample);
-    return maxHalfplaneStat(net_points.begin(), net_points.end(), sample_points.begin(), sample_points.end(), rho);
+    auto pairs = maxHalfplaneStat(net_points.begin(), net_points.end(), sample_points.begin(), sample_points.end(), rho);
+    return std::get<0>(pairs);
 }
 
-pyscan::Halfplane maxHalfplaneGamma(const py::object& net, const py::object& sample, double rho) {
+pyscan::Halfspace<2> maxHalfplaneGamma(const py::object& net, const py::object& sample, double rho) {
     std::vector<pyscan::Point<double>> net_points = to_std_vector<pyscan::Point<double>>(net);
     std::vector<pyscan::Point<double>> sample_points = to_std_vector<pyscan::Point<double>>(sample);
-    return maxHalfplaneGamma(net_points.begin(), net_points.end(), sample_points.begin(), sample_points.end(), rho);
+    auto pairs = maxHalfplaneGamma(net_points.begin(), net_points.end(), sample_points.begin(), sample_points.end(), rho);
+    return std::get<0>(pairs);
 }
 
-pyscan::Halfplane maxHalfplaneLin(const py::object& net, const py::object& sample, double rho) {
+pyscan::Halfspace<2> maxHalfplaneLin(const py::object& net, const py::object& sample, double rho) {
     std::vector<pyscan::Point<double>> net_points = to_std_vector<pyscan::Point<double>>(net);
     std::vector<pyscan::Point<double>> sample_points = to_std_vector<pyscan::Point<double>>(sample);
-    return maxHalfplaneLin(net_points.begin(), net_points.end(), sample_points.begin(), sample_points.end());
+    auto pairs = maxHalfplaneLin(net_points.begin(), net_points.end(), sample_points.begin(), sample_points.end());
+    return std::get<0>(pairs);
+}
+
+
+
+
+pyscan::Disk maxDisk(const py::object& net, const py::object& sampleM, const py::object& sampleB, double rho) {
+    std::vector<pyscan::Point<double>> net_points = to_std_vector<pyscan::Point<double>>(net);
+    std::vector<pyscan::Point<double>> sample_pointsM = to_std_vector<pyscan::Point<double>>(sampleM);
+    std::vector<pyscan::Point<double>> sample_pointsB = to_std_vector<pyscan::Point<double>>(sampleB);
+    return pyscan::diskScanStat(net_points, sample_pointsM, sample_pointsB, rho);
 }
 
 double local_xLoc(double a1, double a2, double a3, double a4) {
@@ -194,8 +207,6 @@ BOOST_PYTHON_MODULE(pyscan) {
             .def("getWeight", &pyscan::Point<int, 2>::getWeight)
             .def("getRedWeight", &pyscan::Point<int, 2>::getRedWeight)
             .def("getBlueWeight", &pyscan::Point<int, 2>::getBlueWeight)
-            .def("getX", &pyscan::Point<int, 2>::get<0>)
-            .def("getY", &pyscan::Point<int, 2>::get<1>)
             .def("__str__", &pyscan::Point<int, 2>::toString)
             .def("__repr__", &pyscan::Point<int, 2>::toString);
 
@@ -204,8 +215,6 @@ BOOST_PYTHON_MODULE(pyscan) {
             .def("getWeight", &pyscan::Point<double, 2>::getWeight)
             .def("getRedWeight", &pyscan::Point<double, 2>::getRedWeight)
             .def("getBlueWeight", &pyscan::Point<double, 2>::getBlueWeight)
-            .def("getX", &pyscan::Point<double, 2>::get<0>)
-            .def("getY", &pyscan::Point<double, 2>::get<1>)
             .def("__str__", &pyscan::Point<double, 2>::toString)
             .def("__repr__", &pyscan::Point<double, 2>::toString);
 
@@ -213,11 +222,11 @@ BOOST_PYTHON_MODULE(pyscan) {
             .def("getWeight", &pyscan::Point<double, 3>::getWeight)
             .def("getRedWeight", &pyscan::Point<double, 3>::getRedWeight)
             .def("getBlueWeight", &pyscan::Point<double, 3>::getBlueWeight)
-            .def("getX", &pyscan::Point<double, 3>::get<0>)
-            .def("getY", &pyscan::Point<double, 3>::get<1>)
-            .def("getZ", &pyscan::Point<double, 3>::get<1>)
             .def("__str__", &pyscan::Point<double, 3>::toString)
             .def("__repr__", &pyscan::Point<double, 3>::toString);
+
+	py::class_<pyscan::LPoint<double, 2>, py::bases<pyscan::Point<double, 2>>>("LPoint", py::init<size_t, double, double, double, double>())
+		.def("getLabel", &pyscan::LPoint<double, 2>::getLabel);
 
     py::class_<BloomFilter>("BloomFilter", py::init<int, double>())
             .def("insert", &BloomFilter::insert)
@@ -238,22 +247,24 @@ BOOST_PYTHON_MODULE(pyscan) {
             .def("__repr__", &pyscan::Trapezoid::print)
             .def_readonly("bottom_b", &pyscan::Trapezoid::bottom_b);
 
-    py::class_<pyscan::Halfplane>("Halfplane", py::init<double, double, double>())
-            .def("getSlope", &pyscan::Halfplane::getSlope)
-            .def("getIntersect", &pyscan::Halfplane::getIntersect)
-            .def("fValue", &pyscan::Halfplane::fValue);
-
-
     py::class_<pyscan::Halfspace<2>>("__halfspace2", py::init<double, double, double>())
             .def("geta", &pyscan::Halfspace<2>::get<0>)
             .def("getb", &pyscan::Halfspace<2>::get<1>)
-            .def("fValue", &pyscan::Halfplane::fValue);
+            .def("fValue", &pyscan::Halfspace<2>::fValue);
 
     py::class_<pyscan::Halfspace<3>>("__halfspace3", py::init<double, double, double, double>())
             .def("geta1", &pyscan::Halfspace<3>::get<0>)
             .def("geta2", &pyscan::Halfspace<3>::get<1>)
             .def("getb", &pyscan::Halfspace<3>::get<2>)
-            .def("fValue", &pyscan::Halfplane::fValue);
+            .def("fValue", &pyscan::Halfspace<3>::fValue);
+
+    py::class_<pyscan::Disk>("Disk", py::init<double, double, double, double>())
+            .def("geta", &pyscan::Disk::getA)
+            .def("getb", &pyscan::Disk::getB)
+            .def("getR", &pyscan::Disk::getR)
+            .def("fValue", &pyscan::Disk::fValue);
+
+
     /*
      class_<pyscan::SlabTree<int>>("SlabTree", py::init<pyscan::Grid<int>, int>())
             .def("measure", &pyscan::SlabTree<int>::measure)

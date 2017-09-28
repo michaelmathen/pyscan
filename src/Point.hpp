@@ -16,7 +16,7 @@ namespace pyscan {
         Weight red;
         Weight blue;
 
-        double coords[dim];
+        double coords[dim] = {0};
 
         template <typename F>
         Point(int ix, F el) {
@@ -38,24 +38,20 @@ namespace pyscan {
             static_assert(dim == sizeof...(Coords), "coords has to be the same as the number of dimensions");
         }
 
+        Point() : red(0), blue(0){
+        }
 
-        Weight getWeight() const {
+        virtual Weight getWeight() const {
             return red + blue;
         }
-        Weight getRedWeight() const {
+        virtual Weight getRedWeight() const {
             return red;
         }
-        Weight getBlueWeight() const {
+        virtual Weight getBlueWeight() const {
             return blue;
         }
 
-        template<int ix>
-        double get() const {
-            static_assert(ix < dim, "Requested a coordinate that is greater than the dimension");
-            return coords[ix];
-        }
-
-        std::string toString() const {
+        virtual std::string toString() const {
             std::ostringstream ss;
             ss << "pyscan::Point(";
             ss << red << ", " << blue;
@@ -66,8 +62,46 @@ namespace pyscan {
             return ss.str();
         }
 
+        template <int ix, typename W, int d>
+        friend double get(Point<W, d> const& pt);
+
+        virtual bool operator==(Point<Weight, dim> const& pt) {
+
+            bool val = pt.getRedWeight() == getRedWeight() &&
+                       pt.getBlueWeight() == getBlueWeight();
+            if (!val)
+                return false;
+            for (int i = 0; i < dim; i++) {
+                if (coords[i] != pt.coords[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
     };
 
+    template <typename Weight=int, int dim=2>
+    class LPoint : public Point<Weight, dim> {
+        size_t label;
+    public:
+        template <typename ...Coords>
+        LPoint(size_t label, Weight r, Weight b, Coords... rest) : Point<Weight, dim>(r, b, rest...) {}
+
+        size_t getLabel() const {
+            return label;
+        }
+        virtual bool operator==(LPoint<Weight, dim> const& lpt) {
+            auto& pt1 = (Point<Weight, dim>&)lpt;
+            auto& pt2 = (Point<Weight, dim>&)*this;
+            return pt2 == pt2 && lpt.label == this->label;
+        }
+    };
+
+    template <int ix, typename W, int dim>
+    double get(Point<W, dim> const& pt) {
+        static_assert(ix < dim, "Requested a coordinate that is greater than the dimension");
+        return pt.coords[ix];
+    }
 
     using point_it = std::vector<Point<int, 2>>::iterator;
     using point_d_it = std::vector<Point<double, 2>>::iterator;

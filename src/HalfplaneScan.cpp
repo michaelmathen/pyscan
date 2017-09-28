@@ -23,18 +23,7 @@ namespace pyscan {
         return y;
     }
 
-    double fastMonoAngle(Point<double> const& p1, Point<double> const& p2) {
-        double ax = p1.get<0>() - p2.get<0>();
-        double ay = p1.get<1>() - p2.get<1>();
-        double f_val;
-        if (ay > 0) {
-            //Starts 1 is 0, 0 is 1, and -1 is 2 and then goes to .
-            f_val = 1 - ax * invsqrtQuake(ax * ax + ay * ay);
-        } else {
-            return ax * invsqrtQuake(ax * ax + ay * ay) + 3;
-        }
 
-    }
     template <typename T, typename Compare>
     std::vector<std::size_t> sort_permutation(const std::vector<T>& vec, Compare compare) {
         std::vector<std::size_t> p(vec.size());
@@ -69,8 +58,8 @@ namespace pyscan {
         /*
          * Finds the angle with the y-axis
          */
-        double ax = p1.get<0>() - p2.get<0>();
-        double ay = p1.get<1>() - p2.get<1>();
+        double ax = get<0>(p1) - get<0>(p2);
+        double ay = get<1>(p1) - get<1>(p2);
         if (ax > 0) {
             return acos(ay * invsqrtQuake(ax * ax + ay * ay));
         } else {
@@ -82,7 +71,8 @@ namespace pyscan {
 
 
     template<typename F>
-    Halfplane maxHalfplane(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e, F func) {
+    std::tuple<Halfspace<>, Point<double>, Point<double>>
+    maxHalfplane(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e, F func) {
 
         double totalM = 0;
         double totalB = 0;
@@ -92,13 +82,15 @@ namespace pyscan {
         }
 
         if (p_net_e - p_net_b == 0) {
-            return {0, 0, 0};
+            return std::make_tuple(Halfspace<>(0.0, 0.0, 0.0),
+                    Point<double>(), Point<double>());
         }
         std::vector<double> mweights(p_net_e - p_net_b - 1, 0);
         std::vector<double> bweights(p_net_e - p_net_b - 1, 0);
         std::vector<double> d_indices(p_net_e - p_net_b - 1, 0);
         std::vector<size_t> indices(p_net_e - p_net_b - 1, 0);
-        Halfplane maxHalfplane;
+        Halfspace<2> maxHalfplane;
+        Point<double> mp1, mp2;
         for (auto p_b = p_net_b; p_b != p_net_e; p_b++) {
 
             auto dind_it = d_indices.begin();
@@ -188,31 +180,31 @@ namespace pyscan {
                     }
                 }
                 if (maxF >= maxHalfplane.fValue()) {
-                    auto& p1 =  *p_b;
-                    auto& p2 = *(p_b + *max_it);
-                    double a = (p1.get<1>() - p2.get<1>()) / (p1.get<0>() - p2.get<0>());
-                    double b = p1.get<1>() - a * p1.get<0>();
-                    maxHalfplane = Halfplane(a, b, maxF);
+                    mp1 =  *p_b;
+                    mp2 = *(p_b + *max_it);
+                    double a = (get<1>(mp2) - get<1>(mp1)) / (get<0>(mp1) * get<1>(mp2) - get<1>(mp1) * get<0>(mp2));
+                    double b = (1 - a / get<0>(mp1)) / get<0>(mp2);
+                    maxHalfplane = Halfspace<>(a, b, maxF);
                 }
                 //Now figure out which point the max angle corresponds to.
             }
         }
-        return maxHalfplane;
+        return std::make_tuple(maxHalfplane, mp1, mp2);
     }
 
 
-    Halfplane maxHalfplaneLin(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e){
+    std::tuple<Halfspace<>, Point<double>, Point<double>> maxHalfplaneLin(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e){
         return maxHalfplane(p_net_b, p_net_e, p_samp_b, p_samp_e, &linear);
     }
 
-    Halfplane maxHalfplaneStat(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e, double rho) {
+     std::tuple<Halfspace<>, Point<double>, Point<double>> maxHalfplaneStat(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e, double rho) {
         return maxHalfplane(p_net_b, p_net_e, p_samp_b, p_samp_e, [&rho](double mr, double br){
             return kulldorff(mr, br, rho);
         });
     }
 
 
-    Halfplane maxHalfplaneGamma(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e, double rho){
+    std::tuple<Halfspace<>, Point<double>, Point<double>> maxHalfplaneGamma(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e, double rho){
         return maxHalfplane(p_net_b, p_net_e, p_samp_b, p_samp_e, [&rho](double mr, double br){
             return gamma(mr, br, rho);
         });

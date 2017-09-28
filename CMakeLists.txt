@@ -21,6 +21,6 @@ set(SOURCE_FILES
         src/Statistics.hpp
         src/Utilities.hpp
         src/HalfplaneScan.cpp
-        src/HalfplaneScan.hpp src/InOutPoint.cpp src/InOutPoint.hpp)
+        src/HalfplaneScan.hpp src/InOutPoint.cpp src/InOutPoint.hpp src/DiskScan.cpp src/DiskScan.hpp)
 
 add_library(pyscan SHARED ${SOURCE_FILES})
