@@ -58,6 +58,8 @@ namespace pyscan {
     template <typename F>
     Disk diskScan(std::vector<Point<double, 2>>& net, std::vector<Point<double, 2>>& sampleM, std::vector<Point<double, 2>>& sampleB, F scan);
 
+    Disk diskScanStatLabels(std::vector<LPoint<double, 2>>& net, std::vector<LPoint<double, 2>>& sampleM, std::vector<LPoint<double, 2>>& sampleB, double rho);
+
 
 
     Disk diskScanStat(std::vector<Point<double, 2>>& net, std::vector<Point<double, 2>>& sampleM, std::vector<Point<double, 2>>& sampleB, double rho);

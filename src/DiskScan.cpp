@@ -204,21 +204,22 @@ namespace pyscan {
     }
 
     template< typename T, typename F>
-    double computeLabelTotal(T begin, T end, F func, std::set<size_t>& label_set) {
+    double computeLabelTotal(T begin, T end, F func, std::unordered_map<size_t, size_t>& label_map) {
         double total = 0;
         for (; begin != end; ++begin) {
-            if (label_set.end() == label_set.find(begin->getLabel())) {
+            if (label_map.end() == label_map.find(begin->getLabel())) {
                 total += func(*begin);
-                label_set.insert(begin->getLabel());
+                label_map[begin->getLabel()] = 0;
             }
+            label_map[begin->getLabel()] = label_map[begin->getLabel()] + 1;
         }
         return total;
     }
 
     template< typename T, typename F>
     double computeLabelTotal(T begin, T end, F func) {
-        std::set<size_t> label_set;
-        return computeLabelTotal(begin, end, func, label_set);
+        std::unordered_map<size_t, size_t> label_map;
+        return computeLabelTotal(begin, end, func, label_map);
     }
 
     template <typename F>
@@ -340,15 +341,15 @@ namespace pyscan {
                 auto mHigherIt = std::partition(msBegin, asIterEnd, partitionF);
                 auto bHigherIt = std::partition(bsBegin, bsIterEnd, partitionF);
 
-                std::fill(mCountsR.begin(), mCountsR.end(), std::vector<size_t>());
-                std::fill(bCountsR.begin(), bCountsR.end(), std::vector<size_t>());
-                std::fill(mCountsA.begin(), mCountsA.end(), std::vector<size_t>());
-                std::fill(bCountsA.begin(), bCountsA.end(), std::vector<size_t>());
+                std::fill(mCountsR.begin(), mCountsR.end(), crescent_t());
+                std::fill(bCountsR.begin(), bCountsR.end(), crescent_t());
+                std::fill(mCountsA.begin(), mCountsA.end(), crescent_t());
+                std::fill(bCountsA.begin(), bCountsA.end(), crescent_t());
                 /*Probably most of the time is spent here*/
                 partial_counts_label(msBegin, mHigherIt, orderV, mCountsR, orderF, getMeasured<double>);
-                mCount = mCount + computeLabelTotal(msBegin, mHigherIt, m_curr_set);
+                mCount = mCount + computeLabelTotal(msBegin, mHigherIt, getMeasured<double>, m_curr_set);
                 partial_counts_label(bsBegin, bHigherIt, orderV, bCountsR, orderF, getBaseline<double>);
-                bCount = bCount + computeLabelTotal(bsBegin, bHigherIt, b_curr_set);
+                bCount = bCount + computeLabelTotal(bsBegin, bHigherIt, getBaseline<double>, b_curr_set);
                 partial_counts_label(mHigherIt, asIterEnd, orderV, mCountsA, orderF,
                                getMeasured<double>);
                 partial_counts_label(bHigherIt, bsIterEnd, orderV, bCountsA, orderF,
@@ -509,7 +510,13 @@ namespace pyscan {
     }
 
 
-    Disk diskScan(std::vector<Point<double, 2>>& net, std::vector<Point<double, 2>>& sampleM, std::vector<Point<double, 2>>& sampleB, double rho) {
+    Disk diskScanStatLabels(std::vector<LPoint<double, 2>>& net, std::vector<LPoint<double, 2>>& sampleM, std::vector<LPoint<double, 2>>& sampleB, double rho) {
+        return diskScanLabels(net, sampleM, sampleB, [&rho](double mr, double br){
+            return kulldorff(mr, br, rho);
+        });
+    }
+
+    Disk diskScanStat(std::vector<Point<double, 2>>& net, std::vector<Point<double, 2>>& sampleM, std::vector<Point<double, 2>>& sampleB, double rho) {
         return diskScan(net, sampleM, sampleB, [&rho](double mr, double br){
             return kulldorff(mr, br, rho);
         });

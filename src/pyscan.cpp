@@ -147,6 +147,17 @@ pyscan::Disk maxDisk(const py::object& net, const py::object& sampleM, const py:
     return diskScanStat(net_points, sample_p_M, sample_p_B, rho);
 }
 
+
+
+pyscan::Disk maxDiskLabels(const py::object& net, const py::object& sampleM, const py::object& sampleB, double rho) {
+    auto net_points = to_std_vector<pyscan::LPoint<double>>(net);
+    auto sample_p_M = to_std_vector<pyscan::LPoint<double>>(sampleM);
+    auto sample_p_B = to_std_vector<pyscan::LPoint<double>>(sampleB);
+    return diskScanStatLabels(net_points, sample_p_M, sample_p_B, rho);
+}
+
+
+
 double local_xLoc(double a1, double a2, double a3, double a4) {
     return pyscan::xLoc(a1, a2, a3, a4);
 }
@@ -298,5 +309,7 @@ BOOST_PYTHON_MODULE(pyscan) {
     py::def("maxHalfPlaneLin", &maxHalfplaneLin);
     py::def("maxHalfPlaneGamma", &maxHalfplaneGamma);
     py::def("maxDisk", &maxDisk);
+    py::def("maxDiskLabels", &maxDiskLabels);
+
 }
 
