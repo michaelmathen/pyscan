@@ -300,9 +300,16 @@ BOOST_PYTHON_MODULE(pyscan) {
     py::def("randomCuttings", randomCuttings);
     py::def("makeGrid", makeGrid);
     py::def("makeNetGrid", makeNetGrid);
-    py::def("maxSubgridKullSlow", &pyscan::maxSubgridKullSlow<int>);
-    py::def("maxSubgridLinearSlow", &pyscan::maxSubgridLinearSlow<int>);
-    py::def("maxSubgridLinearSimple", &pyscan::maxSubgridLinearSimple<int>);
+
+
+    pyscan::Subgrid (*f1)(pyscan::Grid<int> const&, double) = &pyscan::maxSubgridKullSlow;
+    pyscan::Subgrid (*f2)(pyscan::Grid<int> const&, double, double) = &pyscan::maxSubgridLinearSlow;
+
+    py::def("maxSubgridKullSlow", f1);
+    py::def("maxSubgridLinearSlow", f2);
+
+    pyscan::Subgrid (*m1)(pyscan::Grid<int> const&, double, double) = &pyscan::maxSubgridLinearSimple;
+    py::def("maxSubgridLinearSimple", m1);
     py::def("maxSubgridLinear", &pyscan::maxSubgridLinearG<int>);
 
     py::def("maxHalfPlaneStat", &maxHalfplaneStat);
