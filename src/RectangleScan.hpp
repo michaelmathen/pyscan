@@ -11,6 +11,7 @@
 #include <cmath>
 #include <random>
 #include <deque>
+#include <functional>
 #include <tuple>
 #include <limits>
 #include <iostream>
@@ -342,6 +343,116 @@ namespace pyscan {
         }
         return max;
     }
+
+    struct Vec_t {
+        double x;
+        double y;
+        Vec_t (double x, double y) : x(x), y(y) {}
+    };
+
+
+    inline double invsqrt( double number ) {
+        double y = number;
+        double x2 = y * 0.5;
+        std::int64_t i = *(std::int64_t *) &y;
+        // The magic number is for doubles is from https://cs.uwaterloo.ca/~m32rober/rsqrt.pdf
+        i = 0x5fe6eb50c7b537a9 - (i >> 1);
+        y = *(double *) &i;
+        y = y * (1.5 - (x2 * y * y));   // 1st iteration
+        y  = y * ( 1.5 - ( x2 * y * y ) );   // 2nd iteration, this can be removed
+        return y;
+    }
+
+
+
+    inline bool lineIntersection(Vec_t const& dir1, double d1, Vec_t const& dir2, double d2, double& mx, double& bx) {
+        /*
+         * Need to test two cases.
+         *
+         */
+
+        double mx1 = dir1.x * d1 - dir2.x * d2;
+        double bx1 = -dir1.y * d1 + dir2.y * d2;
+        double proj = (mx1 * dir1.x + bx1 * dir1.y);
+
+        if (mx1 == 0 && bx1 == 0) {
+            return false;
+        } else if (std::signbit(d1) * proj >= 0) {
+            mx = mx1, bx = bx1;
+            return true;
+        } else {
+            mx = -mx1, bx = -bx1;
+            return true;
+        }
+    }
+
+
+    inline double approximateHull(double eps,
+                           std::function<double(double, double)> phi, //function to maximize
+                           std::function<std::tuple<double, double>(Vec_t)> lineMaxF)
+    {
+
+
+        auto norm = [&] (Vec_t const& vect) {
+            double a = vect.x, b = vect.y;
+            double is = invsqrt(a *a  + b * b);
+            return Vec_t(a * is , b * is);
+        };
+
+        auto dot = [&] (Vec_t const& v1, Vec_t const& v2) {
+            return v1.x * v2.x + v1.y * v2.y;
+        };
+
+        auto avg = [&] (Vec_t const& v1, Vec_t const& v2) {
+            return norm(Vec_t(v1.x + v2.x, v1.y + v2.y));
+        };
+
+        int ux, uy, lx, ly;
+        struct Frame {
+            Vec_t vec_i, vec_j;
+            double  mi, bi, mj, bj;
+            Frame(Vec_t vi, Vec_t vj, double mi, double bi, double mj, double bj) :
+                    vec_i(vi), vec_j(vj), mi(mi), bi(bi), mj(mj), bj(bj) {}
+        };
+        double maxRValue = 0;
+
+        std::deque<Frame> frameStack;
+        // TODO double check debug to see if there is an issue with an infinite singularity here. Might need to change start.
+        //This start needs to be fixed. Compute the mi, bi, and everything explicitly
+        frameStack.push_back(Frame(norm(Vec_t(0, 1)), Vec_t(1, 0), 0, 1, 1, 0));
+        //cout << fixed;
+        //cout << setprecision(9);
+        while(!frameStack.empty()) {
+            Frame lf = frameStack.front();
+            frameStack.pop_front();
+            double di = dot(lf.vec_i, Vec_t(lf.mi, lf.bi));
+            double dj = dot(lf.vec_j, Vec_t(lf.mj, lf.bj));
+
+            double mExt, bExt;
+            if (lineIntersection(lf.vec_i, di, lf.vec_j, dj, mExt, bExt)) {
+                continue;
+            }
+            double vw = phi(mExt, bExt);
+            double vi = phi(lf.mi, lf.bi);
+            double vj = phi(lf.mj, lf.bj);
+
+            if (std::max({vi, vj, maxRValue}) + eps  > vw) {
+                // No value in this triangle is large enough to be interesting
+                continue;
+            } else {
+                //This triangle is worth evaluating
+                auto m_vec = avg(lf.vec_i, lf.vec_j);
+                auto lineMax = lineMaxF(m_vec);
+                frameStack.push_back(Frame(m_vec, lf.vec_j,
+                                           std::get<0>(lineMax), std::get<1>(lineMax), lf.mj, lf.bj));
+                frameStack.push_back(Frame(lf.vec_i, m_vec,
+                                           lf.mi, lf.bi, std::get<0>(lineMax), std::get<1>(lineMax)));
+                //cout << "n phi(" << b << " " << m << ")=" << phi(m, b) << endl;
+            }
+        }
+        return maxRValue;
+    }
+
 
     class ValueInterval {
         size_t left;

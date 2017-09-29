@@ -173,6 +173,13 @@ namespace pyscan {
         });
     }
 
+
+
+
+
+
+
+
     Subgrid maxSubgridLinear(slab_ptr slab, MaximumIntervals const &maxInt, double a, double b) {
         if (slab == nullptr) {
             //std::cout << maxInt << maxInt.getLeft() << maxInt.getRight() <<  std::endl;
