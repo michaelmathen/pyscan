@@ -18,7 +18,6 @@ namespace pyscan {
         x1 = get<0>(pt);
         x2 = get<1>(pt);
     }
-
     template <typename W>
     double getMeasured(Point<W, 2> const& pt) {
         return pt.getRedWeight();
@@ -28,6 +27,7 @@ namespace pyscan {
     double getBaseline(Point<W, 2> const& pt) {
         return pt.getBlueWeight();
     }
+
 
     template <typename W>
     double getX(Point<W, 2> const& pt) {

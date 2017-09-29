@@ -3,6 +3,7 @@
 //
 #include <functional>
 #include <tuple>
+#include <unordered_set>
 
 #include "RectangleScan.hpp"
 
@@ -219,6 +220,118 @@ namespace pyscan {
     }
     //template <> Subgrid MaxSubgridLinearSimple<int>(Grid<int> const& grid, double a, double b);
 
+    template <typename W>
+    double getMeasured(Point<W, 2> const& pt) {
+        return pt.getRedWeight();
+    }
+
+    template <typename W>
+    double getBaseline(Point<W, 2> const& pt) {
+        return pt.getBlueWeight();
+    }
+
+    template< typename T, typename F>
+    double computeLabelTotal(T begin, T end, F func) {
+        std::unordered_set<size_t> label_set;
+        double total = 0;
+        for (; begin != end; ++begin) {
+            if (label_set.end() == label_set.find(begin->getLabel())) {
+                total += func(*begin);
+                label_set.insert(begin->getLabel());
+            }
+        }
+        return total;
+    }
+
+
+    template <typename W, typename F>
+    Rectangle maxLabeledRect(std::vector<LPoint<W>> const& net,
+                             std::vector<LPoint<W>> const& m_points,
+                             std::vector<LPoint<W>> const& b_points,
+                             F func) {
+
+        double m_Total = computeLabelTotal(m_points.begin(), m_points.end(), getMeasured<W>);
+        double b_Total = computeLabelTotal(b_points.begin(), b_points.end(), getBaseline<W>);
+        Rectangle maxRect(0, 0, 0, 0, 0.0);
+        //Create a top and bottom line
+        for (auto onb1 = net.begin(); onb1 != (net.end() - 2); onb1++) {
+            for (auto onb2 = onb1 + 1; onb2 != (net.end() - 1); onb2++) {
+                auto nb1 = get<1>(*onb1) >= get<1>(*onb2) ? onb1 : onb2;
+                auto nb2 = get<1>(*onb1) < get<1>(*onb2) ? onb1 : onb2;
+
+                std::vector<LPoint<W>> divisions;
+                std::vector<LPoint<W>> m_slab;
+                std::vector<LPoint<W>> b_slab;
+                auto between_f = [&](LPoint<W> const& pt){
+                    return get<1>(pt) <= get<1>(*nb1) && get<1>(*nb2) <= get<1>(pt);
+                };
+                auto pointXComp = [](LPoint<W> const& p1, LPoint<W> const& p2){
+                    return get<0>(p1) < get<0>(p2);
+                };
+                std::remove_copy_if(net.begin(), net.end(), std::back_inserter(divisions), between_f);
+                //Filter the m_slab and b_slab points
+                std::remove_copy_if(m_points.begin(), m_points.end(), std::back_inserter(m_slab), between_f);
+                std::remove_copy_if(b_points.begin(), b_points.end(), std::back_inserter(b_slab), between_f);
+                std::sort(divisions.begin(), divisions.end(), pointXComp);
+
+                //Now position the points into each division
+                using part_t = std::vector<std::vector<LPoint<W>>>;
+                part_t m_parts(divisions.size() + 1,  std::vector<LPoint<W>>());
+                part_t b_parts(divisions.size() + 1, std::vector<LPoint<W>>());
+
+                auto place_pts = [&] (part_t & parts, decltype(m_points) all_pts) {
+                    for (auto& pt : all_pts) {
+                        auto loc_it = std::lower_bound(divisions.begin(), divisions.end(), pt, pointXComp);
+                        parts[loc_it - divisions.begin()].emplace_back(pt);
+                    }
+                };
+                place_pts(m_parts, m_slab);
+                place_pts(b_parts, b_slab);
+
+                for (int i = 0; i < divisions.size() - 1; i++) {
+                    double m_count = 0;
+                    double b_count = 0;
+                    std::unordered_set<size_t> active_m_labels;
+                    std::unordered_set<size_t> active_b_labels;
+                    for (int j = i + 1; j < divisions.size(); j++) {
+                        for (auto m_b = m_parts[j].begin(); m_b != m_parts[j].end(); ++m_b) {
+                            if (active_m_labels.find(m_b->getLabel()) != active_m_labels.end()) {
+                                m_count += m_b->getRedWeight();
+                                active_m_labels.insert(m_b->getLabel());
+                            }
+                        }
+                        for (auto b_b = b_parts[j].begin(); b_b != b_parts[j].end(); ++b_b) {
+                            if (active_m_labels.find(b_b->getLabel()) != active_b_labels.end()) {
+                                b_count += b_b->getRedWeight();
+                                active_b_labels.insert(b_b->getLabel());
+                            }
+                        }
+                        double new_val = func(m_count / m_Total, b_count / b_Total);
+                        if (new_val > maxRect.fValue()) {
+                            maxRect = Rectangle(get<0>(divisions[i]), get<1>(*nb1), get<0>(divisions[j]), get<1>(*nb2), new_val);
+                        }
+                    }
+                }
+            }
+        }
+        return maxRect;
+    }
+
+    Rectangle maxLabeledRectStat(std::vector<LPoint<int>> const& net,
+                                 std::vector<LPoint<int>> const& m_points,
+                                 std::vector<LPoint<int>> const& b_points, double rho) {
+        return maxLabeledRect(net, m_points, b_points, [&rho](double mr, double br){
+            return kulldorff(mr, br, rho);
+        });
+    }
+
+    Rectangle maxLabeledRectStat(std::vector<LPoint<double>> const& net,
+                                 std::vector<LPoint<double>> const& m_points,
+                                 std::vector<LPoint<double>> const& b_points, double rho) {
+        return maxLabeledRect(net, m_points, b_points, [&rho](double mr, double br){
+            return kulldorff(mr, br, rho);
+        });
+    }
 
      void mergeWeights(MaximumIntervals &interval, slab_ptr left, slab_ptr right) {
          interval = interval.mergeZeros(left->non_zeros, right->non_zeros);

@@ -259,6 +259,13 @@ namespace pyscan {
     };
 
 
+    Rectangle maxLabeledRectStat(std::vector<LPoint<int>> const& net,
+                             std::vector<LPoint<int>> const& m_points,
+                             std::vector<LPoint<int>> const& b_points);
+
+    Rectangle maxLabeledRectStat(std::vector<LPoint<double>> const& net,
+                                 std::vector<LPoint<double>> const& m_points,
+                                 std::vector<LPoint<double>> const& b_points);
 
     Subgrid maxSubgridKullSlow(Grid<double> const &grid, double rho);
     Subgrid maxSubgridLinearSlow(Grid<int> const& grid, double a, double b);
