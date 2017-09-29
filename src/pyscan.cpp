@@ -139,13 +139,12 @@ pyscan::Halfspace<2> maxHalfplaneLin(const py::object& net, const py::object& sa
 }
 
 
-
-
 pyscan::Disk maxDisk(const py::object& net, const py::object& sampleM, const py::object& sampleB, double rho) {
     std::vector<pyscan::Point<double>> net_points = to_std_vector<pyscan::Point<double>>(net);
-    std::vector<pyscan::Point<double>> sample_pointsM = to_std_vector<pyscan::Point<double>>(sampleM);
-    std::vector<pyscan::Point<double>> sample_pointsB = to_std_vector<pyscan::Point<double>>(sampleB);
-    return pyscan::diskScanStat(net_points, sample_pointsM, sample_pointsB, rho);
+    std::vector<pyscan::Point<double>> sample_p_M = to_std_vector<pyscan::Point<double>>(sampleM);
+    std::vector<pyscan::Point<double>> sample_p_B = to_std_vector<pyscan::Point<double>>(sampleB);
+
+    return diskScanStat(net_points, sample_p_M, sample_p_B, rho);
 }
 
 double local_xLoc(double a1, double a2, double a3, double a4) {
@@ -205,6 +204,8 @@ BOOST_PYTHON_MODULE(pyscan) {
 
     py::class_<pyscan::Point<int, 2>>("__point2i", py::init<int, int, double, double>())
             .def("getWeight", &pyscan::Point<int, 2>::getWeight)
+            .def("setRedWeight", &pyscan::Point<int, 2>::setRedWeight)
+            .def("setBlueWeight", &pyscan::Point<int, 2>::setBlueWeight)
             .def("getRedWeight", &pyscan::Point<int, 2>::getRedWeight)
             .def("getBlueWeight", &pyscan::Point<int, 2>::getBlueWeight)
             .def("__str__", &pyscan::Point<int, 2>::toString)
@@ -213,6 +214,8 @@ BOOST_PYTHON_MODULE(pyscan) {
 
     py::class_<pyscan::Point<double, 2>>("__point2d", py::init<double, double, double, double>())
             .def("getWeight", &pyscan::Point<double, 2>::getWeight)
+            .def("setRedWeight", &pyscan::Point<double, 2>::setRedWeight)
+            .def("setBlueWeight", &pyscan::Point<double, 2>::setBlueWeight)
             .def("getRedWeight", &pyscan::Point<double, 2>::getRedWeight)
             .def("getBlueWeight", &pyscan::Point<double, 2>::getBlueWeight)
             .def("__str__", &pyscan::Point<double, 2>::toString)
@@ -220,13 +223,21 @@ BOOST_PYTHON_MODULE(pyscan) {
 
     py::class_<pyscan::Point<double, 3>>("__point3d", py::init<double, double, double, double, double>())
             .def("getWeight", &pyscan::Point<double, 3>::getWeight)
+	        .def("setRedWeight", &pyscan::Point<double, 3>::setRedWeight)
+	        .def("setBlueWeight", &pyscan::Point<double, 3>::setBlueWeight)
             .def("getRedWeight", &pyscan::Point<double, 3>::getRedWeight)
             .def("getBlueWeight", &pyscan::Point<double, 3>::getBlueWeight)
             .def("__str__", &pyscan::Point<double, 3>::toString)
             .def("__repr__", &pyscan::Point<double, 3>::toString);
 
-	py::class_<pyscan::LPoint<double, 2>, py::bases<pyscan::Point<double, 2>>>("LPoint", py::init<size_t, double, double, double, double>())
-		.def("getLabel", &pyscan::LPoint<double, 2>::getLabel);
+    py::class_<pyscan::Disk>("Disk", py::init<double, double, double, double>())
+            .add_property("a", &pyscan::Disk::getA, &pyscan::Disk::setA)
+            .add_property("b", &pyscan::Disk::getB, &pyscan::Disk::setB)
+            .add_property("radius", &pyscan::Disk::getR, &pyscan::Disk::setR)
+            .def("fValue", &pyscan::Disk::fValue);
+
+    py::class_<pyscan::LPoint<double, 2>, py::bases<pyscan::Point<double, 2>>>("LPoint", py::init<size_t, double, double, double, double>())
+	    .def("getLabel", &pyscan::LPoint<double, 2>::getLabel);
 
     py::class_<BloomFilter>("BloomFilter", py::init<int, double>())
             .def("insert", &BloomFilter::insert)
@@ -283,8 +294,9 @@ BOOST_PYTHON_MODULE(pyscan) {
     py::def("maxSubgridLinearSimple", &pyscan::maxSubgridLinearSimple<int>);
     py::def("maxSubgridLinear", &pyscan::maxSubgridLinearG<int>);
 
-    py::def("maxHalfPlaneStat", &pyscan::maxHalfplaneStat);
-    py::def("maxHalfPlaneLin", &pyscan::maxHalfplaneLin);
-    py::def("maxHalfPlaneGamma", &pyscan::maxHalfplaneGamma);
+    py::def("maxHalfPlaneStat", &maxHalfplaneStat);
+    py::def("maxHalfPlaneLin", &maxHalfplaneLin);
+    py::def("maxHalfPlaneGamma", &maxHalfplaneGamma);
+    py::def("maxDisk", &maxDisk);
 }
 

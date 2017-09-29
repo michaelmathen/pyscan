@@ -26,6 +26,14 @@ namespace pyscan {
             return (get<0>(pt) - getA()) * (get<0>(pt) - getA()) +  (get<1>(pt) - getA()) * (get<1>(pt) - getA()) <= radius * radius;
         }
 
+        void setA(double la) {
+            a = la;
+        }
+
+        void setB(double lb) {
+            b = lb;
+        }
+
         double getA() const {
             return a;
         }
@@ -36,6 +44,10 @@ namespace pyscan {
 
         double getR() const {
             return radius;
+        }
+
+        void setR(double rb) {
+            radius = rb;
         }
 
         double fValue() const {

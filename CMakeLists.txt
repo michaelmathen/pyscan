@@ -3,6 +3,7 @@ project(pyscan)
 
 set(CMAKE_CXX_STANDARD 14)
 
+
 find_package( Boost 1.36.0 COMPONENTS python REQUIRED)
 find_package( PythonLibs 2.7 REQUIRED )
 include_directories( ${PYTHON_INCLUDE_DIRS} )

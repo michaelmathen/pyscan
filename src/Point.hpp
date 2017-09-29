@@ -41,6 +41,13 @@ namespace pyscan {
         Point() : red(0), blue(0){
         }
 
+	virtual void setRedWeight(double w_r) {
+	    red = w_r;
+	}
+
+	virtual void setBlueWeight(double w_b) {
+	    blue = w_b;
+	} 
         virtual Weight getWeight() const {
             return red + blue;
         }
