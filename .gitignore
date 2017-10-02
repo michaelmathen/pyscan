@@ -1,5 +1,18 @@
 
+# files for google testing
 
+
+gmock.pc
+gmock_main.pc
+googletest-build/
+googletest-download/
+googletest-src/
+gtest.pc
+gtest_main.pc
+pyscan.cbp
+
+
+# cmake stuff
 *\.idea
 
 CMakeCache.txt
