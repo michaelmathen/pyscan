@@ -278,6 +278,8 @@ namespace pyscan {
     Subgrid maxSubgridLinearSimple(Grid<double> const &grid, double a, double b);
     Subgrid maxSubgridLinearSimple(Grid<int> const &grid, double a, double b);
 
+    Subgrid maxSubgridLinearSimpleStat(Grid<int> const& grid, double rho);
+
     class ValueInterval {
         size_t left;
         double value;

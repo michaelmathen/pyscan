@@ -234,8 +234,8 @@ BOOST_PYTHON_MODULE(pyscan) {
 
     py::class_<pyscan::Point<double, 3>>("__point3d", py::init<double, double, double, double, double>())
             .def("getWeight", &pyscan::Point<double, 3>::getWeight)
-	        .def("setRedWeight", &pyscan::Point<double, 3>::setRedWeight)
-	        .def("setBlueWeight", &pyscan::Point<double, 3>::setBlueWeight)
+	          .def("setRedWeight", &pyscan::Point<double, 3>::setRedWeight)
+	          .def("setBlueWeight", &pyscan::Point<double, 3>::setBlueWeight)
             .def("getRedWeight", &pyscan::Point<double, 3>::getRedWeight)
             .def("getBlueWeight", &pyscan::Point<double, 3>::getBlueWeight)
             .def("__str__", &pyscan::Point<double, 3>::toString)
@@ -248,11 +248,11 @@ BOOST_PYTHON_MODULE(pyscan) {
             .def("fValue", &pyscan::Disk::fValue);
 
     py::class_<pyscan::LPoint<double, 2>, py::bases<pyscan::Point<double, 2>>>("LPoint", py::init<size_t, double, double, double, double>())
-	    .def("getLabel", &pyscan::LPoint<double, 2>::getLabel);
+	          .def("getLabel", &pyscan::LPoint<double, 2>::getLabel);
 
-    py::class_<BloomFilter>("BloomFilter", py::init<int, double>())
-            .def("insert", &BloomFilter::insert)
-            .def("mightBePresent", &BloomFilter::mightBePresent);
+    py::class_<pyscan::BloomFilter>("BloomFilter", py::init<int, double>())
+            .def("insert", &pyscan::BloomFilter::insert)
+            .def("mightBePresent", &pyscan::BloomFilter::mightBePresent);
 
     py::class_<pyscan::Trapezoid>("Trapezoid", py::init<double, double, double, double, double, double>())
             .def("crossing", &pyscan::Trapezoid::crossing)
@@ -279,12 +279,6 @@ BOOST_PYTHON_MODULE(pyscan) {
             .def("geta2", &pyscan::Halfspace<3>::get<1>)
             .def("getb", &pyscan::Halfspace<3>::get<2>)
             .def("fValue", &pyscan::Halfspace<3>::fValue);
-
-    py::class_<pyscan::Disk>("Disk", py::init<double, double, double, double>())
-            .def("geta", &pyscan::Disk::getA)
-            .def("getb", &pyscan::Disk::getB)
-            .def("getR", &pyscan::Disk::getR)
-            .def("fValue", &pyscan::Disk::fValue);
 
 
     /*
@@ -320,4 +314,3 @@ BOOST_PYTHON_MODULE(pyscan) {
 
 
 }
-

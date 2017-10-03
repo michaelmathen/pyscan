@@ -5,23 +5,12 @@
 #include <tuple>
 #include <functional>
 
+#include "Utilities.hpp"
 #include "Statistics.hpp"
 #include "HalfplaneScan.hpp"
 
+
 namespace pyscan {
-
-
-    double invsqrtQuake( double number ) {
-        double y = number;
-        double x2 = y * 0.5;
-        std::int64_t i = *(std::int64_t *) &y;
-        // The magic number is for doubles is from https://cs.uwaterloo.ca/~m32rober/rsqrt.pdf
-        i = 0x5fe6eb50c7b537a9 - (i >> 1);
-        y = *(double *) &i;
-        y = y * (1.5 - (x2 * y * y));   // 1st iteration
-        y  = y * ( 1.5 - ( x2 * y * y ) );   // 2nd iteration, this can be removed
-        return y;
-    }
 
 
     template <typename T, typename Compare>
@@ -61,9 +50,9 @@ namespace pyscan {
         double ax = get<0>(p1) - get<0>(p2);
         double ay = get<1>(p1) - get<1>(p2);
         if (ax > 0) {
-            return acos(ay * invsqrtQuake(ax * ax + ay * ay));
+            return acos(ay * invsqrt(ax * ax + ay * ay));
         } else {
-            return M_PI + acos(-ay * invsqrtQuake(ax * ax + ay * ay));
+            return M_PI + acos(-ay * invsqrt(ax * ax + ay * ay));
         }
     }
 

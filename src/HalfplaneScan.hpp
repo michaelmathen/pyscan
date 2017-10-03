@@ -9,18 +9,6 @@
 
 namespace pyscan {
 
-
-    template <typename W, int dim>
-    double dot(pyscan::Point<W, dim> const& pt, double coords[dim]) {
-        if (dim == 3) {
-            return get<0>(pt) * coords[0] + get<1>(pt) * coords[1] + get<2>(pt) * coords[2];
-        } else {
-            return get<0>(pt) * coords[0] + get<1>(pt) * coords[1];
-        }
-    }
-
-
-
     template <int dim=2>
     class Halfspace {
         /*

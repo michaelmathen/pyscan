@@ -14,22 +14,24 @@ set(SOURCE_FILES
         src/FunctionApprox.cpp
         src/FunctionApprox.hpp
         src/Point.hpp
-        src/pyscan.cpp
         src/RectangleScan.cpp
         src/RectangleScan.hpp
         src/Statistics.hpp
         src/Utilities.hpp
         src/HalfplaneScan.cpp
         src/HalfplaneScan.hpp
-        src/InOutPoint.cpp
-        src/InOutPoint.hpp
         src/DiskScan.cpp
-        src/DiskScan.hpp)
+        src/DiskScan.hpp
+        src/Vecky.hpp
+        src/Utilities.cpp)
+
+set(PY_SOURCE_FILES
+        src/pyscan.cpp)
 
 set(test true)
 
 if (test)
-    set(TEST_FILES test/RectangleScan_unittest.cpp)
+    set(TEST_FILES test/Scan_unittest.cpp test/Utilities.hpp test/Utilities.cpp)
 
     configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
     execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
@@ -62,11 +64,12 @@ if (test)
     endif()
 
     # Now simply link against gtest or gtest_main as needed. Eg
-    add_executable(rect_test ${TEST_FILES} ${SOURCE_FILES})
-    target_link_libraries(rect_test gtest_main)
-    add_test(NAME rect_scan_test COMMAND rect_test)
+    add_executable(scan_test ${TEST_FILES} ${SOURCE_FILES})
+    target_link_libraries(scan_test gtest_main)
+    add_test(NAME scan_test COMMAND scan_test)
 endif()
 
 
 
-add_library(pyscan SHARED ${SOURCE_FILES})
+add_library(pyscan SHARED ${SOURCE_FILES} ${PY_SOURCE_FILES})
+target_link_libraries(pyscan ${Boost_LIBRARIES})

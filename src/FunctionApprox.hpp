@@ -5,11 +5,14 @@
 #ifndef PYSCAN_FUNCTIONAPPROX_HPP
 #define PYSCAN_FUNCTIONAPPROX_HPP
 #include <functional>
+#include "Vecky.hpp"
 
-double approximateHull(double mi, double bi,
-                       double mj, double bj,
-                       double alpha, double theta, double eps,
-                       std::function<double(double, double)> phi, //function to maximize
-                       std::function<std::tuple<double, double>(double)> lineMaxF);
+namespace pyscan {
 
+  double approximateHull(double eps,
+                        VecD const& cc, VecD const& cl,
+                        std::function<double(VecD)> phi, //function to maximize
+                        std::function<VecD(VecD)> lineMaxF);
+
+}
 #endif //PYSCAN_FUNCTIONAPPROX_HPP

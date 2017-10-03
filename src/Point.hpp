@@ -9,6 +9,8 @@
 #include <string>
 #include <sstream>
 
+#include "Vecky.hpp"
+
 namespace pyscan {
 
     template <typename Weight=int, int dim=2>
@@ -16,23 +18,11 @@ namespace pyscan {
         Weight red;
         Weight blue;
 
-        double coords[dim] = {0};
-
-        template <typename F>
-        Point(int ix, F el) {
-            coords[dim - ix] = el;
-        }
-
-        template <typename F, typename ...Coords>
-        Point(int ix, F el, Coords... rest) : Point(ix - 1, rest...){
-            coords[dim - ix] = el;
-            static_assert(std::is_same<double, F>::value, "One of the coords is not of type double");
-        }
-
+        VecN<Weight, dim> coords;
     public:
 
         template <typename ...Coords>
-        Point(Weight r, Weight b, Coords... rest) : Point(dim, rest...){
+        Point(Weight r, Weight b, Coords... rest) : coords(rest...) {
             red = r;
             blue = b;
             static_assert(dim == sizeof...(Coords), "coords has to be the same as the number of dimensions");
@@ -41,13 +31,14 @@ namespace pyscan {
         Point() : red(0), blue(0){
         }
 
-	virtual void setRedWeight(double w_r) {
-	    red = w_r;
-	}
+      	virtual void setRedWeight(double w_r) {
+      	    red = w_r;
+      	}
 
-	virtual void setBlueWeight(double w_b) {
-	    blue = w_b;
-	} 
+      	virtual void setBlueWeight(double w_b) {
+      	    blue = w_b;
+      	}
+
         virtual Weight getWeight() const {
             return red + blue;
         }
@@ -86,6 +77,12 @@ namespace pyscan {
             return true;
         }
     };
+
+
+    template<typename W, int dim>
+    inline double dot(Point<W, dim> const& p1, Point<W, dim> const& p2) {
+        return dot(p1.coords, p2.coords);
+    }
 
     template <typename Weight=int, int dim=2>
     class LPoint : public Point<Weight, dim> {
