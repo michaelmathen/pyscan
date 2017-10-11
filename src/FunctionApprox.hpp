@@ -14,5 +14,8 @@ namespace pyscan {
                         std::function<double(VecD)> phi, //function to maximize
                         std::function<VecD(VecD)> lineMaxF);
 
+  double approximateHull(double eps,
+            std::function<double(VecD)> phi, //function to maximize
+            std::function<VecD(VecD)> lineMaxF);
 }
 #endif //PYSCAN_FUNCTIONAPPROX_HPP

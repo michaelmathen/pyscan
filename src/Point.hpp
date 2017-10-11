@@ -8,21 +8,22 @@
 #include <initializer_list>
 #include <string>
 #include <sstream>
+#include <vector>
 
 #include "Vecky.hpp"
 
 namespace pyscan {
 
-    template <typename Weight=int, int dim=2>
+    template <int dim=2>
     class Point {
-        Weight red;
-        Weight blue;
+        double red;
+        double blue;
 
-        VecN<Weight, dim> coords;
+        VecN<double, dim> coords;
     public:
 
         template <typename ...Coords>
-        Point(Weight r, Weight b, Coords... rest) : coords(rest...) {
+        Point(double r, double b, Coords... rest) : coords(rest...) {
             red = r;
             blue = b;
             static_assert(dim == sizeof...(Coords), "coords has to be the same as the number of dimensions");
@@ -39,13 +40,13 @@ namespace pyscan {
       	    blue = w_b;
       	}
 
-        virtual Weight getWeight() const {
+        virtual double getWeight() const {
             return red + blue;
         }
-        virtual Weight getRedWeight() const {
+        virtual double getRedWeight() const {
             return red;
         }
-        virtual Weight getBlueWeight() const {
+        virtual double getBlueWeight() const {
             return blue;
         }
 
@@ -60,10 +61,10 @@ namespace pyscan {
             return ss.str();
         }
 
-        template <int ix, typename W, int d>
-        friend double get(Point<W, d> const& pt);
+        template <int ix,  int d>
+        friend double get(Point<d> const& pt);
 
-        virtual bool operator==(Point<Weight, dim> const& pt) {
+        virtual bool operator==(Point<dim> const& pt) {
 
             bool val = pt.getRedWeight() == getRedWeight() &&
                        pt.getBlueWeight() == getBlueWeight();
@@ -76,39 +77,54 @@ namespace pyscan {
             }
             return true;
         }
+
+        double getX() const {
+            return coords[0];
+        }
+
+        double getY() const {
+            return coords[1];
+        }
     };
 
 
-    template<typename W, int dim>
-    inline double dot(Point<W, dim> const& p1, Point<W, dim> const& p2) {
+    template<int dim>
+    inline double dot(Point<dim> const& p1, Point<dim> const& p2) {
         return dot(p1.coords, p2.coords);
     }
 
-    template <typename Weight=int, int dim=2>
-    class LPoint : public Point<Weight, dim> {
+    template <int dim=2>
+    class LPoint : public Point<dim> {
         size_t label;
     public:
         template <typename ...Coords>
-        LPoint(size_t label, Weight r, Weight b, Coords... rest) : Point<Weight, dim>(r, b, rest...) {}
+        LPoint(size_t label, double r, double b, Coords... rest) : Point<dim>(r, b, rest...) {}
 
         size_t getLabel() const {
             return label;
         }
-        virtual bool operator==(LPoint<Weight, dim> const& lpt) {
-            auto& pt1 = (Point<Weight, dim>&)lpt;
-            auto& pt2 = (Point<Weight, dim>&)*this;
+        virtual bool operator==(LPoint<dim> const& lpt) {
+            auto& pt1 = (Point<dim>&)lpt;
+            auto& pt2 = (Point<dim>&)*this;
             return pt2 == pt2 && lpt.label == this->label;
         }
     };
 
-    template <int ix, typename W, int dim>
-    double get(Point<W, dim> const& pt) {
+    template <int ix, int dim>
+    double get(Point<dim> const& pt) {
         static_assert(ix < dim, "Requested a coordinate that is greater than the dimension");
         return pt.coords[ix];
     }
 
-    using point_it = std::vector<Point<int, 2>>::iterator;
-    using point_d_it = std::vector<Point<double, 2>>::iterator;
+    using point_it = std::vector<Point<>>::iterator;
 
+    double getMeasured(Point<> const& pt);
+    double getBaseline(Point<> const& pt);
+
+    void getLoc(Point<> pt, double& x1, double& x2);
+
+    double getX(Point<> const& pt);
+    double getY(Point<> const& pt);
+    bool colinear(Point<> const&, Point<> const&, Point<> const&);
 }
 #endif //PYSCAN_POINT_HPP

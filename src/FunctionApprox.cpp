@@ -35,6 +35,7 @@ namespace pyscan {
 
 
     double approximateHull(double eps,
+                           VecD const& cc, VecD const& cl,
                            std::function<double(VecD)> phi, //function to maximize
                            std::function<VecD(VecD)> lineMaxF) {
 
@@ -55,8 +56,7 @@ namespace pyscan {
         std::deque<Frame> frameStack;
         // TODO double check debug to see if there is an issue with an infinite singularity here. Might need to change start.
         //This start needs to be fixed. Compute the mi, bi, and everything explicitly
-        frameStack.push_back(Frame(VecD(0, 1), VecD(1, 0),
-                                   VecD(0, 1), VecD(1, 0)));
+        frameStack.push_back(Frame(cc, cl, lineMaxF(cc), lineMaxF(cl)));
         //cout << fixed;
         //cout << setprecision(9);
         while(!frameStack.empty()) {
@@ -84,9 +84,22 @@ namespace pyscan {
                                            line_max, lf.p_cl));
                 frameStack.push_back(Frame(lf.d_cc, m_vec,
                                            lf.p_cc, line_max));
-                //cout << "n phi(" << b << " " << m << ")=" << phi(m, b) << endl;
             }
         }
         return maxRValue;
+    }
+
+    double approximateHull(double eps,
+                           std::function<double(VecD)> phi, //function to maximize
+                           std::function<VecD(VecD)> lineMaxF) {
+        //This top line doesn't make sense to maximize for since we will always just return the largest region.
+        //approximateHull(eps, VecD(0, 1), VecD(1, 0), f, linemaxF);
+        //Likewise this line doesn't make any sense to optimize for since we will always try to find the null set.
+        // approximateHull(eps, VecD(0, -1), VecD(-1, 0), f, linemaxF);
+
+        //This finds the region with the largest measured amount, but smallest baseline amount in terms of the stat fun
+        return std::max(approximateHull(eps, VecD(1, 0), VecD(0, -1), phi, lineMaxF),
+                        //This finds the region with the largest baseline amount, but smallest measured amount in terms of the stat fun
+                        approximateHull(eps, VecD(-1, 0), VecD(0, 1), phi, lineMaxF));
     }
   }

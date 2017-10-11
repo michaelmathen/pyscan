@@ -43,7 +43,7 @@ namespace pyscan {
         }
     }
 
-    double angle(Point<double> const &p1, Point<double> const &p2) {
+    double angle(Point<> const &p1, Point<> const &p2) {
         /*
          * Finds the angle with the y-axis
          */
@@ -60,8 +60,8 @@ namespace pyscan {
 
 
     template<typename F>
-    std::tuple<Halfspace<>, Point<double>, Point<double>>
-    maxHalfplane(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e, F func) {
+    std::tuple<Halfspace<>, Point<>, Point<>>
+    maxHalfplane(point_it p_net_b, point_it p_net_e, point_it p_samp_b, point_it p_samp_e, F func) {
 
         double totalM = 0;
         double totalB = 0;
@@ -72,14 +72,14 @@ namespace pyscan {
 
         if (p_net_e - p_net_b == 0) {
             return std::make_tuple(Halfspace<>(0.0, 0.0, 0.0),
-                    Point<double>(), Point<double>());
+                    Point<>(), Point<>());
         }
         std::vector<double> mweights(p_net_e - p_net_b - 1, 0);
         std::vector<double> bweights(p_net_e - p_net_b - 1, 0);
         std::vector<double> d_indices(p_net_e - p_net_b - 1, 0);
         std::vector<size_t> indices(p_net_e - p_net_b - 1, 0);
         Halfspace<2> maxHalfplane;
-        Point<double> mp1, mp2;
+        Point<> mp1, mp2;
         for (auto p_b = p_net_b; p_b != p_net_e; p_b++) {
 
             auto dind_it = d_indices.begin();
@@ -181,19 +181,34 @@ namespace pyscan {
         return std::make_tuple(maxHalfplane, mp1, mp2);
     }
 
+    Halfspace<3> liftHalfspace(Halfspace<2> const& h2, Point<3> const& p3) {
+        return {h2.fValue(), get<0>(h2), get<1>(h2),
+                (1 - get<0>(p3) * get<0>(h2) - get<1>(p3) * get<1>(h2)) / get<2>(p3)};
+    }
 
-    std::tuple<Halfspace<>, Point<double>, Point<double>> maxHalfplaneLin(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e){
+    Point<2> dropPoint(Point<3> const& fixed_point, Point<3> const& p3) {
+        /*
+         * Does an affine transformation from 3 to 2.
+         */
+        double scaling = get<2>(fixed_point) - get<2>(p3);
+        return {p3.getRedWeight(), p3.getBlueWeight(),
+                get<0>(p3) * get<2>(fixed_point) - get<0>(fixed_point) * get<2>(p3),
+                get<1>(p3) * get<2>(fixed_point) - get<1>(fixed_point) * get<2>(p3)
+        };
+    }
+
+    std::tuple<Halfspace<>, Point<>, Point<>> maxHalfplaneLin(point_it p_net_b, point_it p_net_e, point_it p_samp_b, point_it p_samp_e){
         return maxHalfplane(p_net_b, p_net_e, p_samp_b, p_samp_e, &linear);
     }
 
-     std::tuple<Halfspace<>, Point<double>, Point<double>> maxHalfplaneStat(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e, double rho) {
+     std::tuple<Halfspace<>, Point<>, Point<>> maxHalfplaneStat(point_it p_net_b, point_it p_net_e, point_it p_samp_b, point_it p_samp_e, double rho) {
         return maxHalfplane(p_net_b, p_net_e, p_samp_b, p_samp_e, [&rho](double mr, double br){
             return kulldorff(mr, br, rho);
         });
     }
 
 
-    std::tuple<Halfspace<>, Point<double>, Point<double>> maxHalfplaneGamma(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e, double rho){
+    std::tuple<Halfspace<>, Point<>, Point<>> maxHalfplaneGamma(point_it p_net_b, point_it p_net_e, point_it p_samp_b, point_it p_samp_e, double rho){
         return maxHalfplane(p_net_b, p_net_e, p_samp_b, p_samp_e, [&rho](double mr, double br){
             return gamma(mr, br, rho);
         });

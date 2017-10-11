@@ -14,6 +14,7 @@ set(SOURCE_FILES
         src/FunctionApprox.cpp
         src/FunctionApprox.hpp
         src/Point.hpp
+        src/Point.cpp
         src/RectangleScan.cpp
         src/RectangleScan.hpp
         src/Statistics.hpp
@@ -70,6 +71,6 @@ if (test)
 endif()
 
 
-
 add_library(pyscan SHARED ${SOURCE_FILES} ${PY_SOURCE_FILES})
 target_link_libraries(pyscan ${Boost_LIBRARIES})
+set_target_properties(pyscan PROPERTIES PREFIX "")

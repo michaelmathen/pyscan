@@ -74,7 +74,7 @@ namespace pyscan {
 
     // Defines functions for creating small size eps-samples for
     // rectangles and halfpspaces.
-    using point_it= std::vector<Point < int>>::iterator;
+    using point_it= std::vector<Point<>>::iterator;
 
     void rectangleSample(point_it begin, point_it end,
                          point_it output_b, point_it output_e);

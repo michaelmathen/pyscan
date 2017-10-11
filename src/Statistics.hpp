@@ -7,6 +7,8 @@
 #include <cmath>
 #include <limits>
 
+#include "Point.hpp"
+
 namespace pyscan {
 
     inline double kulldorff(double mr, double br, double rho) {
@@ -35,5 +37,27 @@ namespace pyscan {
     inline double linear(double mr, double br) {
         return  abs(mr - br);
     }
-};
+
+    template<typename Reg, typename F>
+    double evaluateRegion(std::vector<Point<>> m_pts, std::vector<Point<>> b_pts, Reg const& reg, F func) {
+        double m_curr = 0;
+        double m_total = 0;
+        for (auto p = m_pts.begin(); p != m_pts.end(); p++) {
+            if (reg.contains(*p)) {
+                m_curr += getMeasured(*p);
+            }
+            m_total += getMeasured(*p);
+        }
+
+        double b_curr = 0;
+        double b_total = 0;
+        for (auto p = b_pts.begin(); p != b_pts.end(); p++) {
+            if (reg.contains(*p)) {
+                b_curr += getBaseline(*p);
+            }
+            b_total += getBaseline(*p);
+        }
+        return func(m_curr / m_total, b_curr / b_total);
+    }
+}
 #endif //PYSCAN_STATISTICS_HPP

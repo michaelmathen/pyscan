@@ -50,6 +50,7 @@ OPERATION_STRUCT(OprGEq, >=, bool)
 OPERATION_STRUCT(OprLEq, <=, bool)
 
 
+
 //A dummy struct
 struct EmptyExpr {};
 
@@ -508,6 +509,22 @@ struct SUM<E1, T, N, N> {
 UNARY_VECTOR_TO_SCALAR(MAG, , T, mag)
 UNARY_VECTOR_TO_SCALAR(SUM, , T, sum)
 
+template<typename E1,	typename E2,
+	 template <typename, typename, typename, unsigned int> class PrevOp1,
+	 typename T,
+	 unsigned int N>
+__host__ __device__ inline
+auto normalize(ExprNode<E1, PrevOp1, E2, T, N> const& expNode1)
+-> decltype(expNode1 / mag(expNode1)) {
+  return expNode1 / mag(expNode1);
+}
+
+template<typename T, unsigned int N>
+__host__ __device__ inline
+auto normalize(VecN<T, N> const& vec1)
+-> decltype(vec1 / mag(vec1)) {
+  return vec1 / mag(vec1);
+}
 
 using VecD = VecN<double, 2>;
 

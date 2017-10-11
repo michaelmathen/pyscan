@@ -4,10 +4,12 @@
 
 
 #include "../src/RectangleScan.hpp"
+#include "../src/DiskScan.hpp"
 #include "Utilities.hpp"
 
 #include <limits.h>
 #include <random>
+#include <iostream>
 
 #include "gtest/gtest.h"
 namespace {
@@ -37,15 +39,34 @@ namespace {
 // </TechnicalDetails>
 
 
-// Tests Factorial().
+    TEST(DiskTest, Kulldorff) {
+
+        const static int n_size = 50;
+        const static int s_size = 1000;
+        const static double rho = .01;
+        auto n_pts = pyscantest::randomPoints(n_size);
+        auto m_pts = pyscantest::randomPoints(s_size);
+        auto b_pts = pyscantest::randomPoints(s_size);
+        auto d1 = pyscan::diskScanSlowStat(n_pts, m_pts, b_pts, rho);
+        auto d2 = pyscan::diskScanStat(n_pts, m_pts, b_pts, rho);
+        std::cout << d1.getA() << " " << d1.getB() << " " << d1.getR() << " " << d1.fValue() << std::endl;
+        std::cout << d2.getA() << " " << d2.getB() << " " << d2.getR() << " " << d2.fValue() << std::endl;
+
+        auto f = [&](double m, double b) {
+            return pyscan::kulldorff(m, b, rho);
+        };
+        EXPECT_FLOAT_EQ(d1.fValue(), evaluateRegion(m_pts, b_pts, d1, f));
+        EXPECT_FLOAT_EQ(d2.fValue(), evaluateRegion(m_pts, b_pts, d2, f));
+        EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
+        EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
+        EXPECT_FLOAT_EQ(d1.getR(), d2.getR());
+
+    }
 
 
-// Tests factorial of negative numbers.
     TEST(ApproximateHullTest, Kulldorff) {
-        // This test is named "Negative", and belongs to the "FactorialTest"
-        // test case.
         const static int test_size = 1000;
-        auto pts = pyscantest::random_Vec(test_size);
+        auto pts = pyscantest::randomVec(test_size);
 
         auto avg = [&] (pyscan::VecD const& v1, pyscan::VecD const& v2) {
             pyscan::VecD v_out = v1 + v2;

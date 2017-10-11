@@ -45,9 +45,8 @@ namespace pyscan {
 
         //}
 
-        template <typename W>
-        bool contains(Point<W, dim> const& pt) const {
-            return dot<W, dim>(pt, coords) >= 1;
+        bool contains(Point<dim> const& pt) const {
+            return dot<double, dim>(pt, coords) >= 1;
         }
 
         template <int ix>
@@ -68,34 +67,20 @@ namespace pyscan {
         return h.coords[ix];
     }
 
-    template <typename W>
-    Halfspace<3> liftHalfspace(Halfspace<2> const& h2, Point<W, 3> const& p3) {
-        return {h2.fValue(), get<0>(h2), get<1>(h2),
-                (1 - get<0>(p3) * get<0>(h2) - get<1>(p3) * get<1>(h2)) / get<2>(p3)};
-    }
+    Halfspace<3> liftHalfspace(Halfspace<2> const& h2, Point<3> const& p3);
 
-    template <typename W>
-    Point<W, 2> dropPoint(Point<W, 3> const& fixed_point, Point<W, 3> const& p3) {
-        /*
-         * Does an affine transformation from 3 to 2.
-         */
-        double scaling = get<2>(fixed_point) - get<2>(p3);
-        return {p3.getRedWeight(), p3.getBlueWeight(),
-                get<0>(p3) * get<2>(fixed_point) - get<0>(fixed_point) * get<2>(p3),
-                get<1>(p3) * get<2>(fixed_point) - get<1>(fixed_point) * get<2>(p3)
-        };
-    }
+    Point<2> dropPoint(Point<3> const& fixed_point, Point<3> const& p3);
 
-    double angle(Point<double> const & p1, Point<double> const& p2);
+    double angle(Point<> const & p1, Point<> const& p2);
 
-    std::tuple<Halfspace<>, Point<double>, Point<double>>
-    maxHalfplaneLin(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e);
+    std::tuple<Halfspace<>, Point<>, Point<>>
+    maxHalfplaneLin(point_it p_net_b, point_it p_net_e, point_it p_samp_b, point_it p_samp_e);
 
-    std::tuple<Halfspace<>, Point<double>, Point<double>>
-    maxHalfplaneStat(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e, double rho);
+    std::tuple<Halfspace<>, Point<>, Point<>>
+    maxHalfplaneStat(point_it p_net_b, point_it p_net_e, point_it p_samp_b, point_it p_samp_e, double rho);
 
-    std::tuple<Halfspace<>, Point<double>, Point<double>>
-    maxHalfplaneGamma(point_d_it p_net_b, point_d_it p_net_e, point_d_it p_samp_b, point_d_it p_samp_e, double rho);
+    std::tuple<Halfspace<>, Point<>, Point<>>
+    maxHalfplaneGamma(point_it p_net_b, point_it p_net_e, point_it p_samp_b, point_it p_samp_e, double rho);
 
 }
 #endif //PYSCAN_HALFPLANE_HPP
