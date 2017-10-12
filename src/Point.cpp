@@ -12,7 +12,7 @@ namespace pyscan {
     }
 
 
-    void getLoc(Point<> pt, double& x1, double& x2) {
+    void getLoc(Point<> const& pt, double& x1, double& x2) {
         x1 = get<0>(pt);
         x2 = get<1>(pt);
     }

@@ -78,12 +78,15 @@ namespace pyscan {
             return true;
         }
 
-        double getX() const {
+        virtual double getX() const {
             return coords[0];
         }
 
-        double getY() const {
+        virtual double getY() const {
             return coords[1];
+        }
+        virtual double get(int i) const {
+          return coords[i];
         }
     };
 
@@ -113,7 +116,8 @@ namespace pyscan {
     template <int ix, int dim>
     double get(Point<dim> const& pt) {
         static_assert(ix < dim, "Requested a coordinate that is greater than the dimension");
-        return pt.coords[ix];
+        static_assert(0 <= ix, "Requested a coordinate that is less than zero");
+        return pt.get(ix);
     }
 
     using point_it = std::vector<Point<>>::iterator;
@@ -121,7 +125,7 @@ namespace pyscan {
     double getMeasured(Point<> const& pt);
     double getBaseline(Point<> const& pt);
 
-    void getLoc(Point<> pt, double& x1, double& x2);
+    void getLoc(Point<> const& pt, double& x1, double& x2);
 
     double getX(Point<> const& pt);
     double getY(Point<> const& pt);

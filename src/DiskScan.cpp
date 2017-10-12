@@ -113,8 +113,12 @@ namespace pyscan {
         }
     }
 
-    using val_t = std::tuple<size_t, double>;
-    using crescent_t = std::vector<val_t>;
+    struct LabeledVal {
+        size_t label;
+        double value;
+        LabeledVal(size_t l, double v) : label(l), value(v) {}
+    };
+    using crescent_t = std::vector<LabeledVal>;
 
     template<typename T, typename F, typename G>
     inline void partial_counts_label(T begin, T end,
@@ -130,32 +134,35 @@ namespace pyscan {
 
     double updateCounts(std::unordered_map<size_t, size_t>& curr_counts,
                         crescent_t& adding, crescent_t& removing) {
+        /*
+        * The adding and removing crescents define the
+        */
         double update_diff = 0;
+        for (auto& val_pair : adding) {
+            auto curr_el = curr_counts.find(val_pair.label);
+            //Start here.
+            if (curr_el != curr_counts.end()) {
+                curr_counts[curr_el->first] = curr_el->second + 1;
+            } else {
+                update_diff += val_pair.value;
+                curr_counts[val_pair.label] = 1;
+            }
+        }
         for (auto& val_pair : removing) {
-            auto curr_el = curr_counts.find(std::get<0>(val_pair));
+            auto curr_el = curr_counts.find(val_pair.label);
             //Start here.
             if (curr_el != curr_counts.end()) {
                 if (curr_el->second <= 1) {
-					update_diff -= std::get<0>(val_pair);
+					          update_diff -= val_pair.value;
                     curr_counts.erase(curr_el);
                 } else {
-                    curr_counts[curr_el->first] = curr_el->second + 1;
+                    curr_counts[curr_el->first] = curr_el->second - 1;
                 }
             } else {
                 assert("The current set contains element that are being removed in the set");
             }
         }
-        for (auto& val_pair : adding) {
-            auto curr_el = curr_counts.find(std::get<0>(val_pair));
-            //Start here.
-            if (curr_el != curr_counts.end()) {
-                curr_counts[curr_el->first] = curr_el->second + 1;
-            } else {
-				update_diff += std::get<0>(val_pair);
-                curr_counts[std::get<0>(val_pair)] = 1;
-            }
-        }
-		return update_diff;
+		    return update_diff;
     }
 
     template <typename F>
@@ -174,7 +181,7 @@ namespace pyscan {
 
         auto nB = net.begin();
         auto nE = net.end();
-        std::vector <Point<>> netSampleSorted(nB, nE);
+        std::vector <LPoint<>> netSampleSorted(nB, nE);
 
         Disk currMax;
         double maxStat = 0;
@@ -203,7 +210,7 @@ namespace pyscan {
                 findPerpVect(*i, *j, &orthoX, &orthoY);
                 double cX = (get<0>(*i) + get<0>(*j)) / 2.0;
                 double cY = (get<1>(*i) + get<1>(*j)) / 2.0;
-                auto isNotCol = [&i, &j](Point<> const& pt) {
+                auto isNotCol = [&i, &j](LPoint<> const& pt) {
                     double x1, x2, x3, y1, y2, y3;
                     getLoc(*i, x1, y1);
                     getLoc(*j, x2, y2);
@@ -214,13 +221,12 @@ namespace pyscan {
                     return (a11 * a22 - a12 * a21 != 0);
                 };
 
-
                 // Partition these into a set of adding points and removing points
-                auto partitionF = [orthoX, orthoY, cX, cY](Point<> const &pt) {
+                auto partitionF = [orthoX, orthoY, cX, cY](LPoint<> const &pt) {
                     return (get<0>(pt) - cX) * orthoX + (get<1>(pt) - cY) * orthoY <= 0;
                 };
 
-                auto orderF = [orthoX, orthoY, &i, &j, cX, cY](Point<> const &pt) {
+                auto orderF = [orthoX, orthoY, &i, &j, cX, cY](LPoint<> const &pt) {
                     // If the point lines up with either of the reference
                     // point then we take this to be a disk defined by only
                     // the reference points.
@@ -230,7 +236,7 @@ namespace pyscan {
                     solveCircle3(*i, *j, pt, a, b);
                     return orthoX * (a - cX) + orthoY * (b - cY);
                 };
-                auto compF = [&orderF](Point<> const &pt1, Point<> const &pt2) {
+                auto compF = [&orderF](LPoint<> const &pt1, LPoint<> const &pt2) {
                     return orderF(pt1) < orderF(pt2);
                 };
 
@@ -238,35 +244,19 @@ namespace pyscan {
                 auto bsIterEnd = std::partition(bsBegin, bsEnd, isNotCol);
                 auto nIterEnd = std::partition(sortedB, sortedE, isNotCol);
 
-                double mCount = 0;
-                double bCount = 0;
                 // will have two sets an added set and a current set.
                 // added set is for stuff that will never leave. The current set on the other hand
                 // will correspond to every trajectory that we overlap.
 
                 std::unordered_map<size_t, size_t> m_curr_set;
                 std::unordered_map<size_t, size_t> b_curr_set;
-
-                std::for_each(asIterEnd, msEnd, [&](LPoint<> const &pt) {
-                    if (onLineSegment(*i, *j, pt)) {
-                        if (m_curr_set.find(pt.getLabel()) == m_curr_set.end()) {
-                            mCount += getMeasured(pt);
-                            m_curr_set[pt.getLabel()] = 1;
-                        } else {
-                            m_curr_set[pt.getLabel()] = m_curr_set[pt.getLabel()] + 1;
-                        }
-                    }
-                });
-                std::for_each(bsIterEnd, bsEnd, [&](LPoint<> const &pt) {
-                    if (onLineSegment(*i, *j, pt)) {
-                        if (b_curr_set.find(pt.getLabel()) == b_curr_set.end()) {
-                            bCount += getBaseline(pt);
-                            b_curr_set[pt.getLabel()] = 1;
-                        } else {
-                            b_curr_set[pt.getLabel()] = b_curr_set[pt.getLabel()] + 1;
-                        }
-                    }
-                });
+                auto onSegment = [&](LPoint<> const& pt) {
+                    return onLineSegment(*i, *j, pt);
+                };
+                //Counts the points that lie on the line segment between i and j.
+                //These points are colinear so have been removed from the scan.
+                double m_count = computeLabelTotalF(asIterEnd, msEnd, getMeasured, m_curr_set, onSegment);
+                double b_count = computeLabelTotalF(bsIterEnd, bsEnd, getBaseline, b_curr_set, onSegment);
 
                 std::sort(sortedB, nIterEnd, compF);
                 std::vector<double> orderV;
@@ -274,6 +264,8 @@ namespace pyscan {
                 for (auto b = sortedB; b != nIterEnd; b++) {
                     orderV.push_back(orderF(*b));
                 }
+
+                //Partition the point set into an adding and removing sets.
                 auto mHigherIt = std::partition(msBegin, asIterEnd, partitionF);
                 auto bHigherIt = std::partition(bsBegin, bsIterEnd, partitionF);
 
@@ -283,9 +275,9 @@ namespace pyscan {
                 std::fill(bCountsA.begin(), bCountsA.end(), crescent_t());
                 /*Probably most of the time is spent here*/
                 partial_counts_label(msBegin, mHigherIt, orderV, mCountsR, orderF, getMeasured);
-                mCount = mCount + computeLabelTotal(msBegin, mHigherIt, getMeasured, m_curr_set);
+                m_count += computeLabelTotal(msBegin, mHigherIt, getMeasured, m_curr_set);
                 partial_counts_label(bsBegin, bHigherIt, orderV, bCountsR, orderF, getBaseline);
-                bCount = bCount + computeLabelTotal(bsBegin, bHigherIt, getBaseline, b_curr_set);
+                b_count += computeLabelTotal(bsBegin, bHigherIt, getBaseline, b_curr_set);
                 partial_counts_label(mHigherIt, asIterEnd, orderV, mCountsA, orderF,
                                getMeasured);
                 partial_counts_label(bHigherIt, bsIterEnd, orderV, bCountsA, orderF,
@@ -294,10 +286,10 @@ namespace pyscan {
                 //Now scan over the counts.
                 auto size = nIterEnd - sortedB;
                 for (int k = 0; k < size; k++) {
-					mCount += updateCounts(m_curr_set, mCountsA[k], mCountsR[k]);
-					bCount += updateCounts(b_curr_set, bCountsA[k], bCountsR[k]);
-                    double m_hat = mCount / m_Total;
-                    double b_hat = bCount / b_Total;
+                    m_count += updateCounts(m_curr_set, mCountsA[k], mCountsR[k]);
+					          b_count += updateCounts(b_curr_set, bCountsA[k], bCountsR[k]);
+                    double m_hat = m_count / m_Total;
+                    double b_hat = b_count / b_Total;
                     double newStat = scan(m_hat, b_hat);
                     if (maxStat <= newStat) {
                         double a, b, r;
@@ -368,19 +360,13 @@ namespace pyscan {
                     if (!colinear(*i, *j, *k)) {
                         double a, b, r;
                         solveCircle3(*i, *j, *k, a, b, r);
-                        double m_curr = computeLabelTotal(sampleM.begin(), sampleM.end(),
-                         [&] (LPoint<> const& pt){
-                           if (contains(a, b, r, pt)) {
-                             return getMeasured(pt);
-                           }
-                        });
-                        double b_curr = computeLabelTotal(sampleB.begin(), sampleB.end(),
-                         [&] (LPoint<> const& pt){
-                           if (contains(a, b, r, pt)) {
-                             return getBaseline(pt);
-                           }
-                        });
-
+                        auto filterF = [&] (Point<> const& pt) {
+                          return contains(a, b, r, pt);
+                        };
+                        double m_curr = computeLabelTotalF(sampleM.begin(), sampleM.end(), getMeasured,
+                                        filterF);
+                        double b_curr = computeLabelTotalF(sampleB.begin(), sampleB.end(), getBaseline,
+                                        filterF);
                         if (scan(m_curr / m_Total, b_curr / b_Total) >= maxDisk.fValue()) {
                             maxDisk = Disk(scan(m_curr / m_Total, b_curr / b_Total), a, b, r);
                         }
@@ -394,57 +380,53 @@ namespace pyscan {
 
     template <typename F>
     Disk diskScan(std::vector<Point<>>& net, std::vector<Point<>>& sampleM, std::vector<Point<>>& sampleB, F scan) {
+      //Calculate the total measured and baseline value.
+      double m_Total = 0;
+      double b_Total = 0;
+      auto msBegin = sampleM.begin();
+      auto bsBegin = sampleB.begin();
+      auto msEnd = sampleM.end();
+      auto bsEnd = sampleB.end();
+      for (auto aIt = msBegin; aIt != msEnd; aIt++)
+          m_Total += getMeasured(*aIt);
+      for (auto bIt = bsBegin; bIt != bsEnd; bIt++)
+          b_Total += getBaseline(*bIt);
 
-        //Calculate the total measured and baseline value.
-        double m_Total = 0;
-        double b_Total = 0;
-        auto msBegin = sampleM.begin();
-        auto bsBegin = sampleB.begin();
-        auto msEnd = sampleM.end();
-        auto bsEnd = sampleB.end();
-        for (auto aIt = msBegin; aIt != msEnd; aIt++)
-            m_Total += getMeasured(*aIt);
-        for (auto bIt = bsBegin; bIt != bsEnd; bIt++)
-            b_Total += getBaseline(*bIt);
+      auto nB = net.begin();
+      auto nE = net.end();
+      std::vector <Point<>> netSampleSorted(nB, nE);
 
-        auto nB = net.begin();
-        auto nE = net.end();
-        std::vector <Point<>> netSampleSorted(nB, nE);
+      Disk currMax;
+      double maxStat = 0;
+      std::vector<double> mCountsA(nE - nB, 0);
+      std::vector<double> bCountsA(nE - nB, 0);
+      std::vector<double> mCountsR(nE - nB, 0);
+      std::vector<double> bCountsR(nE - nB, 0);
 
-        Disk currMax;
-        double maxStat = 0;
-        std::vector<double> mCountsA(nE - nB, 0);
-        std::vector<double> bCountsA(nE - nB, 0);
-        std::vector<double> mCountsR(nE - nB, 0);
-        std::vector<double> bCountsR(nE - nB, 0);
-
-        auto sortedB = netSampleSorted.begin();
-        auto sortedEOuter = netSampleSorted.end();
-        for (auto i = nB; i != nE - 2; i++) {
-            sortedEOuter = std::remove(sortedB, sortedEOuter, *i);
-            auto sortedE = sortedEOuter;
-            for (auto j = i + 1; j != nE - 1; j++) {
-                auto el = std::find(sortedB, sortedE, *j);
-                std::swap(*el, *(sortedE - 1));
-                sortedE = sortedE - 1;
-                //Create a vector between the two points
-                double orthoX, orthoY;
-                findPerpVect(*i, *j, &orthoX, &orthoY);
-                double cX = (get<0>(*i) + get<0>(*j)) / 2.0;
-                double cY = (get<1>(*i) + get<1>(*j)) / 2.0;
-                auto isNotCol = [&i, &j](Point<> const& pt) {
-                    double x1, x2, x3, y1, y2, y3;
-                    getLoc(*i, x1, y1);
-                    getLoc(*j, x2, y2);
-                    getLoc(pt, x3, y3);
-                    double
-                        a11 = x2 - x1, a12 = y2 - y1,
-                        a21 = x2 - x3, a22 = y2 - y3;
-                    return (a11 * a22 - a12 * a21 != 0);
-                };
-
-
-
+      auto sortedB = netSampleSorted.begin();
+      auto sortedEOuter = netSampleSorted.end();
+      for (auto i = nB; i != nE - 2; i++) {
+        sortedEOuter = std::remove(sortedB, sortedEOuter, *i);
+        auto sortedE = sortedEOuter;
+        for (auto j = i + 1; j != nE - 1; j++) {
+          auto el = std::find(sortedB, sortedE, *j);
+          std::swap(*el, *(sortedE - 1));
+          sortedE = sortedE - 1;
+          //Create a vector between the two points
+          double orthoX, orthoY;
+          findPerpVect(*i, *j, &orthoX, &orthoY);
+          double cX = (get<0>(*i) + get<0>(*j)) / 2.0;
+          double cY = (get<1>(*i) + get<1>(*j)) / 2.0;
+          auto isNotCol = [&i, &j](Point<> const& pt) {
+              double x1, x2, x3, y1, y2, y3;
+              getLoc(*i, x1, y1);
+              getLoc(*j, x2, y2);
+              getLoc(pt, x3, y3);
+              double
+                  a11 = x2 - x1, a12 = y2 - y1,
+                  a21 = x2 - x3, a22 = y2 - y3;
+              return (a11 * a22 - a12 * a21 != 0);
+          };
           // Partition these into a set of adding points and removing points
           auto partitionF = [orthoX, orthoY, cX, cY](Point<> const &pt) {
               return (get<0>(pt) - cX) * orthoX + (get<1>(pt) - cY) * orthoY <= 0;

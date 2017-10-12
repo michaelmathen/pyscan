@@ -72,14 +72,13 @@ namespace {
         auto m_pts = pyscantest::randomLPoints(s_size, 10);
         auto b_pts = pyscantest::randomLPoints(s_size, 10);
         auto d1 = pyscan::diskScanSlowStatLabels(n_pts, m_pts, b_pts, rho);
-        auto d2 = pyscan::diskScanStatLabels(n_pts, m_pts, b_pts, rho);
-        std::cout << d1.getA() << " " << d1.getB() << " " << d1.getR() << " " << d1.fValue() << std::endl;
-        std::cout << d2.getA() << " " << d2.getB() << " " << d2.getR() << " " << d2.fValue() << std::endl;
 
         auto f = [&](double m, double b) {
             return pyscan::kulldorff(m, b, rho);
         };
         EXPECT_FLOAT_EQ(d1.fValue(), evaluateRegion(m_pts, b_pts, d1, f));
+
+        auto d2 = pyscan::diskScanStatLabels(n_pts, m_pts, b_pts, rho);
         EXPECT_FLOAT_EQ(d2.fValue(), evaluateRegion(m_pts, b_pts, d2, f));
         EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
         EXPECT_FLOAT_EQ(d1.getB(), d2.getB());

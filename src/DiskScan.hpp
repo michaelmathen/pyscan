@@ -55,17 +55,31 @@ namespace pyscan {
         }
     };
 
+
+    template<typename T, typename Eval, typename Filter>
+    double computeLabelTotalF(T begin, T end, Eval func, std::unordered_map<size_t, size_t>& label_map, Filter filter) {
+      double total = 0;
+      for (; begin != end; ++begin) {
+        if (filter(*begin)) {
+          if (label_map.end() == label_map.find(begin->getLabel())) {
+              total += func(*begin);
+              label_map[begin->getLabel()] = 0;
+          }
+          label_map[begin->getLabel()] = label_map[begin->getLabel()] + 1;
+        }
+      }
+      return total;
+    }
+
     template< typename T, typename F>
     double computeLabelTotal(T begin, T end, F func, std::unordered_map<size_t, size_t>& label_map) {
-        double total = 0;
-        for (; begin != end; ++begin) {
-            if (label_map.end() == label_map.find(begin->getLabel())) {
-                total += func(*begin);
-                label_map[begin->getLabel()] = 0;
-            }
-            label_map[begin->getLabel()] = label_map[begin->getLabel()] + 1;
-        }
-        return total;
+      return computeLabelTotalF(begin, end, func, label_map, [](Point<> const& pt){ return true; });
+    }
+
+    template<typename T, typename Eval, typename Filter>
+    double computeLabelTotalF(T begin, T end, Eval func, Filter filter) {
+        std::unordered_map<size_t, size_t> label_map;
+        return computeLabelTotalF(begin, end, func, label_map, filter);
     }
 
     template< typename T, typename F>
@@ -73,6 +87,8 @@ namespace pyscan {
         std::unordered_map<size_t, size_t> label_map;
         return computeLabelTotal(begin, end, func, label_map);
     }
+
+
 
     template<typename T, typename F>
     double computeTotal(T begin, T end, F func) {
@@ -82,7 +98,6 @@ namespace pyscan {
       });
       return sum;
     }
-
 
     void solveCircle3(Point<> const& pt1, Point<> const& pt2, Point<> const& pt3,
                       double &a, double &b);

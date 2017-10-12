@@ -6,6 +6,7 @@
 #define PYSCAN_STATISTICS_HPP
 #include <cmath>
 #include <limits>
+#include <iostream>
 
 #include "DiskScan.hpp"
 #include "Point.hpp"
@@ -40,26 +41,21 @@ namespace pyscan {
     }
 
     template<typename Reg, typename F>
-    double evaluateRegion(std::vector<LPoint<>> m_pts, std::vector<LPoint<>> b_pts, Reg const& reg, F func) {
+    double evaluateRegion(std::vector<LPoint<>>& m_pts, std::vector<LPoint<>>& b_pts, Reg const& reg, F func) {
       double m_total = computeLabelTotal(m_pts.begin(), m_pts.end(), getMeasured);
       double b_total = computeLabelTotal(b_pts.begin(), b_pts.end(), getBaseline);
-      double m_curr = computeLabelTotal(m_pts.begin(), m_pts.end(),
-       [&] (LPoint<> const& pt){
-         if (reg.contains(pt)) {
-           return getMeasured(pt);
-         }
-      });
-      double b_curr = computeLabelTotal(b_pts.begin(), b_pts.end(),
-       [&] (LPoint<> const& pt){
-         if (reg.contains(pt)) {
-           return getBaseline(pt);
-         }
-      });
+      auto filterF = [&] (Point<> const& pt) {
+        return reg.contains(pt);
+      };
+      double m_curr = computeLabelTotalF(m_pts.begin(), m_pts.end(), getMeasured,
+                                        filterF);
+      double b_curr = computeLabelTotalF(b_pts.begin(), b_pts.end(), getBaseline,
+                                        filterF);
       return func(m_curr / m_total, b_curr / b_total);
     }
 
     template<typename Reg, typename F>
-    double evaluateRegion(std::vector<Point<>> m_pts, std::vector<Point<>> b_pts, Reg const& reg, F func) {
+    double evaluateRegion(std::vector<Point<>>& m_pts, std::vector<Point<>>& b_pts, Reg const& reg, F func) {
         double m_curr = 0;
         double m_total = 0;
         for (auto p = m_pts.begin(); p != m_pts.end(); p++) {
