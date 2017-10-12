@@ -6,6 +6,7 @@
 #define PYSCAN_DISKSCAN_HPP_HPP
 
 #include <vector>
+#include <unordered_map>
 
 #include "Point.hpp"
 
@@ -54,6 +55,34 @@ namespace pyscan {
         }
     };
 
+    template< typename T, typename F>
+    double computeLabelTotal(T begin, T end, F func, std::unordered_map<size_t, size_t>& label_map) {
+        double total = 0;
+        for (; begin != end; ++begin) {
+            if (label_map.end() == label_map.find(begin->getLabel())) {
+                total += func(*begin);
+                label_map[begin->getLabel()] = 0;
+            }
+            label_map[begin->getLabel()] = label_map[begin->getLabel()] + 1;
+        }
+        return total;
+    }
+
+    template< typename T, typename F>
+    double computeLabelTotal(T begin, T end, F func) {
+        std::unordered_map<size_t, size_t> label_map;
+        return computeLabelTotal(begin, end, func, label_map);
+    }
+
+    template<typename T, typename F>
+    double computeTotal(T begin, T end, F func) {
+      double sum = 0;
+      std::for_each(begin, end, [&](Point<> const& pt) {
+          sum += func(pt);
+      });
+      return sum;
+    }
+
 
     void solveCircle3(Point<> const& pt1, Point<> const& pt2, Point<> const& pt3,
                       double &a, double &b);
@@ -65,6 +94,7 @@ namespace pyscan {
     Disk diskScan(std::vector<Point<>>& net, std::vector<Point<>>& sampleM, std::vector<Point<>>& sampleB, F scan);
 
     Disk diskScanSlowStat(std::vector<Point<>>& net, std::vector<Point<>>& sampleM, std::vector<Point<>>& sampleB, double rho);
+    Disk diskScanSlowStatLabels(std::vector<LPoint<>>& net, std::vector<LPoint<>>& sampleM, std::vector<LPoint<>>& sampleB, double rho);
 
     Disk diskScanStatLabels(std::vector<LPoint<2>>& net, std::vector<LPoint<2>>& sampleM, std::vector<LPoint<2>>& sampleB, double rho);
 

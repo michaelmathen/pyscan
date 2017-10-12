@@ -158,34 +158,6 @@ namespace pyscan {
 		return update_diff;
     }
 
-    template< typename T, typename F>
-    double computeLabelTotal(T begin, T end, F func, std::unordered_map<size_t, size_t>& label_map) {
-        double total = 0;
-        for (; begin != end; ++begin) {
-            if (label_map.end() == label_map.find(begin->getLabel())) {
-                total += func(*begin);
-                label_map[begin->getLabel()] = 0;
-            }
-            label_map[begin->getLabel()] = label_map[begin->getLabel()] + 1;
-        }
-        return total;
-    }
-
-    template< typename T, typename F>
-    double computeLabelTotal(T begin, T end, F func) {
-        std::unordered_map<size_t, size_t> label_map;
-        return computeLabelTotal(begin, end, func, label_map);
-    }
-
-    template<typename T, typename F>
-    double computeTotal(T begin, T end, F func) {
-      double sum = 0;
-      std::for_each(begin, end, [&](Point<> const& pt) {
-          sum += func(pt);
-      });
-      return sum;
-    }
-
     template <typename F>
     Disk diskScanLabels(std::vector<LPoint<>>& net,
                         std::vector<LPoint<>>& sampleM,
@@ -385,6 +357,42 @@ namespace pyscan {
     }
 
     template <typename F>
+    Disk diskScanSlowLabels(std::vector<LPoint<>>& net, std::vector<LPoint<>>& sampleM, std::vector<LPoint<>>& sampleB, F scan) {
+        double m_Total = computeLabelTotal(sampleM.begin(), sampleM.end(), getMeasured);
+        double b_Total = computeLabelTotal(sampleB.begin(), sampleB.end(), getBaseline);
+
+        Disk maxDisk(0, 0, 0, 0);
+        for (auto i = net.begin(); i != net.end() - 2; i++) {
+            for (auto j = i + 1; j != net.end() - 1; j++) {
+                for (auto k = j + 1; k != net.end(); k++) {
+                    if (!colinear(*i, *j, *k)) {
+                        double a, b, r;
+                        solveCircle3(*i, *j, *k, a, b, r);
+                        double m_curr = computeLabelTotal(sampleM.begin(), sampleM.end(),
+                         [&] (LPoint<> const& pt){
+                           if (contains(a, b, r, pt)) {
+                             return getMeasured(pt);
+                           }
+                        });
+                        double b_curr = computeLabelTotal(sampleB.begin(), sampleB.end(),
+                         [&] (LPoint<> const& pt){
+                           if (contains(a, b, r, pt)) {
+                             return getBaseline(pt);
+                           }
+                        });
+
+                        if (scan(m_curr / m_Total, b_curr / b_Total) >= maxDisk.fValue()) {
+                            maxDisk = Disk(scan(m_curr / m_Total, b_curr / b_Total), a, b, r);
+                        }
+
+                    }
+                }
+            }
+        }
+        return maxDisk;
+    }
+
+    template <typename F>
     Disk diskScan(std::vector<Point<>>& net, std::vector<Point<>>& sampleM, std::vector<Point<>>& sampleB, F scan) {
 
         //Calculate the total measured and baseline value.
@@ -525,6 +533,12 @@ namespace pyscan {
     */
     Disk diskScanStatLabels(std::vector<LPoint<>>& net, std::vector<LPoint<>>& sampleM, std::vector<LPoint<>>& sampleB, double rho) {
         return diskScanLabels(net, sampleM, sampleB, [&rho](double mr, double br){
+            return kulldorff(mr, br, rho);
+        });
+    }
+
+    Disk diskScanSlowStatLabels(std::vector<LPoint<>>& net, std::vector<LPoint<>>& sampleM, std::vector<LPoint<>>& sampleB, double rho) {
+        return diskScanSlowLabels(net, sampleM, sampleB, [&rho](double mr, double br){
             return kulldorff(mr, br, rho);
         });
     }

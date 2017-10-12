@@ -7,6 +7,7 @@
 #include <cmath>
 #include <limits>
 
+#include "DiskScan.hpp"
 #include "Point.hpp"
 
 namespace pyscan {
@@ -36,6 +37,25 @@ namespace pyscan {
 
     inline double linear(double mr, double br) {
         return  abs(mr - br);
+    }
+
+    template<typename Reg, typename F>
+    double evaluateRegion(std::vector<LPoint<>> m_pts, std::vector<LPoint<>> b_pts, Reg const& reg, F func) {
+      double m_total = computeLabelTotal(m_pts.begin(), m_pts.end(), getMeasured);
+      double b_total = computeLabelTotal(b_pts.begin(), b_pts.end(), getBaseline);
+      double m_curr = computeLabelTotal(m_pts.begin(), m_pts.end(),
+       [&] (LPoint<> const& pt){
+         if (reg.contains(pt)) {
+           return getMeasured(pt);
+         }
+      });
+      double b_curr = computeLabelTotal(b_pts.begin(), b_pts.end(),
+       [&] (LPoint<> const& pt){
+         if (reg.contains(pt)) {
+           return getBaseline(pt);
+         }
+      });
+      return func(m_curr / m_total, b_curr / b_total);
     }
 
     template<typename Reg, typename F>

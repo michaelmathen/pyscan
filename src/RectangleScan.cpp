@@ -283,7 +283,7 @@ namespace pyscan {
     /////////////////////////////////////////////////////////////////////////////////
 
     template< typename T, typename F>
-    double computeLabelTotal(T begin, T end, F func) {
+    double computeLabelTotalRect(T begin, T end, F func) {
         std::unordered_set<size_t> label_set;
         double total = 0;
         for (; begin != end; ++begin) {
@@ -302,10 +302,10 @@ namespace pyscan {
                              std::vector<LPoint<>> const& b_points,
                              F func) {
 
-        double m_Total = computeLabelTotal(m_points.begin(), m_points.end(), [](Point<2> const& pt){
+        double m_Total = computeLabelTotalRect(m_points.begin(), m_points.end(), [](Point<2> const& pt){
             return pt.getRedWeight();
         });
-        double b_Total = computeLabelTotal(b_points.begin(), b_points.end(), [](Point<2> const& pt){
+        double b_Total = computeLabelTotalRect(b_points.begin(), b_points.end(), [](Point<2> const& pt){
             return pt.getBlueWeight();
         });
         Rectangle maxRect(0, 0, 0, 0, 0.0);
