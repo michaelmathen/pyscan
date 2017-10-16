@@ -41,7 +41,7 @@ namespace pyscan {
     }
 
     template<typename Reg, typename F>
-    double evaluateRegion(std::vector<LPoint<>>& m_pts, std::vector<LPoint<>>& b_pts, Reg const& reg, F func) {
+    double evaluateRegion(std::vector<LPoint<>> const& m_pts, std::vector<LPoint<>> const& b_pts, Reg const& reg, F func) {
       double m_total = computeLabelTotal(m_pts.begin(), m_pts.end(), getMeasured);
       double b_total = computeLabelTotal(b_pts.begin(), b_pts.end(), getBaseline);
       auto filterF = [&] (Point<> const& pt) {

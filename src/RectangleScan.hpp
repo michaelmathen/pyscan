@@ -100,10 +100,13 @@ namespace pyscan {
            os <<  "(" << u_x << " " << u_y << " " << l_x << " " << l_y << " " << value << ")";
         }
 
-        bool contains(Point<> const& pt) {
+        bool contains(Point<> const& pt) const {
             return u_x >= get<0>(pt) && get<0>(pt) >= l_x && u_y >= get<1>(pt) && get<1>(pt) >= l_y;
         }
 
+        void setValue(double v) {
+          value = v;
+        }
         Bound_t lowX() const { return l_x; }
         Bound_t upX() const { return u_x; }
         Bound_t lowY() const { return l_y; }
@@ -147,9 +150,10 @@ namespace pyscan {
 
 
 
-    Rectangle maxLabeledRectStat(std::vector<LPoint<>> const& net,
+    Rectangle maxRectStatLabels(std::vector<LPoint<>> const& net,
                                  std::vector<LPoint<>> const& m_points,
-                                 std::vector<LPoint<>> const& b_points, double rho);
+                                 std::vector<LPoint<>> const& b_points,
+                                 double rho);
 
     Subgrid maxSubgridKullSlow(Grid const &grid, double rho);
     Subgrid maxSubgridLinearSlow(Grid const& grid, double a, double b);
@@ -166,6 +170,10 @@ namespace pyscan {
 
     Subgrid maxSubgridLinearG(Grid const &grid, size_t r_prime, double a, double b);
 
+    Rectangle maxRectSlowStatLabels(std::vector<LPoint<>> const& net,
+                                 std::vector<LPoint<>> const& m_points,
+                                 std::vector<LPoint<>> const& b_points,
+                                 double rho);
     //template<typename F>
     //subgrid maxSubgridConvex(Grid const& grid, int r_prime, F func) {
 

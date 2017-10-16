@@ -297,7 +297,50 @@ namespace pyscan {
 
 
     template <typename F>
-    Rectangle maxLabeledRect(std::vector<LPoint<>> const& net,
+    Rectangle maxRectSlowLabels(std::vector<LPoint<>> const& net,
+                                std::vector<LPoint<>> const& m_points,
+                                std::vector<LPoint<>> const& b_points,
+                                F func) {
+
+        double m_Total = computeLabelTotalRect(m_points.begin(), m_points.end(), [](Point<2> const& pt){
+            return getMeasured(pt);
+        });
+        double b_Total = computeLabelTotalRect(b_points.begin(), b_points.end(), [](Point<2> const& pt){
+            return getBaseline(pt);
+        });
+        Rectangle maxRect(0, 0, 0, 0, 0.0);
+        //Create a top and bottom line
+        for (auto onb1 = net.begin(); onb1 != (net.end() - 3); onb1++) {
+            for (auto onb2 = onb1 + 1; onb2 != (net.end() - 2); onb2++) {
+              for (auto onb3 = onb2 + 1; onb2 != (net.end() - 1); onb3++) {
+                for (auto onb4 = onb3 + 1; onb3 != net.end(); onb4++) {
+                  auto ux = std::max({onb1->getX(), onb2->getX(), onb3->getX(), onb4->getX()});
+                  auto lx = std::min({onb1->getX(), onb2->getX(), onb3->getX(), onb4->getX()});
+                  auto uy = std::max({onb1->getY(), onb2->getY(), onb3->getY(), onb4->getY()});
+                  auto ly = std::min({onb1->getY(), onb2->getY(), onb3->getY(), onb4->getY()});
+                  Rectangle rect(ux, uy, lx, ly, 0.0);
+
+                  double new_stat = evaluateRegion( m_points, b_points, rect, func);
+                  if (new_stat >= maxRect.fValue()) {
+                    maxRect = rect;
+                    maxRect.setValue(new_stat);
+                  }
+                }
+              }
+            }
+        }
+        return maxRect;
+    }
+
+    Rectangle maxRectSlowStatLabels(std::vector<LPoint<>> const& net,
+                                 std::vector<LPoint<>> const& m_points,
+                                 std::vector<LPoint<>> const& b_points, double rho) {
+        return maxRectSlowLabels(net, m_points, b_points, [&rho](double mr, double br){
+            return kulldorff(mr, br, rho);
+        });
+    }
+    template <typename F>
+    Rectangle maxRectLabels(std::vector<LPoint<>> const& net,
                              std::vector<LPoint<>> const& m_points,
                              std::vector<LPoint<>> const& b_points,
                              F func) {
@@ -373,10 +416,10 @@ namespace pyscan {
         return maxRect;
     }
 
-    Rectangle maxLabeledRectStat(std::vector<LPoint<>> const& net,
+    Rectangle maxRectStatLabels(std::vector<LPoint<>> const& net,
                                  std::vector<LPoint<>> const& m_points,
                                  std::vector<LPoint<>> const& b_points, double rho) {
-        return maxLabeledRect(net, m_points, b_points, [&rho](double mr, double br){
+        return maxRectLabels(net, m_points, b_points, [&rho](double mr, double br){
             return kulldorff(mr, br, rho);
         });
     }

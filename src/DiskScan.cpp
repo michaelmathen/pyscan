@@ -62,31 +62,6 @@ namespace pyscan {
         r = sqrt((x1 - a) * (x1 - a) + (y1 - b) * (y1 - b));
     }
 
-    bool sameLoc(Point<> const& p1, Point<> const& p2) {
-        return getX(p1) == getX(p2) && getY(p1) == getY(p2);
-    }
-
-    bool onLineSegment(Point<> const& pt1,
-                       Point<> const& pt2,
-                       Point<> const& pt3) {
-        if (colinear(pt1, pt2, pt3)) {
-            if (sameLoc(pt1, pt2) || sameLoc(pt2, pt3))
-                return true;
-            //Now we know that the point is on the same line
-            if (getX(pt1) != getX(pt2)) {
-                double theta = (getY(pt1) - getX(pt3)) / (getX(pt1) - getX(pt2));
-                return (theta <= 1) && (theta >= 0);
-            } else {
-                double theta = (getY(pt1) - getY(pt3)) / (getY(pt1) - getY(pt2));
-                return (theta <= 1) && (theta >= 0);
-            }
-        } else {
-            return false;
-        }
-    }
-
-
-
     void findPerpVect(Point<> const& p1, Point<> const& p2, double* u, double* v) {
         double x1, x2, y1, y2;
         getLoc(p1, x1, y1);
@@ -107,26 +82,20 @@ namespace pyscan {
                                std::vector<double>& counts, F& orderF, G& valueF) {
         //Partitions based on the break points.
         for (; begin != end; begin++) {
-            auto lb = lower_bound(partitions.begin(), partitions.end(),
+            auto lb = std::lower_bound(partitions.begin(), partitions.end(),
                                   orderF(*begin));
             counts[lb - partitions.begin()] += valueF(*begin);
         }
     }
 
-    struct LabeledVal {
-        size_t label;
-        double value;
-        LabeledVal(size_t l, double v) : label(l), value(v) {}
-    };
-    using crescent_t = std::vector<LabeledVal>;
 
     template<typename T, typename F, typename G>
     inline void partial_counts_label(T begin, T end,
                                std::vector<double> const& partitions,
-                               std::vector<crescent_t >& counts, F& orderF, G& valueF) {
+                               std::vector<crescent_t >& counts, F orderF, G valueF) {
         //Partitions based on the break points.
         for (; begin != end; begin++) {
-            auto lb = lower_bound(partitions.begin(), partitions.end(),
+            auto lb = std::lower_bound(partitions.begin(), partitions.end(),
                                   orderF(*begin));
             counts[lb - partitions.begin()].emplace_back(begin->getLabel(), valueF(*begin));
         }
@@ -153,7 +122,7 @@ namespace pyscan {
             //Start here.
             if (curr_el != curr_counts.end()) {
                 if (curr_el->second <= 1) {
-					          update_diff -= val_pair.value;
+                    update_diff -= val_pair.value;
                     curr_counts.erase(curr_el);
                 } else {
                     curr_counts[curr_el->first] = curr_el->second - 1;
@@ -162,7 +131,7 @@ namespace pyscan {
                 assert("The current set contains element that are being removed in the set");
             }
         }
-		    return update_diff;
+        return update_diff;
     }
 
     template <typename F>
@@ -178,6 +147,8 @@ namespace pyscan {
         auto bsBegin = sampleB.begin();
         auto msEnd = sampleM.end();
         auto bsEnd = sampleB.end();
+        double m_Total = computeLabelTotal(msBegin, msEnd, getMeasured);
+        double b_Total = computeLabelTotal(bsBegin, bsEnd, getBaseline);
 
         auto nB = net.begin();
         auto nE = net.end();
@@ -185,16 +156,6 @@ namespace pyscan {
 
         Disk currMax;
         double maxStat = 0;
-        //Need to change this so that it keeps track of the number of counts we have
-        //seen.
-
-
-        std::vector<crescent_t> mCountsA(nE - nB, crescent_t());
-        std::vector<crescent_t> bCountsA(nE - nB, crescent_t());
-        std::vector<crescent_t> mCountsR(nE - nB, crescent_t());
-        std::vector<crescent_t> bCountsR(nE - nB, crescent_t());
-        double m_Total = computeLabelTotal(msBegin, msEnd, getMeasured);
-        double b_Total = computeLabelTotal(bsBegin, bsEnd, getBaseline);
 
         auto sortedB = netSampleSorted.begin();
         auto sortedEOuter = netSampleSorted.end();
@@ -211,16 +172,8 @@ namespace pyscan {
                 double cX = (get<0>(*i) + get<0>(*j)) / 2.0;
                 double cY = (get<1>(*i) + get<1>(*j)) / 2.0;
                 auto isNotCol = [&i, &j](LPoint<> const& pt) {
-                    double x1, x2, x3, y1, y2, y3;
-                    getLoc(*i, x1, y1);
-                    getLoc(*j, x2, y2);
-                    getLoc(pt, x3, y3);
-                    double
-                            a11 = x2 - x1, a12 = y2 - y1,
-                            a21 = x2 - x3, a22 = y2 - y3;
-                    return (a11 * a22 - a12 * a21 != 0);
+                    return !colinear(*i, *j, pt);
                 };
-
                 // Partition these into a set of adding points and removing points
                 auto partitionF = [orthoX, orthoY, cX, cY](LPoint<> const &pt) {
                     return (get<0>(pt) - cX) * orthoX + (get<1>(pt) - cY) * orthoY <= 0;
@@ -247,20 +200,20 @@ namespace pyscan {
                 // will have two sets an added set and a current set.
                 // added set is for stuff that will never leave. The current set on the other hand
                 // will correspond to every trajectory that we overlap.
-
-                std::unordered_map<size_t, size_t> m_curr_set;
-                std::unordered_map<size_t, size_t> b_curr_set;
                 auto onSegment = [&](LPoint<> const& pt) {
                     return onLineSegment(*i, *j, pt);
                 };
+
                 //Counts the points that lie on the line segment between i and j.
                 //These points are colinear so have been removed from the scan.
+                std::unordered_map<size_t, size_t> m_curr_set;
+                std::unordered_map<size_t, size_t> b_curr_set;
                 double m_count = computeLabelTotalF(asIterEnd, msEnd, getMeasured, m_curr_set, onSegment);
                 double b_count = computeLabelTotalF(bsIterEnd, bsEnd, getBaseline, b_curr_set, onSegment);
 
                 std::sort(sortedB, nIterEnd, compF);
                 std::vector<double> orderV;
-                orderV.reserve(nIterEnd - sortedB);
+                orderV.reserve(static_cast<size_t>(nIterEnd - sortedB));
                 for (auto b = sortedB; b != nIterEnd; b++) {
                     orderV.push_back(orderF(*b));
                 }
@@ -269,14 +222,17 @@ namespace pyscan {
                 auto mHigherIt = std::partition(msBegin, asIterEnd, partitionF);
                 auto bHigherIt = std::partition(bsBegin, bsIterEnd, partitionF);
 
-                std::fill(mCountsR.begin(), mCountsR.end(), crescent_t());
-                std::fill(bCountsR.begin(), bCountsR.end(), crescent_t());
-                std::fill(mCountsA.begin(), mCountsA.end(), crescent_t());
-                std::fill(bCountsA.begin(), bCountsA.end(), crescent_t());
+                std::vector<crescent_t> mCountsA(static_cast<size_t>(nE - nB), crescent_t());
+                std::vector<crescent_t> bCountsA(static_cast<size_t>(nE - nB), crescent_t());
+                std::vector<crescent_t> mCountsR(static_cast<size_t>(nE - nB), crescent_t());
+                std::vector<crescent_t> bCountsR(static_cast<size_t>(nE - nB), crescent_t());
+
                 /*Probably most of the time is spent here*/
-                partial_counts_label(msBegin, mHigherIt, orderV, mCountsR, orderF, getMeasured);
+                partial_counts_label(msBegin, mHigherIt, orderV, mCountsR, orderF,
+                                     getMeasured);
                 m_count += computeLabelTotal(msBegin, mHigherIt, getMeasured, m_curr_set);
-                partial_counts_label(bsBegin, bHigherIt, orderV, bCountsR, orderF, getBaseline);
+                partial_counts_label(bsBegin, bHigherIt, orderV, bCountsR, orderF,
+                                     getBaseline);
                 b_count += computeLabelTotal(bsBegin, bHigherIt, getBaseline, b_curr_set);
                 partial_counts_label(mHigherIt, asIterEnd, orderV, mCountsA, orderF,
                                getMeasured);
@@ -287,7 +243,7 @@ namespace pyscan {
                 auto size = nIterEnd - sortedB;
                 for (int k = 0; k < size; k++) {
                     m_count += updateCounts(m_curr_set, mCountsA[k], mCountsR[k]);
-					          b_count += updateCounts(b_curr_set, bCountsA[k], bCountsR[k]);
+                    b_count += updateCounts(b_curr_set, bCountsA[k], bCountsR[k]);
                     double m_hat = m_count / m_Total;
                     double b_hat = b_count / b_Total;
                     double newStat = scan(m_hat, b_hat);
@@ -313,10 +269,10 @@ namespace pyscan {
     Disk diskScanSlow(std::vector<Point<>>& net, std::vector<Point<>>& sampleM, std::vector<Point<>>& sampleB, F scan) {
         double m_Total = 0;
         double b_Total = 0;
-        for (auto aIt = sampleM.begin(); aIt != sampleM.end(); aIt++)
-            m_Total += getMeasured(*aIt);
-        for (auto bIt = sampleB.begin(); bIt != sampleB.end(); bIt++)
-            b_Total += getBaseline(*bIt);
+        for (auto& aIt : sampleM)
+            m_Total += getMeasured(aIt);
+        for (auto& bIt : sampleB)
+            b_Total += getBaseline(bIt);
 
         Disk maxDisk(0, 0, 0, 0);
         for (auto i = net.begin(); i != net.end() - 2; i++) {
@@ -327,14 +283,14 @@ namespace pyscan {
                         double b_curr = 0;
                         double a, b, r;
                         solveCircle3(*i, *j, *k, a, b, r);
-                        for (auto p = sampleM.begin(); p != sampleM.end(); p++) {
-                           if (contains(a, b, r, *p)) {
-                              m_curr += getMeasured(*p);
+                        for (auto& p : sampleM) {
+                           if (contains(a, b, r, p)) {
+                              m_curr += getMeasured(p);
                            }
                         }
-                        for (auto p = sampleB.begin(); p != sampleB.end(); p++) {
-                            if (contains(a, b, r, *p)) {
-                                b_curr += getBaseline(*p);
+                        for (auto& p : sampleB) {
+                            if (contains(a, b, r, p)) {
+                                b_curr += getBaseline(p);
                             }
                         }
                         if (scan(m_curr / m_Total, b_curr / b_Total) >= maxDisk.fValue()) {
@@ -459,7 +415,7 @@ namespace pyscan {
           });
           std::for_each(bsIterEnd, bsEnd, [i, j, &bCount](Point<> const &pt) {
               if (onLineSegment(*i, *j, pt)) {
-                bCount += getMeasured(pt);
+                bCount += getBaseline(pt);
               }
           });
 

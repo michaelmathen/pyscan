@@ -56,6 +56,16 @@ namespace pyscan {
     };
 
 
+    struct LabeledVal {
+        size_t label;
+        double value;
+        LabeledVal(size_t l, double v) : label(l), value(v) {}
+    };
+    using crescent_t = std::vector<LabeledVal>;
+
+    double updateCounts(std::unordered_map<size_t, size_t>& curr_counts,
+                        crescent_t& adding, crescent_t& removing);
+
     template<typename T, typename Eval, typename Filter>
     double computeLabelTotalF(T begin, T end, Eval func, std::unordered_map<size_t, size_t>& label_map, Filter filter) {
       double total = 0;

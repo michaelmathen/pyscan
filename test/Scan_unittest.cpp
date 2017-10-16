@@ -63,6 +63,85 @@ namespace {
 
     }
 
+    TEST(updateCounts, adding) {
+        std::unordered_map<size_t, size_t> curr_counts;
+        curr_counts[0] = 2;
+        curr_counts[1] = 1;
+        curr_counts[3] = 1;
+
+        pyscan::crescent_t adding_set;
+        pyscan::crescent_t removing_set;
+        adding_set.emplace_back(0, .1); // shouldn't change value.
+        adding_set.emplace_back(1, .3); // shouldn't change the value.
+        adding_set.emplace_back(4, .2); // should increase the value.
+        double result_v = pyscan::updateCounts(curr_counts, adding_set, removing_set);
+
+        EXPECT_FLOAT_EQ(.2, result_v);
+        EXPECT_EQ(curr_counts[0], 3);
+        EXPECT_EQ(curr_counts[1], 2);
+        EXPECT_EQ(curr_counts[3], 1);
+        EXPECT_EQ(curr_counts[4], 1);
+    }
+
+    TEST(updateCounts, removing) {
+        std::unordered_map<size_t, size_t> curr_counts;
+        curr_counts[0] = 3;
+        curr_counts[1] = 2;
+        curr_counts[3] = 1;
+        curr_counts[4] = 1;
+
+        pyscan::crescent_t adding_set;
+        pyscan::crescent_t removing_set;
+        removing_set.emplace_back(0, .1); // shouldn't remove this element.
+        removing_set.emplace_back(1, .3); // shouldn't remove this element.
+        removing_set.emplace_back(3, .3); //should remove this element.
+        double result_v = pyscan::updateCounts(curr_counts, adding_set, removing_set);
+
+        EXPECT_FLOAT_EQ(-.3, result_v);
+        EXPECT_EQ(curr_counts[0], 2);
+        EXPECT_EQ(curr_counts[1], 1);
+        EXPECT_EQ(curr_counts.find(3), curr_counts.end());
+        EXPECT_EQ(curr_counts[4], 1);
+    }
+
+    TEST(updateCounts, addremove) {
+            std::unordered_map<size_t, size_t> curr_counts;
+            curr_counts[0] = 3;
+            curr_counts[1] = 2;
+            curr_counts[3] = 1;
+
+            pyscan::crescent_t adding_set;
+            pyscan::crescent_t removing_set;
+            adding_set.emplace_back(4, .2); // should increase the value
+            removing_set.emplace_back(4, .2);
+            double result_v = pyscan::updateCounts(curr_counts, adding_set, removing_set);
+
+            EXPECT_FLOAT_EQ(0, result_v);
+            EXPECT_EQ(curr_counts[0], 3);
+            EXPECT_EQ(curr_counts[1], 2);
+            EXPECT_EQ(curr_counts[3], 1);
+            EXPECT_EQ(curr_counts.find(4), curr_counts.end());
+    }
+
+    TEST(updateCounts, removeadd) {
+            std::unordered_map<size_t, size_t> curr_counts;
+            curr_counts[0] = 3;
+            curr_counts[1] = 2;
+            curr_counts[3] = 1;
+            curr_counts[4] = 1;
+
+            pyscan::crescent_t adding_set;
+            pyscan::crescent_t removing_set;
+            adding_set.emplace_back(4, .2); // should increase the value
+            removing_set.emplace_back(4, .2);
+            double result_v = pyscan::updateCounts(curr_counts, adding_set, removing_set);
+
+            EXPECT_FLOAT_EQ(0, result_v);
+            EXPECT_EQ(curr_counts[0], 3);
+            EXPECT_EQ(curr_counts[1], 2);
+            EXPECT_EQ(curr_counts[3], 1);
+            EXPECT_EQ(curr_counts[4], 1);
+    }
     TEST(DiskTestLabel, Kulldorff) {
 
         const static int n_size = 50;
@@ -77,14 +156,37 @@ namespace {
             return pyscan::kulldorff(m, b, rho);
         };
         EXPECT_FLOAT_EQ(d1.fValue(), evaluateRegion(m_pts, b_pts, d1, f));
-
         auto d2 = pyscan::diskScanStatLabels(n_pts, m_pts, b_pts, rho);
+        EXPECT_FLOAT_EQ(d1.fValue(), d2.fValue());
         EXPECT_FLOAT_EQ(d2.fValue(), evaluateRegion(m_pts, b_pts, d2, f));
         EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
         EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
         EXPECT_FLOAT_EQ(d1.getR(), d2.getR());
 
     }
+
+//    TEST(RectangleScanLabel, Kulldorff) {
+//
+//        const static int n_size = 50;
+//        const static int s_size = 1000;
+//        const static double rho = .01;
+//        auto n_pts = pyscantest::randomLPoints(n_size, 10);
+//        auto m_pts = pyscantest::randomLPoints(s_size, 10);
+//        auto b_pts = pyscantest::randomLPoints(s_size, 10);
+//        auto d1 = pyscan::maxRectSlowStatLabels(n_pts, m_pts, b_pts, rho);
+//
+//        auto f = [&](double m, double b) {
+//            return pyscan::kulldorff(m, b, rho);
+//        };
+//        EXPECT_FLOAT_EQ(d1.fValue(), evaluateRegion(m_pts, b_pts, d1, f));
+//
+//        //auto d2 = pyscan::maxRectStatLabels(n_pts, m_pts, b_pts, rho);
+//        //EXPECT_FLOAT_EQ(d2.fValue(), evaluateRegion(m_pts, b_pts, d2, f));
+//        //EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
+//        //EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
+//        //EXPECT_FLOAT_EQ(d1.getR(), d2.getR());
+//
+//    }
     //TODO write labeled disk scan tests.
 
 

@@ -40,4 +40,28 @@ namespace pyscan {
                 a21 = x2 - x3, a22 = y2 - y3;
         return (a11 * a22 - a12 * a21 == 0);
     }
+
+
+    bool onLineSegment(Point<> const& pt1,
+                       Point<> const& pt2,
+                       Point<> const& pt3) {
+        if (colinear(pt1, pt2, pt3)) {
+            if (sameLoc(pt1, pt2) || sameLoc(pt2, pt3))
+                return true;
+            //Now we know that the point is on the same line
+            if (getX(pt1) != getX(pt2)) {
+                double theta = (getY(pt1) - getX(pt3)) / (getX(pt1) - getX(pt2));
+                return (theta <= 1) && (theta >= 0);
+            } else {
+                double theta = (getY(pt1) - getY(pt3)) / (getY(pt1) - getY(pt2));
+                return (theta <= 1) && (theta >= 0);
+            }
+        } else {
+            return false;
+        }
+    }
+
+    bool sameLoc(Point<> const& p1, Point<> const& p2) {
+        return getX(p1) == getX(p2) && getY(p1) == getY(p2);
+    }
 }

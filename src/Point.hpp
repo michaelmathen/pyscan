@@ -101,15 +101,13 @@ namespace pyscan {
         size_t label;
     public:
         template <typename ...Coords>
-        LPoint(size_t label, double r, double b, Coords... rest) : Point<dim>(r, b, rest...) {}
+        LPoint(size_t l, double r, double b, Coords... rest) : label(l), Point<dim>(r, b, rest...) {}
 
-        size_t getLabel() const {
+        virtual size_t getLabel() const {
             return label;
         }
         virtual bool operator==(LPoint<dim> const& lpt) {
-            auto& pt1 = (Point<dim>&)lpt;
-            auto& pt2 = (Point<dim>&)*this;
-            return pt2 == pt2 && lpt.label == this->label;
+            return Point<dim>::operator==(lpt) && lpt.label == this->label;
         }
     };
 
@@ -130,5 +128,11 @@ namespace pyscan {
     double getX(Point<> const& pt);
     double getY(Point<> const& pt);
     bool colinear(Point<> const&, Point<> const&, Point<> const&);
+    bool onLineSegment(Point<> const& pt1,
+                       Point<> const& pt2,
+                       Point<> const& pt3);
+
+    bool sameLoc(Point<> const& p1, Point<> const& p2);
+
 }
 #endif //PYSCAN_POINT_HPP

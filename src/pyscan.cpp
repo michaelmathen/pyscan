@@ -168,7 +168,7 @@ pyscan::Rectangle maxRectLabelsD(const py::object& net, const py::object& sample
     auto net_points = to_std_vector<pyscan::LPoint<>>(net);
     auto sample_p_M = to_std_vector<pyscan::LPoint<>>(sampleM);
     auto sample_p_B = to_std_vector<pyscan::LPoint<>>(sampleB);
-    return pyscan::maxLabeledRectStat(net_points, sample_p_M, sample_p_B, rho);
+    return pyscan::maxRectStatLabels(net_points, sample_p_M, sample_p_B, rho);
 }
 /*
 pyscan::Subgrid maxRectLabelsI(const py::object& net, const py::object& sampleM, const py::object& sampleB, double rho) {
