@@ -17,13 +17,13 @@ namespace pyscan {
         double b;
         double radius;
     public:
-        Disk(double val, double a, double b, double r) : value(val), a(a), b(b), radius(r) {
+        Disk(double val, double a_i, double b_i, double r) : value(val), a(a_i), b(b_i), radius(r) {
         }
 
         Disk() : value(0), a(0), b(0), radius(0) {}
 
         bool contains(Point<> const &pt) const {
-            return (get<0>(pt) - getA()) * (get<0>(pt) - getA()) +  (get<1>(pt) - getB()) * (get<1>(pt) - getB()) <= radius * radius;
+            return (get<0>(pt) - getA()) * (get<0>(pt) - getA()) + (get<1>(pt) - getB()) * (get<1>(pt) - getB()) <= radius * radius;
         }
 
         void setA(double la) {
@@ -64,7 +64,7 @@ namespace pyscan {
     using crescent_t = std::vector<LabeledVal>;
 
     double updateCounts(std::unordered_map<size_t, size_t>& curr_counts,
-                        crescent_t& adding, crescent_t& removing);
+                        crescent_t const& adding, crescent_t const& removing);
 
     template<typename T, typename Eval, typename Filter>
     double computeLabelTotalF(T begin, T end, Eval func, std::unordered_map<size_t, size_t>& label_map, Filter filter) {

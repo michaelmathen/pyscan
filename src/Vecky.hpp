@@ -128,14 +128,14 @@ class VecN {
   template<typename Coord, typename... Coords>
   void fill(int i, Coord f_el, Coords... args) {
     _data[i] = f_el;
-    fill(i - 1, args...);
+    fill(i + 1, args...);
   }
 
 public:
   __host__ __device__
   template<typename... Coords>
   VecN(Coords... args) {
-    fill(N - 1, args...);
+    fill(0, args...);
   }
 
   template<typename E1, template <typename, typename, typename, unsigned int> class OP, typename E2>

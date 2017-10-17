@@ -11,5 +11,8 @@ namespace pyscantest {
     auto randomVec(int test_size) -> std::vector<pyscan::VecD>;
     auto randomPoints(int test_size) -> std::vector<pyscan::Point<>>;
     auto randomLPoints(int test_size, size_t num_labels) -> std::vector<pyscan::LPoint<>>;
+    auto randomLPointsUnique(int test_size) -> std::vector<pyscan::LPoint<>>;
+
+    auto removeLabels(std::vector<pyscan::LPoint<>> const& pts) -> std::vector<pyscan::Point<>>;
 }
 #endif //PYSCAN_UTILITIES_HPP

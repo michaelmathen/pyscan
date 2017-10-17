@@ -134,5 +134,10 @@ namespace pyscan {
 
     bool sameLoc(Point<> const& p1, Point<> const& p2);
 
+
+    inline Point<> removeLabel(LPoint<> const& pt) {
+      return Point<>(pt.getRedWeight(), pt.getBlueWeight(), pt.get(0), pt.get(1));
+    }
+
 }
 #endif //PYSCAN_POINT_HPP

@@ -3,6 +3,8 @@
 //
 #include <algorithm>
 #include <unordered_map>
+#include <ostream>
+
 #include <set>
 #include <unordered_set>
 #include <assert.h>
@@ -79,7 +81,7 @@ namespace pyscan {
     template<typename T, typename F, typename G>
     inline void partial_counts(T begin, T end,
                                std::vector<double> const& partitions,
-                               std::vector<double>& counts, F& orderF, G& valueF) {
+                               std::vector<double>& counts, F orderF, G valueF) {
         //Partitions based on the break points.
         for (; begin != end; begin++) {
             auto lb = std::lower_bound(partitions.begin(), partitions.end(),
@@ -102,7 +104,7 @@ namespace pyscan {
     }
 
     double updateCounts(std::unordered_map<size_t, size_t>& curr_counts,
-                        crescent_t& adding, crescent_t& removing) {
+                        crescent_t const& adding, crescent_t const& removing) {
         /*
         * The adding and removing crescents define the
         */
@@ -132,6 +134,22 @@ namespace pyscan {
             }
         }
         return update_diff;
+    }
+
+    std::ostream& operator<<(std::ostream& os, std::unordered_map<size_t, size_t> const& items) {
+      for (auto ix : items) {
+        os << ix.first << ":" << ix.second << ", ";
+      }
+      return os;
+    }
+
+
+
+    std::ostream& operator<<(std::ostream& os, crescent_t const& items) {
+      for (auto ix : items) {
+        os << ix.label  << ", ";
+      }
+      return os;
     }
 
     template <typename F>
@@ -240,10 +258,12 @@ namespace pyscan {
                                getBaseline);
                 /*----------------------------------------------*/
                 //Now scan over the counts.
+
                 auto size = nIterEnd - sortedB;
                 for (int k = 0; k < size; k++) {
                     m_count += updateCounts(m_curr_set, mCountsA[k], mCountsR[k]);
                     b_count += updateCounts(b_curr_set, bCountsA[k], bCountsR[k]);
+                    
                     double m_hat = m_count / m_Total;
                     double b_hat = b_count / b_Total;
                     double newStat = scan(m_hat, b_hat);
@@ -374,14 +394,7 @@ namespace pyscan {
           double cX = (get<0>(*i) + get<0>(*j)) / 2.0;
           double cY = (get<1>(*i) + get<1>(*j)) / 2.0;
           auto isNotCol = [&i, &j](Point<> const& pt) {
-              double x1, x2, x3, y1, y2, y3;
-              getLoc(*i, x1, y1);
-              getLoc(*j, x2, y2);
-              getLoc(pt, x3, y3);
-              double
-                  a11 = x2 - x1, a12 = y2 - y1,
-                  a21 = x2 - x3, a22 = y2 - y3;
-              return (a11 * a22 - a12 * a21 != 0);
+            return !colinear(*i, *j, pt);
           };
           // Partition these into a set of adding points and removing points
           auto partitionF = [orthoX, orthoY, cX, cY](Point<> const &pt) {
