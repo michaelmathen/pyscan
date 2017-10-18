@@ -7,38 +7,106 @@
 #include <algorithm>
 #include <functional>
 #include <tuple>
+#include <iostream>
+
 #include "Vecky.hpp"
 #include "Utilities.hpp"
 
 namespace pyscan {
+
+    bool almostEqualRelative(double A, double B, double maxRelDiff) {
+        // Calculate the difference.
+        double diff = abs(A - B);
+        A = abs(A);
+        B = abs(B);
+        // Find the largest
+        double largest = (B > A) ? B : A;
+        return diff <= largest * maxRelDiff;
+    }
 
     bool lineIntersection(VecD const& dir1, double d1, VecD const& dir2, double d2, VecD& v_ext) {
         /*
          * Need to test two cases.
          *
          */
-
-        double mx1 = dir1[0] * d1 - dir2[0] * d2;
-        double bx1 = -dir1[1] * d1 + dir2[1] * d2;
-        double proj = (mx1 * dir1[0] + bx1 * dir1[1]);
-
-        if (mx1 == 0 && bx1 == 0) {
+        if (almostEqualRelative(dir1[0] * dir2[1], dir1[1] * dir2[0], 8 * std::numeric_limits<double>::epsilon())) {
             return false;
-        } else if (std::signbit(d1) * proj >= 0) {
-            v_ext[0] = mx1, v_ext[1] = bx1;
-            return true;
-        } else {
-            v_ext[0] = -mx1, v_ext[1] = -bx1;
-            return true;
         }
+
+        double denom = 1 / (dir1[0] * dir2[1] - dir1[1] * dir2[0]);
+
+        v_ext[0] = (dir2[1] * d1 - dir1[1] * d2) * denom;
+        v_ext[1] = (dir1[0] * d2 - dir2[0] * d1) * denom;
+        return true;
+    }
+
+    bool inside(VecD pos, double alpha, double rho) {
+      return (alpha <= pos[0]) && (pos[0] <= 1 - alpha) &&
+        (rho <= pos[1]) && (pos[1] <= 1 - rho);
+    }
+
+    bool inRange(double a, double b) {
+      return (b <= a) && (a <= 1 - b);
+    }
+
+    void lineIntersectionI(VecD const& dir1, double d1, VecD const& dir2, double d2, VecD& v_ext) {
+      /*
+        If there is numerical instability then we project to infinity.
+      */
+      if (!lineIntersection(dir1, d1, dir2, d2, v_ext)) {
+        v_ext[0] = std::numeric_limits<double>::infinity();
+        v_ext[1] = std::numeric_limits<double>::infinity();
+      }
     }
 
 
-    double approximateHull(double eps,
+
+    VecD projectToBoundary(VecD pos, VecD dir, double alpha, double rho) {
+      /*
+        Takes the pos and projects it to the rectangle defined by
+        [rho, 1 rho] x [alpha, 1 - alpha]
+      */
+      if (inside(pos, alpha, rho))
+        return pos;
+
+      VecD rho_b, rho_t, alpha_l, alpha_r;
+      double d1 = dot(pos, dir);
+      lineIntersectionI(dir, d1, VecD(0.0, 1.0), rho, rho_b);
+      lineIntersectionI(dir, d1, VecD(0.0, 1.0), 1 - rho, rho_t);
+      lineIntersectionI(dir, d1, VecD(1.0, 0.0), alpha, alpha_l);
+      lineIntersectionI(dir, d1, VecD(1.0, 0.0), 1 - alpha, alpha_r);
+      if (pos[1] < rho && inRange(rho_b[0], alpha))
+          return rho_b;
+      else if (1 - rho < pos[1] && inRange(rho_t[0], alpha))
+        return rho_t;
+      else if (pos[0] < alpha && inRange(alpha_l[1], rho))
+        return alpha_l;
+      else if (1 - alpha < pos[0] && inRange(alpha_r[1], rho))
+        return alpha_r;
+      // lives in the corner and no good projections
+      else if (pos[0] < alpha) {
+        if (pos[1] < rho)
+          return {alpha, rho};
+        else
+          return {alpha, 1 - rho};
+      } else {
+        if (pos[1] < rho)
+          return {1 - alpha, rho};
+        else
+          return {1 - alpha, 1 - rho};
+      }
+    }
+
+    double approximateHull(double alpha, double rho, double eps,
                            VecD const& cc, VecD const& cl,
                            std::function<double(VecD)> phi, //function to maximize
-                           std::function<VecD(VecD)> lineMaxF) {
+                           std::function<VecD(VecD)> lineMaxExt) {
 
+
+        auto lineMaxF = [&] (VecD v1) {
+          auto pt = projectToBoundary(lineMaxExt(v1), v1, alpha, rho);
+          return pt;
+        };
 
         auto avg = [&] (VecD const& v1, VecD const& v2) {
             VecD v_out = v1 + v2;
@@ -64,16 +132,15 @@ namespace pyscan {
             frameStack.pop_front();
             double di = dot(lf.d_cc, lf.p_cc);
             double dj = dot(lf.d_cl, lf.p_cl);
-
+            double vi = phi(lf.p_cc);
+            double vj = phi(lf.p_cl);
+            maxRValue = std::max({vi, vj, maxRValue});
             VecD p_ext;
-            if (lineIntersection(lf.d_cc, di, lf.d_cl, dj, p_ext)) {
+            if (!lineIntersection(lf.d_cc, di, lf.d_cl, dj, p_ext)) {
                 continue;
             }
             double vw = phi(p_ext);
-            double vi = phi(lf.p_cc);
-            double vj = phi(lf.p_cl);
-
-            if (std::max({vi, vj, maxRValue}) + eps  > vw) {
+            if (maxRValue + eps  > vw) {
                 // No value in this triangle is large enough to be interesting
                 continue;
             } else {
@@ -89,7 +156,7 @@ namespace pyscan {
         return maxRValue;
     }
 
-    double approximateHull(double eps,
+    double approximateHull(double alpha, double rho, double eps,
                            std::function<double(VecD)> phi, //function to maximize
                            std::function<VecD(VecD)> lineMaxF) {
         //This top line doesn't make sense to maximize for since we will always just return the largest region.
@@ -98,8 +165,8 @@ namespace pyscan {
         // approximateHull(eps, VecD(0, -1), VecD(-1, 0), f, linemaxF);
 
         //This finds the region with the largest measured amount, but smallest baseline amount in terms of the stat fun
-        return std::max(approximateHull(eps, VecD(1, 0), VecD(0, -1), phi, lineMaxF),
+        return std::max(approximateHull(alpha, rho, eps, VecD(1, 0), VecD(0, -1), phi, lineMaxF),
                         //This finds the region with the largest baseline amount, but smallest measured amount in terms of the stat fun
-                        approximateHull(eps, VecD(-1, 0), VecD(0, 1), phi, lineMaxF));
+                        approximateHull(alpha, rho, eps, VecD(-1, 0), VecD(0, 1), phi, lineMaxF));
     }
   }

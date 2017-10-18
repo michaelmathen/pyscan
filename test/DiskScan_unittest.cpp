@@ -290,44 +290,7 @@ namespace {
     //TODO write labeled disk scan tests.
 
 
-    TEST(ApproximateHullTest, Kulldorff) {
-        const static int test_size = 1000;
-        auto pts = pyscantest::randomVec(test_size);
 
-        auto avg = [&] (pyscan::VecD const& v1, pyscan::VecD const& v2) {
-            pyscan::VecD v_out = v1 + v2;
-            return v_out * 1.0 / mag(v_out);
-        };
-
-        auto line_f = [&] (pyscan::VecD dir){
-            pyscan::VecD max_pt(0.0, 0.0);
-            for (auto pt : pts) {
-                if (dot(pt, dir) > dot(max_pt, dir)) {
-                    max_pt = pt;
-                }
-            }
-            return max_pt;
-        };
-        /*
-        EXPECT_EQ(1, Factorial(-5));
-        EXPECT_EQ(1, Factorial(-1));
-        EXPECT_GT(Factorial(-10), 0);
-        */
-        // <TechnicalDetails>
-        //
-        // EXPECT_EQ(expected, actual) is the same as
-        //
-        //   EXPECT_TRUE((expected) == (actual))
-        //
-        // except that it will print both the expected value and the actual
-        // value when the assertion fails.  This is very helpful for
-        // debugging.  Therefore in this case EXPECT_EQ is preferred.
-        //
-        // On the other hand, EXPECT_TRUE accepts any Boolean expression,
-        // and is thus more general.
-        //
-        // </TechnicalDetails>
-    }
 
 // Tests factorial of 0.
 }

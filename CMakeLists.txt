@@ -72,6 +72,11 @@ if (test)
     add_executable(RectangleScan_test test/RectangleScan_unittest.cpp ${TEST_FILES} ${SOURCE_FILES})
     target_link_libraries(RectangleScan_test gtest_main)
     add_test(NAME RectangleScan_test COMMAND RectangleScan_test)
+
+    add_executable(FunctionApprox_test test/FunctionApprox_unittest.cpp ${TEST_FILES} ${SOURCE_FILES})
+    target_link_libraries(FunctionApprox_test gtest_main)
+    add_test(NAME FunctionApprox_test COMMAND FunctionApprox_test)
+
 endif()
 
 

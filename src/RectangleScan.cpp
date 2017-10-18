@@ -244,7 +244,7 @@ namespace pyscan {
 
 
     template<typename F>
-    Subgrid maxSubgridLinearSStat(Grid const& grid, double eps, F f) {
+    Subgrid maxSubgridLinearSStat(Grid const& grid, double alpha, double rho, double eps, F f) {
         /*
          * This uses the
          */
@@ -262,19 +262,20 @@ namespace pyscan {
             }
             return curr_mb;
         };
-        approximateHull(eps, f, linemaxF);
+        approximateHull(alpha, rho, eps, f, linemaxF);
         return max_subgrid;
     }
 
     Subgrid maxSubgridLinKull(Grid const& grid, double eps, double rho) {
-        return maxSubgridLinearSStat(grid, eps, [&](VecD const& p) {
-            return kulldorff(p[0], p[1], rho);
-        });
+      double alpha = exp(-1 / rho);
+      return maxSubgridLinearSStat(grid, alpha, rho, eps, [&](VecD const& p) {
+            return kulldorff(p[0], p[1], 0);
+      });
     }
 
     Subgrid maxSubgridLinGamma(Grid const& grid, double eps, double rho) {
-        return maxSubgridLinearSStat(grid, eps, [&](VecD const &p) {
-            return gamma(p[0], p[1], rho);
+        return maxSubgridLinearSStat(grid, 0, rho, eps, [&](VecD const &p) {
+            return gamma(p[0], p[1], 0);
         });
     }
 

@@ -1,3 +1,4 @@
+#include <ostream>
 #include <math.h>
 
 #ifndef MM_VECKY
@@ -528,5 +529,18 @@ auto normalize(VecN<T, N> const& vec1)
 
 using VecD = VecN<double, 2>;
 
+
+template<typename T, unsigned int dim>
+std::ostream& operator<<(std::ostream& os, VecN<T, dim> const& vec) {
+  os << "V(";
+  for (int i = 0; i < dim - 1; i++) {
+    os << vec[i] << ", ";
+  }
+  if (dim > 0) {
+    os << vec[dim - 1];
+  }
+  os << ")";
+  return os;
+}
 }
 #endif
