@@ -32,7 +32,7 @@ set(PY_SOURCE_FILES
 set(test true)
 
 if (test)
-    set(TEST_FILES test/Scan_unittest.cpp test/Utilities.hpp test/Utilities.cpp)
+    set(TEST_FILES test/Utilities.hpp test/Utilities.cpp)
 
     configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
     execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
@@ -65,9 +65,13 @@ if (test)
     endif()
 
     # Now simply link against gtest or gtest_main as needed. Eg
-    add_executable(scan_test ${TEST_FILES} ${SOURCE_FILES})
-    target_link_libraries(scan_test gtest_main)
-    add_test(NAME scan_test COMMAND scan_test)
+    add_executable(DiskScan_test test/DiskScan_unittest.cpp ${TEST_FILES} ${SOURCE_FILES})
+    target_link_libraries(DiskScan_test gtest_main)
+    add_test(NAME DiskScan_test COMMAND DiskScan_test)
+
+    add_executable(RectangleScan_test test/RectangleScan_unittest.cpp ${TEST_FILES} ${SOURCE_FILES})
+    target_link_libraries(RectangleScan_test gtest_main)
+    add_test(NAME RectangleScan_test COMMAND RectangleScan_test)
 endif()
 
 
