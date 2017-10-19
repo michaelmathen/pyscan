@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(pyscan)
 
 set(CMAKE_CXX_STANDARD 14)
+#set(CMAKE_C_FLAGS_DEBUG "-DDEBUG")
 find_package( Boost 1.36.0 COMPONENTS python REQUIRED)
 find_package( PythonLibs 2.7 REQUIRED )
 include_directories( ${PYTHON_INCLUDE_DIRS} )
@@ -30,6 +31,7 @@ set(PY_SOURCE_FILES
         src/pyscan.cpp)
 
 set(test true)
+
 
 if (test)
     set(TEST_FILES test/Utilities.hpp test/Utilities.cpp)

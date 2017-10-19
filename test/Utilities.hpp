@@ -18,7 +18,7 @@ namespace pyscantest {
     template <typename F>
     auto maxVecD(std::vector<pyscan::VecD> const& vecs, F func)
     -> pyscan::VecD {
-      pyscan::VecD max_pt(0.0, 0.0);
+      auto max_pt = vecs[0];
       for (auto pt : vecs) {
           if (func(pt) > func(max_pt)) {
               max_pt = pt;

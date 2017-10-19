@@ -484,7 +484,7 @@ template<typename E1, typename T, unsigned int I, unsigned int N>
 struct MAG {
   __host__ __device__ inline static T
   apply(E1 const& e1) {
-    return sqrt(DOT<E1, E1, T, I, N>::apply(e1, e1));
+    return sqrt(DOT<E1, E1, T, 0, N>::apply(e1, e1));
   }
 };
 

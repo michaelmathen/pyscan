@@ -40,10 +40,10 @@ namespace {
 // </TechnicalDetails>
 
 TEST(ApproximateHullTest, Kulldorff) {
-    const static int test_size = 1000;
+    const static int test_size = 10000;
     double rho = .01;
     double alpha = .001;
-    double eps = .01;
+    double eps = 1;
     auto pts = pyscantest::randomVec(test_size);
 
     auto avg = [&] (pyscan::VecD const& v1, pyscan::VecD const& v2) {
@@ -65,8 +65,8 @@ TEST(ApproximateHullTest, Kulldorff) {
       return pyscan::kulldorff(pt[0], pt[1], 0);
     });
 
-    double maxV_exact = pyscan::kulldorff(maxV_exact_pt[0], maxV_exact_pt[1], rho);
-
+    double maxV_exact = pyscan::kulldorff(maxV_exact_pt[0], maxV_exact_pt[1], 0);
+    std::cout << maxV_approx << " " << maxV_exact << std::endl;
     EXPECT_NEAR(maxV_exact, maxV_approx, eps);
 
   }

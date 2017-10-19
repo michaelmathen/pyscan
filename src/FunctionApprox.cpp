@@ -16,9 +16,9 @@ namespace pyscan {
 
     bool almostEqualRelative(double A, double B, double maxRelDiff) {
         // Calculate the difference.
-        double diff = abs(A - B);
-        A = abs(A);
-        B = abs(B);
+        double diff = fabs(A - B);
+        A = fabs(A);
+        B = fabs(B);
         // Find the largest
         double largest = (B > A) ? B : A;
         return diff <= largest * maxRelDiff;
@@ -97,38 +97,50 @@ namespace pyscan {
       }
     }
 
-    double approximateHull(double alpha, double rho, double eps,
+    double approximateHull(double eps,
                            VecD const& cc, VecD const& cl,
                            std::function<double(VecD)> phi, //function to maximize
                            std::function<VecD(VecD)> lineMaxExt) {
 
 
         auto lineMaxF = [&] (VecD v1) {
-          auto pt = projectToBoundary(lineMaxExt(v1), v1, alpha, rho);
-          return pt;
+          auto pt = lineMaxExt(v1);
+          //std::cout << "line_max = " << pt << std::endl;
+          return pt; // projectToBoundary(pt, v1, alpha, rho);
         };
 
         auto avg = [&] (VecD const& v1, VecD const& v2) {
             VecD v_out = v1 + v2;
-            return v_out * 1.0 / mag(v_out);
+            VecD tmp;
+            double norm = 1.0 / sqrt(v_out[0] * v_out[0] + v_out[1] * v_out[1]);
+            tmp[0] = v_out[0] * norm;
+            tmp[1] = v_out[1] * norm;
+            return tmp;
         };
 
         int ux, uy, lx, ly;
         struct Frame {
             VecD d_cc, d_cl, p_cc, p_cl;
-            Frame(VecD const& vi, VecD const& vj, VecD const& cc, VecD const& cl) :
-                    d_cc(vi), d_cl(vj), p_cc(cc), p_cl(cl) {}
+            Frame(VecD const& di, VecD const& dj, VecD const& cc, VecD const& cl) :
+                    d_cc(di), d_cl(dj), p_cc(cc), p_cl(cl) {}
         };
         double maxRValue = 0;
 
         std::deque<Frame> frameStack;
         // TODO double check debug to see if there is an issue with an infinite singularity here. Might need to change start.
         //This start needs to be fixed. Compute the mi, bi, and everything explicitly
-        frameStack.push_back(Frame(cc, cl, lineMaxF(cc), lineMaxF(cl)));
-        //cout << fixed;
-        //cout << setprecision(9);
+        frameStack.emplace_back(cc, cl, lineMaxF(cc), lineMaxF(cl));
+
+//#ifndef NDEBUG
+//        size_t iter_count = 0;
+//#endif
         while(!frameStack.empty()) {
             Frame lf = frameStack.front();
+
+//#ifndef NDEBUG
+//            std::cout << "considering triangle" << std::endl;
+//            std::cout << lf.d_cc << " " << lf.p_cc << " " << lf.d_cl << " " << lf.p_cl << std::endl;
+//#endif
             frameStack.pop_front();
             double di = dot(lf.d_cc, lf.p_cc);
             double dj = dot(lf.d_cl, lf.p_cl);
@@ -136,23 +148,34 @@ namespace pyscan {
             double vj = phi(lf.p_cl);
             maxRValue = std::max({vi, vj, maxRValue});
             VecD p_ext;
-            if (!lineIntersection(lf.d_cc, di, lf.d_cl, dj, p_ext)) {
-                continue;
+            if (lineIntersection(lf.d_cc, di, lf.d_cl, dj, p_ext)) {
+                double vw = phi(p_ext);
+//#ifndef NDEBUG
+//                std::cout << lf.p_cc << " " << vi << std::endl;
+//                std::cout << p_ext << " " << vw << std::endl;
+//                std::cout << lf.p_cl << " " << vj << std::endl;
+//#endif
+                if (maxRValue + eps <= vw) {
+                    //This triangle is worth evaluating
+//#ifndef NDEBUG
+//                    std::cout << "evaluating triangle" << std::endl;
+//#endif
+                    VecD m_vec = avg(lf.d_cc, lf.d_cl);
+                    auto line_max = lineMaxF(m_vec);
+
+                    frameStack.emplace_back(lf.d_cc, m_vec, lf.p_cc, line_max);
+                    frameStack.emplace_back(m_vec, lf.d_cl, line_max, lf.p_cl);
+                }
             }
-            double vw = phi(p_ext);
-            if (maxRValue + eps  > vw) {
-                // No value in this triangle is large enough to be interesting
-                continue;
-            } else {
-                //This triangle is worth evaluating
-                auto m_vec = avg(lf.d_cc, lf.d_cl);
-                auto line_max = lineMaxF(m_vec);
-                frameStack.push_back(Frame(m_vec, lf.d_cl,
-                                           line_max, lf.p_cl));
-                frameStack.push_back(Frame(lf.d_cc, m_vec,
-                                           lf.p_cc, line_max));
-            }
+//#ifndef NDEBUG
+//            iter_count += 1;
+//            std::cout << std::endl;
+//#endif
         }
+//#ifndef NDEBUG
+//        std::cout << "maxRValue = " << maxRValue << std::endl;
+//        std::cout << iter_count << std::endl;
+//#endif
         return maxRValue;
     }
 
