@@ -182,6 +182,9 @@ namespace pyscan {
             auto sortedE = sortedEOuter;
             for (auto j = i + 1; j != nE - 1; j++) {
                 auto el = std::find(sortedB, sortedE, *j);
+                if (el == sortedE) {
+                    continue;
+                }
                 std::swap(*el, *(sortedE - 1));
                 sortedE = sortedE - 1;
                 //Create a vector between the two points
@@ -386,6 +389,9 @@ namespace pyscan {
         auto sortedE = sortedEOuter;
         for (auto j = i + 1; j != nE - 1; j++) {
           auto el = std::find(sortedB, sortedE, *j);
+          if (el == sortedE) {
+              continue;
+          }
           std::swap(*el, *(sortedE - 1));
           sortedE = sortedE - 1;
           //Create a vector between the two points

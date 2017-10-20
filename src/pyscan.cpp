@@ -259,6 +259,7 @@ BOOST_PYTHON_MODULE(pyscan) {
             .add_property("a", &pyscan::Disk::getA, &pyscan::Disk::setA)
             .add_property("b", &pyscan::Disk::getB, &pyscan::Disk::setB)
             .add_property("radius", &pyscan::Disk::getR, &pyscan::Disk::setR)
+            .def("contains", &pyscan::Disk::contains)
             .def("fValue", &pyscan::Disk::fValue);
 
     py::class_<pyscan::LPoint<2>, py::bases<pyscan::Point<2>>>("LPoint", py::init<size_t, double, double, double, double>())

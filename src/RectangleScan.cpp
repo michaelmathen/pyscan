@@ -266,8 +266,7 @@ namespace pyscan {
         return max_subgrid;
     }
 
-    Subgrid maxSubgridLinKull(Grid const& grid, double eps, double rho) {
-      double alpha = exp(-1 / rho);
+    Subgrid maxSubgridLinKull(Grid const& grid, double eps) {
       return maxSubgridLinearSStat(grid, eps, [&](VecD const& p) {
             return kulldorff(p[0], p[1], 0);
       });
@@ -419,9 +418,10 @@ namespace pyscan {
 
     Rectangle maxRectStatLabels(std::vector<LPoint<>> const& net,
                                  std::vector<LPoint<>> const& m_points,
-                                 std::vector<LPoint<>> const& b_points) {
-        return maxRectLabels(net, m_points, b_points, [](double mr, double br){
-            return kulldorff(mr, br, 0);
+                                 std::vector<LPoint<>> const& b_points,
+                                 double rho) {
+        return maxRectLabels(net, m_points, b_points, [&](double mr, double br){
+            return kulldorff(mr, br, rho);
         });
     }
 
