@@ -51,7 +51,7 @@ TEST(ApproximateHullTest, Kulldorff) {
         return v_out * 1.0 / mag(v_out);
     };
 
-    double maxV_approx = pyscan::approximateHull(alpha, rho, eps,
+    double maxV_approx = pyscan::approximateHull(eps,
       [&](pyscan::VecD pt) {
         return pyscan::kulldorff(pt[0], pt[1], 0);
       },

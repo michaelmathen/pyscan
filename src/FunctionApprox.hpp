@@ -9,12 +9,12 @@
 
 namespace pyscan {
 
-  double approximateHull(double alpha, double rho, double eps,
+  double approximateHull(double eps,
                         VecD const& cc, VecD const& cl,
                         std::function<double(VecD)> phi, //function to maximize
                         std::function<VecD(VecD)> lineMaxF);
 
-  double approximateHull(double alpha, double rho, double eps,
+  double approximateHull(double eps,
             std::function<double(VecD)> phi, //function to maximize
             std::function<VecD(VecD)> lineMaxF);
 }

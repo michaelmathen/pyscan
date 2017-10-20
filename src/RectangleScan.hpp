@@ -162,11 +162,11 @@ namespace pyscan {
      * Simple 1/eps^3 algorithm that computes the max subgrid over a linear function.
      */
     Subgrid maxSubgridLinearSimple(Grid const &grid, double a, double b);
-    Subgrid maxSubgridLinearSimpleStat(Grid const& grid, double rho);
+    Subgrid maxSubgridLinearSimpleStat(Grid const& grid);
 
 
-    Subgrid maxSubgridLinKull(Grid const& grid, double eps, double rho);
-    Subgrid maxSubgridLinGamma(Grid const& grid, double eps, double rho);
+    Subgrid maxSubgridLinKull(Grid const& grid, double eps);
+    Subgrid maxSubgridLinGamma(Grid const& grid, double eps);
 
     Subgrid maxSubgridLinearG(Grid const &grid, size_t r_prime, double a, double b);
 

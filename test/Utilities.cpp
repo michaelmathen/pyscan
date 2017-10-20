@@ -12,6 +12,7 @@ namespace pyscantest {
       std::default_random_engine generator(rd());
       std::uniform_real_distribution<double> distribution (0.0,1.0);
       std::vector<pyscan::VecD> points;
+      points.emplace_back(0, 0);
       for (int i = 0; i < test_size; i++) {
           points.emplace_back(distribution(generator), distribution(generator));
       }

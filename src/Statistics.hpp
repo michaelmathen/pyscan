@@ -20,10 +20,24 @@ namespace pyscan {
         if (abs(1 - abs(mr / br)) <= std::numeric_limits<double>::epsilon()) {
             return 0;
         }
-        if (mr <= 0 || mr >= 1)
+        if (mr == 0) {
+            if (br == 1) {
+                return std::numeric_limits<double>::infinity();
+            } else {
+                return log(1 / (1 - br));
+            }
+        }
+        if (mr == 1) {
+            if (br == 0) {
+                return std::numeric_limits<double>::infinity();
+            } else {
+                return log(1 / br);
+            }
+        }
+        if (br == 0 || br == 1) {
             return std::numeric_limits<double>::infinity();
-        if (br <= 0 || br >= 1)
-            return std::numeric_limits<double>::infinity();
+        }
+
         return mr * log(mr / br) + (1 - mr) * log((1 - mr) / (1 - br));
     }
 

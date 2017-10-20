@@ -124,6 +124,10 @@ namespace pyscan {
             Frame(VecD const& di, VecD const& dj, VecD const& cc, VecD const& cl) :
                     d_cc(di), d_cl(dj), p_cc(cc), p_cl(cl) {}
         };
+        auto dist = [](Frame const& f) {
+            double x = dot(f.d_cc, f.d_cl);
+            return mag(f.p_cc - f.p_cl) * sqrt((1 - x) / (x + 1));
+        };
         double maxRValue = 0;
 
         std::deque<Frame> frameStack;
@@ -155,7 +159,9 @@ namespace pyscan {
 //                std::cout << p_ext << " " << vw << std::endl;
 //                std::cout << lf.p_cl << " " << vj << std::endl;
 //#endif
-                if (maxRValue + eps <= vw) {
+                //dist(lf)
+                if (vw - maxRValue > eps) {
+
                     //This triangle is worth evaluating
 //#ifndef NDEBUG
 //                    std::cout << "evaluating triangle" << std::endl;
@@ -179,7 +185,7 @@ namespace pyscan {
         return maxRValue;
     }
 
-    double approximateHull(double alpha, double rho, double eps,
+    double approximateHull(double eps,
                            std::function<double(VecD)> phi, //function to maximize
                            std::function<VecD(VecD)> lineMaxF) {
         //This top line doesn't make sense to maximize for since we will always just return the largest region.
@@ -188,8 +194,8 @@ namespace pyscan {
         // approximateHull(eps, VecD(0, -1), VecD(-1, 0), f, linemaxF);
 
         //This finds the region with the largest measured amount, but smallest baseline amount in terms of the stat fun
-        return std::max(approximateHull(alpha, rho, eps, VecD(1, 0), VecD(0, -1), phi, lineMaxF),
+        return std::max(approximateHull(eps, VecD(1, 0), VecD(0, -1), phi, lineMaxF),
                         //This finds the region with the largest baseline amount, but smallest measured amount in terms of the stat fun
-                        approximateHull(alpha, rho, eps, VecD(-1, 0), VecD(0, 1), phi, lineMaxF));
+                        approximateHull(eps, VecD(-1, 0), VecD(0, 1), phi, lineMaxF));
     }
   }
