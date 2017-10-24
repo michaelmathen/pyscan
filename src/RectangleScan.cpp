@@ -266,9 +266,9 @@ namespace pyscan {
         return max_subgrid;
     }
 
-    Subgrid maxSubgridLinKull(Grid const& grid, double eps) {
+    Subgrid maxSubgridLinKull(Grid const& grid, double eps, double rho) {
       return maxSubgridLinearSStat(grid, eps, [&](VecD const& p) {
-            return kulldorff(p[0], p[1], 0);
+            return regularized_kulldorff(p[0], p[1], rho);
       });
     }
 

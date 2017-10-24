@@ -41,9 +41,9 @@ namespace {
 
 TEST(ApproximateHullTest, Kulldorff) {
     const static int test_size = 10000;
-    double rho = .01;
+    double rho = .001;
     double alpha = .001;
-    double eps = 1;
+    double eps = .01;
     auto pts = pyscantest::randomVec(test_size);
 
     auto avg = [&] (pyscan::VecD const& v1, pyscan::VecD const& v2) {
@@ -53,7 +53,7 @@ TEST(ApproximateHullTest, Kulldorff) {
 
     double maxV_approx = pyscan::approximateHull(eps,
       [&](pyscan::VecD pt) {
-        return pyscan::kulldorff(pt[0], pt[1], 0);
+        return pyscan::regularized_kulldorff(pt[0], pt[1], rho);
       },
       [&] (pyscan::VecD dir){
         return pyscantest::maxVecD(pts, [&](pyscan::VecD const& v) {
@@ -62,10 +62,10 @@ TEST(ApproximateHullTest, Kulldorff) {
     });
 
     auto maxV_exact_pt = pyscantest::maxVecD(pts, [&](pyscan::VecD const& pt){
-      return pyscan::kulldorff(pt[0], pt[1], 0);
+      return pyscan::regularized_kulldorff(pt[0], pt[1], rho);
     });
 
-    double maxV_exact = pyscan::kulldorff(maxV_exact_pt[0], maxV_exact_pt[1], 0);
+    double maxV_exact = pyscan::regularized_kulldorff(maxV_exact_pt[0], maxV_exact_pt[1], rho);
     std::cout << maxV_approx << " " << maxV_exact << std::endl;
     EXPECT_NEAR(maxV_exact, maxV_approx, eps);
 

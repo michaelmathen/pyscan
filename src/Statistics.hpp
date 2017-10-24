@@ -41,6 +41,16 @@ namespace pyscan {
         return mr * log(mr / br) + (1 - mr) * log((1 - mr) / (1 - br));
     }
 
+    inline double regularized_kulldorff(double mr, double br, double rho) {
+        if (mr == 0) {
+            return log(1 / (1 - br + rho));
+        } else if (mr == 1) {
+            return log(1 / (br + rho));
+        } else {
+            return mr * log(mr / (br + rho)) + (1 - mr) * log((1 - mr) / (1 - br + rho));
+        }
+    }
+
 
     inline double gamma(double mr, double br, double rho) {
         if (br < rho || br > 1 - rho)

@@ -321,7 +321,7 @@ BOOST_PYTHON_MODULE(pyscan) {
     py::def("maxSubgridLinearSimple", m1);
     py::def("maxSubgridLinear", &pyscan::maxSubgridLinearG);
 
-    pyscan::Subgrid (*fl1)(pyscan::Grid const&, double) = &pyscan::maxSubgridLinKull;
+    pyscan::Subgrid (*fl1)(pyscan::Grid const&, double, double) = &pyscan::maxSubgridLinKull;
     py::def("maxSubgridKull", fl1);
 
     py::def("maxHalfPlaneStat", &maxHalfplaneStat);

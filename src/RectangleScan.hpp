@@ -165,7 +165,7 @@ namespace pyscan {
     Subgrid maxSubgridLinearSimpleStat(Grid const& grid);
 
 
-    Subgrid maxSubgridLinKull(Grid const& grid, double eps);
+    Subgrid maxSubgridLinKull(Grid const& grid, double eps, double rho);
     Subgrid maxSubgridLinGamma(Grid const& grid, double eps);
 
     Subgrid maxSubgridLinearG(Grid const &grid, size_t r_prime, double a, double b);

@@ -97,6 +97,8 @@ namespace pyscan {
       }
     }
 
+
+
     double approximateHull(double eps,
                            VecD const& cc, VecD const& cl,
                            std::function<double(VecD)> phi, //function to maximize
@@ -124,10 +126,6 @@ namespace pyscan {
             Frame(VecD const& di, VecD const& dj, VecD const& cc, VecD const& cl) :
                     d_cc(di), d_cl(dj), p_cc(cc), p_cl(cl) {}
         };
-        auto dist = [](Frame const& f) {
-            double x = dot(f.d_cc, f.d_cl);
-            return mag(f.p_cc - f.p_cl) * sqrt((1 - x) / (x + 1));
-        };
         double maxRValue = 0;
 
         std::deque<Frame> frameStack;
@@ -152,6 +150,7 @@ namespace pyscan {
             double vj = phi(lf.p_cl);
             maxRValue = std::max({vi, vj, maxRValue});
             VecD p_ext;
+
             if (lineIntersection(lf.d_cc, di, lf.d_cl, dj, p_ext)) {
                 double vw = phi(p_ext);
 //#ifndef NDEBUG

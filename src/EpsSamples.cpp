@@ -47,526 +47,526 @@ namespace pyscan {
         double y = yVal(l1, x);
         return Line2(x, y);
     }
-
-   bool Edge::crosses(Line2 const &crossing_line) const {
-       double crossing_pt = xLoc(std::get<0>(crossing_line), std::get<1>(crossing_line),
-            std::get<0>(edge_line), std::get<1>(edge_line));
-
-       return x_begin <= crossing_pt && crossing_pt <= x_end;
-   }
-
-   bool Edge::sameLine(Edge const& other_edge) const {
-       return std::get<0>(edge_line) == std::get<0>(other_edge.edge_line) &&
-               std::get<1>(edge_line) == std::get<1>(other_edge.edge_line);
-   }
-
-   void split_edge(edge_ptr edge, Line2 const& intersect_line, edge_ptr e1, edge_ptr e2) {
-       // Split the second crossing edge
-       double crossing_pt = xLoc(std::get<0>(intersect_line), std::get<1>(intersect_line),
-                                 std::get<0>(edge->edge_line), std::get<1>(edge->edge_line));
-
-       e1 = std::make_shared<Edge>(*edge, edge->x_begin, crossing_pt);
-       e2 = std::make_shared<Edge>(*edge, crossing_pt, edge->x_end);
-   }
-
-   bool Vertex::crosses(Line2 const &line) const {
-       return std::get<0>(line) * std::get<0>(vertex_location) + std::get<1>(line) == std::get<1>(vertex_location);
-   }
-
-
-   Vertex::Vertex(Line2 const &l1, Line2 const &l2, simplex_ptr pl, simplex_ptr pr) : left_ptr(pl), right_ptr(pr) {
-       double x_value = xLoc(std::get<0>(l1), std::get<1>(l1), std::get<0>(l2), std::get<1>(l2));
-       vertex_location = Line2(x_value, x_value * std::get<0>(l1) + std::get<1>(l1));
-   }
-   /*
-   Simplex Simplex::getNext(Line2 const& new_line) {
-
-   }
-   */
-   Line2 toLine2(Line const& l) {
-       return Line2(std::get<0>(l), std::get<1>(l));
-   }
-
-   //////////////////////////////////////////////////////
-   //Splitters///////////////////////////////////////////
-   //////////////////////////////////////////////////////
-
-   double Splitter::bottom() const {
-       if (_unbounded && !_standing) {
-           return -std::numeric_limits<double>::infinity();
-       } else {
-           double x_val = getX();
-           return std::min(yVal(l, x_val), yVal(termination, x_val));
-       }
-   }
-
-   double Splitter::top() const {
-       if (_unbounded && _standing) {
-           return std::numeric_limits<double>::infinity();
-       } else {
-           double x_val = getX();
-           return std::max(yVal(l, x_val), yVal(termination, x_val));
-       }
-   }
-
-   double Splitter::getX() const {
-       return xLoc(l, r);
-   }
-
-   bool Splitter::crosses(Line2 const& nl) const {
-       double x_val = getX();
-       double line_y_val = yVal(nl, x_val);
-       return bottom() <= line_y_val && line_y_val <= top();
-   }
-
-   bool Splitter::crosses(Line2 const& nl, Line2& pt) const {
-       /*
-        * Computes the crossing point and stores it in the pt;
-        */
-       double x_val = getX();
-       double line_y_val = yVal(nl, x_val);
-       pt = Line2(x_val, line_y_val);
-       return bottom() <= line_y_val && line_y_val <= top();
-
-   }
-
-   bool Splitter::crosses(Line const& nl) const {
-       return crosses(toLine2(nl));
-   }
-
-   bool Splitter::passesBelow(Line2 const& nl) const {
-       //Checks to see if the line passes below the bottom terminating vertex
-       if (_unbounded && !_standing) {
-           return false;
-       } else {
-           double x_val = getX();
-           return yVal(nl, x_val) <= bottom();
-       }
-   }
-   bool Splitter::passesAbove(Line2 const& nl) const {
-       //Checks to see if the line passes above the bottom terminating vertex
-       if (_unbounded && _standing) {
-           return false;
-       } else {
-           double x_val = getX();
-           return top() <= yVal(nl, x_val);
-       }
-   }
-
-   bool Splitter::leftOf(Line2 const& nl) const {
-       return rightOf(nl);
-   }
-
-   bool Splitter::rightOf(Line2 const& nl) const {
-       //If it is unbounded then it has to go through
-       // either l or r line
-       if (passesAbove(nl) != _standing) {
-           //Check to see if it crosses the left line to the left
-           // of the splitter
-           return xLoc(nl, l) <= getX();
-       } else {
-           //It must cross the term line either to the left or right
-           //of the splitter
-           return xLoc(nl, termination) <= getX();
-       }
-   }
-
-   bool Splitter::leftOf(Line const& nl) const {
-       return leftOf(toLine2(nl));
-   }
-   bool Splitter::rightOf(Line const& nl) const {
-       return rightOf(toLine2(nl));
-   }
-
-   Line2 Splitter::crossPt() const {
-       return Line2(getX(), yVal(l, getX()));
-   }
-
-   bool Splitter::isCrossLine(Line2 const& nl) const {
-       return nl == l || nl == r;
-   }
-
-
-   /*
-    *
-    * Copies the entire top half into the new simplex. If the simplex is open then entrance or exit could be -1 then
-    * this also preserves the location of the opening. This does not adjust the edge pointers.
-    */
-   void Simplex::copyTopHalf(int entrance, int exit,
-                             edge_ptr entrance_edge,
-                             edge_ptr exit_edge,
-                             edge_ptr cutting_edge,
-                             vertex_ptr entrance_v,
-                             vertex_ptr exit_v,
-                             std::vector<edge_ptr>& top_edges,
-                             std::vector<vertex_ptr>& top_vertices) {
-       if (entrance == -1) {
-           top_edges.push_back(cutting_edge);
-           top_edges.push_back(exit_edge);
-           top_edges.insert(top_edges.end(), edge_list.begin() + exit + 1, edge_list.end());
-           top_vertices.push_back(exit_v);
-           top_vertices.insert(top_vertices.end(), corner_ptrs.begin() + exit, corner_ptrs.end());
-       } else if (exit == -1) {
-           top_edges.insert(top_edges.end(), edge_list.begin(), edge_list.begin() + entrance);
-           top_edges.push_back(entrance_edge);
-           top_edges.push_back(cutting_edge);
-           top_vertices.insert(top_vertices.end(), corner_ptrs.begin(), corner_ptrs.begin() + entrance);
-           top_vertices.push_back(entrance_v);
-       } else if (entrance < exit) {
-           top_edges.insert(top_edges.end(), edge_list.begin(), edge_list.begin() + entrance);
-           top_edges.push_back(entrance_edge);
-           top_edges.push_back(cutting_edge);
-           top_edges.push_back(exit_edge);
-           top_edges.insert(top_edges.end(), edge_list.begin() + exit + 1, edge_list.end());
-
-           top_vertices.insert(top_vertices.end(), corner_ptrs.begin(), corner_ptrs.end()+ entrance);
-           top_vertices.push_back(entrance_v);
-           top_vertices.push_back(exit_v);
-           top_vertices.insert(top_vertices.end(), top_vertices.begin() + exit, top_vertices.end());
-
-       } else {
-           top_edges.push_back(exit_edge);
-           top_edges.insert(top_edges.end(), edge_list.begin() + exit + 1, edge_list.begin() + entrance);
-           top_edges.push_back(entrance_edge);
-           top_edges.push_back(cutting_edge);
-
-           top_vertices.insert(top_vertices.end(), corner_ptrs.begin() + exit + 1, corner_ptrs.end() + entrance);
-           top_vertices.push_back(entrance_v);
-           top_vertices.push_back(exit_v);
-       }
-   }
-
-   void Simplex::copyBottomHalf(int entrance, int exit,
-                                edge_ptr entrance_edge,
-                                edge_ptr exit_edge,
-                                edge_ptr cutting_edge,
-                                vertex_ptr entrance_v,
-                                vertex_ptr exit_v,
-                                std::vector<edge_ptr>& top_edges,
-                                std::vector<vertex_ptr>& top_vertices) {
-      copyTopHalf(exit, entrance, exit_edge, entrance_edge, cutting_edge, exit_v, entrance_v, top_edges, top_vertices);
-   }
-
-   void Simplex::updatePtrs(simplex_ptr old_ptr) {
-       /*
-        * For each pointer it either points inside or outside of the cell. Since we
-        * created a new cell in an earlier step we need to adjust the pointer to point
-        * at ourselves
-        */
-       for (auto& edge : edge_list) {
-           if (edge->top_ptr.lock() == old_ptr) {
-               edge->top_ptr = this_ptr;
-           } else {
-               edge->bottom_ptr = this_ptr;
-           }
-       }
-       for (auto& vertex : corner_ptrs) {
-           if (vertex->right_ptr.lock() == old_ptr) {
-               vertex->right_ptr = this_ptr;
-           } else {
-               vertex->left_ptr = this_ptr;
-           }
-       }
-   }
-
-   bool above(Line l, Line2 vertex) {
-       return std::get<0>(l) * std::get<0>(vertex) + std::get<1>(l) > std::get<1>(vertex);
-   }
-
-   bool below(Line l, Line2 vertex) {
-       return std::get<0>(l) * std::get<0>(vertex) + std::get<1>(l) < std::get<1>(vertex);
-   }
-
-   void seperateLines(LineList const& lines, Line2 left_vertex, Line2 right_vertex,
-                      LineList above_list, LineList below_list){
-       for (Line l : lines) {
-           //This should put the line in the top or bottom set.
-           //It might not end up in either if it is the same line as the seperator.
-           if (above(l, left_vertex) || above(l, right_vertex)) {
-               above_list.push_back(l);
-           }
-           if (below(l, left_vertex) || below(l, right_vertex)) {
-               below_list.push_back(l);
-           }
-       }
-   }
-
-   void Simplex::computeLRVertexCross(simplex_ptr left_ptr, Line2 l, vertex_ptr left_vt, vertex_ptr right_vt) {
-       /*
-        * Check the line and see if it crosses any vertices. The left entrance and right entrance could potentialy
-        * cross vertices. If it crosses a vertex then we will set left_vt to the left vertex or right_vt to the right
-        * vertex. If the left or right entrance is not crossed then we set them to nullptrs.
-        */
-       vertex_ptr first_ptr = nullptr, second_ptr = nullptr;
-       for (auto vertex : corner_ptrs) {
-           if (vertex->crosses(l) && first_ptr == nullptr) {
-               first_ptr == vertex;
-           } else if (vertex->crosses(l)) {
-               second_ptr = vertex;
-           }
-       }
-
-       if (first_ptr == nullptr || left_ptr == nullptr || left_ptr != first_ptr->left_ptr.lock()) {
-           left_vt = second_ptr, right_vt = first_ptr;
-       } else {
-           left_vt = first_ptr, right_vt = second_ptr;
-       }
-   }
-
-   void Simplex::computeLRcrossing(simplex_ptr left_ptr, Line2 l, edge_ptr left_edge, edge_ptr right_edge) const {
-       /*
-        * Computes the left and right edge crossings. If there is no left or no right crossing then we set
-        * left or right to false.
-        */
-       edge_ptr first_cross = nullptr, second_cross = nullptr;
-       for (auto e : this->edge_list) {
-           if (e->crosses(l) && first_cross == nullptr) {
-               if (first_cross == nullptr)
-                   first_cross = e;
-               else
-                   second_cross = e;
-           }
-       }
-       // Three cases fc, sc null, sc null, neither null.
-       if (first_cross == nullptr && second_cross == nullptr) {
-           left_edge = nullptr, right_edge = nullptr;
-       } else if (second_cross == nullptr) {
-           if (left_ptr != nullptr) {
-               left_edge = first_cross;
-           } else {
-               right_edge = first_cross;
-           }
-       } else {
-           if (first_cross->bottom_ptr.lock() == left_ptr ||
-                   first_cross->top_ptr.lock() == left_ptr) {
-               left_edge = first_cross;
-               right_edge = second_cross;
-           } else {
-               left_edge = second_cross;
-               right_edge = first_cross;
-           }
-       }
-   }
-
-   edge_ptr Simplex::findOppositeEdge(edge_ptr intersecting_edge, double x_val) const {
-       for (edge_ptr & e : this->edge_list) {
-           if (e->x_begin <= x_val && e->x_end <= x_val && e != intersecting_edge) {
-               return e;
-           }
-       }
-       return nullptr;
-   }
-
-   void insertSplitter(Splitter const& spl, std::vector<LineList> & crossing_list, std::vector<Splitter>& splitter_list) {
-       /*
-        * Inserts the splitter into the splitter list and modifies the crossing_list by splitting all lines in
-        * the crossing list into the set that lies on the left and right sides of the crossing list.
-        */
-       auto s_it = std::find_if(splitter_list.begin(), splitter_list.end(), [&](Splitter const& sp){
-           return spl.getX() < sp.getX();
-       });
-       splitter_list.insert(s_it, spl);
-       LineList left_lines;
-       LineList right_lines;
-       for (auto line : crossing_list[s_ix]){
-           if (spl.crosses(line)) {
-               left_lines.push_back(line);
-               right_lines.push_back(line);
-           } else if (spl.leftOf(line)) { //splitter is to the left of the line
-               right_lines.push_back(line);
-           } else {
-               left_lines.push_back(line);
-           }
-       }
-       //Insert the new line crossings into the crossing and splitter list
-       auto s_ix = s_it - splitter_list.begin();
-       crossing_list[s_ix] = right_lines;
-       crossing_list.insert(crossing_list.begin() + s_ix, left_lines);
-
-   }
-
-   Splitter Simplex::makeSplitter(edge_ptr e1, Line2 new_line, edge_ptr term) {
-       if (term == nullptr) {
-           return {e1->edge_line, new_line, e1->top_ptr.lock() == this};
-       } else {
-           return {e1->edge_line, new_line, term->edge_line};
-       }
-   }
-
-   void mergeSplitters(Line2 const& new_line, bool above, std::vector<Splitter>& splitters, std::vector<LineList>& crossings) {
-       /*
-        * Enumerate the splitters and merge cells that should not belong.
-        */
-       std::set<Line> cell_elements;
-       std::vector<Splitter> new_splitters;
-       std::vector<LineList> new_crossings;
-
-       for (size_t i = 0; i < splitters.size(); i++) {
-           //Need to handle the other cases.
-           if (splitters[i].crosses(new_line)) {
-               cell_elements.insert(crossings[i].begin(), crossings[i].end());
-
-               if (above != splitters[i].standing()) {
-                   new_crossings.emplace_back(cell_elements.begin(), cell_elements.end());
-                   new_splitters.emplace_back(splitters[i], new_line);
-                   cell_elements = std::set<Line>();
-               }
-           } else if (splitters[i].passesAbove(new_line) == above) {
-               new_crossings.emplace_back(crossings[i].begin(), crossings.end());
-               new_splitters.push_back(splitters[i]);
-           }
-       }
-       // insert the last cell.
-       cell_elements.insert(crossings[splitters.size() + 1].begin(), crossings[splitters.size() + 1].end());
-       new_crossings.emplace_back(cell_elements.begin(), cell_elements.end());
-       splitters = new_splitters;
-       crossings = new_crossings;
-   }
-
-   void splitSimplex(simplex_ptr& sp, simplex_ptr& entr_ptr, simplex_ptr& upper, simplex_ptr& lower){
-
-   }
-
-   void Simplex::splitSplitters(Line2 const& new_line, simplex_ptr entr_ptr,
-                                decltype(crossings)& above_crossings, decltype(splitter_list)& above_splitters,
-                                decltype(corner_ptrs)& above_corners,
-                                decltype(crossings)& below_crossings, decltype(splitter_list)& below_splitters,
-                                decltype(corner_ptrs)& below_corners) {
-       /*
-        * Takes splitters and removes lines that fall no longer fall between two splitters.
-        * Since they earlier fell inside, but now we only need to check whether the line
-        * passes above the two end points of adjacent splitters.
-        */
-       // Always will be at least one region.
-       size_t i = 0;
-       edge_ptr left_edge, right_edge;
-       vertex_ptr  left_vt, right_vt;
-       computeLRVertexCross(std::move(entr_ptr), new_line, left_vt, right_vt);
-       computeLRcrossing(std::move(entr_ptr), new_line, left_edge, right_edge);
-       decltype(crossings) local_crossings = crossings;
-       decltype(splitter_list) local_splitters = splitter_list;
-       decltype(corner_ptrs) local_corners = corner_ptrs;
-       // (1) Insert the new splitters and local crossings into the list and
-       // also add the newly created edges and (possibly vertices).
-       // TODO handle the case where the line goes through a vertex.
-       if (left_vt == nullptr && left_edge != nullptr) {
-           auto term_left = findOppositeEdge(left_edge, xLoc(left_edge->edge_line, new_line));
-           //In these cases the simplex is open on the top or the bottom so we need to extend
-           //either down or up. The simplex is convex so we find out which side it opens to.
-           Splitter left_splitter = makeSplitter(left_edge, new_line, term_left);
-           insertSplitter(left_splitter, local_crossings, local_splitters);
-       }
-       if (right_vt == nullptr && right_edge != nullptr) {
-           auto term_right = findOppositeEdge(right_edge, xLoc(right_edge->edge_line, new_line));
-           Splitter right_splitter = makeSplitter(right_edge, new_line, term_right);
-           insertSplitter(right_splitter, local_crossings, local_splitters);
-       }
-
-       // (2) Now need to cut all regions defined by splitters into an upper and lower portion depending on
-       // how the new line cuts them.
-       // If the line passes below the region then crossings and splitters end up in the above
-       // If the line pass above the region then crossings and splitters end up in the below
-       // If the line passes through the region then crossings and splitters end up in both.
-       if (splitter_list.size() == 0) {
-           above_crossings.push_back(local_crossings[0]);
-           below_crossings.push_back(local_crossings[0]);
-       } else {
-           // We have at least 1 splitter and 2 crossings
-           // We check each splitter in sequence until we start getting crossings.
-           // We will cross the first splitter and last splitters we inserted
-           Line2 left_entrance, right_entrance;
-           size_t i = 0;
-           for (; i < local_splitters.size(); i++) {
-               if (local_splitters[i].passesBelow(new_line)) {
-                   above_crossings.push_back(local_crossings[i]);
-                   above_splitters.push_back(local_splitters[i]);
-               } else if (local_splitters[i].passesAbove(new_line) {
-                   below_crossings.push_back(local_crossings[i]);
-                   below_splitters.push_back(local_splitters[i]);
-               }
-               if (local_splitters[i].isCrossLine(new_line)){
-                   //Now have left entrance
-                   left_entrance = local_splitters[i].crossPt();
-                   i++; //Set to next splitter
-                   break;
-               }
-           }
-           // Now everything between.
-           LineList mergeIntoBelow;
-           LineList mergeIntoAbove;
-           for (; i < local_splitters.size(); i++) {
-               if (local_splitters[i].crosses(new_line, right_entrance)){
-
-                   LineList above_lines, below_lines;
-                   seperateLines(local_crossings[i], left_entrance, right_entrance, above_lines, below_lines);
-                   above_crossings.push_back(above_lines);
-                   below_crossings.push_back(below_lines);
-                   above_splitters.push_back(local_splitters[i]);
-                   below_splitters.push_back(local_splitters[i]);
-                   /*
-                   if (local_splitters[i].standing()) {
-                       below_splitters.emplace_back(Splitter(local_splitters[i], new_line));
-                       mergeIntoAbove.insert(mergeIntoAbove.end(), local_crossings[i].begin(), local_crossings[i].end());
-                       below_crossings.push_back()
-                   } else {
-                       above_splitters.emplace_back(Splitter(local_splitters[i], new_line));
-                       mergeIntoBelow.insert(mergeIntoAbove.end(), local_crossings[i].begin(), local_crossings[i].end());
-                   }
-                   */
-                   //Now have left entrance
-                   left_entrance = right_entrance;
-               } else if (local_splitters[i].passesBelow(new_line)) {
-                   above_crossings.push_back(local_crossings[i]);
-                   above_splitters.push_back(local_splitters[i]);
-               } else if (local_splitters[i].passesAbove(new_line) {
-                   below_crossings.push_back(local_crossings[i]);
-                   below_splitters.push_back(local_splitters[i]);
-               }
-           }
-       }
-       // Now need to merge splitters.
-       mergeSplitters(new_line, true, above_splitters, above_crossings);
-       mergeSplitters(new_line, false, below_splitters, below_crossings);
-   }
-
-   Simplex Simplex::upper_split(Line2 const& new_line, edge_ptr clock_wise, vertex_ptr lower_simplex) {
-       /*
-        * Computes the upper split of a simplex
-        */
-
-       Simplex top_simplex;
-
-       // 4 cases for closed simplex, v -> e, e -> e, e -> v, and v -> v
-       // 4 cases for open simplex, v -> o, o -> v, o-> e, e -> o.
-
-       bool entrance_vertex;
-       bool exit_vertex;
-       if (entrance_vertex && exit_vertex) {
-
-       } else if (entrance_vertex && !exit_vertex) {
-
-       } else if (!entrance_vertex && exit_vertex) {
-
-       } else {
-
-       }
-       return Simplex();
-   }
-
-   bool Simplex::closed() const {
-       return !open;
-   }
-
-
-   Simplex Simplex::split(Line2 const& new_line,
-                          edge_ptr const& clock_entrance_edge,
-                          edge_ptr const& counter_entrance_edge,
-                          vertex_ptr upper_simplex,
-                          vertex_ptr lower_simplex
-   ) {
-
-       return Simplex();
-   }
+//
+//   bool Edge::crosses(Line2 const &crossing_line) const {
+//       double crossing_pt = xLoc(std::get<0>(crossing_line), std::get<1>(crossing_line),
+//            std::get<0>(edge_line), std::get<1>(edge_line));
+//
+//       return x_begin <= crossing_pt && crossing_pt <= x_end;
+//   }
+//
+//   bool Edge::sameLine(Edge const& other_edge) const {
+//       return std::get<0>(edge_line) == std::get<0>(other_edge.edge_line) &&
+//               std::get<1>(edge_line) == std::get<1>(other_edge.edge_line);
+//   }
+//
+//   void split_edge(edge_ptr edge, Line2 const& intersect_line, edge_ptr e1, edge_ptr e2) {
+//       // Split the second crossing edge
+//       double crossing_pt = xLoc(std::get<0>(intersect_line), std::get<1>(intersect_line),
+//                                 std::get<0>(edge->edge_line), std::get<1>(edge->edge_line));
+//
+//       e1 = std::make_shared<Edge>(*edge, edge->x_begin, crossing_pt);
+//       e2 = std::make_shared<Edge>(*edge, crossing_pt, edge->x_end);
+//   }
+//
+//   bool Vertex::crosses(Line2 const &line) const {
+//       return std::get<0>(line) * std::get<0>(vertex_location) + std::get<1>(line) == std::get<1>(vertex_location);
+//   }
+//
+//
+//   Vertex::Vertex(Line2 const &l1, Line2 const &l2, simplex_ptr pl, simplex_ptr pr) : left_ptr(pl), right_ptr(pr) {
+//       double x_value = xLoc(std::get<0>(l1), std::get<1>(l1), std::get<0>(l2), std::get<1>(l2));
+//       vertex_location = Line2(x_value, x_value * std::get<0>(l1) + std::get<1>(l1));
+//   }
+//   /*
+//   Simplex Simplex::getNext(Line2 const& new_line) {
+//
+//   }
+//   */
+//   Line2 toLine2(Line const& l) {
+//       return Line2(std::get<0>(l), std::get<1>(l));
+//   }
+//
+//   //////////////////////////////////////////////////////
+//   //Splitters///////////////////////////////////////////
+//   //////////////////////////////////////////////////////
+//
+//   double Splitter::bottom() const {
+//       if (_unbounded && !_standing) {
+//           return -std::numeric_limits<double>::infinity();
+//       } else {
+//           double x_val = getX();
+//           return std::min(yVal(l, x_val), yVal(termination, x_val));
+//       }
+//   }
+//
+//   double Splitter::top() const {
+//       if (_unbounded && _standing) {
+//           return std::numeric_limits<double>::infinity();
+//       } else {
+//           double x_val = getX();
+//           return std::max(yVal(l, x_val), yVal(termination, x_val));
+//       }
+//   }
+//
+//   double Splitter::getX() const {
+//       return xLoc(l, r);
+//   }
+//
+//   bool Splitter::crosses(Line2 const& nl) const {
+//       double x_val = getX();
+//       double line_y_val = yVal(nl, x_val);
+//       return bottom() <= line_y_val && line_y_val <= top();
+//   }
+//
+//   bool Splitter::crosses(Line2 const& nl, Line2& pt) const {
+//       /*
+//        * Computes the crossing point and stores it in the pt;
+//        */
+//       double x_val = getX();
+//       double line_y_val = yVal(nl, x_val);
+//       pt = Line2(x_val, line_y_val);
+//       return bottom() <= line_y_val && line_y_val <= top();
+//
+//   }
+//
+//   bool Splitter::crosses(Line const& nl) const {
+//       return crosses(toLine2(nl));
+//   }
+//
+//   bool Splitter::passesBelow(Line2 const& nl) const {
+//       //Checks to see if the line passes below the bottom terminating vertex
+//       if (_unbounded && !_standing) {
+//           return false;
+//       } else {
+//           double x_val = getX();
+//           return yVal(nl, x_val) <= bottom();
+//       }
+//   }
+//   bool Splitter::passesAbove(Line2 const& nl) const {
+//       //Checks to see if the line passes above the bottom terminating vertex
+//       if (_unbounded && _standing) {
+//           return false;
+//       } else {
+//           double x_val = getX();
+//           return top() <= yVal(nl, x_val);
+//       }
+//   }
+//
+//   bool Splitter::leftOf(Line2 const& nl) const {
+//       return rightOf(nl);
+//   }
+//
+//   bool Splitter::rightOf(Line2 const& nl) const {
+//       //If it is unbounded then it has to go through
+//       // either l or r line
+//       if (passesAbove(nl) != _standing) {
+//           //Check to see if it crosses the left line to the left
+//           // of the splitter
+//           return xLoc(nl, l) <= getX();
+//       } else {
+//           //It must cross the term line either to the left or right
+//           //of the splitter
+//           return xLoc(nl, termination) <= getX();
+//       }
+//   }
+//
+//   bool Splitter::leftOf(Line const& nl) const {
+//       return leftOf(toLine2(nl));
+//   }
+//   bool Splitter::rightOf(Line const& nl) const {
+//       return rightOf(toLine2(nl));
+//   }
+//
+//   Line2 Splitter::crossPt() const {
+//       return Line2(getX(), yVal(l, getX()));
+//   }
+//
+//   bool Splitter::isCrossLine(Line2 const& nl) const {
+//       return nl == l || nl == r;
+//   }
+//
+//
+//   /*
+//    *
+//    * Copies the entire top half into the new simplex. If the simplex is open then entrance or exit could be -1 then
+//    * this also preserves the location of the opening. This does not adjust the edge pointers.
+//    */
+//   void Simplex::copyTopHalf(int entrance, int exit,
+//                             edge_ptr entrance_edge,
+//                             edge_ptr exit_edge,
+//                             edge_ptr cutting_edge,
+//                             vertex_ptr entrance_v,
+//                             vertex_ptr exit_v,
+//                             std::vector<edge_ptr>& top_edges,
+//                             std::vector<vertex_ptr>& top_vertices) {
+//       if (entrance == -1) {
+//           top_edges.push_back(cutting_edge);
+//           top_edges.push_back(exit_edge);
+//           top_edges.insert(top_edges.end(), edge_list.begin() + exit + 1, edge_list.end());
+//           top_vertices.push_back(exit_v);
+//           top_vertices.insert(top_vertices.end(), corner_ptrs.begin() + exit, corner_ptrs.end());
+//       } else if (exit == -1) {
+//           top_edges.insert(top_edges.end(), edge_list.begin(), edge_list.begin() + entrance);
+//           top_edges.push_back(entrance_edge);
+//           top_edges.push_back(cutting_edge);
+//           top_vertices.insert(top_vertices.end(), corner_ptrs.begin(), corner_ptrs.begin() + entrance);
+//           top_vertices.push_back(entrance_v);
+//       } else if (entrance < exit) {
+//           top_edges.insert(top_edges.end(), edge_list.begin(), edge_list.begin() + entrance);
+//           top_edges.push_back(entrance_edge);
+//           top_edges.push_back(cutting_edge);
+//           top_edges.push_back(exit_edge);
+//           top_edges.insert(top_edges.end(), edge_list.begin() + exit + 1, edge_list.end());
+//
+//           top_vertices.insert(top_vertices.end(), corner_ptrs.begin(), corner_ptrs.end()+ entrance);
+//           top_vertices.push_back(entrance_v);
+//           top_vertices.push_back(exit_v);
+//           top_vertices.insert(top_vertices.end(), top_vertices.begin() + exit, top_vertices.end());
+//
+//       } else {
+//           top_edges.push_back(exit_edge);
+//           top_edges.insert(top_edges.end(), edge_list.begin() + exit + 1, edge_list.begin() + entrance);
+//           top_edges.push_back(entrance_edge);
+//           top_edges.push_back(cutting_edge);
+//
+//           top_vertices.insert(top_vertices.end(), corner_ptrs.begin() + exit + 1, corner_ptrs.end() + entrance);
+//           top_vertices.push_back(entrance_v);
+//           top_vertices.push_back(exit_v);
+//       }
+//   }
+//
+//   void Simplex::copyBottomHalf(int entrance, int exit,
+//                                edge_ptr entrance_edge,
+//                                edge_ptr exit_edge,
+//                                edge_ptr cutting_edge,
+//                                vertex_ptr entrance_v,
+//                                vertex_ptr exit_v,
+//                                std::vector<edge_ptr>& top_edges,
+//                                std::vector<vertex_ptr>& top_vertices) {
+//      copyTopHalf(exit, entrance, exit_edge, entrance_edge, cutting_edge, exit_v, entrance_v, top_edges, top_vertices);
+//   }
+//
+//   void Simplex::updatePtrs(simplex_ptr old_ptr) {
+//       /*
+//        * For each pointer it either points inside or outside of the cell. Since we
+//        * created a new cell in an earlier step we need to adjust the pointer to point
+//        * at ourselves
+//        */
+//       for (auto& edge : edge_list) {
+//           if (edge->top_ptr.lock() == old_ptr) {
+//               edge->top_ptr = this_ptr;
+//           } else {
+//               edge->bottom_ptr = this_ptr;
+//           }
+//       }
+//       for (auto& vertex : corner_ptrs) {
+//           if (vertex->right_ptr.lock() == old_ptr) {
+//               vertex->right_ptr = this_ptr;
+//           } else {
+//               vertex->left_ptr = this_ptr;
+//           }
+//       }
+//   }
+//
+//   bool above(Line l, Line2 vertex) {
+//       return std::get<0>(l) * std::get<0>(vertex) + std::get<1>(l) > std::get<1>(vertex);
+//   }
+//
+//   bool below(Line l, Line2 vertex) {
+//       return std::get<0>(l) * std::get<0>(vertex) + std::get<1>(l) < std::get<1>(vertex);
+//   }
+//
+//   void seperateLines(LineList const& lines, Line2 left_vertex, Line2 right_vertex,
+//                      LineList above_list, LineList below_list){
+//       for (Line l : lines) {
+//           //This should put the line in the top or bottom set.
+//           //It might not end up in either if it is the same line as the seperator.
+//           if (above(l, left_vertex) || above(l, right_vertex)) {
+//               above_list.push_back(l);
+//           }
+//           if (below(l, left_vertex) || below(l, right_vertex)) {
+//               below_list.push_back(l);
+//           }
+//       }
+//   }
+//
+//   void Simplex::computeLRVertexCross(simplex_ptr left_ptr, Line2 l, vertex_ptr left_vt, vertex_ptr right_vt) {
+//       /*
+//        * Check the line and see if it crosses any vertices. The left entrance and right entrance could potentialy
+//        * cross vertices. If it crosses a vertex then we will set left_vt to the left vertex or right_vt to the right
+//        * vertex. If the left or right entrance is not crossed then we set them to nullptrs.
+//        */
+//       vertex_ptr first_ptr = nullptr, second_ptr = nullptr;
+//       for (auto vertex : corner_ptrs) {
+//           if (vertex->crosses(l) && first_ptr == nullptr) {
+//               first_ptr == vertex;
+//           } else if (vertex->crosses(l)) {
+//               second_ptr = vertex;
+//           }
+//       }
+//
+//       if (first_ptr == nullptr || left_ptr == nullptr || left_ptr != first_ptr->left_ptr.lock()) {
+//           left_vt = second_ptr, right_vt = first_ptr;
+//       } else {
+//           left_vt = first_ptr, right_vt = second_ptr;
+//       }
+//   }
+//
+//   void Simplex::computeLRcrossing(simplex_ptr left_ptr, Line2 l, edge_ptr left_edge, edge_ptr right_edge) const {
+//       /*
+//        * Computes the left and right edge crossings. If there is no left or no right crossing then we set
+//        * left or right to false.
+//        */
+//       edge_ptr first_cross = nullptr, second_cross = nullptr;
+//       for (auto e : this->edge_list) {
+//           if (e->crosses(l) && first_cross == nullptr) {
+//               if (first_cross == nullptr)
+//                   first_cross = e;
+//               else
+//                   second_cross = e;
+//           }
+//       }
+//       // Three cases fc, sc null, sc null, neither null.
+//       if (first_cross == nullptr && second_cross == nullptr) {
+//           left_edge = nullptr, right_edge = nullptr;
+//       } else if (second_cross == nullptr) {
+//           if (left_ptr != nullptr) {
+//               left_edge = first_cross;
+//           } else {
+//               right_edge = first_cross;
+//           }
+//       } else {
+//           if (first_cross->bottom_ptr.lock() == left_ptr ||
+//                   first_cross->top_ptr.lock() == left_ptr) {
+//               left_edge = first_cross;
+//               right_edge = second_cross;
+//           } else {
+//               left_edge = second_cross;
+//               right_edge = first_cross;
+//           }
+//       }
+//   }
+//
+//   edge_ptr Simplex::findOppositeEdge(edge_ptr intersecting_edge, double x_val) const {
+//       for (edge_ptr & e : this->edge_list) {
+//           if (e->x_begin <= x_val && e->x_end <= x_val && e != intersecting_edge) {
+//               return e;
+//           }
+//       }
+//       return nullptr;
+//   }
+//
+//   void insertSplitter(Splitter const& spl, std::vector<LineList> & crossing_list, std::vector<Splitter>& splitter_list) {
+//       /*
+//        * Inserts the splitter into the splitter list and modifies the crossing_list by splitting all lines in
+//        * the crossing list into the set that lies on the left and right sides of the crossing list.
+//        */
+//       auto s_it = std::find_if(splitter_list.begin(), splitter_list.end(), [&](Splitter const& sp){
+//           return spl.getX() < sp.getX();
+//       });
+//       splitter_list.insert(s_it, spl);
+//       LineList left_lines;
+//       LineList right_lines;
+//       for (auto line : crossing_list[s_ix]){
+//           if (spl.crosses(line)) {
+//               left_lines.push_back(line);
+//               right_lines.push_back(line);
+//           } else if (spl.leftOf(line)) { //splitter is to the left of the line
+//               right_lines.push_back(line);
+//           } else {
+//               left_lines.push_back(line);
+//           }
+//       }
+//       //Insert the new line crossings into the crossing and splitter list
+//       auto s_ix = s_it - splitter_list.begin();
+//       crossing_list[s_ix] = right_lines;
+//       crossing_list.insert(crossing_list.begin() + s_ix, left_lines);
+//
+//   }
+//
+//   Splitter Simplex::makeSplitter(edge_ptr e1, Line2 new_line, edge_ptr term) {
+//       if (term == nullptr) {
+//           return {e1->edge_line, new_line, e1->top_ptr.lock() == this};
+//       } else {
+//           return {e1->edge_line, new_line, term->edge_line};
+//       }
+//   }
+//
+//   void mergeSplitters(Line2 const& new_line, bool above, std::vector<Splitter>& splitters, std::vector<LineList>& crossings) {
+//       /*
+//        * Enumerate the splitters and merge cells that should not belong.
+//        */
+//       std::set<Line> cell_elements;
+//       std::vector<Splitter> new_splitters;
+//       std::vector<LineList> new_crossings;
+//
+//       for (size_t i = 0; i < splitters.size(); i++) {
+//           //Need to handle the other cases.
+//           if (splitters[i].crosses(new_line)) {
+//               cell_elements.insert(crossings[i].begin(), crossings[i].end());
+//
+//               if (above != splitters[i].standing()) {
+//                   new_crossings.emplace_back(cell_elements.begin(), cell_elements.end());
+//                   new_splitters.emplace_back(splitters[i], new_line);
+//                   cell_elements = std::set<Line>();
+//               }
+//           } else if (splitters[i].passesAbove(new_line) == above) {
+//               new_crossings.emplace_back(crossings[i].begin(), crossings.end());
+//               new_splitters.push_back(splitters[i]);
+//           }
+//       }
+//       // insert the last cell.
+//       cell_elements.insert(crossings[splitters.size() + 1].begin(), crossings[splitters.size() + 1].end());
+//       new_crossings.emplace_back(cell_elements.begin(), cell_elements.end());
+//       splitters = new_splitters;
+//       crossings = new_crossings;
+//   }
+//
+//   void splitSimplex(simplex_ptr& sp, simplex_ptr& entr_ptr, simplex_ptr& upper, simplex_ptr& lower){
+//
+//   }
+//
+//   void Simplex::splitSplitters(Line2 const& new_line, simplex_ptr entr_ptr,
+//                                decltype(crossings)& above_crossings, decltype(splitter_list)& above_splitters,
+//                                decltype(corner_ptrs)& above_corners,
+//                                decltype(crossings)& below_crossings, decltype(splitter_list)& below_splitters,
+//                                decltype(corner_ptrs)& below_corners) {
+//       /*
+//        * Takes splitters and removes lines that fall no longer fall between two splitters.
+//        * Since they earlier fell inside, but now we only need to check whether the line
+//        * passes above the two end points of adjacent splitters.
+//        */
+//       // Always will be at least one region.
+//       size_t i = 0;
+//       edge_ptr left_edge, right_edge;
+//       vertex_ptr  left_vt, right_vt;
+//       computeLRVertexCross(std::move(entr_ptr), new_line, left_vt, right_vt);
+//       computeLRcrossing(std::move(entr_ptr), new_line, left_edge, right_edge);
+//       decltype(crossings) local_crossings = crossings;
+//       decltype(splitter_list) local_splitters = splitter_list;
+//       decltype(corner_ptrs) local_corners = corner_ptrs;
+//       // (1) Insert the new splitters and local crossings into the list and
+//       // also add the newly created edges and (possibly vertices).
+//       // TODO handle the case where the line goes through a vertex.
+//       if (left_vt == nullptr && left_edge != nullptr) {
+//           auto term_left = findOppositeEdge(left_edge, xLoc(left_edge->edge_line, new_line));
+//           //In these cases the simplex is open on the top or the bottom so we need to extend
+//           //either down or up. The simplex is convex so we find out which side it opens to.
+//           Splitter left_splitter = makeSplitter(left_edge, new_line, term_left);
+//           insertSplitter(left_splitter, local_crossings, local_splitters);
+//       }
+//       if (right_vt == nullptr && right_edge != nullptr) {
+//           auto term_right = findOppositeEdge(right_edge, xLoc(right_edge->edge_line, new_line));
+//           Splitter right_splitter = makeSplitter(right_edge, new_line, term_right);
+//           insertSplitter(right_splitter, local_crossings, local_splitters);
+//       }
+//
+//       // (2) Now need to cut all regions defined by splitters into an upper and lower portion depending on
+//       // how the new line cuts them.
+//       // If the line passes below the region then crossings and splitters end up in the above
+//       // If the line pass above the region then crossings and splitters end up in the below
+//       // If the line passes through the region then crossings and splitters end up in both.
+//       if (splitter_list.size() == 0) {
+//           above_crossings.push_back(local_crossings[0]);
+//           below_crossings.push_back(local_crossings[0]);
+//       } else {
+//           // We have at least 1 splitter and 2 crossings
+//           // We check each splitter in sequence until we start getting crossings.
+//           // We will cross the first splitter and last splitters we inserted
+//           Line2 left_entrance, right_entrance;
+//           size_t i = 0;
+//           for (; i < local_splitters.size(); i++) {
+//               if (local_splitters[i].passesBelow(new_line)) {
+//                   above_crossings.push_back(local_crossings[i]);
+//                   above_splitters.push_back(local_splitters[i]);
+//               } else if (local_splitters[i].passesAbove(new_line) {
+//                   below_crossings.push_back(local_crossings[i]);
+//                   below_splitters.push_back(local_splitters[i]);
+//               }
+//               if (local_splitters[i].isCrossLine(new_line)){
+//                   //Now have left entrance
+//                   left_entrance = local_splitters[i].crossPt();
+//                   i++; //Set to next splitter
+//                   break;
+//               }
+//           }
+//           // Now everything between.
+//           LineList mergeIntoBelow;
+//           LineList mergeIntoAbove;
+//           for (; i < local_splitters.size(); i++) {
+//               if (local_splitters[i].crosses(new_line, right_entrance)){
+//
+//                   LineList above_lines, below_lines;
+//                   seperateLines(local_crossings[i], left_entrance, right_entrance, above_lines, below_lines);
+//                   above_crossings.push_back(above_lines);
+//                   below_crossings.push_back(below_lines);
+//                   above_splitters.push_back(local_splitters[i]);
+//                   below_splitters.push_back(local_splitters[i]);
+//                   /*
+//                   if (local_splitters[i].standing()) {
+//                       below_splitters.emplace_back(Splitter(local_splitters[i], new_line));
+//                       mergeIntoAbove.insert(mergeIntoAbove.end(), local_crossings[i].begin(), local_crossings[i].end());
+//                       below_crossings.push_back()
+//                   } else {
+//                       above_splitters.emplace_back(Splitter(local_splitters[i], new_line));
+//                       mergeIntoBelow.insert(mergeIntoAbove.end(), local_crossings[i].begin(), local_crossings[i].end());
+//                   }
+//                   */
+//                   //Now have left entrance
+//                   left_entrance = right_entrance;
+//               } else if (local_splitters[i].passesBelow(new_line)) {
+//                   above_crossings.push_back(local_crossings[i]);
+//                   above_splitters.push_back(local_splitters[i]);
+//               } else if (local_splitters[i].passesAbove(new_line) {
+//                   below_crossings.push_back(local_crossings[i]);
+//                   below_splitters.push_back(local_splitters[i]);
+//               }
+//           }
+//       }
+//       // Now need to merge splitters.
+//       mergeSplitters(new_line, true, above_splitters, above_crossings);
+//       mergeSplitters(new_line, false, below_splitters, below_crossings);
+//   }
+//
+//   Simplex Simplex::upper_split(Line2 const& new_line, edge_ptr clock_wise, vertex_ptr lower_simplex) {
+//       /*
+//        * Computes the upper split of a simplex
+//        */
+//
+//       Simplex top_simplex;
+//
+//       // 4 cases for closed simplex, v -> e, e -> e, e -> v, and v -> v
+//       // 4 cases for open simplex, v -> o, o -> v, o-> e, e -> o.
+//
+//       bool entrance_vertex;
+//       bool exit_vertex;
+//       if (entrance_vertex && exit_vertex) {
+//
+//       } else if (entrance_vertex && !exit_vertex) {
+//
+//       } else if (!entrance_vertex && exit_vertex) {
+//
+//       } else {
+//
+//       }
+//       return Simplex();
+//   }
+//
+//   bool Simplex::closed() const {
+//       return !open;
+//   }
+//
+//
+//   Simplex Simplex::split(Line2 const& new_line,
+//                          edge_ptr const& clock_entrance_edge,
+//                          edge_ptr const& counter_entrance_edge,
+//                          vertex_ptr upper_simplex,
+//                          vertex_ptr lower_simplex
+//   ) {
+//
+//       return Simplex();
+//   }
 
    void splitCell(Cell const &cell, Line const &line, std::deque<Cell> &cells, std::vector<Cell> &output);
 
