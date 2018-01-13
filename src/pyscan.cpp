@@ -105,17 +105,25 @@ py::list splitCellWrapper(pyscan::Trapezoid const& trap, py::object const& lines
     return cellsToList(output);
 }
 
-pyscan::Grid makeGrid(const py::object& iterable, size_t r) {
-    std::vector<pyscan::Point<>> points = to_std_vector<pyscan::Point<>>(iterable);
-
-    return pyscan::Grid(points.begin(), points.end(), r);
+pyscan::Grid makeGrid(const py::object& sample_r, const py::object& sample_b, size_t r) {
+    std::vector<pyscan::Point<>> points_r = to_std_vector<pyscan::Point<>>(sample_r);
+    std::vector<pyscan::Point<>> points_b = to_std_vector<pyscan::Point<>>(sample_b);
+    return pyscan::Grid(r, points_r.begin(), points_r.end(), points_b.begin(), points_b.end());
 }
 
-pyscan::Grid makeNetGrid(const py::object& iterable, size_t r) {
-    std::vector<pyscan::Point<>> points = to_std_vector<pyscan::Point<>>(iterable);
-
-    return pyscan::Grid(points.begin(), points.end(), r, true);
+pyscan::Grid makeNetGrid(const py::object& net, const py::object& sample_r, const py::object& sample_b) {
+    std::vector<pyscan::Point<>> net_p = to_std_vector<pyscan::Point<>>(net);
+    std::vector<pyscan::Point<>> points_r = to_std_vector<pyscan::Point<>>(sample_r);
+    std::vector<pyscan::Point<>> points_b = to_std_vector<pyscan::Point<>>(sample_b);
+    return pyscan::Grid(net_p.begin(), net_p.end(), points_r.begin(), points_r.end(), points_b.begin(), points_b.end());
 }
+
+//pyscan::Grid makeSampleGrid(const py::object& s_m, const py::object& s_b, size_t r) {
+//    std::vector<pyscan::Point<>> m_sample = to_std_vector<pyscan::Point<>>(s_m);
+//    std::vector<pyscan::Point<>> b_sample = to_std_vector<pyscan::Point<>>(s_b);
+//    return pyscan::Grid(r, m_sample.begin(), m_sample.end(), b_sample.begin(), b_sample.end());
+//
+//}
 
 pyscan::Halfspace<2> maxHalfplaneStat(const py::object& net, const py::object& sample, double rho) {
     std::vector<pyscan::Point<>> net_points = to_std_vector<pyscan::Point<>>(net);
@@ -203,7 +211,10 @@ py::list createPartitionWrapper(const py::object& iterable, int r) {
 
 BOOST_PYTHON_MODULE(pyscan) {
     using namespace py;
-
+    /*
+    py::class_<pyscan::MaximumIntervals>("MaximumIntervals", py::init<std::size_t>())
+            .def("mergeZeros")
+    */
     py::class_<pyscan::Grid>("Grid", py::no_init)
             .def("totalRedWeight", &pyscan::Grid::totalRedWeight)
             .def("totalBlueWeight", &pyscan::Grid::totalBlueWeight)
@@ -309,7 +320,7 @@ BOOST_PYTHON_MODULE(pyscan) {
     py::def("randomCuttings", randomCuttings);
     py::def("makeGrid", makeGrid);
     py::def("makeNetGrid", makeNetGrid);
-
+    //py::def("makeSampleGrid", makeSampleGrid);
 
     pyscan::Subgrid (*f1)(pyscan::Grid const&, double) = &pyscan::maxSubgridKullSlow;
     pyscan::Subgrid (*f2)(pyscan::Grid const&, double, double) = &pyscan::maxSubgridLinearSlow;
@@ -323,6 +334,8 @@ BOOST_PYTHON_MODULE(pyscan) {
 
     pyscan::Subgrid (*fl1)(pyscan::Grid const&, double, double) = &pyscan::maxSubgridLinKull;
     py::def("maxSubgridKull", fl1);
+
+    py::def("maxSubgridTheoryKull", pyscan::maxSubgridLinKullTheory);
 
     py::def("maxHalfPlaneStat", &maxHalfplaneStat);
     py::def("maxHalfPlaneLin", &maxHalfplaneLin);

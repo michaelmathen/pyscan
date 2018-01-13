@@ -40,7 +40,7 @@ namespace {
 // </TechnicalDetails>
 
 TEST(ApproximateHullTest, Kulldorff) {
-    const static int test_size = 10000;
+    const static int test_size = 1000000;
     double rho = .001;
     double alpha = .001;
     double eps = .01;

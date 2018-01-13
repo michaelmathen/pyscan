@@ -29,52 +29,29 @@ namespace pyscan {
     using subgrid = std::tuple<int, int, int, int, double>;
 
 
-    template<typename P_it, typename I_it, typename Comp>
-    void quantiles(P_it begin, P_it end, I_it i_begin, I_it i_end, Comp comp) {
+    template<typename P_it, typename I_it, typename Comp, typename Wf>
+    void quantiles(P_it begin, P_it end, I_it i_begin, I_it i_end, Comp comp, Wf wf) {
+        std::sort(begin, end, comp);
+
         //std::random_device rd;
         //std::mt19937 gen(rd());
         //std::uniform_real_distribution<double> dis(0, 1);
-        int k = i_end - i_begin;
-        double width = static_cast<double>(end - begin) / k;
-        // Choose a start index randomly by either rounding down or up.
-        int start_index = 0;
-        /*
-        if (dis(gen) > width  2) {
-            start_index = (int) (width / 2);
-        } else {
-            start_index = (int) (width / 2 + 1);
-        }
-         */
+        int r = i_end - i_begin;
+        double total_weight = 0;
+        std::for_each(begin, end, [&](decltype(*begin) const& pt) {
+            total_weight += wf(pt);
+        });
 
-        //Pick a set of evenly spread indices
-        auto i_b = i_begin;
-        for (int i = 0; i < k; i++) {
-            //double prob = i * width + start_index;
-            (*i_b) = i * width + start_index;
-            i_b++;
-        }
-        std::sort(begin, end, comp);
-        /*
-        std::cout << "got here" << std::endl;
-        std::deque<std::tuple<int, int>> tuple_stack;
-        tuple_stack.push_back(std::make_tuple(0, (int)(i_end - i_begin) - 1));
-        while (!tuple_stack.empty()) {
-            auto &part = tuple_stack.back();
-            tuple_stack.pop_back();
-            int lo = std::get<0>(part);
-            int hi = std::get<1>(part);
-            if (lo < hi) {
-                int mid = (lo + hi) / 2;
-                std::cout << hi << " " << mid << " " << lo << std::endl;
-                int i_lo = *(i_begin + lo);
-                int i_hi = *(i_begin + hi);
-                int i_mid = *(i_begin + mid);
-                std::nth_element(begin + i_lo, begin + i_hi, begin + i_mid, comp);
-                tuple_stack.push_back(std::make_tuple(lo, mid - 1));
-                tuple_stack.push_back(std::make_tuple(mid + 1, hi));
+        double eps_s = total_weight / r;
+        double curr_weight = 0;
+        std::for_each(begin, end, [&](decltype(*begin) const& pt) {
+            curr_weight += wf(pt);
+            if (curr_weight > eps_s) {
+                *i_begin = pt;
+                i_begin++;
+                curr_weight = 0;
             }
-        }
-         */
+        });
     }
 
     template<typename Bound_t>
@@ -117,6 +94,11 @@ namespace pyscan {
     using Rectangle = RectBase<double>;
     using Subgrid = RectBase<size_t>;
 
+    enum class I_Type {
+        VALUE,
+        MAX
+    };
+
     class Grid {
         /*
          * Grid as defined in the SODA paper. Construction takes O(mlog r + r^2) time where
@@ -130,8 +112,8 @@ namespace pyscan {
         double total_red_weight = 0;
         double total_blue_weight = 0;
     public:
-        Grid(point_it begin, point_it end, size_t r_arg, bool run_net);
-        Grid(point_it begin, point_it end, size_t r_arg);
+        Grid(size_t r_arg, point_it r_begin, point_it r_end, point_it b_begin, point_it b_end);
+        Grid(point_it net_begin, point_it net_end, point_it r_begin, point_it r_end, point_it b_begin, point_it b_end);
         double totalRedWeight() const;
         double totalBlueWeight() const;
         double redCount(size_t row, size_t col) const;
@@ -148,7 +130,160 @@ namespace pyscan {
         Rectangle toRectangle(Subgrid const &sg) const;
     };
 
+    class ValueInterval {
+        size_t left;
+        double value;
+        size_t right;
+    public:
+        ValueInterval();
+        ValueInterval(double val, size_t left, size_t right);
+        void print(std::ostream& os) const;
+        size_t getLeft() const;
+        size_t getRight() const;
+        void setLeft(size_t left_c);
+        void setRight(size_t right_c);
+        double getValue() const;
+        void setValue(double val);
+        ValueInterval &operator+=(double val);
+    };
 
+
+    class MaxInterval {
+        ValueInterval left_max;
+        ValueInterval right_max;
+        ValueInterval center_max;
+    public:
+        MaxInterval();
+        MaxInterval(double value, size_t index);
+        MaxInterval &operator+=(MaxInterval const &op);
+        size_t getLeft() const;
+        size_t getRight() const;
+        size_t lowCIx() const;
+        size_t upCIx() const;
+        double lValue() const;
+        double rValue() const;
+        double cValue() const;
+        void print(std::ostream& os) const;
+    };
+
+    struct SlabNode {
+        std::vector<double> red_weights;
+        std::vector<double> blue_weights;
+        std::vector<size_t> indices;
+        BloomFilter non_zeros;
+
+        using slab_ptr = std::shared_ptr<SlabNode>;
+        size_t left_col;
+        size_t right_col;
+        slab_ptr left = nullptr;
+        slab_ptr right = nullptr;
+
+
+        SlabNode(Grid const &g, size_t left_col, size_t right_col, size_t r_prime);
+
+        size_t getMid() const;
+
+        bool hasChildren() const;
+
+        void print(std::ostream &os) const;
+
+    };
+
+    class MaximumIntervals {
+        std::vector<I_Type> intervals;
+        std::vector<MaxInterval> max_intervals;
+        std::vector<double> weights;
+        // one to one mapping with weights
+        std::vector<size_t> weight_index;
+
+        size_t left_col;
+        size_t right_col;
+
+        MaximumIntervals(size_t l, size_t r);
+    public:
+
+        void print(std::ostream& os) const;
+
+        size_t getWeightNum() const;
+        size_t getIntervalNum() const;
+        explicit MaximumIntervals(size_t r);
+        void setBounds(size_t l_c, size_t r_c);
+        void updateBounds(size_t l_c, size_t r_c);
+
+        /*
+         * Indices and weights are assumed to be presorted.
+         */
+        void updateWeights(std::vector<double> const &new_weights,
+                           std::vector<size_t> const &indices,
+                           double w);
+
+        MaximumIntervals mergeZeros(BloomFilter const& f1) const;
+        MaximumIntervals mergeZeros(BloomFilter const& f1, BloomFilter const& f2) const;
+        template<typename F>
+        MaximumIntervals mergeZeros(F const& mightBePresent) const {
+            MaximumIntervals new_max(left_col, right_col);
+            new_max.max_intervals.reserve(max_intervals.size() / 2);
+            new_max.weights.reserve(weights.size() / 2);
+            new_max.intervals.reserve(max_intervals.size() / 2);
+            int mx_ix = 0;
+            int w_ix = 0;
+            /*
+             std::vector<int> zeros;
+            for (int i = 0; i < 20; i++) {
+                if (!mightBePresent(i)) {
+                    zeros.push_back(i);
+                }
+            }
+            */
+            //std::cout << zeros << std::endl;
+            //std::cout << *this << std::endl;
+
+            //std::cout << bloom << std::endl;
+            bool prev_Max = false;
+            for (size_t i = 0; i < intervals.size(); i++) {
+                if (intervals[i] == I_Type::VALUE) {
+                    if (!mightBePresent((uint32_t) weight_index[w_ix])) {
+                        if (prev_Max) {
+                            auto prev_el = new_max.max_intervals.end() - 1;
+                            (*prev_el) += MaxInterval(weights[w_ix], weight_index[w_ix]); // Merge the previous
+                        } else {
+                            new_max.max_intervals.emplace_back(weights[w_ix], weight_index[w_ix]);
+                            new_max.intervals.push_back(I_Type::MAX);
+                        }
+                        prev_Max = true;
+                    } else {
+                        prev_Max = false;
+                        new_max.weights.push_back(weights[w_ix]);
+                        new_max.weight_index.push_back(weight_index[w_ix]);
+                        new_max.intervals.push_back(I_Type::VALUE);
+                    }
+                    w_ix += 1;
+                } else {
+                    if (prev_Max) {
+                        auto prev_el = new_max.max_intervals.end() - 1;
+                        (*prev_el) += max_intervals[mx_ix]; // Merge the previous
+                    } else {
+                        new_max.max_intervals.push_back(max_intervals[mx_ix]);
+                        new_max.intervals.push_back(I_Type::MAX);
+                    }
+                    prev_Max = true;
+                    mx_ix += 1;
+                }
+            }
+            //std::cout << new_max << std::endl;
+            //std::cout << std::endl;
+            return new_max;
+        }
+
+        Subgrid getMax() const;
+        size_t maxIntervalNum() const;
+        size_t valueNum() const;
+        MaxInterval getFirstMax() const;
+        size_t getLeft() const;
+        size_t getRight() const;
+        void setLeft(size_t left);
+        void setRight(size_t right);
+    };
 
     Rectangle maxRectStatLabels(std::vector<LPoint<>> const& net,
                                  std::vector<LPoint<>> const& m_points,
@@ -166,9 +301,10 @@ namespace pyscan {
 
 
     Subgrid maxSubgridLinKull(Grid const& grid, double eps, double rho);
+    Subgrid maxSubgridLinKullTheory(Grid const& grid, double eps, double rho);
     Subgrid maxSubgridLinGamma(Grid const& grid, double eps);
 
-    Subgrid maxSubgridLinearG(Grid const &grid, size_t r_prime, double a, double b);
+    Subgrid maxSubgridLinearG(Grid const &grid, int r_prime, double a, double b);
 
     Rectangle maxRectSlowStatLabels(std::vector<LPoint<>> const& net,
                                  std::vector<LPoint<>> const& m_points,
