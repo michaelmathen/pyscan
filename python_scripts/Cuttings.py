@@ -194,6 +194,16 @@ class Line:
             return approx_eq(self.a, other.a) and approx_eq(self.b, other.b)
         return False
 
+    def pt_eq_below(self, pt):
+        y = self.evaluate(pt[0])
+        return approx_eq_above(pt[1], y)
+
+    def pt_eq_above(self, pt):
+        y = self.evaluate(pt[0])
+        return approx_eq_above(y, pt[1])
+
+
+
 ix_edge = 0
 
 
@@ -406,6 +416,14 @@ class Splitter:
 
     def cut_right(self):
         return not self.cut_left()
+
+    def pt_is_left(self, pt):
+        return approx_eq_above(pt[0], self.x_value())
+
+    def pt_is_right(self, pt):
+        return approx_eq_above(self.x_value(), pt[0])
+
+
 
 class Simplex:
     def __init__(self, crossing_lines=[]):
@@ -736,6 +754,27 @@ class Simplex:
         lower_simplex.crossing_lines = lower_lines
 
         return new_edge, u_exit, l_exit, upper_simplex, lower_simplex
+
+
+class Trapezoid:
+
+    def __init__(self):
+        """
+        A trapezoid consists of upper cells and lower cells.
+        """
+        self.left_splitter = None
+        self.top_edge = None
+        self.right_splitter = None
+        self.bottom_edge = None
+        self.left_cells = []
+        self.right_cells = []
+        self.top_cells = []
+        self.bottom_cells = []
+
+
+
+
+
 
 
 class Arrangement:
@@ -1073,6 +1112,16 @@ def label_arrangement(arr, min_x, max_x, ax):
     for e in edges:
         label_edge(e, min_x, max_x, ax)
 
+
+def simplex_cutting(self, lines):
+    """
+    Computes a cutting uses the simplices as cells. For each simplex we cut the simplex in half until
+    the number of crossing lines is less than $n/r$. We then stop and store the simplex.
+    :param self:
+    :param lines:
+    :return:
+    """
+    pass
 
 # if __name__ == "__main__":
 #     max_x = 2
