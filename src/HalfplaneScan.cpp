@@ -61,13 +61,16 @@ namespace pyscan {
 
     template<typename F>
     std::tuple<Halfspace<>, Point<>, Point<>>
-    maxHalfplane(point_it p_net_b, point_it p_net_e, point_it p_samp_b, point_it p_samp_e, F func) {
+    maxHalfplane(point_it p_net_b, point_it p_net_e, point_it s_M_b, point_it s_M_e,
+                 point_it s_B_b, point_it s_B_e, F func) {
 
         double totalM = 0;
         double totalB = 0;
-        for (auto p_s = p_samp_b; p_s != p_samp_e; ++p_s) {
+        for (auto p_s = s_M_b; p_s != s_M_e; ++p_s) {
             totalM += p_s->getBlueWeight();
-            totalB += p_s->getRedWeight();
+        }
+        for (auto p_s = s_B_b; p_s != s_B_e; ++p_s) {
+            totalM += p_s->getRedWeight();
         }
 
         if (p_net_e - p_net_b == 0) {
@@ -104,9 +107,13 @@ namespace pyscan {
             apply_permutation_in_place(indices, perm);
 
             //Now update all the weights as the angle changes over all the points
-            for (auto p_s = p_samp_b; p_s != p_samp_e; ++p_s) {
+            for (auto p_s = s_M_b; p_s != s_M_e; ++p_s) {
                 auto s_it = std::lower_bound(d_indices.begin(), d_indices.end(), angle(*p_b, *p_s));
                 mweights[s_it - d_indices.begin()] += p_s->getBlueWeight();
+            }
+
+            for (auto p_s = s_B_b; p_s != s_B_e; ++p_s) {
+                auto s_it = std::lower_bound(d_indices.begin(), d_indices.end(), angle(*p_b, *p_s));
                 bweights[s_it - d_indices.begin()] += p_s->getRedWeight();
             }
 

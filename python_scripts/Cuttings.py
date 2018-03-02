@@ -4,10 +4,15 @@ import matplotlib
 import pprint
 import pickle
 import math
+from numba import jit
 
 ix = 0
 GLOBAL_TOL = 1e-08
 
+def weighted_shuffle(items, weights):
+    rweights = [-random.random() ** (1.0 / w) for w in weights]
+    order = sorted(range(len(items)), key=lambda i: rweights[i])
+    return [items[i] for i in order]
 
 def approx_eq(a, b):
     """
@@ -83,6 +88,7 @@ class Line:
         else:
             raise IndexError("Lines only have 0 and 1 indices")
 
+
     def crossing_pt(self, line):
         return (self.x_intercept(line), self.y_intercept(line))
 
@@ -93,6 +99,12 @@ class Line:
         return (line.b * self.a - self.b * line.a) / (self.a - line.a)
 
     def evaluate(self, x):
+        if approx_eq(self.a, 0):
+            """
+            This is so if the line is used as the top of a trapezoid it will still be defined 
+            even if inf * 0.
+            """
+            return self.b
         return x * self.a + self.b
 
     def eval_at_boundaries(self, line, xl, xr):
@@ -102,27 +114,9 @@ class Line:
         ysr = self.evaluate(xr)
         return ysl, ysr, yll, ylr
 
-    # def above_closed_interval(self, line, xl, xr):
-    #     """
-    #     Checks to see if the passed in line passes above
-    #     self over the interval. Can cross the line at the boundary.
-    #     """
-    #     ysl, ysr, yll, ylr = self.eval_at_boundaries(line, xl, xr)
-    #     if xl == -float("inf") and xr == float("inf"):
-    #         if line.a == self.a:
-    #             return line.b <= self.b
-    #         else:
-    #             return False
-    #     elif xl == -float("inf"):
-    #         return yll <= ysl and line.a >= self.a
-    #     elif xr == float("inf"):
-    #         return ylr <= ysr and line.a <= self.a
-    #     else:
-    #         return yll <= ysl and ylr <= ysr
-
     def above_closed_interval(self, line, xl, xr):
         """
-        Checks to see if the passed in line passes above
+        Checks to see if the passed in line is below
         self over the interval. Can cross the line at the boundary.
         This will evaluate the crossing to be overlapping if they are very close.
         """
@@ -133,9 +127,9 @@ class Line:
             else:
                 return False
         elif xl == -float("inf"):
-            return approx_eq_above(yll, ysl) and approx_eq_below(line.a, self.a)
+            return approx_eq_above(ylr, ysr) and approx_eq_below(line.a, self.a)
         elif xr == float("inf"):
-            return approx_eq_above(ylr, ysr) and approx_eq_above(line.a, self.a)
+            return approx_eq_above(yll, ysl) and approx_eq_above(line.a, self.a)
         else:
             return approx_eq_above(yll, ysl) and approx_eq_above(ylr, ysr)
 
@@ -147,9 +141,9 @@ class Line:
             else:
                 return False
         elif xl == -float("inf"):
-            return approx_eq_below(yll, ysl) and approx_eq_above(line.a, self.a)
+            return approx_eq_below(ylr, ysr) and approx_eq_above(line.a, self.a)
         elif xr == float("inf"):
-            return approx_eq_below(ylr, ysr) and approx_eq_below(line.a, self.a)
+            return approx_eq_below(yll, ysl) and approx_eq_below(line.a, self.a)
         else:
             return approx_eq_below(yll, ysl) and approx_eq_below(ylr, ysr)
 
@@ -182,10 +176,14 @@ class Line:
             return approx_below(yll, ysl) and approx_below(ylr, ysr)
 
     def interval_crossed_by_closed(self, line, xl, xr):
+        if approx_eq(line.a, self.a):
+            return False
         x_val = self.x_intercept(line)
         return approx_eq_above(xl, x_val) and approx_eq_above(x_val, xr)
 
     def interval_crossed_by(self, line, xl, xr):
+        if approx_eq(line.a, self.a):
+            return False
         x_val = self.x_intercept(line)
         return approx_above(xl, x_val) and approx_above(x_val, xr)
 
@@ -879,7 +877,7 @@ style = {"simplex_color": 'k',
          "edge_color": 'k',
          "line_color": 'r',
          "zone_line_color": "b",
-         "zone_line_thickness": 3}
+         "zone_line_thickness": 4}
 
 
 def plot_edge(edge, min_x, max_x, ax):
@@ -1113,15 +1111,7 @@ def label_arrangement(arr, min_x, max_x, ax):
         label_edge(e, min_x, max_x, ax)
 
 
-def simplex_cutting(self, lines):
-    """
-    Computes a cutting uses the simplices as cells. For each simplex we cut the simplex in half until
-    the number of crossing lines is less than $n/r$. We then stop and store the simplex.
-    :param self:
-    :param lines:
-    :return:
-    """
-    pass
+
 
 # if __name__ == "__main__":
 #     max_x = 2

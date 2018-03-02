@@ -1,7 +1,11 @@
 from Cuttings import *
 from collections import deque
 import pydot
+import numpy as np
+import itertools
 
+
+id = 0
 class Segment(Line):
 
     def __repr__(self):
@@ -14,10 +18,23 @@ class Segment(Line):
                 non_recursive[el] = parameters[el]
         return type(self).__name__ + "(**" + pprint.pformat(non_recursive, indent=4, width=1) + ")"
 
+
     def __init__(self, line, x_1, x_2):
         super(Segment, self).__init__(line.a, line.b)
         self.xl = x_1
         self.xr = x_2
+        global id
+        self.id = id
+        id += 1
+
+    def hsplit(self, x):
+        """
+        Splits the edge. Does not update the simplices though
+        that the child edges point at. Need to update that later.
+        """
+        e1 = Segment(self, self.xl, x)
+        e2 = Segment(self, x, self.xr)
+        return e1, e2
 
 
     def split(self, line):
@@ -28,13 +45,17 @@ class Segment(Line):
         x_mid = self.x_intercept(line)
         if approx_eq(x_mid, self.xl) or approx_eq(x_mid, self.xr):
             if self.above_closed(line):
-                return self, None
+                return self, None, approx_eq(x_mid, self.xr)
             else:
-                return None, self
+                return None, self, approx_eq(x_mid, self.xr)
 
         e1 = Segment(self, self.xl, x_mid)
         e2 = Segment(self, x_mid, self.xr)
-        return e1, e2
+        if e1.above_closed(line):
+            return e1, e2, True
+        else:
+            return e2, e1, False
+
 
     def below(self, line):
         return self.below_interval(line, self.xl, self.xr)
@@ -88,7 +109,7 @@ class Segment(Line):
         elif not isinstance(other, Edge):
             return False
         else:
-            return other.a == self.a and other.b == self.b and other.xl == self.xl and other.xr == self.xr
+            return approx_eq(other.a, self.a) and approx_eq(other.b, self.b) and approx_eq(other.xl, self.xl) and approx_eq(other.xr, self.xr)
 
 
     #This is useful for determining if this line segment is to the right side or left side of its intersection
@@ -138,7 +159,7 @@ class Node:
 
 class Non_Terminal(Node):
 
-    def __init__(self, right, left):
+    def __init__(self, left, right):
         self.right = right
         self.left = left
 
@@ -157,8 +178,8 @@ class Non_Terminal(Node):
 class Vertical_Node(Non_Terminal):
     def __repr__(self):
         return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
-    def __init__(self, x, right=None, left=None):
-        super(Vertical_Node, self).__init__(right, left)
+    def __init__(self, x, left=None, right=None):
+        super(Vertical_Node, self).__init__(left, right)
         self.x = x
 
 
@@ -206,7 +227,7 @@ class Segment_Node(Non_Terminal):
         return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
 
     def __init__(self, segment, up=None, down=None):
-        super(Segment_Node, self).__init__(up, down)
+        super(Segment_Node, self).__init__(down, up)
         self.segment = segment
 
 
@@ -223,12 +244,12 @@ class Segment_Node(Non_Terminal):
             if self.segment.contained(seg.right_vertex):
                 return self.segment.below_closed_interval(seg, float("-inf"), seg.xr)
             else:
-                return self.segment.pt_eq_below(seg.right_vertex)
+                return self.segment.pt_eq_above(seg.right_vertex)
         else:
             if self.segment.contained(seg.left_vertex):
                 return self.segment.below_closed_interval(seg, seg.xl, float("inf"))
             else:
-                return self.segment.pt_eq_below(seg.left_vertex)
+                return self.segment.pt_eq_above(seg.left_vertex)
 
     def hinted_l_or_b(self, seg, right):
         return not self.hinted_r_or_a(seg, right)
@@ -250,36 +271,113 @@ class Segment_Node(Non_Terminal):
         :param seg:
         :return:
         """
+        if approx_eq(seg.a, self.segment.a):
+            return False
         x_v = seg.x_intercept(self.segment)
         return approx_above(self.segment.xl, x_v) and \
                approx_above(x_v, self.segment.xr) and \
                approx_above(seg.xl, x_v) and \
                approx_above(x_v, seg.xr)
 
+
+
+
+DEBUG = True
+trigered = False
+
+trap_id = 0
 class Trapezoid(Node):
     def __repr__(self):
         return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
 
-    def __init__(self, top_line=None, bottom_line=None, left_x=-float("inf"), right_x=float("inf"), lines=list(), weights=list()):
+    def __init__(self, top_line=None, bottom_line=None, left_x=-float("inf"), right_x=float("inf"), w_lines=[], points=list()):
         self.top_line = Line(0, float("inf")) if top_line is None else top_line
 
         self.bottom_line = Line(0, float("-inf")) if bottom_line is None else bottom_line
         self.left_x = left_x
         self.right_x = right_x
-        self.lines = lines
-        self.weights = weights
-        self.weight = sum(weights)
+        self.w_lines = []
 
-    def inside(self, pt):
-        """
-        Determines if the point is inside
-        :param pt:
-        :return:
-        """
-        pass
+        self.points = points
+        # for p in points:
+        #     #if self.inside_closed(p):
+        #     self.points.append(p)
+        self.weight = 0
+
+        for l, w in w_lines:
+            if l.same_line(top_line) or l.same_line(bottom_line):
+                continue
+            if self.line_crosses(l):
+                self.w_lines.append((l, w))
+                self.weight += w
+
+        global trap_id
+        self.id = trap_id
+        trap_id += 1
+
+        global DEBUG
+        global trigered
+        if DEBUG:
+            if not approx_eq_above(self.bottom_line.evaluate(self.left_x),
+                                                self.top_line.evaluate(self.left_x)):
+                print(self)
+                print("PROBLEM")
+                trigered = True
+            if not approx_eq_above(self.bottom_line.evaluate(self.right_x),
+                                    self.top_line.evaluate(self.right_x)):
+                print(self)
+                print("PROBLEM")
+                trigered = True
+
+    def get_points(self):
+        return self.points
+
+    def get_lines(self):
+        return [l for l, _ in self.w_lines]
+
+
+    def ptCount(self):
+        return len(self.points)
 
     def is_terminal(self):
         return True
+
+    def visualize(self, ax, min_x, max_x, min_y, max_y, viz_lines=False):
+
+        if self.left_x > max_x or self.right_x < min_x:
+            return
+
+        if viz_lines:
+            c = color
+        else:
+            c = next(ax._get_lines.prop_cycler)['color']
+
+        if max_x >= self.left_x >= min_x:
+            ax.vlines(self.left_x, min(max_y, self.top_line.evaluate(self.left_x)),
+                        max(min_y, self.bottom_line.evaluate(self.left_x)), color=c)
+        if max_x >= self.right_x >= min_x:
+            ax.vlines(self.right_x, min(max_y, self.top_line.evaluate(self.right_x)),
+                    max(min_y, self.bottom_line.evaluate(self.right_x)), color=c)
+        mnx = max(self.left_x, min_x)
+        mxx = min(self.right_x, max_x)
+        ax.plot([mnx, mxx],
+                [self.top_line.evaluate(mnx), self.top_line.evaluate(mxx)],
+                linewidth=style["simplex_line_thickness"], color=c)
+        ax.plot([mnx, mxx],
+                [self.bottom_line.evaluate(mnx), self.bottom_line.evaluate(mxx)],
+                linewidth=style["simplex_line_thickness"], color=c)
+
+        x_vals = []
+        y_vals = []
+        for x, y in self.points:
+            if min_x <= x <= max_x and min_y <= y <= max_y:
+                x_vals.append(x)
+                y_vals.append(y)
+
+        ax.scatter(x_vals, y_vals)
+        if viz_lines:
+            for l, _ in self.w_lines:
+                ax.plot([min_x, max_x], [l.evaluate(min_x), l.evaluate(max_x)], color=color)
 
     def horz_split(self, segment):
         """
@@ -287,59 +385,44 @@ class Trapezoid(Node):
         :param segment:
         :return:
         """
-        bottom = []
-        top = []
-        tw = []
-        bw = []
-        for l, w in zip(self.lines, self.weights):
-            #if the line crosses the segment inside of the trapezoid
-            if segment.interval_crossed_by(l, self.left_x, self.right_x):
-                bottom.append(l)
-                bw.append(w)
-                top.append(l)
-                tw.append(w)
-            #if the line is above the segment inside the trapezoid
-            elif l.above_closed_interval(segment, segment.xl, segment.xr):
-                top.append(l)
-                tw.append(w)
+        up = []
+        down = []
+        for p in self.points:
+            if segment.pt_eq_below(p):
+                down.append(p)
             else:
-                bottom.append(l)
-                bw.append(w)
-        return Trapezoid(self.top_line, segment, self.left_x, self.right_x, top, tw), \
-                Trapezoid(segment, self.bottom_line, self.left_x , self.right_x, bottom, bw)
+                up.append(p)
 
+        # up_w_lines = []
+        # down_w_lines = []
+        # for l, w in self.w_lines:
+        #     if segment.interval_crossed_by(l, self.left_x, self.right_x):
+        #         up_w_lines.append((l, w))
+        #         down_w_lines.append((l, w))
+        #     elif l.above_interval(segment, self.left_x, self.right_x):
+        #         up_w_lines.append((l, w))
+        #     else:
+        #         down_w_lines.append((l, w))
+        #
+        #
+        # return Trapezoid(self.top_line, segment, self.left_x, self.right_x, up_w_lines, up), \
+        #         Trapezoid(segment, self.bottom_line, self.left_x , self.right_x, down_w_lines, down)
+        return Trapezoid(self.top_line, segment, self.left_x, self.right_x, self.w_lines[:], up), \
+                Trapezoid(segment, self.bottom_line, self.left_x , self.right_x, self.w_lines[:], down)
 
     def vert_split(self, x):
         left = []
         right = []
-        lw = []
-        rw = []
-        ty = self.top_line.evaluate(x)
-        by = self.bottom_line.evaluate(x)
-        for l, w in zip(self.lines, self.weights):
-            ly = l.evaluate(x)
-            if approx_above(by, ly) and approx_above(ly, ty):
-                left.append(l)
-                right.append(l)
-                lw.append(w)
-                rw.append(w)
+        for p in self.points:
+            if p[0] < x:
+                left.append(p)
             else:
-                wedge_point = self.top_line.x_intercept(self.bottom_line)
-                intercepts = [l.x_intercept(self.top_line), l.x_intercept(self.bottom_line)]
-                if wedge_point < x:
-                    intercepts = [x for x in intercepts if x > wedge_point]
-                else:
-                    intercepts = [x for x in intercepts if x < wedge_point]
-                if intercepts[0] < x:
-                    left.append(l)
-                    lw.append(w)
-                else:
-                    right.append(l)
-                    rw.append(w)
-        return Trapezoid(self.top_line, self.bottom_line, self.left_x, x, left, lw), \
-                Trapezoid(self.top_line, self.bottom_line, x, self.right_x, right, rw)
+                right.append(p)
+        return Trapezoid(self.top_line, self.bottom_line, self.left_x, x, self.w_lines, left), \
+               Trapezoid(self.top_line, self.bottom_line, x, self.right_x, self.w_lines, right)
 
-    def getWeight(self):
+
+    def get_weight(self):
         return self.weight
 
     def inside_closed(self, pt):
@@ -354,15 +437,81 @@ class Trapezoid(Node):
             # TODO
             pass
 
+    def line_crosses(self, line):
+        # print(line.below_interval(self.top_line, self.left_x, self.right_x))
+        # print(line.above_interval(self.bottom_line, self.left_x, self.right_x))
+        # print(line.interval_crossed_by_closed(self.top_line, self.left_x, self.right_x))
+        # print(line.interval_crossed_by_closed(self.bottom_line, self.left_x, self.right_x))
+        if self.top_line.b == float("inf") and self.bottom_line.b == -float("inf"):
+            return True
+        elif self.top_line.b == float("inf"):
+            return line.above_interval(self.bottom_line, self.left_x, self.right_x) or \
+                   line.interval_crossed_by(self.bottom_line, self.left_x, self.right_x)
+        elif self.bottom_line.b == float("-inf"):
+            return line.below_interval(self.top_line, self.left_x, self.right_x) or \
+                   line.interval_crossed_by(self.top_line, self.left_x, self.right_x)
+        elif (line.below_interval(self.top_line, self.left_x, self.right_x) and
+                line.above_interval(self.bottom_line, self.left_x, self.right_x)):
+                    return True
+        elif line.interval_crossed_by_closed(self.top_line, self.left_x, self.right_x):
+            return True
+        else:
+            return line.interval_crossed_by_closed(self.bottom_line, self.left_x, self.right_x)
+
+    def get_vertices(self):
+        def get_vertex(l, x):
+            return (x, l.evaluate(x))
+        vertices = [get_vertex(self.top_line, self.left_x), get_vertex(self.bottom_line, self.left_x),
+                    get_vertex(self.top_line, self.right_x), get_vertex(self.bottom_line, self.right_x)]
+        out_v = []
+        for v in vertices:
+            if abs(v[0]) != float("inf") and abs(v[1]) != float("inf"):
+                out_v.append(v)
+        return out_v
+
 
 class Seidel_Tree:
-    def  __init__(self, crossing_lines=list(), weights=None):
-        if weights is None:
-            weights = [1 for i in range(len(crossing_lines))]
-        self.root = Trapezoid(lines=crossing_lines, weights=weights)
+
+    def is_active(self, node):
+        return node.get_weight() > self.min_weight and len(node.get_points()) > self.min_p_count
+
+    def register_leaf(self, node):
+        if self.is_active(node):
+            self.active_set.add(node)
+
+    def unregister(self, node):
+        if node in self.active_set:
+            self.active_set.remove(node)
+
+    def get_heaviest(self):
+        return max(self.get_trapezoids(), key=lambda x: x.pt_count())
+
+    def __init__(self, weighted_lines,  points=list(), min_weight=-1, min_p_count=-1):
+
+        self.root = Trapezoid(w_lines=weighted_lines, points=points)
+        self.lines = set()
+        self.min_weight = min_weight
+        self.min_p_count = min_p_count
+
+        self.active_set = set()
+        self.register_leaf(self.root)
 
     def __repr__(self):
         return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
+
+    def get_trapezoids(self) -> Trapezoid:
+        stack = deque([self.root])
+
+        all_traps = []
+        while stack:
+            curr_node = stack.pop()
+            if curr_node.is_terminal():
+                all_traps.append(curr_node)
+            else:
+                stack.append(curr_node.get_l_or_b())
+                stack.append(curr_node.get_r_or_a())
+
+        return all_traps
 
     def visualize(self, file_name):
         def toOutputString(n):
@@ -374,32 +523,42 @@ class Seidel_Tree:
                 name = "V"
             return name
 
-        def gen_label(n):
+        def gen_label(n, l):
             if isinstance(n, Segment_Node):
-                name = "Line(%f, %f, %f, %f)" % (n.segment.a, n.segment.b, n.segment.xl, n.segment.xr)
+                name = "Line(%f, %f, %f, %f, %d), %s" % (n.segment.a, n.segment.b, n.segment.xl,
+                                                         n.segment.xr, n.segment.id, l)
             elif isinstance(n, Trapezoid):
-                name = "T(%d)"%(n.weight,)
+                name = ("T(%d, %d, Line(%f, %f), \n " +
+                       " Line(%f, %f)) \n" +
+                        " lx=%f, rx=%f \n" +
+                        "lty=%f, lby=%f, rty=%f rby=%f \n" +
+                        "%s ")%(n.id, n.weight,
+                                         n.top_line.a, n.top_line.b,
+                                         n.bottom_line.a, n.bottom_line.b,
+                                         n.left_x, n.right_x,
+                                         n.top_line.evaluate(n.left_x), n.bottom_line.evaluate(n.left_x),
+                                         n.top_line.evaluate(n.right_x),n.bottom_line.evaluate(n.right_x), l)
             elif isinstance(n, Vertical_Node):
-                name = "V(%f)" % (n.x,)
+                name = "V(%f), %s" % (n.x, l)
             return name
-        stack = deque([(self.root, 0)])
-        graph = pydot.Dot(graph_type='graph')
+        stack = deque([(self.root, 0, "r")])
+        graph = pydot.Dot(graph_type='graph', rankdir="LR")
         while stack:
-            curr_node, nid = stack.pop()
-            node = pydot.Node("%s_%d"% (toOutputString(curr_node), nid), label=gen_label(curr_node))
+            curr_node, nid, l = stack.pop()
+            node = pydot.Node("%s_%d"% (toOutputString(curr_node), nid), label=gen_label(curr_node, l))
             graph.add_node(node)
             if not curr_node.is_terminal():
                 if curr_node.get_r_or_a() is not None:
                     edge = pydot.Edge("%s_%d"% (toOutputString(curr_node), nid), "%s_%d" %
                                  (toOutputString(curr_node.get_r_or_a()), 2 * nid + 1))
                     graph.add_edge(edge)
-                    stack.append((curr_node.get_r_or_a(), 2 * nid + 1))
+                    stack.append((curr_node.get_r_or_a(), 2 * nid + 1, "r_a"))
                 if curr_node.get_l_or_b() is not None:
                     edge = pydot.Edge("%s_%d" % (toOutputString(curr_node), nid), "%s_%d" %
                                   (toOutputString(curr_node.get_l_or_b()), 2 * nid + 2))
 
                     graph.add_edge(edge)
-                    stack.append((curr_node.get_l_or_b(), 2 * nid + 2))
+                    stack.append((curr_node.get_l_or_b(), 2 * nid + 2, "l_b"))
         graph.write_png(file_name + ".png")
 
     def visualize_arrangement(self, ax, min_x, max_x, min_y, max_y):
@@ -414,7 +573,6 @@ class Seidel_Tree:
         while stack:
             curr_node, segments = stack.pop()
             if not curr_node.is_terminal():
-
                 if isinstance(curr_node, Segment_Node):
                     e = curr_node.segment
                     x1 = restrict(e.xl, min_x, max_x)
@@ -429,7 +587,6 @@ class Seidel_Tree:
                     ax.plot([x1, x2], [y1, y2])
                     segments += [e]
                 elif isinstance(curr_node, Vertical_Node):
-                    print(segments)
                     top_y = max_val(segments, curr_node.x)
                     bottom_y = min_val(segments, curr_node.x)
                     if min_x < curr_node.x < max_x:
@@ -438,6 +595,33 @@ class Seidel_Tree:
                     stack.append((curr_node.get_r_or_a(), segments))
                 if curr_node.get_l_or_b() is not None:
                     stack.append((curr_node.get_l_or_b(), segments))
+
+    def visualize_trapezoids(self, ax, min_x, max_x, min_y, max_y):
+        """
+        Picks a few trapezoids and colors them based on the color list. If 4 colors are passed in then
+        four trapezoids will be colored. Uses the
+        :param ax:
+        :param min_x:
+        :param max_x:
+        :param min_y:
+        :param max_y:
+        :param color_list:
+        :return:
+        """
+        all_traps = self.get_trapezoids()
+        random.shuffle(all_traps)
+
+        # ix = 0
+        # curr_node = all_traps[6]
+        # print(len(all_traps))
+        # curr_node.visualize(ax, min_x, max_x, min_y, max_y, viz_lines=False, color=color_list[0])
+
+        for curr_node in all_traps:
+            curr_node.visualize(ax, min_x, max_x, min_y, max_y, viz_lines=False)
+        """
+        for curr_node in all_traps[len(color_list):]:
+            curr_node.visualize(ax, min_x, max_x, min_y, max_y)
+        """
 
     def locate_pt(self, pt, curr_node=None):
         """
@@ -478,6 +662,7 @@ class Seidel_Tree:
         cross and their direct parents.
         Note this allows for segments that cross other segments.
         """
+
         curr_node = self.root if curr_node is None else curr_node
         node_stack = deque([(curr_node, None)])
         while node_stack:
@@ -492,68 +677,46 @@ class Seidel_Tree:
             else:
                 node_stack.append((curr_node.get_l_or_b(), curr_node))
 
-    def left_child(self, segment, curr_node):
-        if curr_node.is_terminal():
-            return None
-        elif curr_node.get_l_or_b() and curr_node.get_l_or_b().crosses(segment):
-            return curr_node.get_l_or_b()
-        else:
-            return None
-
-    def right_child(self, segment, curr_node):
-        if curr_node.is_terminal():
-            return None
-        elif curr_node.get_r_or_a() and curr_node.get_r_or_a().crosses(segment):
-            return curr_node.get_r_or_a()
-        else:
-            return None
-
-    def line_to_segments(self, line, curr_node=None):
-        """
-        Converts a line into many seperate segments.
-        """
-        curr_node = self.root if curr_node is None else curr_node
-        full_segment = Segment(line, -float("inf"), float("inf"))
-        node_stack = deque()
-        x_vals = [-float("inf")]
-        while True:
-            if curr_node is not None:
-                node_stack.append(curr_node)
-                curr_node = self.left_child(full_segment, curr_node)
-            else:
-                if not node_stack:
-                    break
-                curr_node = node_stack.pop()
-                if isinstance(curr_node, Segment_Node): #and curr_node.segment.crossed_by(line):
-                    x_vals.append(curr_node.segment.x_intercept(full_segment))
-                curr_node = self.right_child(full_segment, curr_node)
-
-        # x_vals should be in increasing order
-        x_vals.append(float("inf"))
-        segments = []
-        print(x_vals)
-        x_vals = sorted(x_vals)
-        for xl, xr in zip(x_vals[:-1], x_vals[1:]):
-            segments.append(Segment(line, xl, xr))
-        return segments
-
-    def insert_splitter(self, line, right, curr_node=None, min_weight=-1):
+    def insert_splitter(self, line, right, curr_node=None, parent_node=None):
         """
         :return:
         """
+
         curr_node = self.root if curr_node is None else curr_node
-        terminal_node, parent_node = self.locate_segment_end(line, right, curr_node=curr_node)
 
         if right:
             x_sp = line.xr
         else:
             x_sp = line.xl
-        if isinstance(parent_node, Vertical_Node) and approx_eq(parent_node.x, x_sp):
+
+
+        l_parent_node = None
+        while not curr_node.is_terminal():
+            l_parent_node = curr_node
+            if isinstance(l_parent_node, Vertical_Node) and approx_eq(l_parent_node.x, x_sp):
+                return
+            elif curr_node.hinted_r_or_a(line, right):
+                curr_node = curr_node.get_r_or_a()
+            else:
+                curr_node = curr_node.get_l_or_b()
+        terminal_node = curr_node
+
+        if not self.is_active(terminal_node):
             return
 
-        if terminal_node.getWeight() <= min_weight:
+        if l_parent_node is not None:
+            parent_node = l_parent_node
+
+        if terminal_node.left_x > x_sp or terminal_node.right_x < x_sp:
+            #self.visualize("Error_occured%f_%d"%(x_sp, terminal_node.id))
+            #print("got here")
             return
+
         left_term, right_term = terminal_node.vert_split(x_sp)
+        self.unregister(terminal_node)
+        self.register_leaf(left_term)
+        self.register_leaf(right_term)
+
         if parent_node is None:
             self.root = Vertical_Node(x_sp, left_term, right_term)
         elif parent_node.get_l_or_b() == terminal_node:
@@ -561,64 +724,538 @@ class Seidel_Tree:
         else:
             parent_node.set_r_or_a(Vertical_Node(x_sp, left_term, right_term))
 
-    def insert_segment(self, seg, curr_node=None, min_weight=-1):
+        return left_term, right_term
+
+
+
+    def insert_line(self, line, curr_node=None, merge=False):
         """
-        The segment is assumed to not cross other line segments.
-        :return:
+        Converts a line into many seperate segments.
         """
+        for l in self.lines:
+            if l.same_line(line):
+                return
+        else:
+            self.lines.add(line)
+
         curr_node = self.root if curr_node is None else curr_node
-        for (n, p) in self.locate_segment(seg, curr_node=curr_node):
-            if n.getWeight() <= min_weight:
-                continue
-            upper, lower = n.horz_split(seg)
-            new_s = Segment_Node(seg, upper, lower)
-            if p is None:
-                self.root = new_s
-            elif p.get_l_or_b() == n:
-                p.set_l_or_b(new_s)
+        full_segment = Segment(line, -float("inf"), float("inf"))
+        node_stack = deque([(curr_node, None, full_segment)])
+
+        upper_zone = []
+        lower_zone = []
+        while node_stack:
+
+            curr_node, parent_node, curr_segment = node_stack.pop()
+            if curr_node.is_terminal():
+                if self.is_active(curr_node):
+                    upper, lower = curr_node.horz_split(curr_segment)
+                    upper_zone.append((upper, parent_node))
+                    lower_zone.append((lower, parent_node))
+                    self.unregister(curr_node)
+                    self.register_leaf(upper)
+                    self.register_leaf(lower)
+
+                    new_s = Segment_Node(curr_segment, upper, lower)
+                    if parent_node is None:
+                        self.root = new_s
+                    elif parent_node.get_l_or_b() == curr_node:
+                        parent_node.set_l_or_b(new_s)
+                    else:
+                        parent_node.set_r_or_a(new_s)
+                else:
+                    continue
+            elif curr_node.crosses(curr_segment):
+                if isinstance(curr_node, Segment_Node):
+                    # upper right determines if we are inserting the right upper vertex or the left upper vertex
+                    upper_split, lower_split, upper_right = curr_segment.split(curr_node.segment)
+                    if upper_right:
+                        self.insert_splitter(lower_split, False, curr_node=curr_node.get_l_or_b(),
+                                             parent_node=curr_node)
+                        self.insert_splitter(upper_split, True, curr_node=curr_node.get_r_or_a(),
+                                             parent_node=curr_node)
+                    else:
+                        self.insert_splitter(lower_split, True, curr_node=curr_node.get_l_or_b(),
+                                             parent_node=curr_node)
+                        self.insert_splitter(upper_split, False, curr_node=curr_node.get_r_or_a(),
+                                             parent_node=curr_node)
+
+                    node_stack.append((curr_node.get_l_or_b(), curr_node, lower_split))
+                    node_stack.append((curr_node.get_r_or_a(), curr_node, upper_split))
+                elif isinstance(curr_node, Vertical_Node):
+                    left_s, right_s = curr_segment.hsplit(curr_node.x)
+                    node_stack.append((curr_node.get_l_or_b(), curr_node, left_s))
+                    node_stack.append((curr_node.get_r_or_a(), curr_node, right_s))
+
+            elif curr_node.segment_r_or_a(curr_segment):
+                node_stack.append((curr_node.get_r_or_a(), curr_node, curr_segment))
             else:
-                p.set_r_or_a(new_s)
+                node_stack.append((curr_node.get_l_or_b(), curr_node, curr_segment))
 
-    def insert_full_segment(self, seg, curr_node=None, min_weight=-1):
-        """
-        The segment is assumed to not cross other line segments.
-        :return:
-        """
-        curr_node = self.root if curr_node is None else curr_node
-        if seg.xl != float("-inf"):
-            self.insert_splitter(seg, False, curr_node, min_weight=min_weight)
-        if seg.xr != float("inf"):
-            self.insert_splitter(seg, True, curr_node, min_weight=min_weight)
-        self.insert_segment(seg, curr_node, min_weight=min_weight)
+        def merge_traps(zone, key):
+            line_matchings = {}
+            for u_l, p in zone:
+                if key(u_l) in line_matchings:
+                    line_matchings[key(u_l)].append((u_l, p))
+                else:
+                    line_matchings[key(u_l)] = [(u_l, p)]
 
-    def insert_line(self, line, curr_node=None, min_weight=-1):
-        curr_node = self.root if curr_node is None else curr_node
-        segments = self.line_to_segments(line, curr_node=curr_node)
-        for seg in segments:
-            if approx_eq(seg.xl, seg.xr):
-                continue
-            print(seg)
+            for tp_lines in line_matchings:
+                merge_traps = line_matchings[tp_lines][0][0]
+                m_lines = set(merge_traps.w_lines)
+                m_points = set(merge_traps.points)
 
-            self.insert_full_segment(seg, curr_node=curr_node, min_weight=min_weight)
+                for (trap, parent_node) in line_matchings[tp_lines][1:]:
+                    merge_traps.left_x = min(merge_traps.left_x, trap.left_x)
+                    merge_traps.right_x = max(merge_traps.right_x, trap.right_x)
+                    m_lines.update(trap.w_lines)
+                    m_points.update(trap.points)
+                    if parent_node.get_l_or_b() == trap:
+                        parent_node.set_l_or_b(merge_traps)
+                    else:
+                        parent_node.set_r_or_a(merge_traps)
+                merge_traps.w_lines = list(m_lines)
+                merge_traps.points = list(m_points)
+
+        if merge:
+            merge_traps(upper_zone, lambda x: x.top_line)
+            merge_traps(lower_zone, lambda x: x.bottom_line)
 
 
-if __name__ == "__main__":
-    #arrange = Arrangement([random_box_line() for i in range(10)])
-    #assume the domain is a 1 by 1 square.
-    #construct the lines so they extend from the left side to the right side.
-    max_x = 2
-    min_x = -2
-    tree = Seidel_Tree([random_box_line() for i in range(100)], [1 for i in range(100)])
-    matplotlib.rcParams['figure.figsize'] = [20.0, 20.0]
-    for i in range(6):
-        #f, (a1, a2) = plt.subplots(2, 1)
-        new_line = random_box_line()
-        #print(new_line)
-        #arrange.insert(new_line)
-        tree.insert_line(new_line, min_weight=10)
 
-        #print(tree)
-    tree.visualize("testing")
+def to_line(p1, p2):
+    return Line((p1[1] - p2[1]) / (p1[0] - p2[0]), p1[1] - (p1[1] - p2[1]) / (p1[0] - p2[0]) * p1[0])
+
+
+def compute_cutting(test_set, weight_map, points, r) -> Seidel_Tree:
+    total_weight = sum(weight_map[l] for l in test_set)
+    min_weight = total_weight / r
+    # Cutting size
+    # min_pt_count =  len(points) / (12 * r * r) - 1
+    lines = weighted_shuffle(test_set, [weight_map[l] / float(total_weight) for l in test_set])
+    tree = Seidel_Tree([(l,weight_map[l]) for l in lines],
+                       points,
+                       min_weight=min_weight)
+    for l in test_set:
+        if len(tree.active_set) == 0:
+            return tree
+        tree.insert_line(l)
+    return tree
+
+    #return tree
+
+
+def plot_cutting_size(pts, l_s, h_s, k, r=4):
+
+    line_count = []
+    trap_count = []
+    for i in np.linspace(l_s, h_s, k):
+        print(i)
+        test_set = []
+        rand_pts = random.sample(pts, int(math.sqrt(i)))
+
+        for p1, p2 in itertools.combinations(rand_pts, 2):
+            test_set.append(to_line(p1, p2))
+        random.shuffle(test_set)
+        weight_map = {t: 1 for t in test_set}
+        tree = compute_cutting(test_set, weight_map, pts, r)
+        trap_count.append(len(tree.get_trapezoids()) / float(r * r))
+        line_count.append(len(test_set))
+
     f, a = plt.subplots()
-    tree.visualize_arrangement(a, -5, 5, -5, 5)
+    a.scatter(line_count, trap_count)
     plt.show()
+
+def plot_cutting_size3(pts, l_s, h_s, k, r=4):
+
+    line_count = []
+    trap_count = []
+    for i in np.linspace(l_s, h_s, k):
+        print(i)
+        test_set = []
+        for _ in range(int(i)):
+            [p1, p2] = random.sample(pts, 2)
+            test_set.append(to_line(p1, p2))
+        weight_map = {t: 1 for t in test_set}
+        tree = compute_cutting(test_set, weight_map, pts, r)
+        trap_count.append(len(tree.get_trapezoids()) / float(r * r))
+        line_count.append(len(test_set))
+
+    f, a = plt.subplots()
+    a.scatter(line_count, trap_count)
+    plt.show()
+
+def plot_cutting_size2(pts, l_s, h_s, k, r=4):
+    line_count = []
+    trap_count = []
+    for i in np.linspace(l_s, h_s, k):
+        print(i)
+        test_set = [random_box_line() for j in range(int(i))]
+        weight_map = {t: 1 for t in test_set}
+        tree = compute_cutting(test_set, weight_map, pts, r)
+        trap_count.append(len(tree.get_trapezoids()) / float(r * r))
+        line_count.append(len(test_set))
+
+    f, a = plt.subplots()
+    a.scatter(line_count, trap_count)
+    plt.show()
+
+
+def find_bad_sequence():
+    global trigered
+
+    r = 4
+    while not trigered:
+        print("tested")
+
+        pts = [(random.random(), random.random()) for i in range(100)]
+        w_lines = []
+        rand_pts = random.sample(pts, 20)
+        lines = dual_cutting(pts, 2)
+        for l in lines:
+            w_lines.append((l, 1))
+        random.shuffle(w_lines)
+        total_weight = sum(w for l, w in w_lines)
+        min_weight = total_weight / r
+
+        tree = Seidel_Tree(w_lines, points=pts, min_weight=min_weight, min_p_count=-1)
+        for i in range(3):
+            new_line, _ = w_lines[i]
+            tree.insert_line(new_line)
+            if trigered:
+                print(w_lines)
+                print(pts)
+                print(i)
+                return
+
+
+def to_dual_line(pt):
+    return Line(-pt[0], pt[1])
+
+
+def deduplicate_points(pts):
+    if not pts:
+        return []
+    s_pts_x = sorted(pts, key=lambda x: x[0])
+
+    curr_p = s_pts_x[0]
+    groups = [[curr_p]]
+    for p in s_pts_x[1:]:
+        if approx_eq(curr_p[0], p[0]):
+            groups[-1].append(p)
+        else:
+            curr_p = p
+            groups.append([p])
+    not_duplicate = []
+    for g in groups:
+        g.sort(key=lambda x: x[1])
+        c_p = g[0]
+        not_duplicate.append(c_p)
+        for p in g[1:]:
+            if not approx_eq(c_p[1], p[1]):
+                not_duplicate.append(p)
+                c_p = p
+
+    return not_duplicate
+
+
+def remove_not_in_pts(pts, vertices):
+    not_new = []
+    for p1 in vertices:
+        for p2 in pts:
+            if approx_eq((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2, 0):
+                not_new.append(p2)
+                break
+    return not_new
+
+#find_bad_sequence()
+def dual_cutting(pts, r):
+    dual_lines = []
+    for p in pts:
+        dual_lines.append(to_dual_line(p))
+    random.shuffle(dual_lines)
+    tree = compute_cutting(dual_lines, {l:1 for l in dual_lines}, [], r)
+    vertices = []
+    for trap in tree.get_trapezoids():
+        vertices.extend(trap.get_vertices())
+    test_set = []
+    vertices = deduplicate_points(vertices)
+
+    test_set = []
+    for v in vertices:
+        test_set.append(to_dual_line(v))
+    return test_set
+
+
+def visualize_cuttings(line_count, w_line_count, point_count, min_x, max_x, min_y, max_y, r, merge=False):
+    pts = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(point_count)]
+    w_lines = []
+    rand_pts = random.sample(pts, int(math.sqrt(w_line_count)))
+    for p1, p2 in itertools.combinations(rand_pts, 2):
+        w_lines.append((to_line(p1, p2), 1))
+
+    random.shuffle(w_lines)
+
+    tree = Seidel_Tree(w_lines, points=pts, min_weight=-1, min_p_count=-1)
+    matplotlib.rcParams['figure.figsize'] = [20.0, 20.0]
+    for i in range(line_count):
+        f, a = plt.subplots()
+        a.set_ylim(min_y, max_y)
+        a.set_xlim(min_x, max_x)
+        new_line, _ = w_lines[i]
+
+        tree.insert_line(new_line, merge=merge)
+        tree.visualize_trapezoids(a, min_x, max_x, min_y, max_y)
+        print(new_line)
+        plt.show()
+
+
+def visualize_cuttings2(point_count, min_x, max_x, min_y, max_y, t, r2, merge=False):
+    pts = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(point_count)]
+    def one_gen():
+        while True:
+            yield 1
+
+    w_lines = list(zip(dual_cutting(pts, t), one_gen()))
+    print(len(w_lines))
+    print(w_lines)
+    random.shuffle(w_lines)
+
+    min_weight = len(w_lines) / r2 - 1
+    # Cutting size
+    min_pt_count = len(pts) / (18 * r2 * r2) - 1
+    tree = Seidel_Tree(w_lines, points=pts, min_weight=min_weight, min_p_count=-1)
+    #matplotlib.rcParams['figure.figsize'] = [20.0, 20.0]
+    for l in w_lines:
+        f, a = plt.subplots()
+        a.set_ylim(min_y, max_y)
+        a.set_xlim(min_x, max_x)
+        print("here")
+        tree.insert_line(l[0], merge=merge)
+        print("inserted")
+        tree.visualize_trapezoids(a, min_x, max_x, min_y, max_y)
+        plt.show()
+
+
+def visualize_cuttings3(point_count, min_x, max_x, min_y, max_y, t, r2, merge=False):
+    pts = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(point_count)]
+
+    lines = dual_cutting(pts, t)
+
+    random.shuffle(lines)
+
+    min_weight = len(lines) / r2 - 1
+    # Cutting size
+    min_pt_count = len(pts) / (18 * r2 * r2) - 1
+    tree = compute_cutting(lines, {l:1 for l in lines}, pts, r2)
+    matplotlib.rcParams['figure.figsize'] = [20.0, 20.0]
+    f, a = plt.subplots()
+    a.set_ylim(min_y, max_y)
+    a.set_xlim(min_x, max_x)
+
+    tree.visualize_trapezoids(a, min_x, max_x, min_y, max_y)
+    x, y = zip(*pts)
+
+
+    a.plot(list(x), list(y), 'x')
+    plt.show()
+
+
+# pts = [(random.random(), random.random()) for k in range(10000)]
+# plot_cutting_size(pts, 10, 10000, 10)
+
+#find_bad_sequence()
+
+#visualize_cuttings3(1000, -4, 4, -4, 4, 2, 16)
+
+# point_count = 10000
+# pts = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(point_count)]
+# lines = []
+# rand_pts = random.sample(pts, 20)
+# for p1, p2 in itertools.combinations(rand_pts, 2):
+#     lines.append(to_line(p1, p2))
+# tree = compute_cutting(lines, {l:1 for l in lines}, pts, 16)
+
+
+#error_plot(10000, 10, 400, 40, r=4, t=2)
+# pts = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(10000)]
+# lines = dual_cutting(pts, 2)
+# print(len(lines))
+# f, ax = plt.subplots()
+# ax.set_ylim(-2, 2)
+# ax.set_xlim(-2, 2)
+# for l in lines:
+#     ax.plot([-2, 2], [l.evaluate(-2), l.evaluate(2)])
+# plt.show()
+
+
+#
+
+# plot_cutting_size(pts, 16, 4000, 80)
+#plot_cutting_size2(pts, 16, 5000, 80)
+# #compute_cutting()
+#error_plot(pts, 10, 400, 40, r=2, z=50)
+
+
+# tree = partition_tree(pts, 2, 20, z=1000)
+# f, a = plt.subplots()
+# # #
+# tree.visualize(a, -5, 5, -5, 5, viz_lines=False, color = 'r')
+# xs, ys = zip(*pts)
+# a.scatter(xs, ys)
+# plt.show()
+
+
+# big_sample = [(random.random(), random.random()) for i in range(1000)]
+# times = []
+# r_vals = []
+# for i in range(1, 20):
+#     s = time.time()
+#     sampled_pts, sampled_weights = partitions(big_sample, 4, 200, z=(i * 2))
+#     times.append(time.time() - s)
+#     r_vals.append(2 * i)
+#     print(2 * i)
+#
+# f, a = plt.subplots()
+# a.scatter(r_vals, times)
+# plt.show()
+
+"""
+big_sample = [(random.random(), random.random()) for i in range(1000)]
+times = []
+r_vals = []
+for i in range(1, 16):
+    s = time.time()
+    sampled_pts, sampled_weights = partitions(big_sample, 2 * int(i), 200)
+    times.append(time.time() - s)
+    r_vals.append(2 * int(i))
+    print(2 * i)
+
+f, a = plt.subplots()
+a.scatter(r_vals, times)
+plt.show()
+"""
+# if __name__ == "__main__":
+#     #arrange = Arrangement([random_box_line() for i in range(10)])
+#     #assume the domain is a 1 by 1 square.
+#     #construct the lines so they extend from the left side to the right side.
+#     max_x = 2
+#     min_x = -2
+#     # tree = Seidel_Tree([random_box_line() for i in range(100)], [1 for i in range(100)], min_weight=30)
+#     matplotlib.rcParams['figure.figsize'] = [20.0, 20.0]
+#     pts = [(random.random(), random.random()) for i in range(1000)]
+#     sampled_pts, sampled_weights = partitions(pts, 16, 400)
+#
+#     f, a = plt.subplots()
+#     x_vals, y_vals = zip(*sampled_pts)
+#     a.scatter(x_vals, y_vals)
+#     plt.show()
+
+# if __name__ == "__main__":
+#     #arrange = Arrangement([random_box_line() for i in range(10)])
+#     #assume the domain is a 1 by 1 square.
+#     #construct the lines so they extend from the left side to the right side.
+#     max_x = 2
+#     min_x = -2
+#     # tree = Seidel_Tree([random_box_line() for i in range(100)], [1 for i in range(100)], min_weight=30)
+#     matplotlib.rcParams['figure.figsize'] = [20.0, 20.0]
+#     # for i in range(50):
+#     #     #f, (a1, a2) = plt.subplots(2, 1)
+#     #     new_line = random_box_line()
+#     #     print(new_line)
+#     #     #arrange.insert(new_line)
+#     #     tree.insert_line(new_line)
+#     #     #tree.visualize("testing_%d"%(i,))
+#     #     #print(tree)
+#     lines = [random_box_line() for i in range(1000)]
+#     weights = {l: 1 for l in lines}
+#
+#     tree = compute_cutting(lines, weights, 4)
+#
+#     f, a = plt.subplots()
+#     #tree.visualize_trapezoids(a, -10, 10, -10, 10, color_list=['r'])
+#     tree.visualize_arrangement(a, -5, 5, -5, 5)
+#     plt.show()
+
+# if __name__ == "__main__":
+#     l = Line(**{   'a': -0.4976264579860905, 'b': 0.3526024541774099})
+#     t = Trapezoid(top_line=Line(**{   'a': 0, 'b': float("inf")}),
+#               bottom_line=Line(**{'a': -0.36399907743655024, 'b': 0.2901120445807751}),
+#               left_x=-float("inf"), right_x=-0.8119035028412716, lines=[l], weights=[1])
+#     f, a = plt.subplots()
+#     t.visualize(a, -5, 5, -5, 5, viz_lines=True, color = 'r')
+#     plt.show()
+#     print(t.line_crosses(l))
+
+
+# if __name__ == "__main__":
+#     # arrange = Arrangement([random_box_line() for i in range(10)])
+#     # assume the domain is a 1 by 1 square.
+#     # construct the lines so they extend from the left side to the right side.
+#     max_x = 2
+#     min_x = -2
+#     tree = Seidel_Tree([random_box_line() for i in range(10)], [1 for i in range(10)])
+#     matplotlib.rcParams['figure.figsize'] = [20.0, 20.0]
+#     lines = [Line(**{ 'a': 0.5360426951034875,
+#                         'b': 0.8326691657946446}),
+#                         Line(**{   'a': -0.0480690624799861,
+#                             'b': 0.49243669185492167}),
+#                         Line(**{   'a': 0.4680545566595835,
+#                             'b': 0.8112910112858986}),
+#                         Line(**{   'a': 0.3898850932855328,
+#                             'b': 0.8150769095233331})]
+#
+#     i = 0
+#     for new_line in lines[:-1]:
+#         # f, (a1, a2) = plt.subplots(2, 1)
+#         #new_line = random_box_line()
+#         #print(new_line)
+#         # arrange.insert(new_line)
+#         tree.insert_line(new_line, min_weight=-1)
+#         tree.visualize("testing_%d"%(i,))
+#         i+=1
+#         # print(tree)
+#
+#     f, a = plt.subplots()
+#     tree.insert_line(lines[-1], min_weight=-1)
+#
+#     #tree.visualize_trapezoids(a, -5, 5, -5, 5, color_list=['r'])
+#     tree.visualize_arrangement(a, -5, 5, -5, 5)
+#     plt.show()
+
+# if __name__ == "__main__":
+#     #arrange = Arrangement([random_box_line() for i in range(10)])
+#     #assume the domain is a 1 by 1 square.
+#     #construct the lines so they extend from the left side to the right side.
+#     max_x = 2
+#     min_x = -2
+#     tree = Seidel_Tree([random_box_line() for i in range(100)], [1 for i in range(100)])
+#     matplotlib.rcParams['figure.figsize'] = [20.0, 20.0]
+#     lines = [Line(**{'a': -0.09945156480785433,
+#             'b': 0.5699475893302439}),
+#         Line(**{'a': 0.20333947989923118,
+#             'b': 0.41909911052666216}),
+#         Line(**{'a': -0.37812378855716655,
+#             'b': 0.2988252079696353})]
+#     i = 0
+#
+#     for new_line in lines[:-1]:
+#         #f, (a1, a2) = plt.subplots(2, 1)
+#         #arrange.insert(new_line)
+#         tree.insert_line(new_line, min_weight=10)
+#         tree.visualize("testing_%d"%(i,))
+#         i+=1
+#         f, a = plt.subplots()
+#         tree.visualize_arrangement(a, -5, 5, -5, 5)
+#         plt.show()
+#         #print(tree)
+#
+#     new_line = lines[-1]
+#     tree.insert_line(new_line, min_weight=10)
+#     tree.visualize("testing_%d"%(i,))
+#     i+=1
+#     f, a = plt.subplots()
+#     tree.visualize_arrangement(a, -5, 5, -5, 5)
+#     plt.show()
+#
+#     plt.show()
