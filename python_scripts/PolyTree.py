@@ -1,11 +1,13 @@
-from SeidelTree import to_line, \
-    Segment, Line, approx_above, approx_eq, \
-    weighted_shuffle
+from Cuttings import approx_above, \
+    approx_eq, \
+    approx_eq_above, \
+    weighted_shuffle, \
+    Line
 import pprint
 import itertools
 import random
 from collections import deque
-from Cuttings import close_point
+from SeidelTree import Segment, to_line
 import math
 import pydot
 import numpy as np
@@ -18,6 +20,119 @@ id = 0
 class Node:
     def is_terminal(self):
         return False
+
+
+def det2(a1, a2, b1, b2):
+    return a1 * b2 - a2 * b1
+
+#
+# class HLine:
+#
+#     def __init__(self, a, b, c = 1):
+#         self.a = a
+#         self.b = b
+#         self.c = c
+#
+#     def join(self, other):
+#         a = det2(self.b, self.c, other.b, other.c)
+#         b = det2(self.a, self.c, other.a, other.c)
+#         c = det2(self.a, self.b, other.a, other.b)
+#         return HLine(a, b, c)
+#
+#     def evaluate(self, other):
+#         return HLine(self.a * other.a, self.b * other.b, self.c * other.c)
+#
+#     def x_intercept(self, other):
+#         pt = self.join(other)
+#         return pt.a / pt.c
+#
+#     # These compare the first or second coordinates of the Hline
+#     def c1_lt(self, other) -> bool:
+#         return self.a * other.c < other.a * self.c
+#
+#     def c2_lt(self, other) -> bool:
+#         return self.b * other.c < other.b * self.c
+#
+#     def c1_lte(self, other) -> bool:
+#         return self.a * other.c <= other.a * self.c
+#
+#     def c2_lte(self, other) -> bool:
+#         return self.b * other.c <= other.b * self.c
+#
+#     def c1_approx_lt(self, other) -> bool:
+#         return approx_above(self.a * other.c < other.a * self.c)
+#
+#     def c2_approx_lt(self, other) -> bool:
+#         return approx_above(self.b * other.c, other.b * self.c)
+#
+#     def c1_approx_lte(self, other) -> bool:
+#         return approx_eq_above(self.a * other.c < other.a * self.c)
+#
+#     def c2_approx_lte(self, other) -> bool:
+#         return approx_eq_above(self.b * other.c, other.b * self.c)
+#
+#     # These test to see whether the dual is above or below the line.
+#     def dual_lt(self, dual) -> bool:
+#         return 0 < dual.a * self.a + dual.b * self.b + dual.c * self.c
+#
+#     def dual_lte(self, dual) -> bool:
+#         return 0 <= dual.a * self.a + dual.b * self.b + dual.c * self.c
+#
+#     def dual_approx_lt(self, dual) -> bool:
+#         return approx_above(0, dual.a * self.a + dual.b * self.b + dual.c * self.c)
+#
+#     def dual_approx_lte(self, dual) -> bool:
+#         return approx_eq_above(0, dual.a * self.a + dual.b * self.b + dual.c * self.c)
+#
+#     # These test to see if a line is below a segment or crosses it.
+#
+#     def crossing_interval(self, other, xl, cl, xr, cr):
+#         h_object = self.join(other)
+#         return approx_above(xl * h_object.c, h_object.a * cl) and \
+#                approx_above(h_object.a * cr, xr * h_object.c)
+#
+#     def crossing_interval_closed(self, other, xl, cl, xr, cr):
+#         h_object = self.join(other)
+#         return approx_eq_above(xl * h_object.c, h_object.a * cl) and \
+#                approx_eq_above(h_object.a * cr, xr * h_object.c)
+#
+#
+#     def above_closed_interval(self, other, xl, xr, cl=1, cr=1):
+#         h_object = self.join(other)
+#         if approx_eq(h_object.c, 0.0):
+#             return approx_eq_above(other.c / other.b, self.c / self.b)
+#         else:
+#             br = approx_above(h_object.a / h_object.c, xr / cr)
+#             bl = approx_above(xl / cl, h_object.a / h_object.c)
+#             if bl and br:
+#                 return False
+#             elif approx_eq_above(xr / cr, h_object.a / h_object.c):
+#                 return h_object.c < 0
+#             else:
+#                 return h_object.c > 0
+#
+#     def above_interval(self, other, xl, xr, cl=1, cr=1):
+#         h_object = self.join(other)
+#         if approx_eq(h_object.c, 0.0):
+#             return approx_above(other.c / other.b, self.c / self.b)
+#         else:
+#             vr = det2(h_object.a, h_object.c, xr, cr)
+#             vl = det2(h_object.a, h_object.c, xl, cl)
+#
+#             if approx_eq_above(vr, 0):
+#                 return False
+#             elif approx_eq_above(xr / cr, h_object.a / h_object.c):
+#                 return h_object.c < 0
+#             else:
+#                 return h_object.c > 0
+#
+# class HSegment(HLine):
+#     def __init__(self, a, b, c, xl, xr):
+#         super(HSegment, self).__init__(a, b, c)
+#         self.xl = xl
+#         self.xr = xr
+
+#
 
 
 class Segment_Node(Node):
@@ -98,7 +213,7 @@ class Polygon(Node):
     def __repr__(self):
         return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
 
-    def __init__(self, border_lines=list(), w_lines=list(), points=list(), k=8):
+    def __init__(self, border_lines=list(), w_lines=list(), points=list(), k=1000):
         self.border_lines = border_lines
         self.w_lines = w_lines
         self.points = points
@@ -145,14 +260,28 @@ class Polygon(Node):
                 down.append(p)
             else:
                 up.append(p)
+        u_l = []
+        l_l = []
+        #print(self.w_lines)
+        for l, w in self.w_lines:
+            if segment.crossed_by(l):
+                u_s, l_s = l.simple_split(segment)
+                if u_s is not None: u_l.append((u_s, w))
+                if l_l is not None: l_l.append((l_s, w))
+            else:
+                if segment.same_line(l):
+                    continue
+                elif l.above_closed(segment):
+                    u_l.append((l, w))
+                else:
+                    l_l.append((l, w))
 
-        u_w_l, l_w_l = horzontal_split_lines(self.w_lines, segment, key= lambda x: x[0])
         # preserves the order of the lines
         upper_border_lines, lower_border_lines = horzontal_split_lines(self.border_lines, segment)
         upper_border_lines.append(segment)
         lower_border_lines.append(segment)
-        return Polygon(upper_border_lines, u_w_l, up), \
-                Polygon(lower_border_lines, l_w_l, down)
+        return Polygon(upper_border_lines, u_l, up, k=self.k), \
+                Polygon(lower_border_lines, l_l, down, k = self.k)
 
     def score_split(self, segment, vertices):
         u_b_v, l_b_v = horizontal_split_vertices(vertices, segment)
@@ -203,11 +332,12 @@ class PolyTree:
             self.active_set.remove(node)
 
     def get_heaviest(self):
-        return max(self.get_polygons(), key=lambda x: x.pt_count())
+        return max(self.get_leaves(), key=lambda x: x.pt_count())
 
-    def __init__(self, weighted_lines,  points=list(), min_weight=-1, k = 8):
-
-        self.root = Polygon(w_lines=weighted_lines, points=points, k = k)
+    def __init__(self, weighted_lines,  points=list(), min_weight=-1, k = 100):
+        li = -float("inf")
+        ri = float("inf")
+        self.root = Polygon(w_lines=[(Segment(l, li, ri), w) for l, w in weighted_lines], points=points, k = k)
         self.lines = set()
         self.min_weight = min_weight
 
@@ -217,7 +347,7 @@ class PolyTree:
     def __repr__(self):
         return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
 
-    def get_polygons(self):
+    def get_leaves(self):
         stack = deque([self.root])
 
         all_traps = []
@@ -232,7 +362,7 @@ class PolyTree:
         return all_traps
 
     def visualize_arrangement(self, ax, min_x, max_x, min_y, max_y):
-        for poly in self.get_polygons():
+        for poly in self.get_leaves():
             poly.visualize(ax, min_x, max_x, min_y, max_y)
 
     def visualize(self, file_name):
@@ -284,7 +414,7 @@ class PolyTree:
             parent_node.set_a(new_s)
         return upper, lower
 
-    def insert_line(self, line : Line, curr_node=None, merge=False):
+    def insert_line(self, line, curr_node=None, merge=False):
         """
         Converts a line into many seperate segments.
         """
@@ -324,44 +454,47 @@ class PolyTree:
             else:
                 node_stack.append((curr_node.get_b(), curr_node, curr_segment))
 
+    def zone(self, line, curr_node=None):
+        """
+        Returns all the cells this line crosses.
+        """
+
+        curr_node = self.root if curr_node is None else curr_node
+        full_segment = Segment(line, -float("inf"), float("inf"))
+        node_stack = deque([(curr_node, None, full_segment)])
+        while node_stack:
+            curr_node, parent_node, curr_segment = node_stack.pop()
+            if curr_node.is_terminal():
+                yield curr_node
+            elif curr_node.segment.same_line(curr_segment):
+                continue
+            elif curr_node.crosses(curr_segment):
+                upper_split, lower_split, upper_right = curr_segment.split(curr_node.segment)
+                node_stack.append((curr_node.get_b(), curr_node, lower_split))
+                node_stack.append((curr_node.get_a(), curr_node, upper_split))
+            elif curr_node.segment_a(curr_segment):
+                node_stack.append((curr_node.get_a(), curr_node, curr_segment))
+            else:
+                node_stack.append((curr_node.get_b(), curr_node, curr_segment))
+
 def compute_cutting(test_set, weight_map, points, r):
     total_weight = sum(weight_map[l] for l in test_set)
     min_weight = total_weight / r
     # Cutting size
     #min_pt_count =  len(points) / (12 * r * r) - 1
     lines = weighted_shuffle(test_set, [weight_map[l] / float(total_weight) for l in test_set])
-    tree = PolyTree([(l,weight_map[l]) for l in lines],
+    #random.shuffle(test_set)
+    tree = PolyTree([(l, weight_map[l]) for l in lines],
                        points,
                        min_weight=min_weight)
-    for l in test_set:
+    for l in lines:
         if len(tree.active_set) == 0:
             return tree
         tree.insert_line(l)
     return tree
 
-def plot_cutting_size(pts, l_s, h_s, k, r=4):
-
-    line_count = []
-    trap_count = []
-    for i in np.linspace(l_s, h_s, k):
-        print(i)
-        test_set = []
-        rand_pts = random.sample(pts, int(math.sqrt(i)))
-
-        for p1, p2 in itertools.combinations(rand_pts, 2):
-            test_set.append(to_line(p1, p2))
-        random.shuffle(test_set)
-        weight_map = {t: 1 for t in test_set}
-        tree = compute_cutting(test_set, weight_map, pts, r)
-        trap_count.append(len(tree.get_polygons()) / float(r * r))
-        line_count.append(len(test_set))
-
-    f, a = plt.subplots()
-    a.scatter(line_count, trap_count)
-    plt.show()
 
 
-#pts = [(random.random(), random.random()) for k in range(10000)]
-#plot_cutting_size(pts, 10, 10000, 20)
+
 
 #visualize_cuttings3(1000, -4, 4, -4, 4, 2, 16)

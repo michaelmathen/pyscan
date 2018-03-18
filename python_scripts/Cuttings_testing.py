@@ -135,7 +135,34 @@ class LineTestingMethod(unittest.TestCase):
         self.assertTrue(l2.above_interval(l1, x_intercept + .0001, float("inf")), "Not intersect and above inf")
         self.assertFalse(l2.above_interval(l1, float("-inf"), x_intercept - .0001), "Not intersect and below inf")
 
-
+# class HLineTestingMethod(unittest.TestCase):
+#
+#     def test_above_interval(self):
+#         l1 = PolyTree.HLine(**{'a': -0.28002249578781524,
+#                      'b': 0.04670219515585938})
+#         l2 = PolyTree.HLine(**{'a': -0.08642455382757375,
+#                      'b': 0.29438253103340406})
+#
+#         x_intercept = l1.x_intercept(l2)
+#
+#         self.assertFalse(l1.above_interval(l2, float("-inf"), float("inf")), "Infinite interval")
+#         self.assertFalse(l2.above_interval(l1, float("-inf"), float("inf")), "Infinite interval")
+#
+#         #Should intersect on boundary and not be above.
+#         self.assertFalse(l1.above_interval(l2, float("-inf"), x_intercept),
+#                          "Intersect on boundary negative infinite test")
+#         self.assertFalse(l1.above_interval(l2, x_intercept, float("inf")),
+#                          "Intersect on boundary and below infinite test")
+#         self.assertFalse(l2.above_interval(l1, float("-inf"), x_intercept),
+#                          "Intersect on boundary negative infinite test")
+#         self.assertFalse(l2.above_interval(l1, x_intercept, float("inf")),
+#                          "Intersect on boundary and below infinite test")
+#
+#         self.assertTrue(l1.above_interval(l2, float("-inf"), x_intercept - .0001), "Not intersect on boundary and neg inf")
+#         self.assertFalse(l1.above_interval(l2, x_intercept + .0001, float("inf")), "Not intersect and below infinite")
+#
+#         self.assertTrue(l2.above_interval(l1, x_intercept + .0001, float("inf")), "Not intersect and above inf")
+#         self.assertFalse(l2.above_interval(l1, float("-inf"), x_intercept - .0001), "Not intersect and below inf")
 
 class SeidelTesting(unittest.TestCase):
 
@@ -143,17 +170,17 @@ class SeidelTesting(unittest.TestCase):
             pts = [(random.random(), random.random()) for t in range(1000)]
             tree = compute_cutting(testing_set, {t: 1 for t in testing_set}, pts, 4)
             total_points = set()
-            for trap in tree.get_trapezoids():
+            for trap in tree.get_leaves():
                 total_points.update(trap.points)
             self.assertEqual(len(total_points), len(pts), "Losing or gaining points somehow")
 
             t_count = 0
-            for trap in tree.get_trapezoids():
+            for trap in tree.get_leaves():
                 t_count += len(trap.points)
             self.assertEqual(len(total_points), t_count, "Losing or gaining points somehow")
 
             all_pts = set(pts)
-            for trap in tree.get_trapezoids():
+            for trap in tree.get_leaves():
                 all_pts -= set(trap.points)
             self.assertEqual(len(all_pts), 0, "Some of the points have gone missing")
 
@@ -167,7 +194,7 @@ class SeidelTesting(unittest.TestCase):
             tree = compute_cutting(testing_set, weight_map, pts, 4)
             total_weight = sum(weight_map[l] for l in testing_set)
 
-            for trap in tree.get_trapezoids():
+            for trap in tree.get_leaves():
                 self.assertTrue(trap.get_weight() <= total_weight / 4, "%f <= %f" % (trap.get_weight(), total_weight / 4))
 
         def test_losing_points_cells_deg(self):
@@ -181,17 +208,17 @@ class SeidelTesting(unittest.TestCase):
             weight_map = {line: 1 for line in test_set}
             tree = compute_cutting(test_set, weight_map, pts, 4)
             total_points = set()
-            for trap in tree.get_trapezoids():
+            for trap in tree.get_leaves():
                 total_points.update(trap.points)
             self.assertEqual(len(total_points), len(pts), "Losing or gaining points somehow")
 
             t_count = 0
-            for trap in tree.get_trapezoids():
+            for trap in tree.get_leaves():
                 t_count += len(trap.points)
             self.assertEqual(len(total_points), t_count, "Losing or gaining points somehow")
 
             all_pts = set(pts)
-            for trap in tree.get_trapezoids():
+            for trap in tree.get_leaves():
                 all_pts -= set(trap.points)
             self.assertEqual(len(all_pts), 0, "Some of the points have gone missing")
 
@@ -212,11 +239,11 @@ class SeidelTesting(unittest.TestCase):
             total_weight = sum(weight_map[l] for l in test_set)
 
 
-            for trap in tree.get_trapezoids():
+            for trap in tree.get_leaves():
                 self.assertTrue(trap.get_weight() <= total_weight / 4,
                                 "%f <= %f, \n %s" % (trap.get_weight(), total_weight / 4, str(trap)))
 
-            for trap in tree.get_trapezoids():
+            for trap in tree.get_leaves():
                 #print(trap.top_line.x_intercept(trap.bottom_line))
                 self.assertTrue(approx_eq_above(trap.bottom_line.evaluate(trap.left_x),
                                                 trap.top_line.evaluate(trap.left_x)), "Bad trap left %s"%(str(trap),))
@@ -269,17 +296,17 @@ class PolyTesting(unittest.TestCase):
 
     def test_losing_points_cells(self):
         total_points = set()
-        for trap in self.tree.get_polygons():
+        for trap in self.tree.get_leaves():
             total_points.update(trap.points)
         self.assertEqual(len(total_points), len(self.pts), "Losing or gaining points somehow")
 
         t_count = 0
-        for trap in self.tree.get_polygons():
+        for trap in self.tree.get_leaves():
             t_count += len(trap.points)
         self.assertEqual(len(total_points), t_count, "Losing or gaining points somehow")
 
         all_pts = set(self.pts)
-        for trap in self.tree.get_polygons():
+        for trap in self.tree.get_leaves():
             all_pts -= set(trap.points)
         self.assertEqual(len(all_pts), 0, "Some of the points have gone missing")
 
@@ -288,24 +315,24 @@ class PolyTesting(unittest.TestCase):
         Check to see if this is a valid cutting.
         :return:
         """
-        for trap in self.tree.get_polygons():
+        for trap in self.tree.get_leaves():
             self.assertFalse(self.tree.is_active(trap),
                             "%f <= %f" % (trap.get_weight(), self.total_weight / 4))
 
     def test_losing_points_cells_deg(self):
 
         total_points = set()
-        for trap in self.tree.get_polygons():
+        for trap in self.tree.get_leaves():
             total_points.update(trap.points)
         self.assertEqual(len(total_points), len(self.pts), "Losing or gaining points somehow")
 
         t_count = 0
-        for trap in self.tree.get_polygons():
+        for trap in self.tree.get_leaves():
             t_count += len(trap.points)
         self.assertEqual(len(total_points), t_count, "Losing or gaining points somehow")
 
         all_pts = set(self.pts)
-        for trap in self.tree.get_polygons():
+        for trap in self.tree.get_leaves():
             all_pts -= set(trap.points)
         self.assertEqual(len(all_pts), 0, "Some of the points have gone missing")
 

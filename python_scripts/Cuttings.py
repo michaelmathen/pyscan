@@ -200,6 +200,14 @@ class Line:
         y = self.evaluate(pt[0])
         return approx_eq_above(y, pt[1])
 
+    def __eq__(self, other):
+        if isinstance(other, Line):
+            return other.a == self.a and other.b == self.b
+        return False
+
+    def __hash__(self):
+        return hash((self.a, self.b))
+
 
 
 ix_edge = 0

@@ -56,6 +56,20 @@ class Segment(Line):
         else:
             return e2, e1, False
 
+    def simple_split(self, line):
+        x_mid = self.x_intercept(line)
+        if approx_eq(x_mid, self.xl) or approx_eq(x_mid, self.xr):
+            if self.above_closed(line):
+                return self, None
+            else:
+                return None, self
+        e1 = Segment(self, self.xl, x_mid)
+        e2 = Segment(self, x_mid, self.xr)
+        if e1.above_closed(line):
+            return e1, e2
+        else:
+            return e2, e1
+
 
     def below(self, line):
         return self.below_interval(line, self.xl, self.xr)
@@ -484,7 +498,7 @@ class Seidel_Tree:
             self.active_set.remove(node)
 
     def get_heaviest(self):
-        return max(self.get_trapezoids(), key=lambda x: x.pt_count())
+        return max(self.get_leaves(), key=lambda x: x.pt_count())
 
     def __init__(self, weighted_lines,  points=list(), min_weight=-1, min_p_count=-1):
 
@@ -499,7 +513,7 @@ class Seidel_Tree:
     def __repr__(self):
         return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
 
-    def get_trapezoids(self) -> Trapezoid:
+    def get_leaves(self) -> Trapezoid:
         stack = deque([self.root])
 
         all_traps = []
@@ -608,7 +622,7 @@ class Seidel_Tree:
         :param color_list:
         :return:
         """
-        all_traps = self.get_trapezoids()
+        all_traps = self.get_leaves()
         random.shuffle(all_traps)
 
         # ix = 0
@@ -792,6 +806,36 @@ class Seidel_Tree:
             else:
                 node_stack.append((curr_node.get_l_or_b(), curr_node, curr_segment))
 
+        def zone(self, line, curr_node=None):
+            """
+            Converts a line into many seperate segments.
+            """
+
+            curr_node = self.root if curr_node is None else curr_node
+            full_segment = Segment(line, -float("inf"), float("inf"))
+            node_stack = deque([(curr_node, None, full_segment)])
+
+            while node_stack:
+
+                curr_node, parent_node, curr_segment = node_stack.pop()
+                if curr_node.is_terminal():
+                    yield curr_node
+                elif isinstance(curr_node, Segment_Node) and curr_node.segment.same_line(curr_segment):
+                    continue
+                elif curr_node.crosses(curr_segment):
+                    if isinstance(curr_node, Segment_Node):
+                        upper_split, lower_split, upper_right = curr_segment.split(curr_node.segment)
+                        node_stack.append((curr_node.get_l_or_b(), curr_node, lower_split))
+                        node_stack.append((curr_node.get_r_or_a(), curr_node, upper_split))
+                    elif isinstance(curr_node, Vertical_Node):
+                        left_s, right_s = curr_segment.hsplit(curr_node.x)
+                        node_stack.append((curr_node.get_l_or_b(), curr_node, left_s))
+                        node_stack.append((curr_node.get_r_or_a(), curr_node, right_s))
+                elif curr_node.segment_r_or_a(curr_segment):
+                    node_stack.append((curr_node.get_r_or_a(), curr_node, curr_segment))
+                else:
+                    node_stack.append((curr_node.get_l_or_b(), curr_node, curr_segment))
+
         def merge_traps(zone, key):
             line_matchings = {}
             for u_l, p in zone:
@@ -833,10 +877,11 @@ def compute_cutting(test_set, weight_map, points, r) -> Seidel_Tree:
     # Cutting size
     # min_pt_count =  len(points) / (12 * r * r) - 1
     lines = weighted_shuffle(test_set, [weight_map[l] / float(total_weight) for l in test_set])
+    #random.shuffle(test_set)
     tree = Seidel_Tree([(l,weight_map[l]) for l in lines],
                        points,
                        min_weight=min_weight)
-    for l in test_set:
+    for l in lines:
         if len(tree.active_set) == 0:
             return tree
         tree.insert_line(l)
@@ -859,7 +904,7 @@ def plot_cutting_size(pts, l_s, h_s, k, r=4):
         random.shuffle(test_set)
         weight_map = {t: 1 for t in test_set}
         tree = compute_cutting(test_set, weight_map, pts, r)
-        trap_count.append(len(tree.get_trapezoids()) / float(r * r))
+        trap_count.append(len(tree.get_leaves()) / float(r * r))
         line_count.append(len(test_set))
 
     f, a = plt.subplots()
@@ -878,7 +923,7 @@ def plot_cutting_size3(pts, l_s, h_s, k, r=4):
             test_set.append(to_line(p1, p2))
         weight_map = {t: 1 for t in test_set}
         tree = compute_cutting(test_set, weight_map, pts, r)
-        trap_count.append(len(tree.get_trapezoids()) / float(r * r))
+        trap_count.append(len(tree.get_leaves()) / float(r * r))
         line_count.append(len(test_set))
 
     f, a = plt.subplots()
@@ -893,7 +938,7 @@ def plot_cutting_size2(pts, l_s, h_s, k, r=4):
         test_set = [random_box_line() for j in range(int(i))]
         weight_map = {t: 1 for t in test_set}
         tree = compute_cutting(test_set, weight_map, pts, r)
-        trap_count.append(len(tree.get_trapezoids()) / float(r * r))
+        trap_count.append(len(tree.get_leaves()) / float(r * r))
         line_count.append(len(test_set))
 
     f, a = plt.subplots()
@@ -901,62 +946,37 @@ def plot_cutting_size2(pts, l_s, h_s, k, r=4):
     plt.show()
 
 
-def find_bad_sequence():
-    global trigered
-
-    r = 4
-    while not trigered:
-        print("tested")
-
-        pts = [(random.random(), random.random()) for i in range(100)]
-        w_lines = []
-        rand_pts = random.sample(pts, 20)
-        lines = dual_cutting(pts, 2)
-        for l in lines:
-            w_lines.append((l, 1))
-        random.shuffle(w_lines)
-        total_weight = sum(w for l, w in w_lines)
-        min_weight = total_weight / r
-
-        tree = Seidel_Tree(w_lines, points=pts, min_weight=min_weight, min_p_count=-1)
-        for i in range(3):
-            new_line, _ = w_lines[i]
-            tree.insert_line(new_line)
-            if trigered:
-                print(w_lines)
-                print(pts)
-                print(i)
-                return
-
-
-def to_dual_line(pt):
-    return Line(-pt[0], pt[1])
+# def find_bad_sequence():
+#     global trigered
+#
+#     r = 4
+#     while not trigered:
+#         print("tested")
+#
+#         pts = [(random.random(), random.random()) for i in range(100)]
+#         w_lines = []
+#         rand_pts = random.sample(pts, 20)
+#         lines = dual_cutting(pts, 2)
+#         for l in lines:
+#             w_lines.append((l, 1))
+#         random.shuffle(w_lines)
+#         total_weight = sum(w for l, w in w_lines)
+#         min_weight = total_weight / r
+#
+#         tree = Seidel_Tree(w_lines, points=pts, min_weight=min_weight, min_p_count=-1)
+#         for i in range(3):
+#             new_line, _ = w_lines[i]
+#             tree.insert_line(new_line)
+#             if trigered:
+#                 print(w_lines)
+#                 print(pts)
+#                 print(i)
+#                 return
 
 
-def deduplicate_points(pts):
-    if not pts:
-        return []
-    s_pts_x = sorted(pts, key=lambda x: x[0])
 
-    curr_p = s_pts_x[0]
-    groups = [[curr_p]]
-    for p in s_pts_x[1:]:
-        if approx_eq(curr_p[0], p[0]):
-            groups[-1].append(p)
-        else:
-            curr_p = p
-            groups.append([p])
-    not_duplicate = []
-    for g in groups:
-        g.sort(key=lambda x: x[1])
-        c_p = g[0]
-        not_duplicate.append(c_p)
-        for p in g[1:]:
-            if not approx_eq(c_p[1], p[1]):
-                not_duplicate.append(p)
-                c_p = p
 
-    return not_duplicate
+
 
 
 def remove_not_in_pts(pts, vertices):
@@ -968,23 +988,6 @@ def remove_not_in_pts(pts, vertices):
                 break
     return not_new
 
-#find_bad_sequence()
-def dual_cutting(pts, r):
-    dual_lines = []
-    for p in pts:
-        dual_lines.append(to_dual_line(p))
-    random.shuffle(dual_lines)
-    tree = compute_cutting(dual_lines, {l:1 for l in dual_lines}, [], r)
-    vertices = []
-    for trap in tree.get_trapezoids():
-        vertices.extend(trap.get_vertices())
-    test_set = []
-    vertices = deduplicate_points(vertices)
-
-    test_set = []
-    for v in vertices:
-        test_set.append(to_dual_line(v))
-    return test_set
 
 
 def visualize_cuttings(line_count, w_line_count, point_count, min_x, max_x, min_y, max_y, r, merge=False):
@@ -1010,55 +1013,55 @@ def visualize_cuttings(line_count, w_line_count, point_count, min_x, max_x, min_
         plt.show()
 
 
-def visualize_cuttings2(point_count, min_x, max_x, min_y, max_y, t, r2, merge=False):
-    pts = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(point_count)]
-    def one_gen():
-        while True:
-            yield 1
-
-    w_lines = list(zip(dual_cutting(pts, t), one_gen()))
-    print(len(w_lines))
-    print(w_lines)
-    random.shuffle(w_lines)
-
-    min_weight = len(w_lines) / r2 - 1
-    # Cutting size
-    min_pt_count = len(pts) / (18 * r2 * r2) - 1
-    tree = Seidel_Tree(w_lines, points=pts, min_weight=min_weight, min_p_count=-1)
-    #matplotlib.rcParams['figure.figsize'] = [20.0, 20.0]
-    for l in w_lines:
-        f, a = plt.subplots()
-        a.set_ylim(min_y, max_y)
-        a.set_xlim(min_x, max_x)
-        print("here")
-        tree.insert_line(l[0], merge=merge)
-        print("inserted")
-        tree.visualize_trapezoids(a, min_x, max_x, min_y, max_y)
-        plt.show()
-
-
-def visualize_cuttings3(point_count, min_x, max_x, min_y, max_y, t, r2, merge=False):
-    pts = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(point_count)]
-
-    lines = dual_cutting(pts, t)
-
-    random.shuffle(lines)
-
-    min_weight = len(lines) / r2 - 1
-    # Cutting size
-    min_pt_count = len(pts) / (18 * r2 * r2) - 1
-    tree = compute_cutting(lines, {l:1 for l in lines}, pts, r2)
-    matplotlib.rcParams['figure.figsize'] = [20.0, 20.0]
-    f, a = plt.subplots()
-    a.set_ylim(min_y, max_y)
-    a.set_xlim(min_x, max_x)
-
-    tree.visualize_trapezoids(a, min_x, max_x, min_y, max_y)
-    x, y = zip(*pts)
+# def visualize_cuttings2(point_count, min_x, max_x, min_y, max_y, t, r2, merge=False):
+#     pts = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(point_count)]
+#     def one_gen():
+#         while True:
+#             yield 1
+#
+#     w_lines = list(zip(dual_cutting(pts, t), one_gen()))
+#     print(len(w_lines))
+#     print(w_lines)
+#     random.shuffle(w_lines)
+#
+#     min_weight = len(w_lines) / r2 - 1
+#     # Cutting size
+#     min_pt_count = len(pts) / (18 * r2 * r2) - 1
+#     tree = Seidel_Tree(w_lines, points=pts, min_weight=min_weight, min_p_count=-1)
+#     #matplotlib.rcParams['figure.figsize'] = [20.0, 20.0]
+#     for l in w_lines:
+#         f, a = plt.subplots()
+#         a.set_ylim(min_y, max_y)
+#         a.set_xlim(min_x, max_x)
+#         print("here")
+#         tree.insert_line(l[0], merge=merge)
+#         print("inserted")
+#         tree.visualize_trapezoids(a, min_x, max_x, min_y, max_y)
+#         plt.show()
 
 
-    a.plot(list(x), list(y), 'x')
-    plt.show()
+# def visualize_cuttings3(point_count, min_x, max_x, min_y, max_y, t, r2, merge=False):
+#     pts = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(point_count)]
+#
+#     lines = dual_cutting(pts, t)
+#
+#     random.shuffle(lines)
+#
+#     min_weight = len(lines) / r2 - 1
+#     # Cutting size
+#     min_pt_count = len(pts) / (18 * r2 * r2) - 1
+#     tree = compute_cutting(lines, {l:1 for l in lines}, pts, r2)
+#     matplotlib.rcParams['figure.figsize'] = [20.0, 20.0]
+#     f, a = plt.subplots()
+#     a.set_ylim(min_y, max_y)
+#     a.set_xlim(min_x, max_x)
+#
+#     tree.visualize_trapezoids(a, min_x, max_x, min_y, max_y)
+#     x, y = zip(*pts)
+#
+#
+#     a.plot(list(x), list(y), 'x')
+#     plt.show()
 
 
 # pts = [(random.random(), random.random()) for k in range(10000)]
