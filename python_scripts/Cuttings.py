@@ -120,57 +120,55 @@ class Line:
         self over the interval. Can cross the line at the boundary.
         This will evaluate the crossing to be overlapping if they are very close.
         """
-        ysl, ysr, yll, ylr = self.eval_at_boundaries(line, xl, xr)
         if xl == -float("inf") and xr == float("inf"):
-            if line.a == self.a:
-                return line.b <= self.b
-            else:
-                return False
-        elif xl == -float("inf"):
-            return approx_eq_above(ylr, ysr) and approx_eq_below(line.a, self.a)
-        elif xr == float("inf"):
-            return approx_eq_above(yll, ysl) and approx_eq_above(line.a, self.a)
+            return line.a == self.a and line.b <= self.b
         else:
-            return approx_eq_above(yll, ysl) and approx_eq_above(ylr, ysr)
+            if xl == -math.inf:
+                return approx_eq_above(line.evaluate(xr), self.evaluate(xr)) and approx_eq_below(line.a, self.a)
+            elif xr == math.inf:
+                return approx_eq_above(line.evaluate(xl), self.evaluate(xl)) and approx_eq_above(line.a, self.a)
+            else:
+                ysl, ysr, yll, ylr = self.eval_at_boundaries(line, xl, xr)
+                return approx_eq_above(yll, ysl) and approx_eq_above(ylr, ysr)
 
     def below_closed_interval(self, line, xl, xr):
         ysl, ysr, yll, ylr = self.eval_at_boundaries(line, xl, xr)
-        if xl == -float("inf") and xr == float("inf"):
+        if xl == -math.inf and xr == math.inf:
             if line.a == self.a:
                 return approx_eq_below(line.b, self.b)
             else:
                 return False
-        elif xl == -float("inf"):
+        elif xl == -math.inf:
             return approx_eq_below(ylr, ysr) and approx_eq_above(line.a, self.a)
-        elif xr == float("inf"):
+        elif xr == math.inf:
             return approx_eq_below(yll, ysl) and approx_eq_below(line.a, self.a)
         else:
             return approx_eq_below(yll, ysl) and approx_eq_below(ylr, ysr)
 
     def above_interval(self, line, xl, xr):
         ysl, ysr, yll, ylr = self.eval_at_boundaries(line, xl, xr)
-        if xl == -float("inf") and xr == float("inf"):
+        if xl == -math.inf and xr == math.inf:
             if line.a == self.a:
                 return approx_above(line.b, self.b)
             else:
                 return False
-        elif xl == -float("inf"):
+        elif xl == -math.inf:
             return approx_above(ylr, ysr) and approx_eq_below(line.a, self.a)
-        elif xr == float("inf"):
+        elif xr == math.inf:
             return approx_above(yll, ysl) and approx_eq_above(line.a, self.a)
         else:
             return approx_above(yll, ysl) and approx_above(ylr, ysr)
 
     def below_interval(self, line, xl, xr):
         ysl, ysr, yll, ylr = self.eval_at_boundaries(line, xl, xr)
-        if xl == -float("inf") and xr == float("inf"):
+        if xl == -math.inf and xr == math.inf:
             if line.a == self.a:
                 return approx_below(line.b, self.b)
             else:
                 return False
-        elif xl == -float("inf"):
+        elif xl == -math.inf:
             return approx_below(ylr, ysr) and approx_eq_above(line.a, self.a)
-        elif xr == float("inf"):
+        elif xr == math.inf:
             return approx_below(yll, ysl) and approx_eq_below(line.a, self.a)
         else:
             return approx_below(yll, ysl) and approx_below(ylr, ysr)

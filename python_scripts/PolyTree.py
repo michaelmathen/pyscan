@@ -213,7 +213,7 @@ class Polygon(Node):
     def __repr__(self):
         return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
 
-    def __init__(self, border_lines=list(), w_lines=list(), points=list(), k=1000):
+    def __init__(self, border_lines=list(), w_lines=list(), points=list(), k=8):
         self.border_lines = border_lines
         self.w_lines = w_lines
         self.points = points
@@ -287,7 +287,7 @@ class Polygon(Node):
         u_b_v, l_b_v = horizontal_split_vertices(vertices, segment)
         return abs(len(u_b_v) - len(l_b_v))
 
-    def find_pretty_good_split(self, k = 3):
+    def find_pretty_good_split_v(self, k = 3):
         """
         Checks all the pairs of vertices and finds the best pair of vertices with which to split
         this polygon with
@@ -310,12 +310,45 @@ class Polygon(Node):
         return max_segment
 
 
+    def find_pretty_good_split_l(self, k=3):
+        """
+        Tries to find a good line to choose that splits the lines in this cell most evenly.
+        :param k:
+        :return:
+        """
+
+        score = math.inf
+        segment, _ = random.choice(self.w_lines)
+        best_split = segment
+        for i in range(k):
+
+            u_l = 0
+            l_l = 0
+            m_l = 0
+            for l, w in self.w_lines:
+                if segment.crossed_by(l):
+                    m_l += 1
+                else:
+                    if segment.same_line(l):
+                        continue
+                    elif l.above_closed(segment):
+                        u_l += 1
+                    else:
+                        l_l += 1
+
+                new_score = abs(u_l - l_l) #+ 1/2.0 * m_l
+                if new_score < score:
+                    score = new_score
+                    best_split = segment
+            segment, _ = random.choice(self.w_lines)
+        return best_split
+
     def get_weight(self) -> float:
         return self.weight
 
     def to_complicated(self) -> bool:
-        return False
-        #return len(self.border_lines) > self.k
+        #return False
+        return len(self.border_lines) > self.k
 
 
 class PolyTree:
@@ -334,7 +367,7 @@ class PolyTree:
     def get_heaviest(self):
         return max(self.get_leaves(), key=lambda x: x.pt_count())
 
-    def __init__(self, weighted_lines,  points=list(), min_weight=-1, k = 100):
+    def __init__(self, weighted_lines,  points=list(), min_weight=-1, k = 8):
         li = -float("inf")
         ri = float("inf")
         self.root = Polygon(w_lines=[(Segment(l, li, ri), w) for l, w in weighted_lines], points=points, k = k)
@@ -412,7 +445,7 @@ class PolyTree:
             parent_node.set_b(new_s)
         else:
             parent_node.set_a(new_s)
-        return upper, lower
+        return upper, lower, new_s
 
     def insert_line(self, line, curr_node=None, merge=False):
         """
@@ -433,11 +466,11 @@ class PolyTree:
             curr_node, parent_node, curr_segment = node_stack.pop()
             if curr_node.is_terminal():
                 if self.is_active(curr_node):
-                    upper, lower = self.insert_segment(parent_node, curr_node, curr_segment)
+                    upper, lower, new_parent = self.insert_segment(parent_node, curr_node, curr_segment)
                     if upper.to_complicated():
-                        node_stack.append((upper, curr_node, upper.find_pretty_good_split()))
+                        node_stack.append((upper, new_parent, upper.find_pretty_good_split_v()))
                     if lower.to_complicated():
-                        node_stack.append((lower, curr_node, lower.find_pretty_good_split()))
+                        node_stack.append((lower, new_parent, lower.find_pretty_good_split_v()))
 
                     self.unregister(curr_node)
                     self.register_leaf(upper)
@@ -453,6 +486,30 @@ class PolyTree:
                 node_stack.append((curr_node.get_a(), curr_node, curr_segment))
             else:
                 node_stack.append((curr_node.get_b(), curr_node, curr_segment))
+
+    def cutting_greedy(self):
+        """
+        Converts a line into many seperate segments.
+        """
+        node_stack = deque([(self.root, None)])
+
+        while node_stack:
+            curr_node, parent_node= node_stack.pop()
+            if self.is_active(curr_node):
+                if curr_node.to_complicated():
+                    segment = curr_node.find_pretty_good_split_v()
+                else:
+                    segment = curr_node.find_pretty_good_split_l(k=0)
+                upper, lower, new_parent = self.insert_segment(parent_node, curr_node, segment)
+                node_stack.append((upper, new_parent))
+                node_stack.append((lower, new_parent))
+
+                self.unregister(curr_node)
+                self.register_leaf(upper)
+                self.register_leaf(lower)
+            else:
+                continue
+
 
     def zone(self, line, curr_node=None):
         """
@@ -494,7 +551,22 @@ def compute_cutting(test_set, weight_map, points, r):
     return tree
 
 
-
+def compute_cutting_greedy(test_set, weight_map, points, r):
+    total_weight = sum(weight_map[l] for l in test_set)
+    min_weight = total_weight / r
+    # Cutting size
+    # min_pt_count =  len(points) / (12 * r * r) - 1
+    lines = weighted_shuffle(test_set, [weight_map[l] / float(total_weight) for l in test_set])
+    # random.shuffle(test_set)
+    tree = PolyTree([(l, weight_map[l]) for l in lines],
+                    points,
+                    min_weight=min_weight)
+    tree.cutting_greedy()
+    # for l in lines:
+    #     if len(tree.active_set) == 0:
+    #         return tree
+    #     tree.insert_line(l)
+    return tree
 
 
 #visualize_cuttings3(1000, -4, 4, -4, 4, 2, 16)

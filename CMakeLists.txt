@@ -28,7 +28,7 @@ set(SOURCE_FILES
         src/Utilities.cpp)
 
 set(PY_SOURCE_FILES
-        src/pyscan.cpp src/Cuttings.cpp src/Cuttings.hpp)
+        src/pyscan.cpp)
 
 set(test true)
 

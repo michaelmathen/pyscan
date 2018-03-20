@@ -114,13 +114,13 @@ def generate_cutting_size_test(pts, l_s, h_s, k, r=4):
     #                   marker=cutting_map["poly_marker"],
     #                   color=cutting_map["tsd_color"])
     print("points ")
-    plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_points, r=r,
+    plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting_greedy, test_set_f=test_set.test_set_points, r=r,
                       marker=cutting_map["poly_marker"],
                       color=cutting_map["psd_color"])
-    print("lines")
-    plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_lines, r=r,
-                      marker=cutting_map["poly_marker"],
-                      color=cutting_map["lsd_color"])
+    # print("lines")
+    # plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_lines, r=r,
+    #                   marker=cutting_map["poly_marker"],
+    #                   color=cutting_map["lsd_color"])
 
     # print("dual")
     # plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=ts.test_set_dual, r=r,
@@ -149,7 +149,11 @@ def generate_cutting_time_test(pts, l_s, h_s, k, r=4):
     #                   marker=cutting_map["poly_marker"],
     #                   color=cutting_map["tsd_color"])
     print("points ")
-    plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=ts.test_set_points, r=r,
+    plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting_greedy, test_set_f=test_set.test_set_points, r=r,
+                      marker=cutting_map["trap_marker"],
+                      color=cutting_map["tsd_color"])
+    print("points ")
+    plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_points, r=r,
                       marker=cutting_map["poly_marker"],
                       color=cutting_map["psd_color"])
     # print("lines")
@@ -161,16 +165,16 @@ def generate_cutting_time_test(pts, l_s, h_s, k, r=4):
     # plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=ts.test_set_dual, r=r,
     #                   marker=cutting_map["trap_marker"],
     #                   color=cutting_map["tsd_color"])
-    print("points")
-    plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=ts.test_set_points, r=r,
-                      marker=cutting_map["trap_marker"],
-                      color=cutting_map["psd_color"])
-    print("lines")
-    plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=ts.test_set_lines, r=r,
-                      marker=cutting_map["trap_marker"],
-                      color=cutting_map["lsd_color"])
+    # print("points")
+    # plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=ts.test_set_points, r=r,
+    #                   marker=cutting_map["trap_marker"],
+    #                   color=cutting_map["psd_color"])
+    # print("lines")
+    # plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=ts.test_set_lines, r=r,
+    #                   marker=cutting_map["trap_marker"],
+    #                   color=cutting_map["lsd_color"])
     #    ax.legend(["poly dts", "poly psd", "poly lsd", "trap dts", "trap psd", "trap lsd"])
-    ax.legend(["poly psd", "poly lsd",  "trap psd", "trap lsd"])
+    ax.legend(["poly greedy", "poly greedy"])#,  "trap psd", "trap lsd"])
     ax.set_xlabel("Line number")
     ax.set_ylabel("Time(s)")
     plt.show()
@@ -178,5 +182,5 @@ def generate_cutting_time_test(pts, l_s, h_s, k, r=4):
 
 if __name__ == "__main__":
     pts = [(random.random(), random.random()) for k in range(100000)]
-    generate_cutting_size_test(pts, 10, 10000, 10)
-    #generate_cutting_time_test(pts, 10, 40000, 10)
+    #generate_cutting_size_test(pts, 1000, 5000, 4)
+    generate_cutting_time_test(pts, 30000, 40000, 2)
