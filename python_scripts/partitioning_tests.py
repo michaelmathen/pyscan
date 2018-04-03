@@ -7,6 +7,7 @@ import Partitioning
 import csv
 import numpy as np
 import time
+import math
 
 
 # Plots showing sample size vs. error
@@ -26,9 +27,12 @@ def testing_framework(pts, l_s, h_s, count, output_file = None,
                       k=100):
 
     if output_file is None:
-        output_file = vparam + "_" + part_f + "_" + cutting_f + "_" + test_set_f + "_"
-        if vparam != "r":
-            output_file += "_" + str(r)
+        if part_f == "box" or part_f == "sample":
+            output_file = vparam + "_" + part_f
+        else:
+            output_file = vparam + "_" + part_f + "_" + cutting_f + "_" + test_set_f + "_"
+            if vparam != "r":
+                output_file += "_" + str(r)
         if vparam != input_size:
             if input_size is None:
                 output_file += "_" + str(len(pts))
@@ -36,8 +40,8 @@ def testing_framework(pts, l_s, h_s, count, output_file = None,
                 output_file += "_" + str(input_size)
         if vparam != output_size:
             output_file += "_" + str(output_size)
-        if vparam != cell_size:
-            output_file += "_" + str(cell_size)
+    if vparam != cell_size and part_f != "sample":
+        output_file += "_" + str(cell_size)
 
     fieldnames = ["vparam", "r", "input_size", "output_size", "cell_size",
                   "test_set_f", "cutting_f", "part_f", "time", "error", "k"]
@@ -94,11 +98,13 @@ def testing_framework(pts, l_s, h_s, count, output_file = None,
             elif part_f == "sample":
                 output_set = random.sample(input_set, output_size)
                 weights = [1.0 for p in output_set]
+            elif part_f == "box":
+                output_set, weights = Partitioning.quadTreeSample(input_set, min_cell_size)
             else:
                 raise ValueError("part_f=%s"%(part_f,))
             end_time = time.time()
 
-            max_error = line_testing.line_error_test(pts, output_set, weights, k)
+            max_error = line_testing.line_error_test(pts, output_set, weights)
 
             row = {"vparam": vparam,
                    "r" : r,
@@ -115,8 +121,29 @@ def testing_framework(pts, l_s, h_s, count, output_file = None,
             print(row)
 
 
+
+def upload_crimes(file_name, perturb = 1):
+    with open(file_name) as f:
+        reader = csv.DictReader(f)
+        pts = []
+        theta = random.random() * math.pi
+
+        a1 = math.cos(theta)
+        a2 = -math.sin(theta)
+        b1 = math.sin(theta)
+        b2 = math.cos(theta)
+        for row in reader:
+            try:
+                x = float(row["X Coordinate"]) + random.random() * perturb
+                y = float(row["Y Coordinate"]) + random.random() * perturb
+                pts.append((a1 * x + a2 * y, b1 * x + b2 * y))
+            except ValueError:
+                pass
+        return pts
+
 if __name__ == "__main__":
     pts = [(random.random(), random.random()) for i in range(100000)]
+    #pts = upload_crimes("crimes.csv")
     # Vary the output sample size
     # for cutting in ["poly", "trap"]:
     #     for l_name in ["lts", "pts"]:
@@ -138,13 +165,20 @@ if __name__ == "__main__":
     #                           test_set_f=l_name, cutting_f=cutting,
     #                           r=4)
 
-    for cutting in ["poly"]:
-        for l_name in ["pts"]:
-            testing_framework(pts, 50, 1000, 10, part_f="pchan",
-                              test_set_f=l_name,
-                              cutting_f=cutting,
-                              r=2,
-                              output_file="test.csv")
+    # print(len(pts))
+    # pts = random.sample(pts, min(len(pts), 1000 * 1000))
+    # print(len(pts))
+    # for cutting in ["poly"]:
+    #     for l_name in ["pts"]:
+    #         testing_framework(pts, 50, 1000, 10, part_f="pchan",
+    #                           test_set_f=l_name,
+    #                           cutting_f=cutting,
+    #                           r=2,
+    #                           output_file="test.csv")
+
+    testing_framework(pts, 50, 2000, 10, part_f="box")
+    testing_framework(pts, 1000, 100000, 10, vparam="input_size", part_f="box")
+
     #
     # testing_framework(pts, 200, 2000, 10, part_f="sample", output_file="output_sampling_chan.csv")
     #
@@ -152,154 +186,3 @@ if __name__ == "__main__":
 
 
     print("Done")
-#
-# def random_sample_plot(point_count, l_s, h_s, k):
-#     big_sample = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(point_count)]
-#     errors = []
-#     sizes = []
-#     for i in np.linspace(l_s, h_s, k):
-#         s_size = int(i + .5)
-#         sampled_pts = random.sample(big_sample, s_size)
-#         #print(sampled_weights)
-#         max_error = 0
-#         for e in line_error_test_unweighted(big_sample, sampled_pts,  100):
-#             max_error = max(max_error, e)
-#         print("finished run")
-#         errors.append(max_error)
-#         sizes.append(len(sampled_pts))
-#     f, a = plt.subplots()
-#     a.scatter(sizes, errors)
-#     plt.show()
-#
-# def random_sample_time_plot(point_count, l_s, h_s, k):
-#     big_sample = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(point_count)]
-#     times = []
-#     sizes = []
-#     for i in np.linspace(l_s, h_s, k):
-#         s_size = int(i + .5)
-#         s = time()
-#         sampled_pts = random.sample(big_sample, s_size)
-#         e = time()
-#         times.append(e - s)
-#         sizes.append(len(sampled_pts))
-#     f, a = plt.subplots()
-#     a.scatter(sizes, times)
-#     plt.show()
-#
-# def random_sample_time_plot2(point_count, l_s, h_s, k):
-#     times = []
-#     sizes = []
-#     for i in np.linspace(l_s, h_s, k):
-#         big_sample = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(int(i))]
-#         s = time()
-#         sampled_pts = random.sample(big_sample, point_count)
-#         e = time()
-#         times.append(e - s)
-#         sizes.append(i)
-#     f, a = plt.subplots()
-#     a.scatter(sizes, times)
-#     plt.show()
-#
-#
-# def error_plot(point_count, l_s, h_s, k, r=4, c=2):
-#     big_sample = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(point_count)]
-#     errors = []
-#     sizes = []
-#     for i in np.linspace(l_s, h_s, k):
-#         sampled_pts, sampled_weights = partitions(big_sample, r, c, min_cell_size=i)
-#         #print(sampled_weights)
-#         max_error = 0
-#         for e in line_error_test(big_sample, sampled_pts, sampled_weights, 100):
-#             max_error = max(max_error, e)
-#         print("finished run %f"%(i, ))
-#         errors.append(max_error)
-#         sizes.append(len(sampled_pts))
-#     #print(sizes, errors)
-#     f, a = plt.subplots()
-#     a.scatter(sizes, errors)
-#     plt.show()
-#
-#
-# def time_plot(point_count, min_cell_size, l_s, h_s, k, r=4, c=2):
-#     big_sample = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(point_count)]
-#     times = []
-#     sizes = []
-#     for i in np.linspace(l_s, h_s, k):
-#         s = time()
-#         sampled_pts, sampled_weights = partitions(big_sample, r, c, min_cell_size=min_cell_size, cell_sample_size=i,
-#                                                   test_set_f=random_test_set)
-#         e = time()
-#         #print(sampled_weights)
-#         print("finished run %f"%(i, ))
-#         times.append(e - s)
-#         sizes.append(len(sampled_pts))
-#     #print(sizes, errors)
-#     f, a = plt.subplots()
-#     a.scatter(sizes, times)
-#     plt.show()
-#
-# def time_plot2(output_size, l_s, h_s, k, r=4, c=2):
-#     times = []
-#     sizes = []
-#     for i in np.linspace(l_s, h_s, k):
-#         big_sample = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(int(i))]
-#         min_cell_size = i / output_size
-#         s = time()
-#         sampled_pts, sampled_weights = chan_partitions(big_sample, r,
-#                                                   min_cell_size=min_cell_size,
-#                                                   cell_sample_size=1,
-#                                                     cutting_f=Pt.compute_cutting,
-#                                                   test_set_f=random_test_set)
-#         e = time()
-#         #print(sampled_weights)
-#         print("finished run %f"%(i, ))
-#         times.append(e - s)
-#         sizes.append(i)
-#     #print(sizes, errors)
-#     f, a = plt.subplots()
-#     a.scatter(sizes, times)
-#     plt.show()
-#
-# def error_plot(output_size, l_s, h_s, k, r=4):
-#     sizes = []
-#     errors = []
-#     for i in np.linspace(l_s, h_s, k):
-#         big_sample = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(int(i))]
-#         min_cell_size = i / output_size
-#         sampled_pts, sampled_weights = chan_partitions(big_sample, r,
-#                                                   min_cell_size=min_cell_size,
-#                                                   cell_sample_size=1,
-#                                                     cutting_f=Pt.compute_cutting,
-#                                                   test_set_f=random_test_set)
-#         max_error = 0
-#         for e in line_error_test(big_sample, sampled_pts, sampled_weights, 100):
-#             max_error = max(max_error, e)
-#         errors.append(max_error)
-#         sizes.append(i)
-#     #print(sizes, errors)
-#     f, a = plt.subplots()
-#     a.scatter(sizes, errors)
-#     plt.show()
-#
-#
-# def error_plot_output_size(set_size, l_s, h_s, k, r=4):
-#     sizes = []
-#     errors = []
-#     big_sample = [(4 * random.random() - 2, 4 * random.random() - 2) for i in range(set_size)]
-#     for i in np.linspace(l_s, h_s, k):
-#
-#         min_cell_size = set_size / i
-#         sampled_pts, sampled_weights = chan_partitions(big_sample, r,
-#                                                   min_cell_size=min_cell_size,
-#                                                   cell_sample_size=1,
-#                                                     cutting_f=Pt.compute_cutting,
-#                                                   test_set_f=random_test_set)
-#         max_error = 0
-#         for e in line_error_test(big_sample, sampled_pts, sampled_weights, 100):
-#             max_error = max(max_error, e)
-#         errors.append(max_error)
-#         sizes.append(len(sampled_pts))
-#     #print(sizes, errors)
-#     f, a = plt.subplots()
-#     a.scatter(sizes, errors)
-#     plt.show()

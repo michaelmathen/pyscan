@@ -227,33 +227,36 @@ def chan_partitions(pts, r, min_cell_size=100, cell_sample_size=1,
     curr_level = [(pts, test_set)]
 
     t = 1
+    b = 10
     while curr_level:
-        t *= 2
+        t *= b
 
         active_level = []
-        inactive_cells = []
+        #inactive_cells = []
 
         for curr_pts, test_set in curr_level:
             #print(len(curr_pts) ,min_cell_size)
             if len(curr_pts) <= min_cell_size:
                 final_cells.append(curr_pts)
-            elif len(pts) / t <= len(curr_pts):
-                active_level.append((curr_pts, test_set))
             else:
-                inactive_cells.append((curr_pts, test_set))
+                active_level.append((curr_pts, test_set))
+
 
         # ensure that the active level is processed in a random order
         random.shuffle(active_level)
 
-        curr_level = inactive_cells
+        weight_map = {l: 1 for l in weight_map}
+        curr_level = []
         for curr_pts, test_set in active_level:
             #print(len(curr_pts), len(test_set))
+
             sub_tree = cutting_f(test_set, weight_map, curr_pts, r)
+            sub_partitions = sub_tree.get_leaves()
+
             #print("computed subtree %d"%(r,))
             sub_cells = []
             # Cut each node of the sub-tree into sub-cells containing at most 2n/(tb) points.
-            sub_partitions = sub_tree.get_leaves()
-            b = max(len(sub_partitions), 1)
+            #b = max(len(sub_partitions), 1)
             #b = r * r * 10
             part_size = max(2 * len(pts) / (t * b), min_cell_size)
             print("t = {} Psz = {} b = {} psz = {} lsz = {}".format(t, part_size, len(sub_partitions), len(curr_pts), len(test_set)))
@@ -268,7 +271,7 @@ def chan_partitions(pts, r, min_cell_size=100, cell_sample_size=1,
 
             # Apply re-weighting operation
             for l in l_counts:
-                weight_map[l] *= (1 + 1.0 / len(sub_partitions)) ** (l_counts[l] - 1)
+                weight_map[l] *= (1 + 1.0 / len(sub_partitions)) ** (l_counts[l])
 
             for sub_cell in sub_cells:
                 curr_level.append((sub_cell.get_points(), sub_cell.get_lines()))
