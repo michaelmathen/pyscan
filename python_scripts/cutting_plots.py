@@ -5,23 +5,23 @@ import test_set
 import PolyTree
 import SeidelTree
 import PolyTree as pt
-import SeidelTree as ts
+import SeidelTree as st
 import time
 import test_set
 import csv
 
-"""
-#377eb8
-#4daf4a
-#984ea3
-"""
-cutting_map = {"tsd_color" : "#e41a1c",
-               "psd_color" : "b",
-               "lsd_color" : "k",
-               "poly_marker" : "x",
-               "trap_marker" : "o",
-               "poly_name": "poly cutting",
-                "trap_name": "trap_cutting"}
+cutting_map = {"poly_d" : "#1b9e77",
+               "poly_l" : "#d95f02",
+               "poly_p" : "#7570b3",
+               "trap_d":"#e7298a",
+               "trap_l":"#66a61e",
+               "trap_p":"#e6ab02",
+               "poly_d_m":"H",
+                "poly_l_m":"v",
+               "poly_p_m":"o",
+               "trap_d_m":">",
+               "trap_p_m":"<",
+               "trap_l_m": "D"}
 
 
 # def testing_framework(pts, l_s, h_s, count, output_file,
@@ -95,9 +95,10 @@ def plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f, test_set_f, r=4, marker='
     times = []
     for i in np.linspace(l_s, h_s, k):
         print(i)
+        t = time.time()
         test_set = test_set_f(pts, int(i))
         weight_map = {t: 1 for t in test_set}
-        t = time.time()
+
         tree = cutting_f(test_set, weight_map, pts, r)
         e = time.time()
         times.append(e - t)
@@ -106,81 +107,185 @@ def plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f, test_set_f, r=4, marker='
     ax.scatter(line_count, times, marker=marker, c=color)
 
 
+def plot_cutting_size_r(ax, pts, l_s, h_s, k, cutting_f, test_set_f, marker='.', color='r'):
+
+    line_count = []
+    trap_count = []
+    for i in np.linspace(l_s, h_s, k):
+        print(i)
+        test_set = test_set_f(pts, int(1/2.0 * len(pts)))
+        weight_map = {t: 1 for t in test_set}
+        tree = cutting_f(test_set, weight_map, pts, i)
+        trap_count.append(len(tree.get_leaves()) / float(i * i))
+        line_count.append(i)
+
+    ax.scatter(line_count, trap_count, marker=marker, c=color)
+
+
+def plot_cutting_time_r(ax, pts, l_s, h_s, k, cutting_f, test_set_f, marker='.', color='r'):
+
+    line_count = []
+    times = []
+    for i in np.linspace(l_s, h_s, k):
+        print(i)
+        test_set = test_set_f(pts, int(1/2.0 * len(pts)))
+        weight_map = {t: 1 for t in test_set}
+        t = time.time()
+        tree = cutting_f(test_set, weight_map, pts, i)
+        e = time.time()
+        times.append(e - t)
+        line_count.append(i)
+
+    ax.scatter(line_count, times, marker=marker, c=color)
+
+
 def generate_cutting_size_test(pts, l_s, h_s, k, r=4):
     f, ax = plt.subplots()
 
-    # print("dual")
-    # plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=ts.test_set_dual, r=r,
-    #                   marker=cutting_map["poly_marker"],
-    #                   color=cutting_map["tsd_color"])
+    print("dual")
+    plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_dual, r=r,
+                      marker=cutting_map["poly_d_m"],
+                      color=cutting_map["poly_d"])
     print("points ")
-    plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting_greedy, test_set_f=test_set.test_set_points, r=r,
-                      marker=cutting_map["poly_marker"],
-                      color=cutting_map["psd_color"])
-    # print("lines")
-    # plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_lines, r=r,
-    #                   marker=cutting_map["poly_marker"],
-    #                   color=cutting_map["lsd_color"])
+    plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_points, r=r,
+                      marker=cutting_map["poly_p_m"],
+                      color=cutting_map["poly_p"])
+    print("lines")
+    plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_lines, r=r,
+                      marker=cutting_map["poly_l_m"],
+                      color=cutting_map["poly_l"])
 
-    # print("dual")
-    # plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=ts.test_set_dual, r=r,
-    #                   marker=cutting_map["trap_marker"],
-    #                   color=cutting_map["tsd_color"])
-    # print("points")
-    # plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=ts.test_set_points, r=r,
-    #                   marker=cutting_map["trap_marker"],
-    #                   color=cutting_map["psd_color"])
-    # print("lines")
-    # plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=ts.test_set_lines, r=r,
-    #                   marker=cutting_map["trap_marker"],
-    #                   color=cutting_map["lsd_color"])
-    #    ax.legend(["poly dts", "poly psd", "poly lsd", "trap dts", "trap psd", "trap lsd"])
-    ax.legend(["poly psd", "poly lsd",  "trap psd", "trap lsd"])
-    ax.set_xlabel("Line number")
-    ax.set_ylabel("Cutting constant")
+    print("dual")
+    plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=test_set.test_set_dual, r=r,
+                      marker=cutting_map["trap_d_m"],
+                      color=cutting_map["trap_d"])
+    print("points")
+    plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=test_set.test_set_points, r=r,
+                      marker=cutting_map["trap_p_m"],
+                      color=cutting_map["trap_p"])
+    print("lines")
+    plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=test_set.test_set_lines, r=r,
+                      marker=cutting_map["trap_l_m"],
+                      color=cutting_map["trap_l"])
+    #ax.legend(["poly dts", "poly psd", "poly lsd", "trap dts", "trap psd", "trap lsd"])
+    ax.legend(["PolyTree_8 Dual", "PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Dual", "Trapezoid Points", "Trapezoid Lines"])
+    ax.set_xlabel("Line Number")
+    ax.set_ylabel("Cutting Constant")
     plt.show()
 
 
 def generate_cutting_time_test(pts, l_s, h_s, k, r=4):
     f, ax = plt.subplots()
 
-    # print("dual")
-    # plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=ts.test_set_dual, r=r,
-    #                   marker=cutting_map["poly_marker"],
-    #                   color=cutting_map["tsd_color"])
-    print("points ")
-    plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting_greedy, test_set_f=test_set.test_set_points, r=r,
-                      marker=cutting_map["trap_marker"],
-                      color=cutting_map["tsd_color"])
+    print("dual")
+    plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_dual, r=r,
+                      marker=cutting_map["poly_d_m"],
+                      color=cutting_map["poly_d"])
     print("points ")
     plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_points, r=r,
-                      marker=cutting_map["poly_marker"],
-                      color=cutting_map["psd_color"])
-    # print("lines")
-    # plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=ts.test_set_lines, r=r,
-    #                   marker=cutting_map["poly_marker"],
-    #                   color=cutting_map["lsd_color"])
+                      marker=cutting_map["poly_p_m"],
+                      color=cutting_map["poly_p"])
+    print("lines")
+    plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_lines, r=r,
+                      marker=cutting_map["poly_l_m"],
+                      color=cutting_map["poly_l"])
 
-    # print("dual")
-    # plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=ts.test_set_dual, r=r,
-    #                   marker=cutting_map["trap_marker"],
-    #                   color=cutting_map["tsd_color"])
-    # print("points")
-    # plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=ts.test_set_points, r=r,
-    #                   marker=cutting_map["trap_marker"],
-    #                   color=cutting_map["psd_color"])
-    # print("lines")
-    # plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=ts.test_set_lines, r=r,
-    #                   marker=cutting_map["trap_marker"],
-    #                   color=cutting_map["lsd_color"])
-    #    ax.legend(["poly dts", "poly psd", "poly lsd", "trap dts", "trap psd", "trap lsd"])
-    ax.legend(["poly greedy", "poly greedy"])#,  "trap psd", "trap lsd"])
-    ax.set_xlabel("Line number")
-    ax.set_ylabel("Time(s)")
+    print("dual")
+    plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=test_set.test_set_dual, r=r,
+                      marker=cutting_map["trap_d_m"],
+                      color=cutting_map["trap_d"])
+    print("points")
+    plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=test_set.test_set_points, r=r,
+                      marker=cutting_map["trap_p_m"],
+                      color=cutting_map["trap_p"])
+    print("lines")
+    plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=test_set.test_set_lines, r=r,
+                      marker=cutting_map["trap_l_m"],
+                      color=cutting_map["trap_l"])
+    #ax.legend(["poly dts", "poly psd", "poly lsd", "trap dts", "trap psd", "trap lsd"])
+    #ax.legend(["PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Points", "Trapezoid Lines"])
+    ax.legend(["PolyTree_8 Dual", "PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Dual", "Trapezoid Points", "Trapezoid Lines"])
+
+    ax.set_xlabel("Line Number")
+    ax.set_ylabel("Time (sec)")
     plt.show()
 
 
+def generate_cutting_size_test_r(pts, l_s, h_s, k):
+    f, ax = plt.subplots()
+
+    print("dual")
+    plot_cutting_size_r(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_dual,
+                      marker=cutting_map["poly_d_m"],
+                      color=cutting_map["poly_d"])
+    print("points ")
+    plot_cutting_size_r(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_points,
+                      marker=cutting_map["poly_p_m"],
+                      color=cutting_map["poly_p"])
+    print("lines")
+    plot_cutting_size_r(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_lines,
+                      marker=cutting_map["poly_l_m"],
+                      color=cutting_map["poly_l"])
+
+    print("dual")
+    plot_cutting_size_r(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=test_set.test_set_dual,
+                      marker=cutting_map["trap_d_m"],
+                      color=cutting_map["trap_d"])
+    print("points")
+    plot_cutting_size_r(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=test_set.test_set_points,
+                      marker=cutting_map["trap_p_m"],
+                      color=cutting_map["trap_p"])
+    print("lines")
+    plot_cutting_size_r(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=test_set.test_set_lines,
+                      marker=cutting_map["trap_l_m"],
+                      color=cutting_map["trap_l"])
+    #ax.legend(["poly dts", "poly psd", "poly lsd", "trap dts", "trap psd", "trap lsd"])
+    #ax.legend(["PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Points", "Trapezoid Lines"])
+
+    ax.legend(["PolyTree_8 Dual", "PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Dual", "Trapezoid Points", "Trapezoid Lines"])
+    ax.set_xlabel("r")
+    ax.set_ylabel("Cutting Constant")
+    plt.savefig("cutting_size.png")
+
+
+def generate_cutting_time_test_r(pts, l_s, h_s, k):
+    f, ax = plt.subplots()
+
+    print("dual")
+    plot_cutting_size_r(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_dual,
+                      marker=cutting_map["poly_d_m"],
+                      color=cutting_map["poly_d"])
+    print("points ")
+    plot_cutting_time_r(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting_greedy, test_set_f=test_set.test_set_points,
+                      marker=cutting_map["poly_p_m"],
+                      color=cutting_map["poly_p"])
+    print("lines")
+    plot_cutting_time_r(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting_greedy, test_set_f=test_set.test_set_lines,
+                      marker=cutting_map["poly_l_m"],
+                      color=cutting_map["poly_l"])
+
+    # print("dual")
+    # plot_cutting_size_r(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=test_set.test_set_dual,
+    #                   marker=cutting_map["trap_d_m"],
+    #                   color=cutting_map["trap_d"])
+    print("points")
+    plot_cutting_time_r(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=test_set.test_set_points,
+                      marker=cutting_map["trap_p_m"],
+                      color=cutting_map["trap_p"])
+    print("lines")
+    plot_cutting_time_r(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=test_set.test_set_lines,
+                      marker=cutting_map["trap_l_m"],
+                      color=cutting_map["trap_l"])
+    #ax.legend(["poly dts", "poly psd", "poly lsd", "trap dts", "trap psd", "trap lsd"])
+    #ax.legend(["PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Points", "Trapezoid Lines"])
+    ax.legend(["PolyTree_8 Dual", "PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Dual", "Trapezoid Points", "Trapezoid Lines"])
+
+    ax.set_xlabel("r")
+    ax.set_ylabel("Time (sec)")
+    plt.savefig("cutting_time.png")
+
+
 if __name__ == "__main__":
-    pts = [(random.random(), random.random()) for k in range(100000)]
-    #generate_cutting_size_test(pts, 1000, 5000, 4)
-    generate_cutting_time_test(pts, 30000, 40000, 2)
+    pts = [(random.random(), random.random()) for k in range(10000)]
+    generate_cutting_time_test(pts, 200, 2000, 10)
+    #generate_cutting_time_test(pts, 200, 2000, 10)

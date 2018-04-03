@@ -17,16 +17,32 @@ import time
 # Plots showing r vs. time
 
 
-def testing_framework(pts, l_s, h_s, count, output_file,
-                      vparam="output_size", r=4, input_size=10000,
+def testing_framework(pts, l_s, h_s, count, output_file = None,
+                      vparam="output_size", r=4, input_size=None,
                       output_size=200, cell_size=1,
                       test_set_f="lts",
                       cutting_f="poly",
                       part_f="pchan",
                       k=100):
 
+    if output_file is None:
+        output_file = vparam + "_" + part_f + "_" + cutting_f + "_" + test_set_f + "_"
+        if vparam != "r":
+            output_file += "_" + str(r)
+        if vparam != input_size:
+            if input_size is None:
+                output_file += "_" + str(len(pts))
+            else:
+                output_file += "_" + str(input_size)
+        if vparam != output_size:
+            output_file += "_" + str(output_size)
+        if vparam != cell_size:
+            output_file += "_" + str(cell_size)
+
     fieldnames = ["vparam", "r", "input_size", "output_size", "cell_size",
                   "test_set_f", "cutting_f", "part_f", "time", "error", "k"]
+    if input_size is None:
+        input_size = len(pts)
     with open(output_file, 'w') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -71,7 +87,6 @@ def testing_framework(pts, l_s, h_s, count, output_file,
                                              test_set_f=test_f)
             elif part_f == "pmat":
                 output_set, weights = Partitioning.partitions(input_set, r,
-                                                     c = .1,
                                                      min_cell_size=min_cell_size,
                                                      cell_sample_size=cell_size,
                                                      cutting_f=compute_cutting,
@@ -83,10 +98,10 @@ def testing_framework(pts, l_s, h_s, count, output_file,
                 raise ValueError("part_f=%s"%(part_f,))
             end_time = time.time()
 
-            max_error = 0
-            for e in line_testing.line_error_test(pts, output_set, weights, k):
-                max_error = max(max_error, e)
+            max_error = line_testing.line_error_test(pts, output_set, weights, k)
+
             row = {"vparam": vparam,
+                   "r" : r,
                              "input_size": input_size,
                              "output_size":len(output_set),
                              "cell_size": min_cell_size,
@@ -102,17 +117,39 @@ def testing_framework(pts, l_s, h_s, count, output_file,
 
 if __name__ == "__main__":
     pts = [(random.random(), random.random()) for i in range(100000)]
+    # Vary the output sample size
     # for cutting in ["poly", "trap"]:
     #     for l_name in ["lts", "pts"]:
-    #         testing_framework(pts, 50, 1000, 10, "timing_plot_r2_"+ cutting + "_" + l_name + ".csv",
-    #                           test_set_f=l_name, cutting_f=cutting, r=2)
+    #         testing_framework(pts, 50, 1000, 10, part_f="pmat",
+    #                           test_set_f=l_name,
+    #                           cutting_f=cutting,
+    #                           r=4)
     #
+    # Vary the r parameter used
     # for cutting in ["poly", "trap"]:
     #     for l_name in ["lts", "pts"]:
-    #         testing_framework(pts, 50, 1000, 10, "timing_plot_r4_"+ cutting + "_" + l_name + ".csv",
-    #                           test_set_f=l_name, cutting_f=cutting, r=4)
+    #         testing_framework(pts, 2, 8, 10, vparam="r", part_f="pmat",
+    #                           test_set_f=l_name, cutting_f=cutting)
+    #
+    # Vary the input size with fixed output size
+    # for cutting in ["poly", "trap"]:
+    #     for l_name in ["lts", "pts"]:
+    #         testing_framework(pts, 1000, 10000, 10, vparam="input_size", part_f="pmat",
+    #                           test_set_f=l_name, cutting_f=cutting,
+    #                           r=4)
 
-    testing_framework(pts, 200, 1800, 10, "sampling.csv", part_f="sample")
+    for cutting in ["poly"]:
+        for l_name in ["pts"]:
+            testing_framework(pts, 50, 1000, 10, part_f="pchan",
+                              test_set_f=l_name,
+                              cutting_f=cutting,
+                              r=2,
+                              output_file="test.csv")
+    #
+    # testing_framework(pts, 200, 2000, 10, part_f="sample", output_file="output_sampling_chan.csv")
+    #
+    # testing_framework(pts, 1000, 100000, 10, part_f="sample", vparam="input_size", output_file="input_sampling_chan.csv")
+
 
     print("Done")
 #

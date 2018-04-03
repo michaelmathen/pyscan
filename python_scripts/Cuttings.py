@@ -4,7 +4,6 @@ import matplotlib
 import pprint
 import pickle
 import math
-from numba import jit
 
 ix = 0
 GLOBAL_TOL = 1e-08
@@ -98,6 +97,9 @@ class Line:
     def y_intercept(self, line):
         return (line.b * self.a - self.b * line.a) / (self.a - line.a)
 
+    def y_evaluate(self, y):
+        return (y - self.b) / self.a
+
     def evaluate(self, x):
         if approx_eq(self.a, 0):
             """
@@ -113,6 +115,9 @@ class Line:
         ysl = self.evaluate(xl)
         ysr = self.evaluate(xr)
         return ysl, ysr, yll, ylr
+
+    def is_segment(self):
+        return False
 
     def above_closed_interval(self, line, xl, xr):
         """
@@ -186,9 +191,8 @@ class Line:
         return approx_above(xl, x_val) and approx_above(x_val, xr)
 
     def same_line(self, other):
-        if isinstance(other, Line):
-            return approx_eq(self.a, other.a) and approx_eq(self.b, other.b)
-        return False
+        return approx_eq(self.a, other.a) and approx_eq(self.b, other.b)
+
 
     def pt_eq_below(self, pt):
         y = self.evaluate(pt[0])
@@ -879,9 +883,10 @@ class Arrangement:
 
 style = {"simplex_color": 'k',
          "simplex_alpha": .4,
-         "simplex_line_thickness": 3,
+         "simplex_line_thickness": 4,
          "edge_color": 'k',
-         "line_color": 'r',
+         "line_color": 'k',
+         "line_thickness": 1,
          "zone_line_color": "b",
          "zone_line_thickness": 4}
 

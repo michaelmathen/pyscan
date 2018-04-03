@@ -4,92 +4,142 @@
 #include <tuple>
 #include <algorithm>
 #include <cstddef>
+#include <limits>
+
 #include "Cuttings.hpp"
 
 namespace pyscan {
 
-    std::tuple<double, double, double>  cross_product(double a1, double b1, double c1,
-                                                      double a2, double b2, double c2) {
-        return std::make_tuple(b1 * c2 - b2 * c1, a2 * c1 - a1 * c2, a1 * b2 - a2 * b1);
-    }
-
-	ProjObject ProjObject::intersection(ProjObject const& other_line) {
-        auto args = cross_product(this->a, this->b, this->c, other_line.a, other_line.b, other_line.c);
-		return ProjObject(std::get<0>(args), std::get<1>(args), std::get<2>(args));
+	double det2(double a1, double b1, double a2, double b2) {
+		return a1 * b2 - b1 * a2;
 	}
 
-    bool ProjObject::below(ProjObject const& obj1){
-        return obj1.a * this->a + obj1.b * this->b + obj1.c * this->c < 0;
+
+	bool approx_zero(double val) {
+		return fabs(val) <= std::numeric_limits<double>::epsilon();
+	}
+
+	bool approx_lte_zero(double val) {
+		return val <= std::numeric_limits<double>::epsilon();
+	}
+
+	bool approx_lt_zero(double val) {
+		return val < -std::numeric_limits<double>::epsilon();
+	}
+
+	bool approx_gte_zero(double val) {
+		return val >= std::numeric_limits<double>::epsilon();
+	}
+
+	ProjObject ProjObject::intersection(ProjObject const& other_line) const {
+		return ProjObject(det2(b, c, other_line.b, other_line.c), 
+							det2(a, c, other_line.a, other_line.c),
+							det2(a, b, other_line.a, other_line.b)
+			);
+	}
+
+    bool ProjObject::dual_is_below_closed(ProjObject const& pt) const {
+    	return approx_lte_zero(this->evaluate(pt));
+    }
+  	
+  	bool ProjObject::dual_is_above_closed(ProjObject const& pt) const {
+  		return approx_gte_zero(this->evaluate(pt));
+  	}
+
+  	double ProjObject::evaluate(ProjObject const& pt) {
+  		return a * pt.a + b * pt.b + c * pt.c;
+  	}
+
+  	bool ProjObject::parallel(ProjObject const& line) const {
+  		return approx_zero(det2(a, b, line.a, line.b));
+  	}
+	
+	ProjObject ProjSegment::get_line() const {
+		return ProjObject(a, b, c);
+	}
+
+    bool ProjSegment::above_closed(ProjObject const& other_line) const {
+    	if (this->parallel(other_line)) {
+    		// (-by - c, ay, a)
+    		// (b x, -a x - c, b)
+
+    		// (-c, 0, a)
+    		// (0, -c, b)
+    		ProjObject test_pt;
+    		if (approx_zero(a)) {
+    			test_pt = ProjObject(0, -c, b);
+    		} else {
+    			test_pt = ProjObject(-c, 0, a);
+    		}
+    		return other_line.dual_is_below_closed(test_pt);
+    	} 
+    	return other_line.dual_is_below_closed(l_end_point) && 
+    			other_line.dual_is_below_closed(r_end_point);
     }
 
-    bool ProjObject::below_closed(ProjObject const& obj1){
-        return obj1.a * this->a + obj1.b * this->b + obj1.c * this->c <= 0;
+    bool ProjSegment::below_closed(ProjObject const& other_line) const {
+    	if (this->parallel(other_line)) {
+    		// (-by - c, ay, a)
+    		// (b x, -a x - c, b)
+
+    		// (-c, 0, a)
+    		// (0, -c, b)
+    		ProjObject test_pt;
+    		if (approx_zero(a)) {
+    			test_pt = ProjObject(0, -c, b);
+    		} else {
+    			test_pt = ProjObject(-c, 0, a);
+    		}
+    		return other_line.dual_is_above_closed(test_pt);
+    	} 
+    	return other_line.dual_is_above_closed(l_end_point) && 
+    			other_line.dual_is_above_closed(r_end_point);
     }
 
-    bool ProjObject::order(ProjObject const& l1, ProjObject const& l2){
-        /*
-         * Orders the intersection of two lines with the current line via there x coordinates.
-         * Or computes two lines going through the same point passing through l1 and l2 and orders
-         * them by their slope.
-         */
-        auto p1 = this->intersection(l1);
-        auto p2 = this->intersection(l2);
-        return p1->x_order(p2);
+    bool ProjSegment::is_crossed(ProjObject const& line) const {
+    	double l_v = line.evaluate(l_end_point);
+    	double r_v = line.evaluate(r_end_point);
+    	if (approx_zero(l_v)  || approx_zero(r_v)) {
+    		return false;
+    	} else {
+    		return l_v * r_v < 0;
+    	}
     }
 
-    bool ProjObject::x_order(ProjObject const& p2) {
-        /*
-         * Uses the x_coordinate to figure out which point is lower.
-         * (or tests to see if a line has a steeper slope).
-         */
-        if (0 <= this->c * p2.c ) {
-            return this->a * p2.c < p2.a * this->c;
-        } else {
-            return this->a * p2.c > p2.a * this->c;
-        }
+  	bool SegmentNode::crossing(ProjSegment const& segment) const {
+  		return segment.is_crossed(this->line);
+  	}
+
+  	bool SegmentNode::above_closed(ProjSegment const& segment) const {
+  		return segment.above_closed(this->line);
+  	}
+
+    bool SegmentNode::below_closed(ProjSegment const& segment) const {
+    	return segment.below_closed(this->line);
     }
 
-    void Cell::insert_points(const std::vector<std::tuple<ProjObject, int>> &pts) {
-
+    bool SegmentNode::above_closed_pt(ProjObject const& pt) const {
+    	return line.dual_is_above_closed(pt);
+    }
+    bool SegmentNode::below_closed_pt(ProjObject const& pt) const {
+    	return line.dual_is_below_closed(pt);
     }
 
-    void Cell::insert_lines(const std::vector<ProjObject> &lines) {
+    void PolyNode::split(ProjObject const& line, node_ptr& p1, node_ptr& p2) const {
+    	p1 = std::make_shared<PolyNode>();
+    	p2 = std::make_shared<PolyNode>();
 
+    	line_list upper_boundary;
+    	line_list lower_boundary;
+    	for (auto& l : boundary_lines) {
+    	}
+
+    	for (auto& l : crossing_lines) {
+    		
+    	}
     }
 
-    bool Triangle::intersects(const ProjObject &l1) {
-        return false;
-    }
-
-    std::vector<Cell> triangle_cutting(const std::vector<ProjObject> &lines, int r) {
-
-    	using inters_t = std::tuple<ProjObject*, ProjObject*>;
-        std::vector<ProjObject> internal_lines = lines;
-
-        //Add two lines at infinity. The return points at opposite infinities.
-        internal_lines.push_back(ProjObject(0, 0, 1));
-        internal_lines.push_back(ProjObject(0, 0, -1));
-        std::vector<inters_t> x_intercepts;
-
-        for (int i = 0; i < internal_lines.size() - 1; i++ ) {
-			for (int j = i + 1; j < internal_lines.size(); j++) {
-				x_intercepts.emplace_back(&internal_lines[i], &internal_lines[j]);
-			}
-        }
-
-
-        std::sort(x_intercepts.begin(), x_intercepts.end(), [&](inters_t const& isp1, inters_t const& isp2) {
-            auto inters_p1 = std::get<0>(isp1)->intersection(*std::get<1>(isp1));
-            auto inters_p2 = std::get<0>(isp2)->intersection(*std::get<1>(isp2));
-        	return inters_p1.x_order(inters_p2);
-        });
-
-        std::vector<Triangle> curr_triangles;
-        std::vector<ProjObject*> first_lines(internal_lines.size(), nullptr);
-        std::vector<ProjObject*> second_lines(internal_lines.size(), nullptr);
-        for (auto& intersect : x_intercepts) {
-
-        }
-
-    }
+    ProjSegment PolyNode::good_line_split(int k) const;
+    ProjSegment PolyNode::good_vertex_split(int k) const;
+    double PolyNode::get_weight() const;
 }

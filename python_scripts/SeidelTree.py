@@ -18,7 +18,6 @@ class Segment(Line):
                 non_recursive[el] = parameters[el]
         return type(self).__name__ + "(**" + pprint.pformat(non_recursive, indent=4, width=1) + ")"
 
-
     def __init__(self, line, x_1, x_2):
         super(Segment, self).__init__(line.a, line.b)
         self.xl = x_1
@@ -36,6 +35,8 @@ class Segment(Line):
         e2 = Segment(self, x, self.xr)
         return e1, e2
 
+    def is_segment(self):
+        return True
 
     def split(self, line):
         """
@@ -319,7 +320,7 @@ class Trapezoid(Node):
         self.weight = 0
 
         for l, w in w_lines:
-            if l.same_line(top_line) or l.same_line(bottom_line):
+            if l.same_line(self.top_line) or l.same_line(self.bottom_line):
                 continue
             if self.line_crosses(l):
                 self.w_lines.append((l, w))
@@ -350,28 +351,30 @@ class Trapezoid(Node):
         return [l for l, _ in self.w_lines]
 
 
-    def ptCount(self):
+    def pt_count(self):
         return len(self.points)
 
     def is_terminal(self):
         return True
 
-    def visualize(self, ax, min_x, max_x, min_y, max_y, viz_lines=False):
+    def visualize(self, ax, min_x, max_x, min_y, max_y, viz_lines=True, viz_points=False):
 
         if self.left_x > max_x or self.right_x < min_x:
             return
 
         if viz_lines:
-            c = color
-        else:
-            c = next(ax._get_lines.prop_cycler)['color']
+            for l, _ in self.w_lines:
+                ax.plot([min_x, max_x], [l.evaluate(min_x), l.evaluate(max_x)], color="k",
+                        linewidth=style["line_thickness"])
+
+        c = next(ax._get_lines.prop_cycler)['color']
 
         if max_x >= self.left_x >= min_x:
             ax.vlines(self.left_x, min(max_y, self.top_line.evaluate(self.left_x)),
-                        max(min_y, self.bottom_line.evaluate(self.left_x)), color=c)
+                        max(min_y, self.bottom_line.evaluate(self.left_x)), color=c, linewidth=style["simplex_line_thickness"])
         if max_x >= self.right_x >= min_x:
             ax.vlines(self.right_x, min(max_y, self.top_line.evaluate(self.right_x)),
-                    max(min_y, self.bottom_line.evaluate(self.right_x)), color=c)
+                    max(min_y, self.bottom_line.evaluate(self.right_x)), color=c, linewidth=style["simplex_line_thickness"])
         mnx = max(self.left_x, min_x)
         mxx = min(self.right_x, max_x)
         ax.plot([mnx, mxx],
@@ -380,18 +383,16 @@ class Trapezoid(Node):
         ax.plot([mnx, mxx],
                 [self.bottom_line.evaluate(mnx), self.bottom_line.evaluate(mxx)],
                 linewidth=style["simplex_line_thickness"], color=c)
+        if viz_points:
+            x_vals = []
+            y_vals = []
+            for x, y in self.points:
+                if min_x <= x <= max_x and min_y <= y <= max_y:
+                    x_vals.append(x)
+                    y_vals.append(y)
 
-        x_vals = []
-        y_vals = []
-        for x, y in self.points:
-            if min_x <= x <= max_x and min_y <= y <= max_y:
-                x_vals.append(x)
-                y_vals.append(y)
+            ax.scatter(x_vals, y_vals)
 
-        ax.scatter(x_vals, y_vals)
-        if viz_lines:
-            for l, _ in self.w_lines:
-                ax.plot([min_x, max_x], [l.evaluate(min_x), l.evaluate(max_x)], color=color)
 
     def horz_split(self, segment):
         """
@@ -631,7 +632,7 @@ class Seidel_Tree:
         # curr_node.visualize(ax, min_x, max_x, min_y, max_y, viz_lines=False, color=color_list[0])
 
         for curr_node in all_traps:
-            curr_node.visualize(ax, min_x, max_x, min_y, max_y, viz_lines=False)
+            curr_node.visualize(ax, min_x, max_x, min_y, max_y)
         """
         for curr_node in all_traps[len(color_list):]:
             curr_node.visualize(ax, min_x, max_x, min_y, max_y)
@@ -1262,3 +1263,31 @@ plt.show()
 #     plt.show()
 #
 #     plt.show()
+
+# def test_set_points(pts, t):
+#     test_set = []
+#     rand_pts = random.sample(pts, int(math.sqrt(2 * t) + 1))
+#     for p1, p2 in itertools.combinations(rand_pts, 2):
+#         if len(test_set) >= t:
+#             break
+#         test_set.append(to_line(p1, p2))
+#     return test_set
+#
+#
+# def test_set_lines(pts, t):
+#     test_set = []
+#     rand_pts = random.sample(pts, 2 * t)
+#
+#     for p1, p2 in zip(rand_pts[:t], rand_pts[t:]):
+#         test_set.append(to_line(p1, p2))
+#     return test_set
+#
+# pts = [(random.random(), random.random()) for i in range(1000)]
+# lines = test_set_lines(pts, 25)
+# tree = compute_cutting(lines, {l: 1 for l in lines}, pts, 5)
+# matplotlib.rcParams['figure.figsize'] = [20.0, 20.0]
+# f, ax = plt.subplots()
+# tree.visualize_trapezoids(ax, -1, 2, -1, 2)
+# ax.set_xlim(0, 1)
+# ax.set_ylim(0, 1)
+# plt.show()

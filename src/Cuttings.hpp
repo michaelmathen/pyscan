@@ -16,25 +16,31 @@ namespace pyscan {
     public:
         ProjObject(double a, double b, double c) : a(a), b(b), c(c) {}
 
-        ProjObject intersection(ProjObject const& other_line);
-
-        bool below(ProjObject const& obj1);
-        bool below_closed(ProjObject const& obj1);
-
-        bool order(ProjObject const& l1, ProjObject const& l2);
-        bool x_order(ProjObject const& p2);
-
+        ProjObject intersection(ProjObject const& other_line) const;
+        bool dual_is_below_closed(ProjObject const& pt) const;
+        double evaluate(ProjObject const& pt) const;
+        bool parallel(ProjObject const& line) const;
     };
 
 
     class ProjSegment : public ProjObject {
-
+        ProjObject l_end_pt;
+        ProjObject r_end_pt;
     public:
-        ProjSegment(ProjObject const& line, double xl, double xr) : ProjObject(line),
+        ProjSegment(ProjObject const& line, ProjObject const& el, ProjObject const& er) : ProjObject(line), 
+            l_end_pt(el), 
+            r_end_pt(er) {}
+
+        ProjObject get_line() const;
+
+        bool above_closed() const;
+        bool below_closed() const;
+        bool is_crossed() const;
     };
 
     using node_ptr = std::shared_ptr<Node>;
     using line_list = std::vector<ProjObject>;
+    using segment_list = std::vector<ProjSegment>;
     using weight_list = std::vector<double>;
 
     class Node {
@@ -46,23 +52,36 @@ namespace pyscan {
         node_ptr upper;
         node_ptr lower;
         ProjObject line;
-
-        //This is the x and scale parameter of the left and right
-        // end of the segment.
-        double x_l, s_l;
-        double x_r, s_r;
     public:
-        bool crossing(ProjObject const& line,)
+        bool crossing(ProjSegment const& segment) const;
+        bool above_closed(ProjSegment const& segment) const;
+        bool below_closed(ProjSegment const& segment) const;
+
+        bool above_closed_pt(ProjObject const& pt) const;
+        bool below_closed_pt(ProjObject const& pt) const;
     };
 
     class PolyNode : public Node {
         line_list boundary_lines;
         line_list crossing_lines;
+        line_list points;
         weight_list weights;
+        double total_weight;
     public:
-        PolyNode() {}
+        PolyNode(line_list const& ls, weight_list const& ws, line_list const& pts) : 
+            crossing_lines(ls), 
+            weights(ws),
+            points(pts)
+        {
+            total_weight = std::accumulate(weights.begin(), weights.end(), 0);
+        }
 
-        PolyNode split(ProjObject line
+        void split(ProjObject const& line, node_ptr& p1, node_ptr& p2) const;
+
+        ProjSegment good_line_split(int k) const;
+        ProjSegment good_vertex_split(int k) const;
+        double get_weight() const;
+
     };
 
 
