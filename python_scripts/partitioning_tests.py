@@ -76,6 +76,8 @@ def testing_framework(pts, l_s, h_s, count, output_file = None,
                 test_f = test_set.test_set_points
             elif test_set_f == "dts":
                 test_f = test_set.test_set_dual
+            elif test_set_f == "dts_x":
+                test_f = test_set.test_set_dual_exact_t
             else:
                 raise ValueError("test_set_f=%s"%(test_set_f,))
 
@@ -88,7 +90,7 @@ def testing_framework(pts, l_s, h_s, count, output_file = None,
                                              min_cell_size=min_cell_size,
                                              cell_sample_size=cell_size,
                                              cutting_f=compute_cutting,
-                                             test_set_f=test_f)
+                                             test_set_f=test_f, c=.05)
             elif part_f == "pmat":
                 output_set, weights = Partitioning.partitions(input_set, r,
                                                      min_cell_size=min_cell_size,
@@ -144,44 +146,36 @@ def upload_crimes(file_name, perturb = 1):
 if __name__ == "__main__":
     pts = [(random.random(), random.random()) for i in range(100000)]
     #pts = upload_crimes("crimes.csv")
-    # Vary the output sample size
-    # for cutting in ["poly", "trap"]:
-    #     for l_name in ["lts", "pts"]:
-    #         testing_framework(pts, 50, 1000, 10, part_f="pmat",
-    #                           test_set_f=l_name,
-    #                           cutting_f=cutting,
-    #                           r=4)
+    print(len(pts))
+    #Vary the output sample size
+    for cutting in ["poly"]:
+        for l_name in [ "dts_x"]:
+            testing_framework(pts, 50, 1000, 10, part_f="pchan",
+                              test_set_f=l_name,
+                              cutting_f=cutting,
+                              r=2)
     #
-    # Vary the r parameter used
+    # #Vary the r parameter used
     # for cutting in ["poly", "trap"]:
     #     for l_name in ["lts", "pts"]:
-    #         testing_framework(pts, 2, 8, 10, vparam="r", part_f="pmat",
+    #         testing_framework(pts, 2, 12, 10, vparam="r", part_f="pchan",
     #                           test_set_f=l_name, cutting_f=cutting)
-    #
-    # Vary the input size with fixed output size
-    # for cutting in ["poly", "trap"]:
-    #     for l_name in ["lts", "pts"]:
-    #         testing_framework(pts, 1000, 10000, 10, vparam="input_size", part_f="pmat",
-    #                           test_set_f=l_name, cutting_f=cutting,
-    #                           r=4)
 
-    # print(len(pts))
-    # pts = random.sample(pts, min(len(pts), 1000 * 1000))
-    # print(len(pts))
+    #Vary the input size with fixed output size
     # for cutting in ["poly"]:
-    #     for l_name in ["pts"]:
-    #         testing_framework(pts, 50, 1000, 10, part_f="pchan",
-    #                           test_set_f=l_name,
-    #                           cutting_f=cutting,
-    #                           r=2,
-    #                           output_file="test.csv")
+    #     for l_name in ["lts", "pts"]:
+    #         testing_framework(pts, 1000, 100000, 10, vparam="input_size", part_f="pchan",
+    #                           test_set_f=l_name, cutting_f=cutting,
+    #                           r=2)
 
-    testing_framework(pts, 50, 2000, 10, part_f="box")
-    testing_framework(pts, 1000, 100000, 10, vparam="input_size", part_f="box")
 
+
+    # testing_framework(pts, 50, 2000, 10, part_f="box")
+    # testing_framework(pts, 1000, 100000, 10, vparam="input_size", part_f="box")
     #
+    # #
     # testing_framework(pts, 200, 2000, 10, part_f="sample", output_file="output_sampling_chan.csv")
-    #
+    # #
     # testing_framework(pts, 1000, 100000, 10, part_f="sample", vparam="input_size", output_file="input_sampling_chan.csv")
 
 

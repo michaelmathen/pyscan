@@ -54,8 +54,10 @@ class Polygon:
                 continue
             elif l.crossed_by(segment):
                 u_s, l_s = l.simple_split(segment)
-                u_b_l.append((u_s, bw, rw))
-                l_b_l.append((l_s, bw, rw))
+                if u_s is not None:
+                    u_b_l.append((u_s, bw, rw))
+                if l_s is not None:
+                    l_b_l.append((l_s, bw, rw))
             elif l.above_closed(segment):
                 u_b_l.append((l, bw, rw))
             else:
@@ -135,6 +137,18 @@ def order_function(p1, p2):
         return math.pi - math.atan2(y, x)
 
 
+def stat(m, b):
+    if approx_eq(m, 0) and approx_eq(b, 0):
+        return 0
+    elif approx_eq(b, 0) or approx_eq(b, 1):
+        return 0
+    elif approx_eq(m, 0):
+        return math.log(1 / (1 - b))
+    elif approx_eq(m, 1):
+        return math.log(1 / b)
+    else:
+        return m * math.log(m / b) + (1 - m) * math.log((1 - m) / (1 - b))
+
 def line_error_test(n, red_points, red_weights, blue_points, blue_weights):
     """
     :param big_samp:
@@ -178,21 +192,25 @@ def line_error_test(n, red_points, red_weights, blue_points, blue_weights):
             big_sample_curr += db
             small_sample_curr += ds
 
-            if max_discrepancy <= abs(big_sample_curr * a - small_sample_curr * b):
+            if max_discrepancy <= stat(small_sample_curr * b, big_sample_curr * a):
                 max_line = to_line(net_sample[i], p_2)
-                max_discrepancy = abs(big_sample_curr * a - small_sample_curr * b)
+                max_discrepancy = stat(small_sample_curr * b, big_sample_curr * a)
+
+                #max_discrepancy = abs(big_sample_curr * a - small_sample_curr * b)
 
         return max_discrepancy, max_line
 
 
 def naive_line_error_test(n, red_points, red_weights, blue_points, blue_weights):
     net_sample = random.sample(blue_points, n / 2) + random.sample(red_points, n / 2)
+    nr = sum(red_weights)
+    nb = sum(blue_weights)
     def gen():
         for p1, p2 in itertools.combinations(net_sample, 2):
             l = to_line(p1, p2)
             r = sum(w for p, w in zip(red_points, red_weights) if l.pt_eq_below(p))
             b = sum(w for p, w in zip(blue_points, blue_weights) if l.pt_eq_below(p))
-            yield abs(r - b), l
+            yield stat(r / nr, b / nb), l
     return max(gen(), key= lambda x: x[0])
 
 
@@ -253,9 +271,9 @@ def testing_framework(r_points, b_points, l_s, h_s, count,
                 s = int(round(c / (eps ** (4/3)) * math.log(1/ eps) ** (2/3)) + .1)
                 print(len(red_points_s)/s)
                 red_points_s, red_weights = Part.chan_partitions(red_points_s, 2, min_cell_size=len(red_points_s) / s,
-                                                    test_set_f=test_set.test_set_points)
+                                                    test_set_f=test_set.test_set_dual_exact_t)
                 blue_points_s, blue_weights = Part.chan_partitions(blue_points_s, 2, min_cell_size=len(blue_points_s) / s,
-                                                     test_set_f=test_set.test_set_points)
+                                                     test_set_f=test_set.test_set_dual_exact_t)
             elif sampling_alg == "quad":
                 expon = 1 / (2 - math.log(3, 4))
                 s = int(round(c / eps ** (2 * expon) * math.log(1/eps) ** expon) + .1)
@@ -319,11 +337,11 @@ def generate_blue_and_red(s_size, q, r, eps=.1):
 
 if __name__ == "__main__":
     print("running experiment")
-    red_points, blue_points = generate_blue_and_red(10000000, .01, .5)
+    red_points, blue_points = generate_blue_and_red(100000, .01, .5)
     # red_points = [(random.random(), random.random()) for _ in range(1000000)]
     # blue_points = [(random.random(), random.random()) for _ in range(1000000)]
 
     for s_alg in ["chan", "naive", "quad"]:
         for sc_alg in ["fast"]:
             print(s_alg + " " + sc_alg)
-            testing_framework(red_points, blue_points, .001, .0001, 10, input_size=min(len(red_points), len(blue_points)), sampling_alg=s_alg, scan_alg=sc_alg)
+            testing_framework(red_points, blue_points, .01, .001, 10, input_size=min(len(red_points), len(blue_points)), sampling_alg=s_alg, scan_alg=sc_alg)

@@ -6,8 +6,7 @@ import Cuttings as Ct
 import math
 
 
-def to_dual_line(pt):
-    return St.Line(-pt[0], pt[1])
+
 
 
 def deduplicate_points(pts):
@@ -40,35 +39,39 @@ def dual_cutting(pts, r):
     #print(r)
     dual_lines = []
     for p in pts:
-        dual_lines.append(to_dual_line(p))
+        dual_lines.append(Ct.to_dual_line(p))
     #print("dual_lines=%d ,r = %d"%(len(dual_lines), r))
     tree = Pt.compute_cutting(dual_lines, {l:1 for l in dual_lines}, [], r)
     #print("computed")
     vertices = []
-    print(len(tree.get_leaves()))
+    #print(len(tree.get_leaves()))
     for trap in tree.get_leaves():
         vertices.extend(trap.get_vertices())
-    test_set = []
+    print(len(vertices))
     vertices = deduplicate_points(vertices)
     #print("got here")
     test_set = []
     for v in vertices:
         test_set.append(to_dual_line(v))
-    return test_set
+    return test_set, tree
+
+
+def test_set_dual_exact_t(pts, t, c=1):
+    internal_pts = random.sample(pts, int(.5 + min(c * math.sqrt(t) * math.log(t), len(pts))))
+    return dual_cutting(internal_pts, max(int((math.sqrt(t)) + .1), 1))[0]
+
+
+def test_dual_tree(pts, t, c=1):
+    internal_pts = random.sample(pts, int(.5 + min(c * math.sqrt(t) * math.log(t), len(pts))))
+    return dual_cutting(internal_pts, max(int((math.sqrt(t)) + .1), 1))
 
 
 
-def test_set_dual_exact_t(pts, t):
-    internal_pts = random.sample(pts, int(.5 + min(math.sqrt(t) * math.log(t), len(pts))))
-    return dual_cutting(internal_pts, max(int(math.sqrt(t) + 1), 2))
-
-
-
-def test_set_dual(pts, t):
-    internal_pts = random.sample(pts, int(.5 + min(math.sqrt(t) * math.log(t), len(pts))))
+def test_set_dual(pts, t, c = 1):
+    internal_pts = random.sample(pts, int(.5 + min(c * math.sqrt(t) * math.log(t), len(pts))))
     t_tmp = t
     while True:
-        lines = dual_cutting(internal_pts, max(int(math.sqrt(t_tmp) + 1), 2))
+        lines = dual_cutting(internal_pts, max(int(math.sqrt(t_tmp) + 1), 2))[0]
         if len(lines) < t:
             t_tmp = 2 * t_tmp
             print("doubling")
@@ -97,3 +100,16 @@ def test_set_lines(pts, t):
         test_set.append(St.to_line(p1, p2))
     return test_set
 
+#
+# import matplotlib.pyplot as plt
+#
+# pts = [(random.random(), random.random()) for i in range(10000)]
+#
+# lines = test_set_dual_exact_t(pts, 100)
+# print(len(lines))
+# f, ax = plt.subplots()
+# for l in lines:
+#     l.visualize(ax, -1, 1)
+# ax.set_xlim([-1, 1])
+# ax.set_ylim([-1, 1])
+# plt.show()

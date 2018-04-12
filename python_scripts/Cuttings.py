@@ -2,7 +2,6 @@ import random
 import matplotlib.pyplot as plt
 import matplotlib
 import pprint
-import pickle
 import math
 
 ix = 0
@@ -13,6 +12,12 @@ def weighted_shuffle(items, weights):
     order = sorted(range(len(items)), key=lambda i: rweights[i])
     return [items[i] for i in order]
 
+
+def isclose(a, b):
+    return abs(a - b) <= GLOBAL_TOL * max(abs(a), abs(b))
+
+
+
 def approx_eq(a, b):
     """
     a < b
@@ -20,7 +25,8 @@ def approx_eq(a, b):
     :param b:
     :return:
     """
-    return math.isclose(a, b, rel_tol=GLOBAL_TOL)
+    return math.isclose(a, b)
+
 
 def approx_above(a, b):
     """
@@ -29,10 +35,11 @@ def approx_above(a, b):
     :param b:
     :return:
     """
-    if math.isclose(a, b, rel_tol=GLOBAL_TOL):
+    if approx_eq(a, b):
         return False
     else:
         return a < b
+
 
 def approx_below(a, b):
     """
@@ -41,7 +48,7 @@ def approx_below(a, b):
     :param b:
     :return:
     """
-    if math.isclose(a, b, rel_tol=GLOBAL_TOL):
+    if approx_eq(a, b):
         return False
     else:
         return a > b
@@ -53,7 +60,7 @@ def approx_eq_above(a, b):
     :param b:
     :return:
     """
-    if math.isclose(a, b, rel_tol=GLOBAL_TOL):
+    if approx_eq(a, b):
         return True
     else:
         return a <= b
@@ -65,7 +72,7 @@ def approx_eq_below(a, b):
     :param b:
     :return:
     """
-    if math.isclose(a, b, rel_tol=GLOBAL_TOL):
+    if approx_eq(a, b):
         return True
     else:
         return a >= b
@@ -193,7 +200,6 @@ class Line:
     def same_line(self, other):
         return approx_eq(self.a, other.a) and approx_eq(self.b, other.b)
 
-
     def pt_eq_below(self, pt):
         y = self.evaluate(pt[0])
         return approx_eq_above(pt[1], y)
@@ -207,15 +213,18 @@ class Line:
             return other.a == self.a and other.b == self.b
         return False
 
+    def to_dual(self):
+        return (self.a, -self.b)
+
     def __hash__(self):
         return hash((self.a, self.b))
 
+    def visualize(self, ax, min_x, max_x):
+        ax.plot([min_x, max_x], [self.evaluate(min_x), self.evaluate(max_x)])
 
+id = 0
 
-ix_edge = 0
-
-
-class Edge(Line):
+class Segment(Line):
 
     def __repr__(self):
         parameters = vars(self)
@@ -227,17 +236,25 @@ class Edge(Line):
                 non_recursive[el] = parameters[el]
         return type(self).__name__ + "(**" + pprint.pformat(non_recursive, indent=4, width=1) + ")"
 
-    def __init__(self, line, x_1, x_2, upper_s=None, lower_s=None):
-        super(Edge, self).__init__(line.a, line.b)
+    def __init__(self, line, x_1, x_2):
+        super(Segment, self).__init__(line.a, line.b)
         self.xl = x_1
         self.xr = x_2
-        self.right_edge = None
-        self.left_edge = None
-        self.up_simplex = upper_s
-        self.bottom_simplex = lower_s
-        global ix_edge
-        self.id = ix_edge
-        ix_edge += 1
+        global id
+        self.id = id
+        id += 1
+
+    def hsplit(self, x):
+        """
+        Splits the edge. Does not update the simplices though
+        that the child edges point at. Need to update that later.
+        """
+        e1 = Segment(self, self.xl, x)
+        e2 = Segment(self, x, self.xr)
+        return e1, e2
+
+    def is_segment(self):
+        return True
 
     def split(self, line):
         """
@@ -247,26 +264,26 @@ class Edge(Line):
         x_mid = self.x_intercept(line)
         if approx_eq(x_mid, self.xl) or approx_eq(x_mid, self.xr):
             if self.above_closed(line):
+                return self, None, approx_eq(x_mid, self.xr)
+            else:
+                return None, self, approx_eq(x_mid, self.xr)
+
+        e1 = Segment(self, self.xl, x_mid)
+        e2 = Segment(self, x_mid, self.xr)
+        if e1.above_closed(line):
+            return e1, e2, True
+        else:
+            return e2, e1, False
+
+    def simple_split(self, line):
+        x_mid = self.x_intercept(line)
+        if approx_eq(x_mid, self.xl) or approx_eq(x_mid, self.xr):
+            if self.above_closed(line):
                 return self, None
             else:
                 return None, self
-
-        e1 = Edge(self, self.xl, x_mid, None, None)
-        e2 = Edge(self, x_mid, self.xr, None, None)
-        if self.left_edge is not None:
-            self.left_edge.right_edge = e1
-        e1.left_edge = self.left_edge
-        e1.right_edge = e2
-        e2.left_edge = e1
-        e2.right_edge = self.right_edge
-        if self.right_edge is not None:
-            self.right_edge.left_edge = e2
-
-        e1.up_simplex = self.up_simplex
-        e1.bottom_simplex = self.bottom_simplex
-        e2.up_simplex = self.up_simplex
-        e2.bottom_simplex = self.bottom_simplex
-
+        e1 = Segment(self, self.xl, x_mid)
+        e2 = Segment(self, x_mid, self.xr)
         if e1.above_closed(line):
             return e1, e2
         else:
@@ -290,11 +307,51 @@ class Edge(Line):
     def crossed_by_closed(self, line):
         return self.interval_crossed_by_closed(line, self.xl, self.xr)
 
-    def update_simplex(self, old_s, new_s):
-        if self.up_simplex == old_s:
-            self.up_simplex = new_s
-        elif self.bottom_simplex == old_s:
-            self.bottom_simplex = new_s
+    """
+    Used to do segment vs. segment comparisons. Only tests on the overlapping portions 
+    of the segment. Concludes false if there is no overlap.
+    """
+    def segment_overlap(self, seg):
+        return self.xl < seg.xr and seg.xl < self.xr
+
+    def overlap_region(self, seg):
+        return (max(self.xl, seg.xl), min(self.xr, seg.xr))
+
+    def below_segment(self, seg):
+        xl, xr = self.overlap_region(seg)
+        if xl >= xr:
+            return False
+        return self.below_interval(seg, xl, xr)
+
+    def above_segment(self, line):
+        xl, xr = self.overlap_region(line)
+        if xl >= xr:
+            return False
+        return self.above_interval(line, xl, xr)
+
+    def above_closed_segment(self, line):
+        xl, xr = self.overlap_region(line)
+        if xl >= xr:
+            return False
+        return self.above_closed_interval(line, xl, xr)
+
+    def below_closed_segment(self, line):
+        xl, xr = self.overlap_region(line)
+        if xl >= xr:
+            return False
+        return self.below_closed_interval(line, xl, xr)
+
+    def crossed_by_segment(self, line):
+        xl, xr = self.overlap_region(line)
+        if xl >= xr:
+            return False
+        return self.interval_crossed_by(line, xl, xr)
+
+    def crossed_by_closed_segment(self, line):
+        xl, xr = self.overlap_region(line)
+        if xl >= xr:
+            return False
+        return self.interval_crossed_by_closed(line, xl, xr)
 
     @property
     def left_vertex(self):
@@ -323,620 +380,878 @@ class Edge(Line):
     def yr(self):
         return self.evaluate(self.xr)
 
-    def same_edge(self, other):
+    def same_segment(self, other):
         if other is None:
             return False
         elif not isinstance(other, Edge):
             return False
         else:
-            return other.a == self.a and other.b == self.b and other.xl == self.xl and other.xr == self.xr
-
-
-class Splitter:
-    def __init__(self, term_l, old_line, new_line):
-        # vertex
-        self.term_l = term_l
-        self.old_line = old_line
-        self.new_line = new_line
-
-    def __repr__(self):
-        return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
-
-    def x_value(self):
-        return self.old_line.x_intercept(self.new_line)
-
-    def y_cross_value(self):
-        """
-        The y value corresponding to the crossing point of old_line and new_line
-        """
-        return self.old_line.y_intercept(self.new_line)
-
-    def base_above(self, line):
-        return approx_above(line.evaluate(self.x_value()), self.y_cross_value())
-
-    def base_above_closed(self, line):
-        return approx_eq_above(line.evaluate(self.x_value()), self.y_cross_value())
-
-    def intersects(self, line):
-        by = self.bottom_y()
-        ty = self.top_y()
-        my = line.evaluate(self.x_value())
-        return approx_above(by, my) and approx_above(my, ty)
-
-    def intersects_closed(self, line):
-        c_y = line.evaluate(self.x_value())
-        return approx_eq_below(self.top_y(), c_y) and approx_eq_below(c_y, self.bottom_y())
-
-    def term_y(self):
-        return self.term_l.evaluate(self.x_value())
-
-    def intersect_y(self):
-        return self.old_line.evaluate(self.x_value())
-
-    def top_y(self):
-        return max(self.term_y(), self.intersect_y())
-
-    def bottom_y(self):
-        return min(self.term_y(), self.intersect_y())
-
-    def below_closed(self, line):
-        """
-        Is the splitter below the line
-        """
-        return approx_eq_above(self.top_y(), line.evaluate(self.x_value()))
-
-    def above_closed(self, line):
-        """
-        Is the splitter above the line
-        """
-        return approx_eq_below(self.bottom_y(), line.evaluate(self.x_value()))
-
-    def below(self, line):
-        """
-        Is the splitter below the line
-        """
-        return approx_above(self.top_y(), line.evaluate(self.x_value()))
-
-    def above(self, line):
-        """
-        Is the splitter above the line
-        """
-        return approx_below(self.bottom_y(), line.evaluate(self.x_value()))
-
-    def get_old_line(self):
-        return self.old_line
-
-    def get_new_line(self):
-        return self.new_line
-
-    def get_term_line(self):
-        return self.term_l
-
-    def cut_left(self):
-        """
-        Does the new line cut the old line to the left of the vertical line
-        :return:
-        """
-        if self.term_y() < self.intersect_y():
-            return self.old_line.a < self.new_line.a
-        else:
-            return self.new_line.a <= self.old_line.a
-
-    def cut_right(self):
-        return not self.cut_left()
-
-    def pt_is_left(self, pt):
-        return approx_eq_above(pt[0], self.x_value())
-
-    def pt_is_right(self, pt):
-        return approx_eq_above(self.x_value(), pt[0])
-
-
-
-class Simplex:
-    def __init__(self, crossing_lines=[]):
-        self.edges = []
-        self.splitters = []
-        self.crossing_lines = [crossing_lines]
-        global ix
-        self.id = ix
-        ix += 1
-
-
-
-    def inside_point(self):
-        if len(edges) > 1:
-            distinct_edges = []
-            for e in self.edges:
-                if len(distinct_edges) >= 3:
-                    return simplex_center(distinct_edges)
-                distinct_edges.append(e.right_vertex)
-                distinct_edges.append(e.left_vertex)
-                remove_close_points(distinct_edges)
-        else:
-            return None
-
-    # def inside(self, x, y):
-    #     """
-    #     simple slow inside implementation.
-    #     :param x:
-    #     :param y:
-    #     :return:
-    #     """
-    #     crossing_pts = []
-    #     l_test = Line(0, y)
-    #     for e in self.edges:
-    #         if e.crossed_by_closed(l_test):
-    #             crossing_pts.append(e.crossed_pt(l_test))
-    #     remove_close_points(crossing_pts)
-    #
-    #     if len(crossing_pts)
-
-    def __repr__(self):
-        return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
-
-
-    def print(self):
-        return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
-
-    def get_new_edge(self, line, entrance_edge):
-        """
-        Makes new edge for the exit values. Note this does not set the upper and lower
-        simplex.
-        """
-        exit_edge = None
-        for edge in self.edges:
-            if edge.crossed_by_closed(line) and not edge.same_edge(entrance_edge):
-                exit_edge = edge
-
-        if exit_edge is None:
-            right_x = float("inf")
-        else:
-            right_x = line.x_intercept(exit_edge)
-
-        if entrance_edge is None:
-            left_x = -float("inf")
-        else:
-            left_x = line.x_intercept(entrance_edge)
-
-        return Edge(line, left_x, right_x)
-
-    def find_term_line(self, line, edge):
-        v_x = line.x_intercept(edge)
-        for e in self.edges:
-            if e.contains_x(v_x) and not edge.same_line(e):
-                return e
-        return None
-
-    def exit_edge(self, line, entrance_edge):
-        for e in self.edges:
-            if e.crossed_by_closed(line) and not e.same_edge(entrance_edge):
-                return e
-        return None
-
-    def next_simplex(self, line, entrance_edge):
-        exit_edge = self.exit_edge(line, entrance_edge)
-        if exit_edge is None:
-            return None
-        else:
-            if exit_edge.crossed_by_closed(line):
-                if exit_edge.up_simplex == self:
-                    return exit_edge, exit_edge.bottom_simplex
-                else:
-                    return exit_edge, exit_edge.up_simplex
-            else:  # crosses the vertex
-                if exit_edge.right_edge is None:
-                    return None
-                if exit_edge.up_simplex == self:
-                    return exit_edge, exit_edge.right_edge.bottom_simplex
-                else:
-                    return exit_edge, exit_edge.right_edge.up_simplex
-
-    def get_left(self):
-        if not self.edges:
-            return -float("inf")
-        return min(e.xl for e in self.edges)
-
-    def get_right(self):
-        if not self.edges:
-            return float("inf")
-        return max(e.xr for e in self.edges)
-
-    def insert_splitter(self, line, entrance_edge, exit_edge):
-
-        # First insert the possibly two new splitters.
-        # We do this by finding the possibly two new vertices created.
-        # Create a splitter for each of these.
-        # These will be the endpoints of the new edge.
-
-        new_splitters = self.splitters[:]
-        new_crossing_lines = self.crossing_lines[:]
-        for edge in [entrance_edge, exit_edge]:
-            if edge is not None:
-                # could be the entrance or exit edge.
-                term = self.find_term_line(line, edge)
-                if term is None:  # the line extends up or down forever.
-                    if edge == exit_edge:
-                        if line.a > edge.a:
-                            term = Line(0, -float('inf'))
-                        elif line.a < edge.a:
-                            term = Line(0, float('inf'))
-                        else:
-                            continue
-                    else:
-                        if line.a < edge.a:
-                            term = Line(0, -float('inf'))
-                        elif line.a > edge.a:
-                            term = Line(0, float('inf'))
-                        else:
-                            continue
-                new_splitter = Splitter(term, edge, line)
-
-                for i, el in enumerate(new_splitters):
-                    if new_splitter.x_value() < el.x_value():
-                        new_splitters.insert(i, new_splitter)
-                        break
-                else:
-                    i = len(new_crossing_lines) - 1
-                    new_splitters.append(new_splitter)
-                left = []
-                right = []
-                for l in new_crossing_lines[i]:
-                    if new_splitter.intersects(l):
-                        left.append(l)
-                        right.append(l)
-                    elif abs(new_splitter.term_y()) == float("inf"):
-                        old = new_splitter.get_old_line()
-                        i_x = old.x_intercept(l)
-                        splitter_x = new_splitter.x_value()
-                        if i_x < splitter_x:
-                            left.append(l)
-                        else:
-                            right.append(l)
-                    else:
-                        old = new_splitter.get_old_line()
-                        term = new_splitter.get_term_line()
-
-                        wedge_point = old.x_intercept(term)
-                        splitter_x = new_splitter.x_value()
-                        intercepts = [l.x_intercept(term), l.x_intercept(old)]
-
-                        if wedge_point < splitter_x:
-                            intercepts = [x for x in intercepts if x > wedge_point]
-                        else:
-                            intercepts = [x for x in intercepts if x < wedge_point]
-                        if len(intercepts) == 0:
-                            print(wedge_point, splitter_x, [l.x_intercept(term), l.x_intercept(old)])
-                        elif intercepts[0] < splitter_x:
-                            left.append(l)
-                        else:
-                            right.append(l)
-                new_crossing_lines[i] = right
-                new_crossing_lines.insert(i, left)
-
-        return new_splitters, new_crossing_lines
-
-    def cut_splitters(self, line, new_splitters):
-
-        #determine if the splitter is above or below the new line.
-        m_upper_splitters = []
-        m_lower_splitters = []
-        # | /-\
-        for splitter in new_splitters:
-            if splitter.base_above(line) or splitter.above_closed(line):
-                m_upper_splitters.append(splitter)
-            else:
-                m_lower_splitters.append(splitter)
-
-        for splitter in new_splitters:
-            if splitter.intersects(line):
-                splitter.term_l = line
-
-        return m_upper_splitters, m_lower_splitters
-
-    def split_crossing_lines(self, line, sp, cross_lines):
-        # Partiton the crossing lines by checking if they cross the new splitter
-        # if they don't then they must reside only on 1 side or the other.
-        # Check to see if they intersect the upper or lower lines in the right or left splitter.
-        partition_points = [s.x_value() for s in sp] + [self.get_right()]
-        upper_lines = []
-        lower_lines = []
-        if len(sp) == 0:
-            return cross_lines, cross_lines
-
-        cl = cross_lines[0]; lx = self.get_left(); rx = partition_points[0]
-        if (sp[0].get_new_line().same_line(line) and sp[0].cut_left()) or sp[0].intersects(line):
-                upper_lines.append([l for l in cl if l.above_interval(line, lx, rx) or
-                                    line.interval_crossed_by(l, lx, rx)])
-                lower_lines.append([l for l in cl if l.below_interval(line, lx, rx) or
-                                    line.interval_crossed_by(l, lx, rx)])
-        elif sp[0].above_closed(line):
-            upper_lines.append(cl)
-            lower_lines.append([])
-        else:
-            upper_lines.append([])
-            lower_lines.append(cl)
-
-
-        for lx, cl, s, rx in zip(partition_points[:-1], cross_lines[1:], sp, partition_points[1:]):
-            if (s.get_new_line().same_line(line) and s.cut_right()) or s.intersects(line):
-                upper_lines.append([l for l in cl if l.above_interval(line, lx, rx) or
-                                    line.interval_crossed_by(l, lx, rx)])
-                lower_lines.append([l for l in cl if l.below_interval(line, lx, rx) or
-                                    line.interval_crossed_by(l, lx, rx)])
-            elif s.above_closed(line):
-                upper_lines.append(cl)
-                lower_lines.append([])
-            else:
-                upper_lines.append([])
-                lower_lines.append(cl)
-
-
-        return upper_lines, lower_lines
-
-    def merge_cells(self, line, sp, upper_lines, lower_lines):
-
-        prev_upper_list = upper_lines[0] if upper_lines else []
-        prev_lower_list = lower_lines[0] if lower_lines else []
-        m_upper_lines = []
-        m_lower_lines = []
-
-        for splitter, u_line_cell, l_line_cell in zip(sp, upper_lines[1:], lower_lines[1:]):
-            if splitter.base_above(line) or splitter.above_closed(line):
-                prev_lower_list.extend(l_line_cell)
-                m_upper_lines.append(list(set(prev_upper_list)))
-                prev_upper_list = u_line_cell
-            else:
-                prev_upper_list.extend(u_line_cell)
-                m_lower_lines.append(list(set(prev_lower_list)))
-                prev_lower_list = l_line_cell
-        m_upper_lines.append(list(set(prev_upper_list)))
-        m_lower_lines.append(list(set(prev_lower_list)))
-        return m_upper_lines, m_lower_lines
-
-    def split_simplex(self, line, entrance_edge, u_entrance = None, l_entrance = None):
-        upper_edges = []
-        lower_edges = []
-
-        exit_edge = self.exit_edge(line, entrance_edge)
-        new_edge = self.get_new_edge(line, entrance_edge)
-        if exit_edge is not None:
-            u_exit, l_exit = exit_edge.split(line)
-        else:
-            u_exit = None; l_exit = None
-        new_edge_flag = True
-        if not self.edges:
-            upper_edges.append(new_edge)
-            lower_edges.append(new_edge)
-        for edge in self.edges:
-            if edge == entrance_edge:
-                if l_entrance is not None:
-                    lower_edges.append(l_entrance)
-                if new_edge_flag:
-                    upper_edges.append(new_edge)
-                    lower_edges.append(new_edge)
-                    new_edge_flag = False
-                if u_entrance is not None:
-                    upper_edges.append(u_entrance)
-            elif edge == exit_edge:
-                if u_exit is not None:
-                    upper_edges.append(u_exit)
-                if new_edge_flag:
-                    upper_edges.append(new_edge)
-                    lower_edges.append(new_edge)
-                    new_edge_flag = False
-                if l_exit is not None:
-                    lower_edges.append(l_exit)
-            elif edge.above_closed(line):
-                upper_edges.append(edge)
-            elif edge.below_closed(line):
-                lower_edges.append(edge)
-        upper_simplex = Simplex()
-        lower_simplex = Simplex()
-        new_edge.up_simplex = upper_simplex
-        new_edge.bottom_simplex = lower_simplex
-        for e in upper_edges:
-            e.update_simplex(self, upper_simplex)
-        for e in lower_edges:
-            e.update_simplex(self, lower_simplex)
-        upper_simplex.edges = upper_edges
-        lower_simplex.edges = lower_edges
-
-        """
-        Makes a pass through the splitters. First inserts the possibly two
-        new splitters. Secondly prunes lines that only fall above
-        or below a division between two splitters. Finally
-        merges splitters that are terminated by lines outside
-        of the current simplex.
-        """
-        new_splitters, new_crossing_lines = self.insert_splitter(line, entrance_edge, exit_edge)
-        upper_lines, lower_lines = self.split_crossing_lines(line, new_splitters, new_crossing_lines)
-        print(len(upper_lines))
-        upper_lines, lower_lines = self.merge_cells(line, new_splitters, upper_lines, lower_lines)
-        m_upper_splitters, m_lower_splitters = self.cut_splitters(line, new_splitters)
-        print(len(upper_lines), len(m_upper_splitters))
-        print()
-        upper_simplex.splitters = m_upper_splitters
-        lower_simplex.splitters = m_lower_splitters
-        upper_simplex.crossing_lines = upper_lines
-        lower_simplex.crossing_lines = lower_lines
-
-        return new_edge, u_exit, l_exit, upper_simplex, lower_simplex
-
-
-class Trapezoid:
-
-    def __init__(self):
-        """
-        A trapezoid consists of upper cells and lower cells.
-        """
-        self.left_splitter = None
-        self.top_edge = None
-        self.right_splitter = None
-        self.bottom_edge = None
-        self.left_cells = []
-        self.right_cells = []
-        self.top_cells = []
-        self.bottom_cells = []
-
-
-
-
-
-
-
-class Arrangement:
-    def __init__(self, initial_lines=[]):
-        self.left_edges = set()
-        self.simplices = {Simplex(initial_lines)}
-
-    def __repr__(self):
-        return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
-
-    def check_arrangement(self):
-        all_edges = set()
-        for s in self.simplices:
-            for e in s.edges:
-                if e.up_simplex is not None and e.up_simplex not in self.simplices:
-                    print("simplex=%d, edge=%d, up_bad=%d"%(s.id, e.id, e.up_simplex.id))
-                if e.bottom_simplex is not None and e.bottom_simplex not in self.simplices:
-                    print("simplex=%d, edge=%d, up_bad=%d" % (s.id, e.id, e.bottom_simplex.id))
-                all_edges.add(e)
-        for s in self.simplices:
-            for e in s.edges:
-                if e.right_edge is not None and e.right_edge not in all_edges:
-                    print("edge=%d, pointing to=%d"%(e.id, e.right_edge.id))
-
-
-    def zone(self, line):
-        if not self.left_edges:
-            el = self.simplices.pop()
-            self.simplices.add(el)
-            yield None, el
-        else:
-            exit_edge = min(self.left_edges, key=lambda x: x.x_intercept(line))
-            while not exit_edge.crossed_by_closed(line):
-                exit_edge = exit_edge.right_edge
-                if exit_edge is None:
-                    print("Shouldn't be here")
-                    return
-            if line.a < exit_edge.a:
-                curr_simplex = exit_edge.up_simplex
-            else:
-                curr_simplex = exit_edge.bottom_simplex
-            yield None, curr_simplex
-            entrance_edge = None
-            while True:
-                possibly_next = curr_simplex.next_simplex(line, entrance_edge)
-                # print(possibly_next)
-                if possibly_next is None:
-                    return
-                entrance_edge, curr_simplex = possibly_next
-                yield possibly_next
-
-    def insert(self, line):
-        first_edge = None
-        prev_edge = None
-        uex = None
-        lex = None
-        zone = [el for el in self.zone(line)]
-        for entrance_edge, simplex in zone:
-            # print("Entrance " + str(entrance_edge))
-            # print("Exit " + str(simplex.print()))
-            # print()
-            # print()
-            u_e = uex
-            l_e = lex
-            new_edge, uex, lex, up_s, l_s = simplex.split_simplex(line, entrance_edge, u_e, l_e)
-            self.simplices.remove(simplex)
-            self.simplices.add(up_s)
-            self.simplices.add(l_s)
-            # plot_edge(new_edge, -1, 2, ax)
-            # plot_edge(u_e, -1, 2, ax)
-            # plot_edge(l_e, -1, 2, ax)
-            # plot_edge(uex, -1, 2, ax)
-            # plot_edge(lex, -1, 2, ax)
-            # plt.show()
-            # make sure that the left edges are kept current.
-            if entrance_edge in self.left_edges:
-                self.left_edges.remove(entrance_edge)
-                if u_e is not None and l_e is not None:
-                    if u_e.right_edge == l_e:
-                        self.left_edges.add(u_e)
-                    else:
-                        self.left_edges.add(l_e)
-                elif u_e is not None:
-                    self.left_edges.add(u_e)
-                elif l_e is not None:
-                    self.left_edges.add(l_e)
-
-            if first_edge is None:
-                first_edge = new_edge
-                prev_edge = first_edge
-            else:
-                prev_edge.right_edge = new_edge
-                if new_edge is not None:
-                    new_edge.left_edge = prev_edge
-                prev_edge = new_edge
-        self.left_edges.add(first_edge)
-
-
-style = {"simplex_color": 'k',
-         "simplex_alpha": .4,
-         "simplex_line_thickness": 4,
-         "edge_color": 'k',
-         "line_color": 'k',
-         "line_thickness": 1,
-         "zone_line_color": "b",
-         "zone_line_thickness": 4}
-
-
-def plot_edge(edge, min_x, max_x, ax):
-    """
-    Plots the edge object
-    :param edge:
-    :param min_x:
-    :param max_x:
-    :param ax:
-    :return:
-    """
-    if edge is None:
-        return
-
-    lx = max(edge.xl, min_x)
-    rx = min(edge.xr, max_x)
-    if lx > max_x or rx < min_x:
-        return
-    ax.plot([lx, rx], [edge.evaluate(lx), edge.evaluate(rx)], style["edge_color"])
-
-
-def plot_line(line, min_x, max_x, ax):
-    """
-    Plots the line object
-    :param line:
-    :param min_x:
-    :param max_x:
-    :param ax:
-    :return:
-    """
-    ax.plot([min_x, max_x], [line.evaluate(min_x), line.evaluate(max_x)], style["line_color"])
-
-
-def plot_zone_line(line, min_x, max_x, ax):
-    """
-    Plots the line object
-    :param line:
-    :param min_x:
-    :param max_x:
-    :param ax:
-    :return:
-    """
-    ax.plot([min_x, max_x], [line.evaluate(min_x), line.evaluate(max_x)], style["zone_line_color"],
-            linewidth=style["zone_line_thickness"])
-
-
-def restrict(x, min_x, max_x):
-    return min(max_x, max(x, min_x))
+            return approx_eq(other.a, self.a) and approx_eq(other.b, self.b) and approx_eq(other.xl, self.xl) and approx_eq(other.xr, self.xr)
+
+
+    #This is useful for determining if this line segment is to the right side or left side of its intersection
+    # note this doesn't make sense if xl and xr are -inf and inf
+    def mostly_to_right(self, x):
+        return (self.xl + self.xr) / 2.0 > x
+
+    def mostly_to_left(self, x):
+        return (self.xl + self.xr) / 2.0 < x
+
+    def contained(self, pt):
+        return self.pt_eq_above(pt) and self.pt_eq_below(pt)
+
+
+    def to_left(self, x):
+        return approx_above(self.xr, x)
+
+    def to_right(self, x):
+        return approx_above(x, self.xl)
+
+    def to_left_closed(self, x):
+        return approx_eq_above(self.xr, x)
+
+    def to_right_closed(self, x):
+        return approx_eq_above(x, self.xl)
+
+def to_dual_line(pt):
+    return Line(pt[0], -pt[1])
+
+def det2(a1, a2, b1, b2):
+    return a1 * b2 - a2 * b1
+
+#
+# class HLine:
+#
+#     def __init__(self, a, b, c = 1):
+#         self.a = a
+#         self.b = b
+#         self.c = c
+#
+#     def join(self, other):
+#         a = det2(self.b, self.c, other.b, other.c)
+#         b = det2(self.a, self.c, other.a, other.c)
+#         c = det2(self.a, self.b, other.a, other.b)
+#         return HLine(a, b, c)
+#
+#     def evaluate(self, other):
+#         return HLine(self.a * other.a, self.b * other.b, self.c * other.c)
+#
+#     def x_intercept(self, other):
+#         pt = self.join(other)
+#         return pt.a / pt.c
+#
+#     # These compare the first or second coordinates of the Hline
+#     def c1_lt(self, other) -> bool:
+#         return self.a * other.c < other.a * self.c
+#
+#     def c2_lt(self, other) -> bool:
+#         return self.b * other.c < other.b * self.c
+#
+#     def c1_lte(self, other) -> bool:
+#         return self.a * other.c <= other.a * self.c
+#
+#     def c2_lte(self, other) -> bool:
+#         return self.b * other.c <= other.b * self.c
+#
+#     def c1_approx_lt(self, other) -> bool:
+#         return approx_above(self.a * other.c < other.a * self.c)
+#
+#     def c2_approx_lt(self, other) -> bool:
+#         return approx_above(self.b * other.c, other.b * self.c)
+#
+#     def c1_approx_lte(self, other) -> bool:
+#         return approx_eq_above(self.a * other.c < other.a * self.c)
+#
+#     def c2_approx_lte(self, other) -> bool:
+#         return approx_eq_above(self.b * other.c, other.b * self.c)
+#
+#     # These test to see whether the dual is above or below the line.
+#     def dual_lt(self, dual) -> bool:
+#         return 0 < dual.a * self.a + dual.b * self.b + dual.c * self.c
+#
+#     def dual_lte(self, dual) -> bool:
+#         return 0 <= dual.a * self.a + dual.b * self.b + dual.c * self.c
+#
+#     def dual_approx_lt(self, dual) -> bool:
+#         return approx_above(0, dual.a * self.a + dual.b * self.b + dual.c * self.c)
+#
+#     def dual_approx_lte(self, dual) -> bool:
+#         return approx_eq_above(0, dual.a * self.a + dual.b * self.b + dual.c * self.c)
+#
+#     # These test to see if a line is below a segment or crosses it.
+#
+#     def crossing_interval(self, other, xl, cl, xr, cr):
+#         h_object = self.join(other)
+#         return approx_above(xl * h_object.c, h_object.a * cl) and \
+#                approx_above(h_object.a * cr, xr * h_object.c)
+#
+#     def crossing_interval_closed(self, other, xl, cl, xr, cr):
+#         h_object = self.join(other)
+#         return approx_eq_above(xl * h_object.c, h_object.a * cl) and \
+#                approx_eq_above(h_object.a * cr, xr * h_object.c)
+#
+#
+#     def above_closed_interval(self, other, xl, xr, cl=1, cr=1):
+#         h_object = self.join(other)
+#         if approx_eq(h_object.c, 0.0):
+#             return approx_eq_above(other.c / other.b, self.c / self.b)
+#         else:
+#             br = approx_above(h_object.a / h_object.c, xr / cr)
+#             bl = approx_above(xl / cl, h_object.a / h_object.c)
+#             if bl and br:
+#                 return False
+#             elif approx_eq_above(xr / cr, h_object.a / h_object.c):
+#                 return h_object.c < 0
+#             else:
+#                 return h_object.c > 0
+#
+#     def above_interval(self, other, xl, xr, cl=1, cr=1):
+#         h_object = self.join(other)
+#         if approx_eq(h_object.c, 0.0):
+#             return approx_above(other.c / other.b, self.c / self.b)
+#         else:
+#             vr = det2(h_object.a, h_object.c, xr, cr)
+#             vl = det2(h_object.a, h_object.c, xl, cl)
+#
+#             if approx_eq_above(vr, 0):
+#                 return False
+#             elif approx_eq_above(xr / cr, h_object.a / h_object.c):
+#                 return h_object.c < 0
+#             else:
+#                 return h_object.c > 0
+#
+# class HSegment(HLine):
+#     def __init__(self, a, b, c, xl, xr):
+#         super(HSegment, self).__init__(a, b, c)
+#         self.xl = xl
+#         self.xr = xr
+
+#
+
+
+
+# class Edge(Line):
+#
+#     def __repr__(self):
+#         parameters = vars(self)
+#         non_recursive = {}
+#         for el in parameters:
+#             if isinstance(parameters[el], Edge) or isinstance(parameters[el], Simplex):
+#                 non_recursive[el] = parameters[el].id
+#             else:
+#                 non_recursive[el] = parameters[el]
+#         return type(self).__name__ + "(**" + pprint.pformat(non_recursive, indent=4, width=1) + ")"
+#
+#     def __init__(self, line, x_1, x_2, upper_s=None, lower_s=None):
+#         super(Edge, self).__init__(line.a, line.b)
+#         self.xl = x_1
+#         self.xr = x_2
+#         self.right_edge = None
+#         self.left_edge = None
+#         self.up_simplex = upper_s
+#         self.bottom_simplex = lower_s
+#         global ix_edge
+#         self.id = ix_edge
+#         ix_edge += 1
+#
+#     def split(self, line):
+#         """
+#         Splits the edge. Does not update the simplices though
+#         that the child edges point at. Need to update that later.
+#         """
+#         x_mid = self.x_intercept(line)
+#         if approx_eq(x_mid, self.xl) or approx_eq(x_mid, self.xr):
+#             if self.above_closed(line):
+#                 return self, None
+#             else:
+#                 return None, self
+#
+#         e1 = Edge(self, self.xl, x_mid, None, None)
+#         e2 = Edge(self, x_mid, self.xr, None, None)
+#         if self.left_edge is not None:
+#             self.left_edge.right_edge = e1
+#         e1.left_edge = self.left_edge
+#         e1.right_edge = e2
+#         e2.left_edge = e1
+#         e2.right_edge = self.right_edge
+#         if self.right_edge is not None:
+#             self.right_edge.left_edge = e2
+#
+#         e1.up_simplex = self.up_simplex
+#         e1.bottom_simplex = self.bottom_simplex
+#         e2.up_simplex = self.up_simplex
+#         e2.bottom_simplex = self.bottom_simplex
+#
+#         if e1.above_closed(line):
+#             return e1, e2
+#         else:
+#             return e2, e1
+#
+#     def below(self, line):
+#         return self.below_interval(line, self.xl, self.xr)
+#
+#     def above(self, line):
+#         return self.above_interval(line, self.xl, self.xr)
+#
+#     def above_closed(self, line):
+#         return self.above_closed_interval(line, self.xl, self.xr)
+#
+#     def below_closed(self, line):
+#         return self.below_closed_interval(line, self.xl, self.xr)
+#
+#     def crossed_by(self, line):
+#         return self.interval_crossed_by(line, self.xl, self.xr)
+#
+#     def crossed_by_closed(self, line):
+#         return self.interval_crossed_by_closed(line, self.xl, self.xr)
+#
+#     def update_simplex(self, old_s, new_s):
+#         if self.up_simplex == old_s:
+#             self.up_simplex = new_s
+#         elif self.bottom_simplex == old_s:
+#             self.bottom_simplex = new_s
+#
+#     @property
+#     def left_vertex(self):
+#         return self.xl, self.evaluate(self.xl)
+#
+#     @property
+#     def right_vertex(self):
+#         return self.xr, self.evaluate(self.xr)
+#
+#     def y_intersects(self, a, b):
+#         y1 = self.xl * a + b
+#         y2 = self.xr * a + b
+#         return y1, y2
+#
+#     def contains_x_closed(self, x_val):
+#         return approx_eq_above(self.xl, x_val) and approx_eq_above(x_val, self.xr)
+#
+#     def contains_x(self, x_val):
+#         return approx_above(self.xl, x_val) and approx_above(x_val, self.xr)
+#
+#     @property
+#     def yl(self):
+#         return self.evaluate(self.xl)
+#
+#     @property
+#     def yr(self):
+#         return self.evaluate(self.xr)
+#
+#     def same_edge(self, other):
+#         if other is None:
+#             return False
+#         elif not isinstance(other, Edge):
+#             return False
+#         else:
+#             return other.a == self.a and other.b == self.b and other.xl == self.xl and other.xr == self.xr
+#
+#
+# class Splitter:
+#     def __init__(self, term_l, old_line, new_line):
+#         # vertex
+#         self.term_l = term_l
+#         self.old_line = old_line
+#         self.new_line = new_line
+#
+#     def __repr__(self):
+#         return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
+#
+#     def x_value(self):
+#         return self.old_line.x_intercept(self.new_line)
+#
+#     def y_cross_value(self):
+#         """
+#         The y value corresponding to the crossing point of old_line and new_line
+#         """
+#         return self.old_line.y_intercept(self.new_line)
+#
+#     def base_above(self, line):
+#         return approx_above(line.evaluate(self.x_value()), self.y_cross_value())
+#
+#     def base_above_closed(self, line):
+#         return approx_eq_above(line.evaluate(self.x_value()), self.y_cross_value())
+#
+#     def intersects(self, line):
+#         by = self.bottom_y()
+#         ty = self.top_y()
+#         my = line.evaluate(self.x_value())
+#         return approx_above(by, my) and approx_above(my, ty)
+#
+#     def intersects_closed(self, line):
+#         c_y = line.evaluate(self.x_value())
+#         return approx_eq_below(self.top_y(), c_y) and approx_eq_below(c_y, self.bottom_y())
+#
+#     def term_y(self):
+#         return self.term_l.evaluate(self.x_value())
+#
+#     def intersect_y(self):
+#         return self.old_line.evaluate(self.x_value())
+#
+#     def top_y(self):
+#         return max(self.term_y(), self.intersect_y())
+#
+#     def bottom_y(self):
+#         return min(self.term_y(), self.intersect_y())
+#
+#     def below_closed(self, line):
+#         """
+#         Is the splitter below the line
+#         """
+#         return approx_eq_above(self.top_y(), line.evaluate(self.x_value()))
+#
+#     def above_closed(self, line):
+#         """
+#         Is the splitter above the line
+#         """
+#         return approx_eq_below(self.bottom_y(), line.evaluate(self.x_value()))
+#
+#     def below(self, line):
+#         """
+#         Is the splitter below the line
+#         """
+#         return approx_above(self.top_y(), line.evaluate(self.x_value()))
+#
+#     def above(self, line):
+#         """
+#         Is the splitter above the line
+#         """
+#         return approx_below(self.bottom_y(), line.evaluate(self.x_value()))
+#
+#     def get_old_line(self):
+#         return self.old_line
+#
+#     def get_new_line(self):
+#         return self.new_line
+#
+#     def get_term_line(self):
+#         return self.term_l
+#
+#     def cut_left(self):
+#         """
+#         Does the new line cut the old line to the left of the vertical line
+#         :return:
+#         """
+#         if self.term_y() < self.intersect_y():
+#             return self.old_line.a < self.new_line.a
+#         else:
+#             return self.new_line.a <= self.old_line.a
+#
+#     def cut_right(self):
+#         return not self.cut_left()
+#
+#     def pt_is_left(self, pt):
+#         return approx_eq_above(pt[0], self.x_value())
+#
+#     def pt_is_right(self, pt):
+#         return approx_eq_above(self.x_value(), pt[0])
+#
+#
+#
+# class Simplex:
+#     def __init__(self, crossing_lines=[]):
+#         self.edges = []
+#         self.splitters = []
+#         self.crossing_lines = [crossing_lines]
+#         global ix
+#         self.id = ix
+#         ix += 1
+#
+#
+#
+#     def inside_point(self):
+#         if len(edges) > 1:
+#             distinct_edges = []
+#             for e in self.edges:
+#                 if len(distinct_edges) >= 3:
+#                     return simplex_center(distinct_edges)
+#                 distinct_edges.append(e.right_vertex)
+#                 distinct_edges.append(e.left_vertex)
+#                 remove_close_points(distinct_edges)
+#         else:
+#             return None
+#
+#     # def inside(self, x, y):
+#     #     """
+#     #     simple slow inside implementation.
+#     #     :param x:
+#     #     :param y:
+#     #     :return:
+#     #     """
+#     #     crossing_pts = []
+#     #     l_test = Line(0, y)
+#     #     for e in self.edges:
+#     #         if e.crossed_by_closed(l_test):
+#     #             crossing_pts.append(e.crossed_pt(l_test))
+#     #     remove_close_points(crossing_pts)
+#     #
+#     #     if len(crossing_pts)
+#
+#     def __repr__(self):
+#         return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
+#
+#
+#     def print(self):
+#         return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
+#
+#     def get_new_edge(self, line, entrance_edge):
+#         """
+#         Makes new edge for the exit values. Note this does not set the upper and lower
+#         simplex.
+#         """
+#         exit_edge = None
+#         for edge in self.edges:
+#             if edge.crossed_by_closed(line) and not edge.same_edge(entrance_edge):
+#                 exit_edge = edge
+#
+#         if exit_edge is None:
+#             right_x = float("inf")
+#         else:
+#             right_x = line.x_intercept(exit_edge)
+#
+#         if entrance_edge is None:
+#             left_x = -float("inf")
+#         else:
+#             left_x = line.x_intercept(entrance_edge)
+#
+#         return Edge(line, left_x, right_x)
+#
+#     def find_term_line(self, line, edge):
+#         v_x = line.x_intercept(edge)
+#         for e in self.edges:
+#             if e.contains_x(v_x) and not edge.same_line(e):
+#                 return e
+#         return None
+#
+#     def exit_edge(self, line, entrance_edge):
+#         for e in self.edges:
+#             if e.crossed_by_closed(line) and not e.same_edge(entrance_edge):
+#                 return e
+#         return None
+#
+#     def next_simplex(self, line, entrance_edge):
+#         exit_edge = self.exit_edge(line, entrance_edge)
+#         if exit_edge is None:
+#             return None
+#         else:
+#             if exit_edge.crossed_by_closed(line):
+#                 if exit_edge.up_simplex == self:
+#                     return exit_edge, exit_edge.bottom_simplex
+#                 else:
+#                     return exit_edge, exit_edge.up_simplex
+#             else:  # crosses the vertex
+#                 if exit_edge.right_edge is None:
+#                     return None
+#                 if exit_edge.up_simplex == self:
+#                     return exit_edge, exit_edge.right_edge.bottom_simplex
+#                 else:
+#                     return exit_edge, exit_edge.right_edge.up_simplex
+#
+#     def get_left(self):
+#         if not self.edges:
+#             return -float("inf")
+#         return min(e.xl for e in self.edges)
+#
+#     def get_right(self):
+#         if not self.edges:
+#             return float("inf")
+#         return max(e.xr for e in self.edges)
+#
+#     def insert_splitter(self, line, entrance_edge, exit_edge):
+#
+#         # First insert the possibly two new splitters.
+#         # We do this by finding the possibly two new vertices created.
+#         # Create a splitter for each of these.
+#         # These will be the endpoints of the new edge.
+#
+#         new_splitters = self.splitters[:]
+#         new_crossing_lines = self.crossing_lines[:]
+#         for edge in [entrance_edge, exit_edge]:
+#             if edge is not None:
+#                 # could be the entrance or exit edge.
+#                 term = self.find_term_line(line, edge)
+#                 if term is None:  # the line extends up or down forever.
+#                     if edge == exit_edge:
+#                         if line.a > edge.a:
+#                             term = Line(0, -float('inf'))
+#                         elif line.a < edge.a:
+#                             term = Line(0, float('inf'))
+#                         else:
+#                             continue
+#                     else:
+#                         if line.a < edge.a:
+#                             term = Line(0, -float('inf'))
+#                         elif line.a > edge.a:
+#                             term = Line(0, float('inf'))
+#                         else:
+#                             continue
+#                 new_splitter = Splitter(term, edge, line)
+#
+#                 for i, el in enumerate(new_splitters):
+#                     if new_splitter.x_value() < el.x_value():
+#                         new_splitters.insert(i, new_splitter)
+#                         break
+#                 else:
+#                     i = len(new_crossing_lines) - 1
+#                     new_splitters.append(new_splitter)
+#                 left = []
+#                 right = []
+#                 for l in new_crossing_lines[i]:
+#                     if new_splitter.intersects(l):
+#                         left.append(l)
+#                         right.append(l)
+#                     elif abs(new_splitter.term_y()) == float("inf"):
+#                         old = new_splitter.get_old_line()
+#                         i_x = old.x_intercept(l)
+#                         splitter_x = new_splitter.x_value()
+#                         if i_x < splitter_x:
+#                             left.append(l)
+#                         else:
+#                             right.append(l)
+#                     else:
+#                         old = new_splitter.get_old_line()
+#                         term = new_splitter.get_term_line()
+#
+#                         wedge_point = old.x_intercept(term)
+#                         splitter_x = new_splitter.x_value()
+#                         intercepts = [l.x_intercept(term), l.x_intercept(old)]
+#
+#                         if wedge_point < splitter_x:
+#                             intercepts = [x for x in intercepts if x > wedge_point]
+#                         else:
+#                             intercepts = [x for x in intercepts if x < wedge_point]
+#                         if len(intercepts) == 0:
+#                             print(wedge_point, splitter_x, [l.x_intercept(term), l.x_intercept(old)])
+#                         elif intercepts[0] < splitter_x:
+#                             left.append(l)
+#                         else:
+#                             right.append(l)
+#                 new_crossing_lines[i] = right
+#                 new_crossing_lines.insert(i, left)
+#
+#         return new_splitters, new_crossing_lines
+#
+#     def cut_splitters(self, line, new_splitters):
+#
+#         #determine if the splitter is above or below the new line.
+#         m_upper_splitters = []
+#         m_lower_splitters = []
+#         # | /-\
+#         for splitter in new_splitters:
+#             if splitter.base_above(line) or splitter.above_closed(line):
+#                 m_upper_splitters.append(splitter)
+#             else:
+#                 m_lower_splitters.append(splitter)
+#
+#         for splitter in new_splitters:
+#             if splitter.intersects(line):
+#                 splitter.term_l = line
+#
+#         return m_upper_splitters, m_lower_splitters
+#
+#     def split_crossing_lines(self, line, sp, cross_lines):
+#         # Partiton the crossing lines by checking if they cross the new splitter
+#         # if they don't then they must reside only on 1 side or the other.
+#         # Check to see if they intersect the upper or lower lines in the right or left splitter.
+#         partition_points = [s.x_value() for s in sp] + [self.get_right()]
+#         upper_lines = []
+#         lower_lines = []
+#         if len(sp) == 0:
+#             return cross_lines, cross_lines
+#
+#         cl = cross_lines[0]; lx = self.get_left(); rx = partition_points[0]
+#         if (sp[0].get_new_line().same_line(line) and sp[0].cut_left()) or sp[0].intersects(line):
+#                 upper_lines.append([l for l in cl if l.above_interval(line, lx, rx) or
+#                                     line.interval_crossed_by(l, lx, rx)])
+#                 lower_lines.append([l for l in cl if l.below_interval(line, lx, rx) or
+#                                     line.interval_crossed_by(l, lx, rx)])
+#         elif sp[0].above_closed(line):
+#             upper_lines.append(cl)
+#             lower_lines.append([])
+#         else:
+#             upper_lines.append([])
+#             lower_lines.append(cl)
+#
+#
+#         for lx, cl, s, rx in zip(partition_points[:-1], cross_lines[1:], sp, partition_points[1:]):
+#             if (s.get_new_line().same_line(line) and s.cut_right()) or s.intersects(line):
+#                 upper_lines.append([l for l in cl if l.above_interval(line, lx, rx) or
+#                                     line.interval_crossed_by(l, lx, rx)])
+#                 lower_lines.append([l for l in cl if l.below_interval(line, lx, rx) or
+#                                     line.interval_crossed_by(l, lx, rx)])
+#             elif s.above_closed(line):
+#                 upper_lines.append(cl)
+#                 lower_lines.append([])
+#             else:
+#                 upper_lines.append([])
+#                 lower_lines.append(cl)
+#
+#
+#         return upper_lines, lower_lines
+#
+#     def merge_cells(self, line, sp, upper_lines, lower_lines):
+#
+#         prev_upper_list = upper_lines[0] if upper_lines else []
+#         prev_lower_list = lower_lines[0] if lower_lines else []
+#         m_upper_lines = []
+#         m_lower_lines = []
+#
+#         for splitter, u_line_cell, l_line_cell in zip(sp, upper_lines[1:], lower_lines[1:]):
+#             if splitter.base_above(line) or splitter.above_closed(line):
+#                 prev_lower_list.extend(l_line_cell)
+#                 m_upper_lines.append(list(set(prev_upper_list)))
+#                 prev_upper_list = u_line_cell
+#             else:
+#                 prev_upper_list.extend(u_line_cell)
+#                 m_lower_lines.append(list(set(prev_lower_list)))
+#                 prev_lower_list = l_line_cell
+#         m_upper_lines.append(list(set(prev_upper_list)))
+#         m_lower_lines.append(list(set(prev_lower_list)))
+#         return m_upper_lines, m_lower_lines
+#
+#     def split_simplex(self, line, entrance_edge, u_entrance = None, l_entrance = None):
+#         upper_edges = []
+#         lower_edges = []
+#
+#         exit_edge = self.exit_edge(line, entrance_edge)
+#         new_edge = self.get_new_edge(line, entrance_edge)
+#         if exit_edge is not None:
+#             u_exit, l_exit = exit_edge.split(line)
+#         else:
+#             u_exit = None; l_exit = None
+#         new_edge_flag = True
+#         if not self.edges:
+#             upper_edges.append(new_edge)
+#             lower_edges.append(new_edge)
+#         for edge in self.edges:
+#             if edge == entrance_edge:
+#                 if l_entrance is not None:
+#                     lower_edges.append(l_entrance)
+#                 if new_edge_flag:
+#                     upper_edges.append(new_edge)
+#                     lower_edges.append(new_edge)
+#                     new_edge_flag = False
+#                 if u_entrance is not None:
+#                     upper_edges.append(u_entrance)
+#             elif edge == exit_edge:
+#                 if u_exit is not None:
+#                     upper_edges.append(u_exit)
+#                 if new_edge_flag:
+#                     upper_edges.append(new_edge)
+#                     lower_edges.append(new_edge)
+#                     new_edge_flag = False
+#                 if l_exit is not None:
+#                     lower_edges.append(l_exit)
+#             elif edge.above_closed(line):
+#                 upper_edges.append(edge)
+#             elif edge.below_closed(line):
+#                 lower_edges.append(edge)
+#         upper_simplex = Simplex()
+#         lower_simplex = Simplex()
+#         new_edge.up_simplex = upper_simplex
+#         new_edge.bottom_simplex = lower_simplex
+#         for e in upper_edges:
+#             e.update_simplex(self, upper_simplex)
+#         for e in lower_edges:
+#             e.update_simplex(self, lower_simplex)
+#         upper_simplex.edges = upper_edges
+#         lower_simplex.edges = lower_edges
+#
+#         """
+#         Makes a pass through the splitters. First inserts the possibly two
+#         new splitters. Secondly prunes lines that only fall above
+#         or below a division between two splitters. Finally
+#         merges splitters that are terminated by lines outside
+#         of the current simplex.
+#         """
+#         new_splitters, new_crossing_lines = self.insert_splitter(line, entrance_edge, exit_edge)
+#         upper_lines, lower_lines = self.split_crossing_lines(line, new_splitters, new_crossing_lines)
+#         print(len(upper_lines))
+#         upper_lines, lower_lines = self.merge_cells(line, new_splitters, upper_lines, lower_lines)
+#         m_upper_splitters, m_lower_splitters = self.cut_splitters(line, new_splitters)
+#         print(len(upper_lines), len(m_upper_splitters))
+#         print()
+#         upper_simplex.splitters = m_upper_splitters
+#         lower_simplex.splitters = m_lower_splitters
+#         upper_simplex.crossing_lines = upper_lines
+#         lower_simplex.crossing_lines = lower_lines
+#
+#         return new_edge, u_exit, l_exit, upper_simplex, lower_simplex
+#
+#
+# class Trapezoid:
+#
+#     def __init__(self):
+#         """
+#         A trapezoid consists of upper cells and lower cells.
+#         """
+#         self.left_splitter = None
+#         self.top_edge = None
+#         self.right_splitter = None
+#         self.bottom_edge = None
+#         self.left_cells = []
+#         self.right_cells = []
+#         self.top_cells = []
+#         self.bottom_cells = []
+#
+#
+#
+#
+#
+#
+#
+# class Arrangement:
+#     def __init__(self, initial_lines=[]):
+#         self.left_edges = set()
+#         self.simplices = {Simplex(initial_lines)}
+#
+#     def __repr__(self):
+#         return type(self).__name__ + "(**" + pprint.pformat(vars(self), indent=4, width=1) + ")"
+#
+#     def check_arrangement(self):
+#         all_edges = set()
+#         for s in self.simplices:
+#             for e in s.edges:
+#                 if e.up_simplex is not None and e.up_simplex not in self.simplices:
+#                     print("simplex=%d, edge=%d, up_bad=%d"%(s.id, e.id, e.up_simplex.id))
+#                 if e.bottom_simplex is not None and e.bottom_simplex not in self.simplices:
+#                     print("simplex=%d, edge=%d, up_bad=%d" % (s.id, e.id, e.bottom_simplex.id))
+#                 all_edges.add(e)
+#         for s in self.simplices:
+#             for e in s.edges:
+#                 if e.right_edge is not None and e.right_edge not in all_edges:
+#                     print("edge=%d, pointing to=%d"%(e.id, e.right_edge.id))
+#
+#
+#     def zone(self, line):
+#         if not self.left_edges:
+#             el = self.simplices.pop()
+#             self.simplices.add(el)
+#             yield None, el
+#         else:
+#             exit_edge = min(self.left_edges, key=lambda x: x.x_intercept(line))
+#             while not exit_edge.crossed_by_closed(line):
+#                 exit_edge = exit_edge.right_edge
+#                 if exit_edge is None:
+#                     print("Shouldn't be here")
+#                     return
+#             if line.a < exit_edge.a:
+#                 curr_simplex = exit_edge.up_simplex
+#             else:
+#                 curr_simplex = exit_edge.bottom_simplex
+#             yield None, curr_simplex
+#             entrance_edge = None
+#             while True:
+#                 possibly_next = curr_simplex.next_simplex(line, entrance_edge)
+#                 # print(possibly_next)
+#                 if possibly_next is None:
+#                     return
+#                 entrance_edge, curr_simplex = possibly_next
+#                 yield possibly_next
+#
+#     def insert(self, line):
+#         first_edge = None
+#         prev_edge = None
+#         uex = None
+#         lex = None
+#         zone = [el for el in self.zone(line)]
+#         for entrance_edge, simplex in zone:
+#             # print("Entrance " + str(entrance_edge))
+#             # print("Exit " + str(simplex.print()))
+#             # print()
+#             # print()
+#             u_e = uex
+#             l_e = lex
+#             new_edge, uex, lex, up_s, l_s = simplex.split_simplex(line, entrance_edge, u_e, l_e)
+#             self.simplices.remove(simplex)
+#             self.simplices.add(up_s)
+#             self.simplices.add(l_s)
+#             # plot_edge(new_edge, -1, 2, ax)
+#             # plot_edge(u_e, -1, 2, ax)
+#             # plot_edge(l_e, -1, 2, ax)
+#             # plot_edge(uex, -1, 2, ax)
+#             # plot_edge(lex, -1, 2, ax)
+#             # plt.show()
+#             # make sure that the left edges are kept current.
+#             if entrance_edge in self.left_edges:
+#                 self.left_edges.remove(entrance_edge)
+#                 if u_e is not None and l_e is not None:
+#                     if u_e.right_edge == l_e:
+#                         self.left_edges.add(u_e)
+#                     else:
+#                         self.left_edges.add(l_e)
+#                 elif u_e is not None:
+#                     self.left_edges.add(u_e)
+#                 elif l_e is not None:
+#                     self.left_edges.add(l_e)
+#
+#             if first_edge is None:
+#                 first_edge = new_edge
+#                 prev_edge = first_edge
+#             else:
+#                 prev_edge.right_edge = new_edge
+#                 if new_edge is not None:
+#                     new_edge.left_edge = prev_edge
+#                 prev_edge = new_edge
+#         self.left_edges.add(first_edge)
+#
+#
+# style = {"simplex_color": 'k',
+#          "simplex_alpha": .4,
+#          "simplex_line_thickness": 4,
+#          "edge_color": 'k',
+#          "line_color": 'k',
+#          "line_thickness": 1,
+#          "zone_line_color": "b",
+#          "zone_line_thickness": 4}
+#
+#
+# def plot_edge(edge, min_x, max_x, ax):
+#     """
+#     Plots the edge object
+#     :param edge:
+#     :param min_x:
+#     :param max_x:
+#     :param ax:
+#     :return:
+#     """
+#     if edge is None:
+#         return
+#
+#     lx = max(edge.xl, min_x)
+#     rx = min(edge.xr, max_x)
+#     if lx > max_x or rx < min_x:
+#         return
+#     ax.plot([lx, rx], [edge.evaluate(lx), edge.evaluate(rx)], style["edge_color"])
+#
+#
+# def plot_line(line, min_x, max_x, ax):
+#     """
+#     Plots the line object
+#     :param line:
+#     :param min_x:
+#     :param max_x:
+#     :param ax:
+#     :return:
+#     """
+#     ax.plot([min_x, max_x], [line.evaluate(min_x), line.evaluate(max_x)], style["line_color"])
+#
+#
+# def plot_zone_line(line, min_x, max_x, ax):
+#     """
+#     Plots the line object
+#     :param line:
+#     :param min_x:
+#     :param max_x:
+#     :param ax:
+#     :return:
+#     """
+#     ax.plot([min_x, max_x], [line.evaluate(min_x), line.evaluate(max_x)], style["zone_line_color"],
+#             linewidth=style["zone_line_thickness"])
+#
+#
+# def restrict(x, min_x, max_x):
+#     return min(max_x, max(x, min_x))
 
 def close_point(p1, p2):
     return approx_eq((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2, 0.0)
@@ -1025,104 +1340,102 @@ def simplex_area_center(simplex, min_x, max_x, min_y, max_y):
         weights.append(w)
     return weighted_avg(centers, weights)
 
-def visualize_simplex(simplex, min_x, max_x, ax, ymin=-5, ymax=5, plot_lines = True):
-    """
-    Takes a simplex and walks the edge list. Draws each edge to a matplotlib drawing.
-    :param simplex:
-    :return:
-    """
-    m_y = float("inf")
-    mx_y = float("-inf")
-    any_in_range = False
-    for e in simplex.edges:
-        if e.xl < min_x > e.xr or e.xr > max_x < e.xl:
-            continue
-        any_in_range = True
-        x1 = restrict(e.xl, min_x, max_x)
-        y1 = e.evaluate(x1)
+# def visualize_simplex(simplex, min_x, max_x, ax, ymin=-5, ymax=5, plot_lines = True):
+#     """
+#     Takes a simplex and walks the edge list. Draws each edge to a matplotlib drawing.
+#     :param simplex:
+#     :return:
+#     """
+#     m_y = float("inf")
+#     mx_y = float("-inf")
+#     any_in_range = False
+#     for e in simplex.edges:
+#         if e.xl < min_x > e.xr or e.xr > max_x < e.xl:
+#             continue
+#         any_in_range = True
+#         x1 = restrict(e.xl, min_x, max_x)
+#         y1 = e.evaluate(x1)
+#
+#         x2 = restrict(e.xr, min_x, max_x)
+#         y2 = e.evaluate(x2)
+#         m_y = min(m_y, y1, y2)
+#         mx_y = max(mx_y, y1, y2)
+#
+#         ax.plot([x1, x2], [y1, y2], style["simplex_color"], linewidth=style["simplex_line_thickness"])
+#     if not any_in_range:
+#         return
+#     x_c, y_c = simplex_area_center(simplex, min_x, max_x, m_y, mx_y)
+#     if x_c != min_x and x_c != max_x:
+#         ax.plot(x_c, y_c, 'o' )
+#         ax.text(x_c, y_c, str(simplex.id))
+#
+#     for split in simplex.splitters:
+#         if max_x < split.x_value() or split.x_value() < min_x:
+#             continue
+#         if split.intersect_y() < m_y > split.term_y() or split.intersect_y() > mx_y < split.term_y():
+#             continue
+#         ty = split.term_y()
+#         iy = split.intersect_y()
+#
+#         #ax.plot([split.x_value(), split.x_value()], [ty, iy])
+#         ax.vlines(split.x_value(), max(split.bottom_y(), ymin), min(split.top_y(), ymax))
+#     if plot_lines:
+#         for cell in simplex.crossing_lines:
+#             c = (random.random(), random.random(), random.random())
+#             for l in cell:
+#                 ax.plot([min_x, max_x], [l.evaluate(min_x), l.evaluate(max_x)], c=c)
+#     #ax.plot((max(x_avg) + min(x_avg)) / 2, (max(y_avg) - min(y_avg)) / 2, 'x')#, str(simplex.id))
+#     # ax.fill(x_vals, y_vals, style["simplex_color"], alpha=style["simplex_alpha"])
+#
+#
+# def visualize_zone(arr, line, min_x, max_x, ax):
+#     for e, simplex in arr.zone(line):
+#         visualize_simplex(simplex, min_x, max_x, ax)
+#     plot_zone_line(line, min_x, max_x, ax)
+#
+#
+# def visualize_arrangement(arr, min_x, max_x, ax):
+#     visualize_lines(arr.left_edges, min_x, max_x, ax)
+#
 
-        x2 = restrict(e.xr, min_x, max_x)
-        y2 = e.evaluate(x2)
-        m_y = min(m_y, y1, y2)
-        mx_y = max(mx_y, y1, y2)
-
-        ax.plot([x1, x2], [y1, y2], style["simplex_color"], linewidth=style["simplex_line_thickness"])
-    if not any_in_range:
-        return
-    x_c, y_c = simplex_area_center(simplex, min_x, max_x, m_y, mx_y)
-    if x_c != min_x and x_c != max_x:
-        ax.plot(x_c, y_c, 'o' )
-        ax.text(x_c, y_c, str(simplex.id))
-
-    for split in simplex.splitters:
-        if max_x < split.x_value() or split.x_value() < min_x:
-            continue
-        if split.intersect_y() < m_y > split.term_y() or split.intersect_y() > mx_y < split.term_y():
-            continue
-        ty = split.term_y()
-        iy = split.intersect_y()
-
-        #ax.plot([split.x_value(), split.x_value()], [ty, iy])
-        ax.vlines(split.x_value(), max(split.bottom_y(), ymin), min(split.top_y(), ymax))
-    if plot_lines:
-        for cell in simplex.crossing_lines:
-            c = (random.random(), random.random(), random.random())
-            for l in cell:
-                ax.plot([min_x, max_x], [l.evaluate(min_x), l.evaluate(max_x)], c=c)
-    #ax.plot((max(x_avg) + min(x_avg)) / 2, (max(y_avg) - min(y_avg)) / 2, 'x')#, str(simplex.id))
-    # ax.fill(x_vals, y_vals, style["simplex_color"], alpha=style["simplex_alpha"])
-
-
-def visualize_zone(arr, line, min_x, max_x, ax):
-    for e, simplex in arr.zone(line):
-        visualize_simplex(simplex, min_x, max_x, ax)
-    plot_zone_line(line, min_x, max_x, ax)
-
-
-def visualize_arrangement(arr, min_x, max_x, ax):
-    visualize_lines(arr.left_edges, min_x, max_x, ax)
-
-def visualize_lines(lines, min_x, max_x, ax):
-    for l in lines:
-        ax.plot([min_x, max_x], [l.evaluate(min_x), l.evaluate(max_x)], style["line_color"])
-
-
-def random_box_line():
-    left_y = random.random()
-    right_y = random.random()
-    return Line(left_y - right_y, left_y)
-
-
-def visualize_arrangement_s(arr, min_x, max_x, ax, plot_lines=False):
-    for s in arr.simplices:
-        if s is not None:
-            visualize_simplex(s, min_x, max_x, ax, plot_lines=plot_lines)
-    label_arrangement(arr, min_x, max_x, ax)
-
-def label_edge(edge, min_x, max_x, ax):
-    x1 = restrict(edge.xl, min_x, max_x)
-    y1 = edge.evaluate(x1)
-
-    x2 = restrict(edge.xr, min_x, max_x)
-    y2 = edge.evaluate(x2)
-
-    ax.text((x1 + x2) / 2.0 , (y1 + y2) / 2.0, str(edge.id))
-
-def label_simplices(s, min_x, max_x, ax):
-    for e in s.edges:
-        label_edge(e, min_x, max_x, ax)
-
-def label_arrangement(arr, min_x, max_x, ax):
-    edges = set()
-    for s in arr.simplices:
-        for e in s.edges:
-            edges.add(e)
-
-    for e in edges:
-        label_edge(e, min_x, max_x, ax)
-
-
-
+#
+#
+# def random_box_line():
+#     left_y = random.random()
+#     right_y = random.random()
+#     return Line(left_y - right_y, left_y)
+#
+#
+# def visualize_arrangement_s(arr, min_x, max_x, ax, plot_lines=False):
+#     for s in arr.simplices:
+#         if s is not None:
+#             visualize_simplex(s, min_x, max_x, ax, plot_lines=plot_lines)
+#     label_arrangement(arr, min_x, max_x, ax)
+#
+# def label_edge(edge, min_x, max_x, ax):
+#     x1 = restrict(edge.xl, min_x, max_x)
+#     y1 = edge.evaluate(x1)
+#
+#     x2 = restrict(edge.xr, min_x, max_x)
+#     y2 = edge.evaluate(x2)
+#
+#     ax.text((x1 + x2) / 2.0 , (y1 + y2) / 2.0, str(edge.id))
+#
+# def label_simplices(s, min_x, max_x, ax):
+#     for e in s.edges:
+#         label_edge(e, min_x, max_x, ax)
+#
+# def label_arrangement(arr, min_x, max_x, ax):
+#     edges = set()
+#     for s in arr.simplices:
+#         for e in s.edges:
+#             edges.add(e)
+#
+#     for e in edges:
+#         label_edge(e, min_x, max_x, ax)
+#
+#
+#
 
 # if __name__ == "__main__":
 #     max_x = 2

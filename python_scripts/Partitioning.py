@@ -3,17 +3,19 @@ from SeidelTree import Trapezoid, to_line, Segment, Line, \
     approx_above, approx_eq_above
 
 import PolyTree as Pt
+import Cuttings as Ct
 import random
 from collections import deque, Counter
-import test_set
-import matplotlib.pyplot as plt
-import math
 
+import math
+import numpy.random as npr
+import numpy as np
+import test_set
 import statistics
 import itertools
 
 
-from time import time
+
 
 def sample_cells(cells, cell_sample_size):
     tw = sum(1 for _ in itertools.chain.from_iterable(cells))
@@ -114,14 +116,7 @@ class BoxCell:
         u_lines = []
         l_lines = []
         sl = Segment(Line(0, my), self.lx, self.rx)
-        for l in self.lines:
-            if sl.crossed_by(l):
-                u_lines.append(l)
-                l_lines.append(l)
-            elif sl.above_closed(l):
-                l_lines.append(l)
-            else:
-                u_lines.append(l)
+        u_lines, l_lines= Pt.split_lines(sl, self.lines)
         return BoxCell(u_pts, u_lines, self.lx, self.rx, my, self.ty), \
              BoxCell(l_pts, l_lines, self.lx, self.rx, self.by, my)
 
@@ -133,8 +128,10 @@ class BoxCell:
         for l in self.lines:
             y_val = l.evaluate(mx)
             if approx_above(self.by, y_val) and approx_above(y_val, self.ty):
-                l_lines.append(l)
-                r_lines.append(l)
+                e1 = Segment(l, l.xl, mx)
+                e2 = Segment(l, mx, l.xr)
+                l_lines.append(e1)
+                r_lines.append(e2)
             elif approx_eq_above(self.ty, y_val):
                 if l.a <= 0:
                     r_lines.append(l)
@@ -213,53 +210,153 @@ This should scale like #cells * log #cells which is the optimal...
 
 """
 
+
+def chan_process_level(prev_level, part_size, test_set, cutting_f, r):
+    # ensure that the active level is processed in a random order
+    random.shuffle(prev_level)
+
+    weight_map = {l: 1 for l in test_set}
+    next_level = []
+    for curr_pts, t_s in prev_level:
+        # print(len(curr_pts), len(test_set))
+
+        sub_tree = cutting_f(t_s, weight_map, curr_pts, r)
+        sub_partitions = sub_tree.get_leaves()
+
+        # print("computed subtree %d"%(r,))
+        sub_cells = []
+        # Cut each node of the sub-tree into sub-cells containing at most 2n/(tb) points.
+
+        # print("t = {} Psz = {} b = {} psz = {} lsz = {}".format(t, part_size, len(sub_partitions), len(curr_pts), len(test_set)))
+        for trap in sub_partitions:
+            cells_list = point_cuts(trap.get_points(), trap.get_lines(), part_size)
+            sub_cells.extend(cells_list)
+
+        # Compute the count of line crossings
+        l_counts = Counter()
+        for sub_cell in sub_cells:
+            l_counts.update(sub_cell.get_lines())
+
+        # Apply re-weighting operation
+        for l in l_counts:
+            weight_map[l] *= (1 + 1.0 / len(sub_partitions)) ** (l_counts[l])
+
+        for sub_cell in sub_cells:
+            next_level.append((sub_cell.get_points(), sub_cell.get_lines()))
+
+    return next_level
+
+
+def find_light_cells(prev_level, min_cell_size):
+    final_cells = []
+    active_level = []
+    for curr_pts, t_s in prev_level:
+        if len(curr_pts) <= min_cell_size:
+            final_cells.append(curr_pts)
+        else:
+            active_level.append((curr_pts, t_s))
+    return  active_level, final_cells
+
+
+# def chan_partitions(pts, r, min_cell_size=100, cell_sample_size=1,
+#                     cutting_f=Pt.compute_cutting,
+#                     test_set_f=test_set.test_set_dual_exact_t, c=1, c2=2, max_h=2):
+#     b = r * r * c2
+#     if max_h is None:
+#         max_t = (len(pts) / min_cell_size)
+#         max_h = len(pts)
+#     else:
+#         max_t = int(b ** (max_h) + .1)
+#
+#     active_levels = deque()
+#     active_levels.append(pts)
+#     final_cells = []
+#
+#     while active_levels:
+#         curr_pts = active_levels.pop()
+#         if len(curr_pts) <= min_cell_size:
+#             final_cells.append(curr_pts)
+#             continue
+#         test_set_size = int(max_t * (math.log(max_t) ** 2) * c + .5)
+#         print(test_set_size)
+#         test_set = test_set_f(curr_pts, test_set_size)
+#         curr_level = [(curr_pts, test_set)]
+#         t = 1
+#         for i in range(max_h):
+#             max_part_size = max(2 * len(curr_pts) / (t * b), 1)
+#             print(max_part_size)
+#             curr_level, finished_cells = find_light_cells(curr_level, min_cell_size)
+#             final_cells.extend(finished_cells)
+#             if curr_level:
+#                 curr_level = chan_process_level(curr_level, max_part_size, test_set, cutting_f, r)
+#             else:
+#                 break
+#             t *= b
+#         for cell_pts, _ in curr_level:
+#             active_levels.append(cell_pts)
+#     return sample_cells(final_cells, cell_sample_size)
+
+
+
 def chan_partitions(pts, r, min_cell_size=100, cell_sample_size=1,
                     cutting_f=Pt.compute_cutting,
                     test_set_f=test_set.test_set_dual_exact_t, c=1):
 
+    import test_set
     final_cells = []
 
     n = (len(pts) / min_cell_size)
-    test_set_size = n * (math.log(n) ** 2) * c
-    print(test_set_size)
-    test_set = test_set_f(pts, test_set_size)
-    weight_map = {line: 1 for line in test_set}
-    curr_level = [(pts, test_set)]
+    if test_set_f == test_set.test_set_dual_exact_t or test_set_f == test_set.test_set_dual:
+        test_set_size = int(round(n) + .1)
+    else:
+        test_set_size = int(n * (math.log(n) ** 2) * c + .5)
+
+    line_test_set = test_set_f(pts, test_set_size)
+    print(len(line_test_set), int(n * (math.log(n) ** 2) * c + .5))
+    weight_map = {}
+    for l in line_test_set:
+        weight_map[l] = 1
+    curr_level = [(pts, line_test_set)]
 
     t = 1
-    b = 10
+    b = r * r
+    #tc = 1
     while curr_level:
-        t *= b
+
 
         active_level = []
-        #inactive_cells = []
 
-        for curr_pts, test_set in curr_level:
+        for curr_pts, t_s in curr_level:
             #print(len(curr_pts) ,min_cell_size)
             if len(curr_pts) <= min_cell_size:
                 final_cells.append(curr_pts)
             else:
-                active_level.append((curr_pts, test_set))
+                active_level.append((curr_pts, t_s))
 
 
         # ensure that the active level is processed in a random order
         random.shuffle(active_level)
+        t = len(final_cells) + len(active_level)
 
-        weight_map = {l: 1 for l in weight_map}
+        for l in weight_map:
+            weight_map[l] = 1
+
         curr_level = []
-        for curr_pts, test_set in active_level:
+        #tc *= r
+        #total_weight = sum(weight_map[l] for l in line_test_set)
+        for curr_pts, t_s in active_level:
             #print(len(curr_pts), len(test_set))
 
-            sub_tree = cutting_f(test_set, weight_map, curr_pts, r)
+
+            #sub_tree = Pt.compute_cutting_weight(t_s, weight_map, curr_pts, total_weight / tc)
+            sub_tree = cutting_f(t_s, weight_map, curr_pts, r)
             sub_partitions = sub_tree.get_leaves()
 
             #print("computed subtree %d"%(r,))
             sub_cells = []
             # Cut each node of the sub-tree into sub-cells containing at most 2n/(tb) points.
-            #b = max(len(sub_partitions), 1)
-            #b = r * r * 10
             part_size = max(2 * len(pts) / (t * b), min_cell_size)
-            print("t = {} Psz = {} b = {} psz = {} lsz = {}".format(t, part_size, len(sub_partitions), len(curr_pts), len(test_set)))
+            #print("t = {} Psz = {} b = {} psz = {} lsz = {} wsz={}".format(t, part_size, len(sub_partitions), len(curr_pts), len(t_s), sum(weight_map[l] for l in t_s)))
             for trap in sub_partitions:
                 cells_list = point_cuts(trap.get_points(), trap.get_lines(),  part_size)
                 sub_cells.extend(cells_list)
@@ -279,11 +376,144 @@ def chan_partitions(pts, r, min_cell_size=100, cell_sample_size=1,
     return sample_cells(final_cells, cell_sample_size)
 
 
+def random_gap(p):
+    u = max(random.random(0.0, 1.0), np.finfo(float).eps)
+    return math.floor(math.log(u) / math.log(1-p))
+
+
+def p_sample(data, p):
+    i = random_gap(p, len(data))
+    while i < len(data):
+        yield data[i]
+        i += random_gap(p)
+
+
+def binom_rand_k(n, p):
+    """
+    This generates a random k from the binomial distribution.
+    This takes time O(np) on expectation.
+    :param n:
+    :param p:
+    :return:
+    """
+    log_q = math.log(1.0 - p)
+    x = 0
+    sum = 0
+    while True:
+        sum += math.log(random.random()) / (n - x)
+        if sum < log_q:
+            return x
+        x += 1
+
+
+def test_set_power(b, t, n, m):
+    return -int(-round(math.log(math.sqrt(b) * math.log(n) / m, 2) + .5))
+
+
+def cell_rate(b, t, n, m):
+    return math.sqrt(b) * math.log(n) / math.sqrt(t)
+
+
+def chan_partitions2(pts, b, min_cell_size=100, c=1):
+    final_cells = []
+
+    s = (len(pts) / min_cell_size)
+    test_set_size = int(round(s) + .1)
+    line_test_set, dual_tree = test_set.test_dual_tree(pts, test_set_size)
+    m = len(line_test_set)
+    n = len(pts)
+
+    print(len(line_test_set), int(n * (math.log(n) ** 2) * c + .5))
+
+
+    curr_test_set_power = test_set_power(b, 1, n, m)
+    p = 2.0 ** curr_test_set_power
+    r_hat = list(p_sample(line_test_set, p))
+    lines_in_tree = set(r_hat)
+
+    tree = Pt.PolyTree2(points=pts, lines=r_hat)
+    curr_level = [(tree.root, None)]
+    weight_map = {l:0 for l in line_test_set}
+    r_weight_map = {l:0 for l in line_test_set}
+    for l in r_hat:
+        r_weight_map[l] = 1
+    while curr_level:
+
+        active_level = []
+        for curr_root, p in curr_level:
+            if len(curr_root.get_points()) <= min_cell_size:
+                final_cells.append((curr_root, p))
+            else:
+                active_level.append((curr_root, p))
+
+        # ensure that the active level is processed in a random order
+        random.shuffle(active_level)
+
+        #update the current working test set
+        t = len(final_cells) + len(active_level)
+        if test_set_power(b, t, n, m) != curr_test_set_power:
+            curr_test_set_power = test_set_power(b, t, n, m)
+            p = 2.0 ** curr_test_set_power
+
+            for l in r_hat:
+                r_weight_map[l] = 0
+            new_r_hat = list(p_sample(line_test_set, 2.0 ** curr_test_set_power))
+            for l in new_r_hat:
+                r_weight_map[l] = 1
+
+            lines_to_insert = set(new_r_hat) - lines_in_tree
+            for l in lines_to_insert:
+                tree.add_line(l)
+            # add new lines
+            lines_in_tree |= lines_to_insert
+
+        curr_level = []
+        for curr_root, parent in active_level:
+            sub_partitions = tree.cutting_b(curr_root, parent, b / 4, weight_map)
+            sub_cells = []
+            # Cut each node of the sub-tree into sub-cells containing at most 2n/(tb) points.
+            part_size = max(2 * len(pts) / (t * b), min_cell_size)
+            #print("t = {} Psz = {} b = {} psz = {} lsz = {} wsz={}".format(t, part_size, len(sub_partitions), len(curr_pts), len(t_s), sum(weight_map[l] for l in t_s)))
+            for cell, parent in sub_partitions:
+                cell_list = tree.partition(cell, parent, part_size)
+                sub_cells.extend(cell_list)
+
+            # 3
+            # Sample the cells of this decomposition and then count the lines inside of them.
+            l_counts = Counter()
+            for sub_cell, _ in p_sample(sub_cells, cell_rate(b, t, n, m)):
+                # TODO implement these two methods
+                dual_cell = sub_cell.to_dual()
+                dual_pts = dual_tree.contained_vertices(dual_cell)
+
+                new_lines = [Ct.to_dual_line(p) for p in dual_pts]
+                l_counts.update(new_lines)
+
+            # 3(a) and 3(b)
+            for l in l_counts:
+                old_weight = weight_map[l]
+                weight_map[l] *= (1 + 1.0 / b) ** (l_counts[l])
+
+                #simulates taking a sample from the newly added lines
+                k = binom_rand_k(weight_map[l] - old_weight, p)
+                if k > 0:
+                    # add these newly sampled lines to the r_weight_map
+                    r_weight_map[l] += k
+                    if l not in lines_in_tree:
+                        tree.add_line(l)
+            curr_level.extend(sub_cells)
+
+    return tree
+
 
 
 def quadTreeSample(pts, min_cell_size=100, cell_sample_size=1):
     boxes = point_cuts(pts, [], min_cell_size)
     return sample_cells([b.get_points() for b in boxes], cell_sample_size)
+
+
+
+
 
 #random_sample_time_plot2(999, 1000, 100000, 10)
 #print("got here")

@@ -86,7 +86,7 @@ def plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f, test_set_f, r=4, marker='
         trap_count.append(len(tree.get_leaves()) / float(r * r))
         line_count.append(len(test_set))
 
-    ax.scatter(line_count, trap_count, marker=marker, c=color)
+    ax.plot(line_count, trap_count, marker=marker, c=color)
 
 
 def plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f, test_set_f, r=4, marker='.', color='r'):
@@ -104,7 +104,7 @@ def plot_cutting_time(ax, pts, l_s, h_s, k, cutting_f, test_set_f, r=4, marker='
         times.append(e - t)
         line_count.append(len(test_set))
 
-    ax.scatter(line_count, times, marker=marker, c=color)
+    ax.plot(line_count, times, marker=marker, c=color)
 
 
 def plot_cutting_size_r(ax, pts, l_s, h_s, k, cutting_f, test_set_f, marker='.', color='r'):
@@ -119,7 +119,7 @@ def plot_cutting_size_r(ax, pts, l_s, h_s, k, cutting_f, test_set_f, marker='.',
         trap_count.append(len(tree.get_leaves()) / float(i * i))
         line_count.append(i)
 
-    ax.scatter(line_count, trap_count, marker=marker, c=color)
+    ax.plot(line_count, trap_count, marker=marker, c=color)
 
 
 def plot_cutting_time_r(ax, pts, l_s, h_s, k, cutting_f, test_set_f, marker='.', color='r'):
@@ -136,7 +136,7 @@ def plot_cutting_time_r(ax, pts, l_s, h_s, k, cutting_f, test_set_f, marker='.',
         times.append(e - t)
         line_count.append(i)
 
-    ax.scatter(line_count, times, marker=marker, c=color)
+    ax.plot(line_count, times, marker=marker, c=color)
 
 
 def generate_cutting_size_test(pts, l_s, h_s, k, r=4):
@@ -245,29 +245,29 @@ def generate_cutting_size_test_r(pts, l_s, h_s, k):
     ax.legend(["PolyTree_8 Dual", "PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Dual", "Trapezoid Points", "Trapezoid Lines"])
     ax.set_xlabel("r")
     ax.set_ylabel("Cutting Constant")
-    plt.savefig("cutting_size.png")
+    plt.show()
 
 
 def generate_cutting_time_test_r(pts, l_s, h_s, k):
     f, ax = plt.subplots()
 
     print("dual")
-    plot_cutting_size_r(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_dual,
+    plot_cutting_time_r(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_dual,
                       marker=cutting_map["poly_d_m"],
                       color=cutting_map["poly_d"])
     print("points ")
-    plot_cutting_time_r(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting_greedy, test_set_f=test_set.test_set_points,
+    plot_cutting_time_r(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_points,
                       marker=cutting_map["poly_p_m"],
                       color=cutting_map["poly_p"])
     print("lines")
-    plot_cutting_time_r(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting_greedy, test_set_f=test_set.test_set_lines,
+    plot_cutting_time_r(ax, pts, l_s, h_s, k, cutting_f=pt.compute_cutting, test_set_f=test_set.test_set_lines,
                       marker=cutting_map["poly_l_m"],
                       color=cutting_map["poly_l"])
 
-    # print("dual")
-    # plot_cutting_size_r(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=test_set.test_set_dual,
-    #                   marker=cutting_map["trap_d_m"],
-    #                   color=cutting_map["trap_d"])
+    print("dual")
+    plot_cutting_time_r(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=test_set.test_set_dual,
+                      marker=cutting_map["trap_d_m"],
+                      color=cutting_map["trap_d"])
     print("points")
     plot_cutting_time_r(ax, pts, l_s, h_s, k, cutting_f=st.compute_cutting, test_set_f=test_set.test_set_points,
                       marker=cutting_map["trap_p_m"],
@@ -282,10 +282,12 @@ def generate_cutting_time_test_r(pts, l_s, h_s, k):
 
     ax.set_xlabel("r")
     ax.set_ylabel("Time (sec)")
-    plt.savefig("cutting_time.png")
+    plt.show()
 
 
 if __name__ == "__main__":
-    pts = [(random.random(), random.random()) for k in range(10000)]
-    generate_cutting_time_test(pts, 200, 2000, 10)
+    pts = [(random.random(), random.random()) for k in range(1000)]
+    #generate_cutting_size_test_r(pts, 2, 30, 10)
+    generate_cutting_time_test_r(pts, 2, 30, 10)
+
     #generate_cutting_time_test(pts, 200, 2000, 10)
