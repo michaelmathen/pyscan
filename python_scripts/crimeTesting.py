@@ -24,7 +24,6 @@ def randomLinFunc():
         a = npr.randn()
         b = npr.randn()
     mag = math.sqrt(a*a + b*b)
-    print a, b
     return (a / mag, b / mag)
 
 def permSampleL(collection, s, n):

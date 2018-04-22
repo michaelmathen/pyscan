@@ -1,7 +1,8 @@
-from Cuttings import *
-from SeidelTree import *
-import PolyTree
+
+from seidel_tree import *
+import poly_tree
 import unittest
+import random
 import matplotlib.pyplot as plt
 
 testing_set = [Line(**{   'a': -0.866656637164839,
@@ -279,19 +280,23 @@ class SeidelTesting(unittest.TestCase):
         #                                         trap.top_line.evaluate(trap.right_x)), "Bad trap right %s"%(str(trap),))
 
 
+class ConeTesting(unittest.TestCase):
+    pass
+
 class PolyTesting(unittest.TestCase):
 
     def setUp(self):
         self.pts = [(random.random(), random.random()) for t in range(1000)]
 
         self.test_set = []
-        rand_pts = random.sample(self.pts, 20)
+        rand_pts = random.sample(self.pts, 40)
         for p1, p2 in itertools.combinations(rand_pts, 2):
             self.test_set.append(to_line(p1, p2))
         random.shuffle(self.test_set)
         self.weight_map = {line: 1 for line in self.test_set}
+        self.r = 9
 
-        self.tree = PolyTree.compute_cutting(self.test_set, self.weight_map, self.pts, 4)
+        self.tree = poly_tree.compute_cutting(self.test_set, self.weight_map, self.pts, self.r)
         self.total_weight = sum(self.weight_map[l] for l in self.test_set)
 
     def test_losing_points_cells(self):
@@ -316,8 +321,8 @@ class PolyTesting(unittest.TestCase):
         :return:
         """
         for trap in self.tree.get_leaves():
-            self.assertFalse(self.tree.is_active(trap),
-                            "%f <= %f" % (trap.get_weight(), self.total_weight / 4))
+            self.assertFalse(trap.total_weight(self.weight_map) > sum(self.weight_map[l] for l in self.weight_map) / self.r,
+                            "%f <= %f" % (trap.total_weight(self.weight_map), self.total_weight / self.r))
 
     def test_losing_points_cells_deg(self):
 
@@ -335,6 +340,50 @@ class PolyTesting(unittest.TestCase):
         for trap in self.tree.get_leaves():
             all_pts -= set(trap.points)
         self.assertEqual(len(all_pts), 0, "Some of the points have gone missing")
+
+    def test_wedge(self):
+        dual_set = [to_dual_line(pt) for pt in self.pts]
+        x1 = random.random()
+        x2 = random.random()
+
+
+        query_line = Segment(Line(.2 * random.random() + .8 , -random.random()), min(x1, x2), max(x1, x2))
+        query_wedge = l_wedge(query_line)
+
+        overlap_set = []
+        for c in self.tree.get_leaves():
+            for p in c.get_border_vertices():
+                if math.isfinite(p[0]) and query_wedge.contains_pt(p):
+                    overlap_set.append(p)
+        overlap_set = deduplicate_points(overlap_set)
+        overlap_set_tree = self.tree.count_wedge(query_wedge)
+        overlap_set_tree = deduplicate_points(overlap_set_tree)
+
+
+        f, ax = plt.subplots()
+        self.tree.visualize_arrangement(ax, -1, 2, -1, 2)
+
+        if len(overlap_set) > 0:
+            x, y = zip(*overlap_set)
+            ax.scatter(x, y, color='b')
+        for c in self.tree.wedge_projection(query_wedge):
+            c.visualize(ax, -1, 2, -1, 2, color='r')
+
+        lx = min(max(query_wedge.up_segment.xl, -1), 2)
+        rx = min(max(query_wedge.up_segment.xr, -1), 2)
+
+        ax.plot([lx, rx], [query_wedge.up_segment.evaluate(lx), query_wedge.up_segment.evaluate(rx)], c='r')
+        ax.plot([lx, rx], [query_wedge.down_segment.evaluate(lx), query_wedge.down_segment.evaluate(rx)], c='b')
+        ax.set_xlim([-1, 2])
+        ax.set_ylim([-1, 2])
+        plt.show()
+
+        self.assertEqual(len(overlap_set), len(overlap_set_tree))
+
+
+
+
+
 
 
 

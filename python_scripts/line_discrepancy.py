@@ -1,7 +1,7 @@
 import random
 import bisect
 import math
-import Partitioning as Part
+import partitioning as Part
 import itertools
 import csv
 import time
@@ -9,9 +9,9 @@ import numpy as np
 import test_set
 import numpy.random as npr
 
-from SeidelTree import Segment, Line, to_line
+from seidel_tree import Segment, Line, to_line
 from collections import deque
-from Cuttings import approx_eq
+from geometric import approx_eq
 
 
 def horizontal_split_vertices(points, segment):
@@ -129,12 +129,16 @@ def discrepancy_fast(r, red_points, blue_points):
 
 
 def order_function(p1, p2):
-    x = p2[0] - p1[0]
-    y = p2[1] - p1[1]
+    y = p2[0] - p1[0]
+    x = p2[1] - p1[1]
     if y >= 0:
         return math.atan2(y, x)
     else:
-        return math.pi - math.atan2(y, x)
+        return math.pi + math.atan2(y, x)
+
+
+def bottom_quad(p1, p2):
+    return p2[1] - p1[1]
 
 
 def stat(m, b):
@@ -149,7 +153,8 @@ def stat(m, b):
     else:
         return m * math.log(m / b) + (1 - m) * math.log((1 - m) / (1 - b))
 
-def line_error_test(n, red_points, red_weights, blue_points, blue_weights):
+
+def line_discrepancy(net_sample, red_points, red_weights, blue_points, blue_weights, disc=stat):
     """
     :param big_samp:
     :param small_samp:
@@ -158,47 +163,80 @@ def line_error_test(n, red_points, red_weights, blue_points, blue_weights):
     :param n: The sub-sampling size of the small sample.
     :return:
     """
-    net_sample = random.sample(blue_points, n // 2) + random.sample(red_points, n // 2)
+    #net_sample = random.sample(blue_points, n // 2) + random.sample(red_points, n // 2)
+    max_discrepancy = -math.inf
+    max_line = Line(0, 0)
+    a = 0
+    b = 0
+    if red_weights:
+        a = 1.0 / sum(red_weights)
+    if blue_weights:
+        b = 1.0 / sum(blue_weights)
 
-    for i in range(len(net_sample)):
+    for i in range(len(net_sample) - 1):
         sample_part = net_sample[i + 1:]
 
+        p_0 = net_sample[i]
+        order_f = lambda x: order_function(p_0, x)
 
-        order_f = lambda x: order_function(net_sample[i], x)
-
-        red_delta = [0] * (len(sample_part) + 1)
-        blue_delta = [0] * (len(sample_part) + 1)
+        red_delta = [0] * len(sample_part)
+        blue_delta = [0] * len(sample_part)
 
         sample_part.sort(key=lambda x: order_f(x))
         angles = [order_f(p) for p in sample_part]
+        try:
+            l1 = to_line(p_0, sample_part[0])
+            for p_1, w in zip(red_points, red_weights):
+
+                insertion_pt = bisect.bisect_right(angles, order_f(p_1)) - 1
+                if insertion_pt == -1:
+                    pass
+                elif l1.pt_eq_below_exact(p_1):
+                    red_delta[insertion_pt] += -w
+                else:
+                    red_delta[insertion_pt] += w
 
 
-        for p_1, w in zip(red_points, red_weights):
-            insertion_pt = bisect.bisect_left(angles, order_f(p_1))
-            red_delta[insertion_pt] += math.copysign(w, p_1[1])
+            for p_1, w in zip(blue_points, blue_weights):
+                insertion_pt = bisect.bisect_right(angles, order_f(p_1)) - 1
+                if insertion_pt == -1:
+                    pass
+                elif l1.pt_eq_below_exact(p_1):
+                    blue_delta[insertion_pt] += -w
+                else:
+                    blue_delta[insertion_pt] += w
 
-        for p_1, w in zip(blue_points, blue_weights):
-            insertion_pt = bisect.bisect_left(angles, order_f(p_1))
-            blue_delta[insertion_pt] += math.copysign(w, p_1[1])
+            red_curr = sum(w for p, w in zip(red_points, red_weights) if l1.pt_eq_below_exact(p))
+            blue_curr = sum(w for p, w in zip(blue_points, blue_weights) if l1.pt_eq_below_exact(p))
+            # red_curr += red_delta[0]
+            # blue_curr += blue_delta[0]
+            for db, ds, p_1 in zip(red_delta, blue_delta, sample_part):
 
-        big_sample_curr = sum(1 for p in red_points if p[1] <= 0)
-        small_sample_curr = sum(1 for p in blue_points if p[1] <= 0)
+                if max_discrepancy <= disc(red_curr * a, blue_curr * b):
+                    max_line = to_line(p_0, p_1)
+                    max_discrepancy = disc(red_curr * a, blue_curr * b)
+                red_curr += db
+                blue_curr += ds
+        except ZeroDivisionError:
+            continue
 
-        max_discrepancy = 0
-        max_line = Line(0, 0)
-        a = 1.0 / sum(red_weights)
-        b = 1.0 / sum(blue_weights)
-        for db, ds, p_2 in zip(red_delta, blue_delta, sample_part):
-            big_sample_curr += db
-            small_sample_curr += ds
+    return max_discrepancy, max_line
 
-            if max_discrepancy <= stat(small_sample_curr * b, big_sample_curr * a):
-                max_line = to_line(net_sample[i], p_2)
-                max_discrepancy = stat(small_sample_curr * b, big_sample_curr * a)
 
-                #max_discrepancy = abs(big_sample_curr * a - small_sample_curr * b)
+def line_error_test(n, red_points, red_weights, blue_points, blue_weights):
+    r_count = max(min(n // 2, len(red_points)), 1)
+    b_count = max(min(n // 2, len(blue_points)), 1)
+    r_t = sum(red_weights)
+    b_t = sum(blue_weights)
+    r_p = [w / r_t for w in red_weights]
+    b_p = [w / b_t for w in blue_weights]
+    net_1 = [blue_points[i] for i in np.random.choice(range(len(blue_weights)), b_count, p=b_p)]
+    net_2 = [red_points[i] for i in np.random.choice(range(len(red_weights)), r_count, p=r_p)]
 
-        return max_discrepancy, max_line
+    def stat(m, b):
+        return abs(m - b)
+
+    return line_discrepancy(net_1 + net_2, red_points, red_weights, blue_points, blue_weights, disc=stat)
 
 
 def naive_line_error_test(n, red_points, red_weights, blue_points, blue_weights):
@@ -215,7 +253,7 @@ def naive_line_error_test(n, red_points, red_weights, blue_points, blue_weights)
 
 
 
-def line_discrepancy(n, red_points, red_weights, blue_points, blue_weights, scan_alg="fast"):
+def line_test(n, red_points, red_weights, blue_points, blue_weights, scan_alg="fast"):
     if scan_alg == "fast":
         return line_error_test(n, red_points, red_weights, blue_points, blue_weights)
     elif scan_alg == "naive":
@@ -236,7 +274,7 @@ def testing_framework(r_points, b_points, l_s, h_s, count,
                       scan_alg="fast"):
 
 
-    output_file = "{}_{}_{}_{}_{}_{}_{}.csv".format(vparam, sampling_alg, scan_alg, c, input_size, l_s, h_s)
+    output_file = "{}_discrepancy.csv".format(sampling_alg)
 
 
     fieldnames = ["vparam", "input_size", "sampling_alg", "scan_alg", "n", "s", "time", "m_disc_approx", "m_disc"]
@@ -244,15 +282,10 @@ def testing_framework(r_points, b_points, l_s, h_s, count,
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
 
-        for i in np.linspace(l_s, h_s, count):
-            if vparam == "eps":
-                eps = i
-            elif vparam == "c":
-                c = i
-            elif vparam == "input_size":
-                input_size = i
-            else:
-                raise ValueError("vparam=%s"%(vparam,))
+        for eps in np.logspace(l_s, h_s, count):
+
+            #eps = i
+
 
             red_input_set = random.sample(r_points, input_size)
             blue_input_set = random.sample(b_points, input_size)
@@ -260,36 +293,54 @@ def testing_framework(r_points, b_points, l_s, h_s, count,
             #(min_cell_size, len(input_set), r, cell_size)
             n = int(round(1 / eps) + .1)
 
-            print(n, eps)
             start_time = time.time()
 
             s = int(round(c / eps ** 2) + .1)
             red_points_s = random.sample(red_input_set, min(s, len(red_input_set)))
             blue_points_s = random.sample(blue_input_set, min(s, len(blue_input_set)))
 
-            if sampling_alg == "chan":
+            if sampling_alg == "chans":
                 s = int(round(c / (eps ** (4/3)) * math.log(1/ eps) ** (2/3)) + .1)
                 print(len(red_points_s)/s)
-                red_points_s, red_weights = Part.chan_partitions(red_points_s, 2, min_cell_size=len(red_points_s) / s,
-                                                    test_set_f=test_set.test_set_dual_exact_t)
-                blue_points_s, blue_weights = Part.chan_partitions(blue_points_s, 2, min_cell_size=len(blue_points_s) / s,
-                                                     test_set_f=test_set.test_set_dual_exact_t)
+
+                red_tree = Part.chan_partitions_simple(red_points_s, 22, min_cell_size=len(red_points_s) / s)
+                red_points_s, red_weights_s = Part.sample_cells([leaf.get_points() for leaf in red_tree.get_leaves()], 1)
+                blue_tree = Part.chan_partitions_simple(blue_points_s, 22, min_cell_size=len(blue_points_s) / s)
+                blue_points_s, blue_weights_s = Part.sample_cells([leaf.get_points() for leaf in blue_tree.get_leaves()], 1)
+
+            elif sampling_alg == "chan":
+                s = int(round(c / (eps ** (4 / 3)) * math.log(1 / eps) ** (2 / 3)) + .1)
+                print(len(red_points_s) / s)
+
+                red_tree = Part.chan_partitions2(red_points_s, 22, min_cell_size=len(red_points_s) / s)
+                red_points_s, red_weights_s = Part.sample_cells([leaf.get_points() for leaf in red_tree.get_leaves()], 1)
+                blue_tree = Part.chan_partitions2(blue_points_s, 22, min_cell_size=len(blue_points_s) / s)
+                blue_points_s, blue_weights_s = Part.sample_cells([leaf.get_points() for leaf in blue_tree.get_leaves()], 1)
+            elif sampling_alg == "mat":
+                s = int(round(c / (eps ** (4 / 3)) * math.log(1 / eps) ** (2 / 3)) + .1)
+                print(len(red_points_s) / s)
+
+                red_points_s, red_weights_s = Part.partitions(red_points_s, 16,
+                                                             min_cell_size=len(red_points_s) / s,
+                                                            test_set_f=test_set.test_set_points)
+                blue_points_s, blue_weights_s = Part.partitions(blue_points_s, 16,
+                                                            min_cell_size=len(blue_points_s) / s,
+                                                              test_set_f=test_set.test_set_points)
             elif sampling_alg == "quad":
                 expon = 1 / (2 - math.log(3, 4))
                 s = int(round(c / eps ** (2 * expon) * math.log(1/eps) ** expon) + .1)
-                red_points_s, red_weights = Part.quadTreeSample(red_points_s, len(red_points_s) / s)
-                blue_points_s, blue_weights = Part.quadTreeSample(blue_points_s, len(blue_points_s) / s)
+                red_points_s, red_weights_s = Part.quadTreeSample(red_points_s, len(red_points_s) / s)
+                blue_points_s, blue_weights_s = Part.quadTreeSample(blue_points_s, len(blue_points_s) / s)
             elif sampling_alg == "naive":
-                red_weights = [1.0] * len(red_points_s)
-                blue_weights = [1.0] * len(blue_points_s)
+                red_weights_s = [1.0] * len(red_points_s)
+                blue_weights_s = [1.0] * len(blue_points_s)
             else:
                 raise ValueError("sampling_alg = {}".format(sampling_alg))
 
-            print(n, len(red_points_s), len(blue_points_s))
-            mx, l = line_discrepancy(n, red_points_s, red_weights, blue_points_s, blue_weights, scan_alg=scan_alg)
+            mx, l = line_test(n, red_points_s, red_weights_s, blue_points_s, blue_weights_s, scan_alg=scan_alg)
             end_time = time.time()
 
-            actual_mx = exact_discrepancy(l, red_points, red_weights, blue_points, blue_weights)
+            actual_mx = exact_discrepancy(l, red_input_set, [1 for p in red_input_set], blue_input_set, [1 for p in blue_input_set])
 
             row = {"vparam": vparam, "input_size":input_size, "sampling_alg":sampling_alg, "scan_alg":scan_alg,
                    "n":n, "s":s, "time":end_time - start_time, "m_disc_approx": mx, "m_disc": actual_mx}
@@ -303,45 +354,81 @@ def exact_discrepancy(line, red_points, red_weights, blue_points, blue_weights):
     return abs(r / sum(red_weights) - b / sum(blue_weights))
 
 
-def generate_blue_and_red(s_size, q, r, eps=.1):
-    full_points = [(random.random(), random.random()) for _ in range(s_size)]
+def line_planted_test(n, points, r):
+    """
+    :param big_samp:
+    :param small_samp:
+    :param weights:
+    :param pt_num:
+    :param n: The sub-sampling size of the small sample.
+    :return:
+    """
+    net_sample = random.sample(points, int(2/r + 1))
 
-    while True:
-        p1 = random.choice(full_points)
-        p2 = random.choice(full_points)
-        print("got here")
-        try:
-            l = to_line(p1, p2)
-            below_line = sum(1 for p in full_points if l.pt_eq_below(p))
-            print(abs(below_line / len(full_points)))
-            if abs(below_line / len(full_points) - r) <= eps:
-                break
-        except ZeroDivisionError:
-            continue
+    md, ml = line_discrepancy(net_sample, points, [1] * len(points), [], [], disc=lambda m, b: -abs(m - r))
+    print(md)
+    return ml
+
+
+def generate_blue_and_red(full_points, q, r, eps=.1):
+
+    # while True:
+    #     p1 = random.choice(full_points)
+    #     p2 = random.choice(full_points)
+    #     print("got here")
+    #     try:
+    #         l = to_line(p1, p2)
+    #         below_line = sum(1 for p in full_points if l.pt_eq_below(p))
+    #         print(abs(below_line / len(full_points)))
+    #         if abs(below_line / len(full_points) - r) <= eps:
+    #             break
+    #     except ZeroDivisionError:
+    #         continue
+    l = line_planted_test(int(2/eps + 1), full_points, r)
 
     red_points = []
     blue_points = []
+    red_below = 0
+    blue_below = 0
     for p in full_points:
         if l.pt_eq_below(p):
-            if .5 - q / 2 < random.random():
+            if .5 + q < random.random():
+                red_below += 1
                 red_points.append(p)
             else:
+                blue_below += 1
                 blue_points.append(p)
         else:
-            if .5 + q / 2 < random.random():
+            if .5 < random.random():
                 red_points.append(p)
             else:
                 blue_points.append(p)
+    print(abs(red_below / len(red_points) - blue_below / len(blue_points)))
     return red_points, blue_points
 
 
 if __name__ == "__main__":
     print("running experiment")
-    red_points, blue_points = generate_blue_and_red(100000, .01, .5)
+    import partitioning_tests
+    pts = partitioning_tests.upload_crimes("crimes.csv")
+
+    red_points, blue_points = generate_blue_and_red(pts, .2, .018)
     # red_points = [(random.random(), random.random()) for _ in range(1000000)]
     # blue_points = [(random.random(), random.random()) for _ in range(1000000)]
 
-    for s_alg in ["chan", "naive", "quad"]:
+    # red_points = random.sample(red_points, 100000)
+    # blue_points = random.sample(blue_points, 100000)
+
+    # import matplotlib.pyplot as plt
+    # f, ax = plt.subplots()
+    # x, y = zip(*red_points)
+    # ax.scatter(x, y, color="red")
+    # x, y = zip(*blue_points)
+    # ax.scatter(x, y, color="blue")
+    #
+    # plt.show()
+
+    for s_alg in ["naive", "quad", "mat", "chan", "chans"]:
         for sc_alg in ["fast"]:
             print(s_alg + " " + sc_alg)
-            testing_framework(red_points, blue_points, .01, .001, 10, input_size=min(len(red_points), len(blue_points)), sampling_alg=s_alg, scan_alg=sc_alg)
+            testing_framework(red_points, blue_points, -.5, -2.5, 80, input_size=min(len(red_points), len(blue_points)), sampling_alg=s_alg, scan_alg=sc_alg)

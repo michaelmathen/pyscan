@@ -2,10 +2,10 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 import test_set
-import PolyTree
-import SeidelTree
-import PolyTree as pt
-import SeidelTree as st
+import poly_tree
+import seidel_tree
+import poly_tree as pt
+import seidel_tree as st
 import time
 import test_set
 import csv
@@ -84,6 +84,23 @@ def plot_cutting_size(ax, pts, l_s, h_s, k, cutting_f, test_set_f, r=4, marker='
         weight_map = {t: 1 for t in test_set}
         tree = cutting_f(test_set, weight_map, pts, r)
         trap_count.append(len(tree.get_leaves()) / float(r * r))
+        line_count.append(len(test_set))
+
+    ax.plot(line_count, trap_count, marker=marker, c=color)
+
+
+def plot_cutting_size_b(ax, pts, l_s, h_s, k, test_set_f, b=4, marker='.', color='r'):
+
+    line_count = []
+    trap_count = []
+    for i in np.linspace(l_s, h_s, k):
+
+        test_set = test_set_f(pts, int(i))
+        weight_map = {t: 1 for t in test_set}
+        tree = pt.PolyTree2([], test_set)
+        tree.cutting_b(b, {l:1 for l in test_set})
+        r = len(test_set) / max(cell.total_weight({l:1 for l in test_set}) for cell in tree.get_leaves())
+        trap_count.append(b / r**2)
         line_count.append(len(test_set))
 
     ax.plot(line_count, trap_count, marker=marker, c=color)
@@ -169,7 +186,33 @@ def generate_cutting_size_test(pts, l_s, h_s, k, r=4):
                       color=cutting_map["trap_l"])
     #ax.legend(["poly dts", "poly psd", "poly lsd", "trap dts", "trap psd", "trap lsd"])
     ax.legend(["PolyTree_8 Dual", "PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Dual", "Trapezoid Points", "Trapezoid Lines"])
-    ax.set_xlabel("Line Number")
+    ax.set_xlabel("Number of Lines")
+    ax.set_ylabel("Cutting Constant")
+
+
+    f.savefig("size_test.pdf",
+          bbox_inches='tight')
+
+
+def generate_cutting_size_test_b(pts, l_s, h_s, k, b=4):
+    f, ax = plt.subplots()
+
+    print("dual")
+    plot_cutting_size_b(ax, pts, l_s, h_s, k, test_set_f=test_set.test_set_dual,  b=b,
+                      marker=cutting_map["poly_d_m"],
+                      color=cutting_map["poly_d"])
+    print("points ")
+    plot_cutting_size_b(ax, pts, l_s, h_s, k,  test_set_f=test_set.test_set_points, b=b,
+                      marker=cutting_map["poly_p_m"],
+                      color=cutting_map["poly_p"])
+    print("lines")
+    plot_cutting_size_b(ax, pts, l_s, h_s, k, test_set_f=test_set.test_set_lines, b=b,
+                      marker=cutting_map["poly_l_m"],
+                      color=cutting_map["poly_l"])
+
+    #ax.legend(["poly dts", "poly psd", "poly lsd", "trap dts", "trap psd", "trap lsd"])
+    ax.legend(["PolyTree_8 Dual", "PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Dual", "Trapezoid Points", "Trapezoid Lines"])
+    ax.set_xlabel("Number of Lines")
     ax.set_ylabel("Cutting Constant")
     plt.show()
 
@@ -206,9 +249,10 @@ def generate_cutting_time_test(pts, l_s, h_s, k, r=4):
     #ax.legend(["PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Points", "Trapezoid Lines"])
     ax.legend(["PolyTree_8 Dual", "PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Dual", "Trapezoid Points", "Trapezoid Lines"])
 
-    ax.set_xlabel("Line Number")
+    ax.set_xlabel("Number of Lines")
     ax.set_ylabel("Time (sec)")
-    plt.show()
+    f.savefig("time_test.pdf",
+                bbox_inches='tight')
 
 
 def generate_cutting_size_test_r(pts, l_s, h_s, k):
@@ -245,7 +289,8 @@ def generate_cutting_size_test_r(pts, l_s, h_s, k):
     ax.legend(["PolyTree_8 Dual", "PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Dual", "Trapezoid Points", "Trapezoid Lines"])
     ax.set_xlabel("r")
     ax.set_ylabel("Cutting Constant")
-    plt.show()
+    f.savefig("size_test_r.pdf",
+                bbox_inches='tight')
 
 
 def generate_cutting_time_test_r(pts, l_s, h_s, k):
@@ -278,16 +323,20 @@ def generate_cutting_time_test_r(pts, l_s, h_s, k):
                       color=cutting_map["trap_l"])
     #ax.legend(["poly dts", "poly psd", "poly lsd", "trap dts", "trap psd", "trap lsd"])
     #ax.legend(["PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Points", "Trapezoid Lines"])
-    ax.legend(["PolyTree_8 Dual", "PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Dual", "Trapezoid Points", "Trapezoid Lines"])
+    ax.legend(["PolyTree_8 Dual", "PolyTree_8 Points", "PolyTree_8 Lines",  "Trapezoid Dual", "Trapezoid Points", "Trapezoid Lines"], loc="upper left")
 
     ax.set_xlabel("r")
     ax.set_ylabel("Time (sec)")
-    plt.show()
+    f.savefig("time_test_r.pdf",
+                bbox_inches='tight')
 
 
 if __name__ == "__main__":
-    pts = [(random.random(), random.random()) for k in range(1000)]
-    #generate_cutting_size_test_r(pts, 2, 30, 10)
-    generate_cutting_time_test_r(pts, 2, 30, 10)
+    pts = [(random.random(), random.random()) for k in range(10000)]
+    # generate_cutting_size_test_r(pts, 2, 32, 20)
+    #generate_cutting_time_test_r(pts, 2, 32, 20)
 
-    #generate_cutting_time_test(pts, 200, 2000, 10)
+
+    #generate_cutting_time_test_b(pts, 2, 30, 10)
+    generate_cutting_size_test(pts, 200, 2000, 20)
+    generate_cutting_time_test(pts, 200, 2000, 20)

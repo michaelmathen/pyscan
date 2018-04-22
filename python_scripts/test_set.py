@@ -1,39 +1,9 @@
 import random
 import itertools
-import SeidelTree as St
-import PolyTree as Pt
-import Cuttings as Ct
+import seidel_tree as St
+import poly_tree as Pt
+import geometric as Ct
 import math
-
-
-
-
-
-def deduplicate_points(pts):
-    if not pts:
-        return []
-    s_pts_x = sorted(pts, key=lambda x: x[0])
-
-    curr_p = s_pts_x[0]
-    groups = [[curr_p]]
-    for p in s_pts_x[1:]:
-        if Ct.approx_eq(curr_p[0], p[0]):
-            groups[-1].append(p)
-        else:
-            curr_p = p
-            groups.append([p])
-    not_duplicate = []
-    for g in groups:
-        g.sort(key=lambda x: x[1])
-        c_p = g[0]
-        not_duplicate.append(c_p)
-        for p in g[1:]:
-            if not Ct.approx_eq(c_p[1], p[1]):
-                not_duplicate.append(p)
-                c_p = p
-
-    return not_duplicate
-
 
 def dual_cutting(pts, r):
     #print(r)
@@ -41,24 +11,43 @@ def dual_cutting(pts, r):
     for p in pts:
         dual_lines.append(Ct.to_dual_line(p))
     #print("dual_lines=%d ,r = %d"%(len(dual_lines), r))
-    tree = Pt.compute_cutting(dual_lines, {l:1 for l in dual_lines}, [], r)
+    tree = Pt.PolyTree2(points=pts, lines=dual_lines)
+    tree.cutting_r(r, {l: 1 for l in dual_lines})
     #print("computed")
     vertices = []
     #print(len(tree.get_leaves()))
     for trap in tree.get_leaves():
         vertices.extend(trap.get_vertices())
-    print(len(vertices))
-    vertices = deduplicate_points(vertices)
+    #print(len(vertices))
+    vertices = Ct.deduplicate_points(vertices)
     #print("got here")
     test_set = []
     for v in vertices:
-        test_set.append(to_dual_line(v))
+        test_set.append(Ct.to_dual_line(v))
     return test_set, tree
 
 
 def test_set_dual_exact_t(pts, t, c=1):
     internal_pts = random.sample(pts, int(.5 + min(c * math.sqrt(t) * math.log(t), len(pts))))
     return dual_cutting(internal_pts, max(int((math.sqrt(t)) + .1), 1))[0]
+
+
+def maintain_test_set(tree, t):
+    class smart_dict(dict):
+        def __missing__(self, key):
+            return 1
+    tree.cutting_r(max(int((math.sqrt(t)) + .1), 2), smart_dict())
+    vertices = []
+    #print(len(tree.get_leaves()))
+    for trap in tree.get_leaves():
+        vertices.extend(trap.get_vertices())
+    #print(len(vertices))
+    vertices = Ct.deduplicate_points(vertices)
+    #print("got here")
+    test_set = []
+    for v in vertices:
+        test_set.append(Ct.to_dual_line(v))
+    return test_set
 
 
 def test_dual_tree(pts, t, c=1):

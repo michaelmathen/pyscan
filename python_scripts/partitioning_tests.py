@@ -1,13 +1,14 @@
 import random
-import SeidelTree
-import PolyTree
+import seidel_tree
+import poly_tree
 import test_set
 import line_testing
-import Partitioning
+import partitioning
 import csv
 import numpy as np
 import time
 import math
+import akcan
 
 
 # Plots showing sample size vs. error
@@ -19,31 +20,20 @@ import math
 
 
 def testing_framework(pts, l_s, h_s, count, output_file = None,
-                      vparam="output_size", r=4, input_size=None,
-                      output_size=200, cell_size=1,
+                      vparam="output_size", b=32, input_size=None,
+                      output_size=500, cell_size=1,
                       test_set_f="lts",
                       cutting_f="poly",
-                      part_f="pchan",
-                      k=100):
+                      part_f="pchan"):
 
     if output_file is None:
-        if part_f == "box" or part_f == "sample":
-            output_file = vparam + "_" + part_f
+        if part_f == "box" or part_f == "sample" or part_f == "l2":
+            output_file = vparam + "_" + part_f + ".csv"
         else:
-            output_file = vparam + "_" + part_f + "_" + cutting_f + "_" + test_set_f + "_"
-            if vparam != "r":
-                output_file += "_" + str(r)
-        if vparam != input_size:
-            if input_size is None:
-                output_file += "_" + str(len(pts))
-            else:
-                output_file += "_" + str(input_size)
-        if vparam != output_size:
-            output_file += "_" + str(output_size)
-    if vparam != cell_size and part_f != "sample":
-        output_file += "_" + str(cell_size)
+            output_file = vparam + "_" + part_f + "_" + cutting_f + "_" + test_set_f + ".csv"
 
-    fieldnames = ["vparam", "r", "input_size", "output_size", "cell_size",
+
+    fieldnames = ["vparam", "b", "input_size", "output_size", "cell_size",
                   "test_set_f", "cutting_f", "part_f", "time", "error", "k"]
     if input_size is None:
         input_size = len(pts)
@@ -52,8 +42,8 @@ def testing_framework(pts, l_s, h_s, count, output_file = None,
         writer.writeheader()
 
         for i in np.linspace(l_s, h_s, count):
-            if vparam == "r":
-                r = max(int(i + .5), 2)
+            if vparam == "b":
+                b = max(int(i + .5), 2)
             elif vparam == "input_size":
                 input_size = max(int(i + .5), 1)
             elif vparam == "output_size":
@@ -63,66 +53,66 @@ def testing_framework(pts, l_s, h_s, count, output_file = None,
             else:
                 raise ValueError("vparam=%s"%(vparam,))
 
-            if cutting_f == "poly":
-                compute_cutting = PolyTree.compute_cutting
-            elif cutting_f == "trap":
-                compute_cutting = SeidelTree.compute_cutting
-            else:
-                raise ValueError("cutting_f=%s"%(cutting_f, ))
-
-            if test_set_f == "lts":
-                test_f = test_set.test_set_lines
-            elif test_set_f == "pts":
-                test_f = test_set.test_set_points
-            elif test_set_f == "dts":
-                test_f = test_set.test_set_dual
-            elif test_set_f == "dts_x":
-                test_f = test_set.test_set_dual_exact_t
-            else:
-                raise ValueError("test_set_f=%s"%(test_set_f,))
-
             input_set = random.sample(pts, input_size)
             min_cell_size = input_size / output_size * cell_size
             #(min_cell_size, len(input_set), r, cell_size)
             start_time = time.time()
             if part_f == "pchan":
-                output_set, weights = Partitioning.chan_partitions(input_set, r,
-                                             min_cell_size=min_cell_size,
-                                             cell_sample_size=cell_size,
-                                             cutting_f=compute_cutting,
-                                             test_set_f=test_f, c=.05)
+                tree = partitioning.chan_partitions2(input_set, b,
+                                                     min_cell_size=min_cell_size)
+                output_set, weights = partitioning.sample_cells([leaf.get_points() for leaf in tree.get_leaves()],
+                                                                cell_size)
+            elif part_f == "pchans":
+                tree = partitioning.chan_partitions_simple(input_set, b,
+                                                     min_cell_size=min_cell_size)
+                output_set, weights = partitioning.sample_cells([leaf.get_points() for leaf in tree.get_leaves()],
+                                                                cell_size)
             elif part_f == "pmat":
-                output_set, weights = Partitioning.partitions(input_set, r,
-                                                     min_cell_size=min_cell_size,
-                                                     cell_sample_size=cell_size,
-                                                     cutting_f=compute_cutting,
-                                                     test_set_f=test_f)
+                # if cutting_f == "poly":
+                #     compute_cutting = poly_tree.compute_cutting
+                # elif cutting_f == "trap":
+                #     compute_cutting = seidel_tree.compute_cutting
+                # else:
+                #     raise ValueError("cutting_f=%s" % (cutting_f,))
+
+                if test_set_f == "lts":
+                    test_f = test_set.test_set_lines
+                elif test_set_f == "pts":
+                    test_f = test_set.test_set_points
+                elif test_set_f == "dts":
+                    test_f = test_set.test_set_dual_exact_t
+                else:
+                    raise ValueError("test_set_f=%s" % (test_set_f,))
+                output_set, weights = partitioning.partitions(input_set, b,
+                                                              min_cell_size=min_cell_size,
+                                                              cell_sample_size=cell_size,
+                                                              test_set_f=test_f)
             elif part_f == "sample":
                 output_set = random.sample(input_set, output_size)
-                weights = [1.0 for p in output_set]
+                weights = [1.0 for _ in output_set]
             elif part_f == "box":
-                output_set, weights = Partitioning.quadTreeSample(input_set, min_cell_size)
+                output_set, weights = partitioning.quadTreeSample(input_set, min_cell_size)
+            elif part_f == "l2":
+                output_set = akcan.biased_l2(input_set, output_size / input_size)
+                weights = [1.0 for _ in output_set]
             else:
                 raise ValueError("part_f=%s"%(part_f,))
             end_time = time.time()
 
             max_error = line_testing.line_error_test(pts, output_set, weights)
-
             row = {"vparam": vparam,
-                   "r" : r,
-                             "input_size": input_size,
-                             "output_size":len(output_set),
-                             "cell_size": min_cell_size,
-                             "test_set_f": test_set_f,
-                             "cutting_f": cutting_f,
-                             "part_f": part_f,
-                             "time": end_time - start_time,
-                             "error": max_error,
-                             "k": k}
+                   "b" : b,
+                     "input_size": input_size,
+                     "output_size":len(output_set),
+                     "cell_size": min_cell_size,
+                     "test_set_f": test_set_f,
+                     "cutting_f": cutting_f,
+                     "part_f": part_f,
+                     "time": end_time - start_time,
+                     "error": max_error}
             writer.writerow(row)
             print(row)
-
-
+    return len(output_set)
 
 def upload_crimes(file_name, perturb = 1):
     with open(file_name) as f:
@@ -143,40 +133,62 @@ def upload_crimes(file_name, perturb = 1):
                 pass
         return pts
 
-if __name__ == "__main__":
-    pts = [(random.random(), random.random()) for i in range(100000)]
-    #pts = upload_crimes("crimes.csv")
-    print(len(pts))
-    #Vary the output sample size
-    for cutting in ["poly"]:
-        for l_name in [ "dts_x"]:
-            testing_framework(pts, 50, 1000, 10, part_f="pchan",
-                              test_set_f=l_name,
-                              cutting_f=cutting,
-                              r=2)
+def b_test(pts, b_low, b_high, output_size, count=20):
+    sample_size = testing_framework(pts, b_low, b_high, count, part_f="pchans", vparam="b",
+                      test_set_f="dts",
+                      cutting_f="poly", output_size=output_size)
+    sample_size = testing_framework(pts, b_low, b_high, count, part_f="pchan", vparam="b",
+                      test_set_f="dts",
+                      cutting_f="poly", output_size=output_size)
     #
-    # #Vary the r parameter used
-    # for cutting in ["poly", "trap"]:
-    #     for l_name in ["lts", "pts"]:
-    #         testing_framework(pts, 2, 12, 10, vparam="r", part_f="pchan",
-    #                           test_set_f=l_name, cutting_f=cutting)
+    # for cutting in ["poly"]:
+    #     for l_name in ["dts", "lts", "pts"]:
+    #         testing_framework(pts, b_low, b_high, count, part_f="pmat", vparam="b",
+    #                           test_set_f=l_name,
+    #                           cutting_f=cutting, output_size=output_size)
 
+
+def output_size(pts, output_low, output_high, count=10):
+    #testing output size
+    testing_framework(pts, output_low, output_high, count, b=22, part_f="pchan",
+                        test_set_f="dts",
+                        cutting_f="poly")
+    testing_framework(pts, output_low, output_high, count, b=22, part_f="pchans",
+                                    test_set_f="dts",
+                                    cutting_f="poly")
+    #testing_framework(pts, output_low, output_high, count, part_f="sample")
+    # testing_framework(pts, output_low, output_high, count, part_f="box")
+    #
+    # for l_name in [ "dts", "lts", "pts"]:
+    #     testing_framework(pts, output_low, output_high, count, part_f="pmat",
+    #                       test_set_f=l_name,
+    #                       cutting_f="poly",
+    #                       b=16)
+
+def input_size(pts, input_low, input_high, output_size, count=10):
     #Vary the input size with fixed output size
     # for cutting in ["poly"]:
-    #     for l_name in ["lts", "pts"]:
-    #         testing_framework(pts, 1000, 100000, 10, vparam="input_size", part_f="pchan",
-    #                           test_set_f=l_name, cutting_f=cutting,
-    #                           r=2)
+    #     for l_name in ["dts", "lts", "pts"]:
+    #         testing_framework(pts, input_low, input_high, count, vparam="input_size", part_f="pmat",
+    #                           test_set_f=l_name, cutting_f=cutting, output_size=output_size,
+    #                           b=16)
 
-
-
-    # testing_framework(pts, 50, 2000, 10, part_f="box")
-    # testing_framework(pts, 1000, 100000, 10, vparam="input_size", part_f="box")
+    sample_size = testing_framework(pts, input_low, input_high, count, b=22, part_f="pchan", output_size=output_size, vparam="input_size")
+    sample_size = testing_framework(pts, input_low, input_high, count, b=22, part_f="pchans", output_size=output_size, vparam="input_size")
     #
-    # #
-    # testing_framework(pts, 200, 2000, 10, part_f="sample", output_file="output_sampling_chan.csv")
-    # #
-    # testing_framework(pts, 1000, 100000, 10, part_f="sample", vparam="input_size", output_file="input_sampling_chan.csv")
+    # testing_framework(pts, input_low, input_high, count, part_f="sample", output_size=output_size, vparam="input_size")
+    # testing_framework(pts, input_low, input_high, count, part_f="box", vparam="input_size")
 
+
+if __name__ == "__main__":
+    #pts = [(random.random(), random.random()) for i in range(100000)]
+    pts = upload_crimes("crimes.csv")
+    default_output = 500
+
+    pts = random.sample(pts, 100000)
+    #
+    #b_test(pts, 4, 32, default_output)
+    output_size(pts, 25, 2000)
+    input_size(pts, 10000, len(pts), output_size=default_output)
 
     print("Done")
