@@ -38,15 +38,19 @@ namespace pyscan {
         bool is_crossed() const;
     };
 
+
+    class Node {
+
+    public:
+        bool is_terminal() const;
+    };
+
     using node_ptr = std::shared_ptr<Node>;
     using line_list = std::vector<ProjObject>;
     using segment_list = std::vector<ProjSegment>;
     using weight_list = std::vector<double>;
+    using node_list = std::vector<node_ptr>;
 
-    class Node {
-
-
-    };
 
     class SegmentNode : public Node {
         node_ptr upper;
@@ -62,8 +66,8 @@ namespace pyscan {
     };
 
     class PolyNode : public Node {
-        line_list boundary_lines;
-        line_list crossing_lines;
+        segment_list boundary_segments;
+        segment_list crossing_segments;
         line_list points;
         weight_list weights;
         double total_weight;
@@ -78,14 +82,45 @@ namespace pyscan {
 
         void split(ProjObject const& line, node_ptr& p1, node_ptr& p2) const;
 
-        ProjSegment good_line_split(int k) const;
-        ProjSegment good_vertex_split(int k) const;
+        ProjSegment good_line_split() const;
+        ProjSegment good_vertex_split() const;
+        /*
+         * Find a split that approximately splits the points in half in the a, b direction.
+        */
+        ProjSegment good_point_split(double a, double b) const;
+
+        /*
+         * Alternate vertical and horizontal lines until each cell has max_weight
+        */
+        node_list partition_mw(double max_weight);
+        /*
+         * Alternate vertical and horizontal lines until there are b cells.
+        */
+        node_list partition_mc(int b);
+
+        /*
+         * Alternate vertical and horizontal lines until each cell has max_weight
+        */
+        node_list cutting_mw(double max_weight);
+        /*
+         * Alternate vertical and horizontal lines until there are b cells.
+        */
+        node_list cutting_mc(int b);
+
         double get_weight() const;
 
     };
 
 
-    std::vector<Cell> triangle_cutting(std::vector<ProjObject> const& lines, int r);
+    class PolyTree {
+        node_ptr root = nullptr;
+        node_ptr initial_poly;
+    public:
+        PolyTree();
+        void add_line(ProjObject const& line);
+        void add_pt(ProjObject const& pt);
+
+    };
 
 
 }
