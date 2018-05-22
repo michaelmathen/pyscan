@@ -43,181 +43,110 @@ namespace pyscan {
         }
     }
 
-    double angle(Point<> const &p1, Point<> const &p2) {
-        /*
-         * Finds the angle with the y-axis
-         */
-        double ax = get<0>(p1) - get<0>(p2);
-        double ay = get<1>(p1) - get<1>(p2);
-        if (ax > 0) {
-            return acos(ay * invsqrt(ax * ax + ay * ay));
+
+    double order_function(Point<> const& p1, Point<> const& p2) {
+        double y = p1[2] * p2[0] - p2[2] * p1[0];
+        double x = p1[2] * p2[1] - p2[2] * p1[1];
+        if (y >= 0) {
+            return atan2(y, x);
         } else {
-            return M_PI + acos(-ay * invsqrt(ax * ax + ay * ay));
+            return M_PI + atan2(y, x);
         }
+
     }
 
-
-
-
-    template<typename F>
-    std::tuple<Halfspace<>, Point<>, Point<>>
-    maxHalfplane(point_it p_net_b, point_it p_net_e, point_it s_M_b, point_it s_M_e,
-                 point_it s_B_b, point_it s_B_e, F func) {
-
-        double totalM = 0;
+    std::tuple<Point<>, double> max_halfplane(
+            point_list& point_net,
+            point_list& red, weight_list& red_weight,
+            point_list& blue, weight_list& blue_weight,
+            std::function<double(double, double)> f) {
+        double totalR = 0;
         double totalB = 0;
-        for (auto p_s = s_M_b; p_s != s_M_e; ++p_s) {
-            totalM += p_s->getBlueWeight();
+        for (auto& rw : red_weight) {
+            totalR += rw;
         }
-        for (auto p_s = s_B_b; p_s != s_B_e; ++p_s) {
-            totalM += p_s->getRedWeight();
+        for (auto& bw : blue_weight) {
+            totalB += bw;
         }
 
-        if (p_net_e - p_net_b == 0) {
-            return std::make_tuple(Halfspace<>(0.0, 0.0, 0.0),
-                    Point<>(), Point<>());
-        }
-        std::vector<double> mweights(p_net_e - p_net_b - 1, 0);
-        std::vector<double> bweights(p_net_e - p_net_b - 1, 0);
-        std::vector<double> d_indices(p_net_e - p_net_b - 1, 0);
-        std::vector<size_t> indices(p_net_e - p_net_b - 1, 0);
-        Halfspace<2> maxHalfplane;
-        Point<> mp1, mp2;
-        for (auto p_b = p_net_b; p_b != p_net_e; p_b++) {
+        double max_discrepancy = -std::numeric_limits<double>::infinity();
+        Point<> max_line;
 
-            auto dind_it = d_indices.begin();
-            auto ind_it =  indices.begin();
-            size_t it = 0;
-            auto p_b_i = p_net_b;
-            while (p_b_i != p_net_e) {
-                if (p_b_i != p_b) {
-                    *ind_it = it;
-                    *dind_it = angle(*p_b, *p_b_i);
-                    ++ind_it;
-                    ++dind_it;
-                }
-                ++p_b_i;
-                ++it;
+        for (size_t i = 0; i < point_net.size() - 1; i++) {
+            auto p_0 = point_net[i];
+
+            auto order_f = [&p_0] (Point<> const& p1) {
+                return order_function(p_0, p1);
+            };
+            auto pb = point_net.begin() + i + 1;
+
+            std::sort(pb, point_net.end(), [&p_0] (Point<> const& p1, Point<> const& p2) {
+                return order_f(p1) < order_f(p2);
+            });
+
+            auto l1 = intersection(p_0, *pb);
+
+            std::vector<double> red_delta(point_net.end() - pb, 0.0);
+            std::vector<double> blue_delta(point_net.end() - pb, 0.0);
+            std::vector<double> angles(point_net.end() - pb, 0.0);
+            for (size_t j = 0; j < angles.size(); j++) {
+                angles[j] = order_f(*(pb + j));
             }
-            //Sort by the angles
-            auto perm = sort_permutation(d_indices, std::less<double>());
-
-            // Now need to sort indices and weights.
-            //Apply to indices and weights
-            apply_permutation_in_place(indices, perm);
-
-            //Now update all the weights as the angle changes over all the points
-            for (auto p_s = s_M_b; p_s != s_M_e; ++p_s) {
-                auto s_it = std::lower_bound(d_indices.begin(), d_indices.end(), angle(*p_b, *p_s));
-                mweights[s_it - d_indices.begin()] += p_s->getBlueWeight();
-            }
-
-            for (auto p_s = s_B_b; p_s != s_B_e; ++p_s) {
-                auto s_it = std::lower_bound(d_indices.begin(), d_indices.end(), angle(*p_b, *p_s));
-                bweights[s_it - d_indices.begin()] += p_s->getRedWeight();
-            }
-
-            // Now find the value of the first halfspace.
-            double m_cum = 0, b_cum = 0;
-            auto halfplane_end_it = std::lower_bound(d_indices.begin(), d_indices.end(), M_PI);
-            {
-                auto mW_e = mweights.begin() + (halfplane_end_it - d_indices.begin());
-                auto bW_e = bweights.begin() + (halfplane_end_it - d_indices.begin());
-                for (auto h_e_it = halfplane_end_it; h_e_it != d_indices.end();) {
-                    m_cum += *mW_e;
-                    b_cum += *bW_e;
-                    ++mW_e, ++bW_e, ++h_e_it;
-                }
-            }
-            // Now do the scan.
-            {
-                double maxF = func(m_cum / totalM, b_cum / totalB);
-                decltype(indices.begin()) curr_it;
-                decltype(indices.begin()) max_it;
-                if (*halfplane_end_it < *d_indices.begin() + M_PI) {
-                    curr_it = indices.begin() + (halfplane_end_it - d_indices.begin());
+            double red_curr = 0;
+            for (size_t j = 0; j < red.size(); j++) {
+                auto angle_it = std::upper_bound(angles.begin(), angles.end(), order_f(red[i]));
+                if (angle_it == angles.begin()) {
+                    continue
                 } else {
-                    curr_it = indices.begin();
-                }
-                max_it = curr_it;
-                auto b_d_ind = d_indices.begin();
-                auto e_d_ind = halfplane_end_it;
-                auto mW_b = mweights.begin();
-                auto bW_b = bweights.begin();
-                auto mW_e = mweights.begin() + (halfplane_end_it - d_indices.begin());
-                auto bW_e = bweights.begin() + (halfplane_end_it - d_indices.begin());
-
-                while (b_d_ind != halfplane_end_it || e_d_ind != d_indices.end()) {
-
-                    if (b_d_ind == halfplane_end_it || *b_d_ind + M_PI > *e_d_ind) {
-                        m_cum -= *mW_e;
-                        b_cum -= *bW_e;
-                        curr_it = indices.begin() + (e_d_ind - d_indices.begin());
-                        ++e_d_ind, ++mW_e, ++bW_e;
-
-                    } else if (e_d_ind == d_indices.end() || *b_d_ind + M_PI < *e_d_ind){
-                        m_cum += *mW_b;
-                        b_cum += *bW_b;
-                        curr_it = indices.begin() + (b_d_ind - d_indices.begin());
-                        ++b_d_ind, ++mW_b, ++bW_b;
+                    size_t ix = angle_it - angles.begin() - 1;
+                    if (l1.above_closed(red[i])) {
+                        red_delta[ix] -= red_weight[i];
+                        red_curr += red_weight[i];
                     } else {
-                        m_cum += *mW_b;
-                        b_cum += *bW_b;
-                        m_cum -= *mW_e;
-                        b_cum -= *bW_e;
-                        curr_it = indices.begin() + (b_d_ind - d_indices.begin());
-                        ++b_d_ind, ++mW_b, ++bW_b,
-                                ++e_d_ind, ++mW_e, ++bW_e;
-                    }
-                    double tmpF = func(m_cum / totalM, b_cum / totalB);
-                    if (tmpF >= maxF) {
-                        maxF = tmpF;
-                        max_it = curr_it;
+                        red_delta[ix] += red_weight[i];
                     }
                 }
-                if (maxF >= maxHalfplane.fValue()) {
-                    mp1 =  *p_b;
-                    mp2 = *(p_b + *max_it);
-                    double a = (get<1>(mp2) - get<1>(mp1)) / (get<0>(mp1) * get<1>(mp2) - get<1>(mp1) * get<0>(mp2));
-                    double b = (1 - a / get<0>(mp1)) / get<0>(mp2);
-                    maxHalfplane = Halfspace<>(a, b, maxF);
+            }
+            double blue_curr = 0;
+            for (size_t j = 0; j < blue.size(); j++) {
+                auto angle_it = std::upper_bound(angles.begin(), angles.end(), order_f(blue[i]));
+                if (angle_it == angles.begin()) {
+                    continue
+                } else {
+                    size_t ix = angle_it - angles.begin() - 1;
+                    if (l1.above_closed(red[i])) {
+                        blue_delta[ix] -= blue_weight[i];
+                        blue_curr += blue_weight[i];
+                    } else {
+                        blue_delta[ix] += blue_weight[i];
+                    }
                 }
-                //Now figure out which point the max angle corresponds to.
+            }
+
+            for (size_t j = 0; j < angles.size(); j++) {
+                double stat = f(red_curr, blue_curr);
+                if (max_discrepancy <= stat) {
+                    max_line = intersection(p_0, *(j + pb));
+                    max_discrepancy = stat;
+                }
+                red_curr += red_delta[j];
+                blue_curr += blue_delta[j];
             }
         }
-        return std::make_tuple(maxHalfplane, mp1, mp2);
+        return std::make_tuple(max_line, max_discrepancy);
     }
 
-    Halfspace<3> liftHalfspace(Halfspace<2> const& h2, Point<3> const& p3) {
-        return {h2.fValue(), get<0>(h2), get<1>(h2),
-                (1 - get<0>(p3) * get<0>(h2) - get<1>(p3) * get<1>(h2)) / get<2>(p3)};
+
+    Point<3> lift_halfspace(Point<2> const& h, Point<3> const& p) {
+
     }
 
-    Point<2> dropPoint(Point<3> const& fixed_point, Point<3> const& p3) {
+    Point<2> dropPoint(Point<3> const& fixed_point, Point<3> const& p1) {
         /*
          * Does an affine transformation from 3 to 2.
          */
-        double scaling = get<2>(fixed_point) - get<2>(p3);
-        return {p3.getRedWeight(), p3.getBlueWeight(),
-                get<0>(p3) * get<2>(fixed_point) - get<0>(fixed_point) * get<2>(p3),
-                get<1>(p3) * get<2>(fixed_point) - get<1>(fixed_point) * get<2>(p3)
-        };
-    }
-
-    std::tuple<Halfspace<>, Point<>, Point<>> maxHalfplaneLin(point_it p_net_b, point_it p_net_e, point_it p_samp_b, point_it p_samp_e){
-        return maxHalfplane(p_net_b, p_net_e, p_samp_b, p_samp_e, &linear);
-    }
-
-     std::tuple<Halfspace<>, Point<>, Point<>> maxHalfplaneStat(point_it p_net_b, point_it p_net_e, point_it p_samp_b, point_it p_samp_e, double rho) {
-        return maxHalfplane(p_net_b, p_net_e, p_samp_b, p_samp_e, [&rho](double mr, double br){
-            return kulldorff(mr, br, rho);
-        });
-    }
-
-
-    std::tuple<Halfspace<>, Point<>, Point<>> maxHalfplaneGamma(point_it p_net_b, point_it p_net_e, point_it p_samp_b, point_it p_samp_e, double rho){
-        return maxHalfplane(p_net_b, p_net_e, p_samp_b, p_samp_e, [&rho](double mr, double br){
-            return gamma(mr, br, rho);
-        });
+        return {p1[0] * fixed_point[2] - fixed_point[0] * p1[2],
+                p1[1] * fixed_point[2] - fixed_point[1] * p1[2],
+                p1[3] * fixed_point[2] - fixed_point[3] * p1[2]};
     }
 }

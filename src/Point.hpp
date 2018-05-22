@@ -5,72 +5,79 @@
 #ifndef PYSCAN_POINT_HPP
 #define PYSCAN_POINT_HPP
 #include <stdexcept>
-#include <initializer_list>
 #include <string>
 #include <sstream>
-#include <vector>
-
-#include "Vecky.hpp"
+#include <array>
+#include <boost/math/special_functions/next.hpp>
 
 namespace pyscan {
 
+    using namespace boost::math;
+
+#define MAX_FLOAT_DISTANCE 5
+
+    inline bool aeq(double a, double b) {
+        return fabs(float_distance(a, b)) < MAX_FLOAT_DISTANCE;
+    }
+
+    inline bool alt(double a, double b) {
+        return a < b && !aeq(a, b);
+    }
+
+    inline bool alte(double a, double b) {
+        return a <= b || aeq(a, b);
+    }
+
+    template <int dim=2>
+    class Point<dim>;
+
+    template<int dim>
+    inline double dot(Point<dim> const& p1, Point<dim> const& p2) {
+        double val = 0.0;
+        for (size_t i = 0; i < dim + 1; i++) {
+            val += p1[i] * p2[i];
+        }
+        return val;
+    }
+
+    inline double det2(double a1, double b1, double a2, double b2) {
+        return a1 * b2 - b1 * a2;
+    }
+
+
+    inline Point<> intersection(Point<> const& p1, Point<> const& p2) {
+        return Point<>(det2(p1[1], p1[2], p2[1], p2[2]),
+                       det2(p1[0], p1[2], p2[0], p2[2]),
+                       det2(p1[0], p1[1], p2[0], p2[1]));
+    }
+
     template <int dim=2>
     class Point {
-        double red;
-        double blue;
-
-        VecN<double, dim> coords;
+        // Points are of form (x, y, c) where c is the homgenous coordinate.
+        std::array<double, dim + 1> coords;
     public:
 
-        template <typename ...Coords>
-        Point(double r, double b, Coords... rest) : coords(rest...) {
-            red = r;
-            blue = b;
-            static_assert(dim == sizeof...(Coords), "coords has to be the same as the number of dimensions");
+        explicit template <typename ...Coords>
+        Point(Coords... rest) : coords(rest...) {}
+
+        Point() {
+            coords.fill(0);
         }
 
-        Point() : red(0), blue(0){
-        }
-
-      	virtual void setRedWeight(double w_r) {
-      	    red = w_r;
-      	}
-
-      	virtual void setBlueWeight(double w_b) {
-      	    blue = w_b;
-      	}
-
-        virtual double getWeight() const {
-            return red + blue;
-        }
-        virtual double getRedWeight() const {
-            return red;
-        }
-        virtual double getBlueWeight() const {
-            return blue;
-        }
 
         virtual std::string toString() const {
             std::ostringstream ss;
             ss << "pyscan::Point(";
-            ss << red << ", " << blue;
-            for (int i = 0; i < dim; i++) {
-                ss << ", " << coords[i];
+            for (auto &el : coords) {
+                ss << ", " << el;
             }
             ss << ")";
             return ss.str();
         }
 
-        template <int ix,  int d>
-        friend double get(Point<d> const& pt);
-
         virtual bool operator==(Point<dim> const& pt) {
 
-            bool val = pt.getRedWeight() == getRedWeight() &&
-                       pt.getBlueWeight() == getBlueWeight();
-            if (!val)
-                return false;
-            for (int i = 0; i < dim; i++) {
+            for (int i = 0; i < dim + 1; i++) {
                 if (coords[i] != pt.coords[i]) {
                     return false;
                 }
@@ -78,66 +85,34 @@ namespace pyscan {
             return true;
         }
 
-        virtual double getX() const {
-            return coords[0];
+        virtual double& operater[](size_t i) {
+            return &coords[i];
+        }
+        virtual double operator[](size_t i) const {
+           return coords[i];
         }
 
-        virtual double getY() const {
-            return coords[1];
+        bool above_closed(Point<dim> const& p1) {
+            return alte(dot(*this, p1), 0.0);
         }
-        virtual double get(int i) const {
-          return coords[i];
+
+        bool above(Point<dim> const& p1) {
+            return alt(dot(*this, p1), 0.0);
         }
-    };
 
-
-    template<int dim>
-    inline double dot(Point<dim> const& p1, Point<dim> const& p2) {
-        return dot(p1.coords, p2.coords);
-    }
-
-    template <int dim=2>
-    class LPoint : public Point<dim> {
-        size_t label;
-    public:
-        template <typename ...Coords>
-        LPoint(size_t l, double r, double b, Coords... rest) : label(l), Point<dim>(r, b, rest...) {}
-
-        virtual size_t getLabel() const {
-            return label;
-        }
-        virtual bool operator==(LPoint<dim> const& lpt) {
-            return Point<dim>::operator==(lpt) && lpt.label == this->label;
+        bool parallel(Point<dim> const& l) {
+            for (int i = 0; i < dim; i++) {
+                if (!aeq(coords[i], l[i])) {
+                    return false;
+                }
+            }
+            return true;
         }
     };
 
-    template <int ix, int dim>
-    double get(Point<dim> const& pt) {
-        static_assert(ix < dim, "Requested a coordinate that is greater than the dimension");
-        static_assert(0 <= ix, "Requested a coordinate that is less than zero");
-        return pt.get(ix);
-    }
 
-    using point_it = std::vector<Point<>>::iterator;
-
-    double getMeasured(Point<> const& pt);
-    double getBaseline(Point<> const& pt);
-
-    void getLoc(Point<> const& pt, double& x1, double& x2);
-
-    double getX(Point<> const& pt);
-    double getY(Point<> const& pt);
-    bool colinear(Point<> const&, Point<> const&, Point<> const&);
-    bool onLineSegment(Point<> const& pt1,
-                       Point<> const& pt2,
-                       Point<> const& pt3);
-
-    bool sameLoc(Point<> const& p1, Point<> const& p2);
-
-
-    inline Point<> removeLabel(LPoint<> const& pt) {
-      return Point<>(pt.getRedWeight(), pt.getBlueWeight(), pt.get(0), pt.get(1));
-    }
+    using point_list = std::vector<Point<>>;
+    using weight_list = std::vector<double>;
 
 }
 #endif //PYSCAN_POINT_HPP
