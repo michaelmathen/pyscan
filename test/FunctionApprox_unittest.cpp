@@ -3,9 +3,9 @@
 //
 
 
-#include "../src/RectangleScan.hpp"
+
 #include "../src/FunctionApprox.hpp"
-#include "../src/DiskScan.hpp"
+#include "../src/Statistics.hpp"
 #include "Utilities.hpp"
 
 #include <limits.h>
@@ -39,33 +39,35 @@ namespace {
 //
 // </TechnicalDetails>
 
+using namespace pyscan;
+
 TEST(ApproximateHullTest, Kulldorff) {
-    const static int test_size = 1000000;
+    const static int test_size = 10000;
     double rho = .001;
     double alpha = .001;
     double eps = .01;
     auto pts = pyscantest::randomVec(test_size);
 
-    auto avg = [&] (pyscan::VecD const& v1, pyscan::VecD const& v2) {
-        pyscan::VecD v_out = v1 + v2;
+    auto avg = [&] (Vec2 const& v1, Vec2 const& v2) {
+        Vec2 v_out = v1 + v2;
         return v_out * 1.0 / mag(v_out);
     };
 
-    double maxV_approx = pyscan::approximateHull(eps,
-      [&](pyscan::VecD pt) {
-        return pyscan::regularized_kulldorff(pt[0], pt[1], rho);
+    double maxV_approx = approximateHull(eps,
+      [&](Vec2 pt) {
+        return regularized_kulldorff(pt[0], pt[1], rho);
       },
-      [&] (pyscan::VecD dir){
-        return pyscantest::maxVecD(pts, [&](pyscan::VecD const& v) {
-          return pyscan::dot(v, dir);
+      [&] (Vec2 dir){
+        return pyscantest::maxVec2(pts, [&](Vec2 const& v) {
+          return dot(v, dir);
       });
     });
 
-    auto maxV_exact_pt = pyscantest::maxVecD(pts, [&](pyscan::VecD const& pt){
-      return pyscan::regularized_kulldorff(pt[0], pt[1], rho);
+    auto maxV_exact_pt = pyscantest::maxVec2(pts, [&](Vec2 const& pt){
+      return regularized_kulldorff(pt[0], pt[1], rho);
     });
 
-    double maxV_exact = pyscan::regularized_kulldorff(maxV_exact_pt[0], maxV_exact_pt[1], rho);
+    double maxV_exact = regularized_kulldorff(maxV_exact_pt[0], maxV_exact_pt[1], rho);
     std::cout << maxV_approx << " " << maxV_exact << std::endl;
     EXPECT_NEAR(maxV_exact, maxV_approx, eps);
 

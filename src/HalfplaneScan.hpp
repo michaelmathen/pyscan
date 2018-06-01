@@ -10,14 +10,43 @@
 #include "Point.hpp"
 
 namespace pyscan {
-    Halfspace<3> liftHalfspace(Halfspace<2> const& h2, Point<3> const& p3);
 
-    Point<2> dropPoint(Point<3> const& fixed_point, Point<3> const& p3);
+    Pt3 lift_halfspace(Pt2 const& h, Pt3 const& p);
+    Pt2 dropPoint(Pt3 const& fixed_point, Pt3 const& p1);
 
-    double angle(Point<> const & p1, Point<> const& p2);
+    std::tuple<Pt2, double> max_halfplane(
+            point_list& point_net,
+            point_list& red,
+            weight_list& red_w,
+            point_list& blue,
+            weight_list& blue_w,
+            std::function<double(double, double)> const& f);
 
-    std::tuple<Point<>, double> max_halfplane(point_list& red, weight_list& red_weight,
-                                              point_list& blue, weight_list& blue_weight,
-                                              std::function<double(double, double)> f);
+
+    std::tuple<Pt2, double> max_halfplane_simple(
+            point_list& point_net,
+            point_list& red,
+            weight_list& red_w,
+            point_list& blue,
+            weight_list& blue_w,
+            std::function<double(double, double)> const& f);  
+
+    std::tuple<Pt3, double> max_halfspace(
+            point3_list& point_net,
+            point3_list& red,
+            weight_list& red_w,
+            point3_list& blue,
+            weight_list& blue_w,
+            std::function<double(double, double)> const& f);
+
+    double under_line(Pt2& line, point_list& points, weight_list& weights);
+    
+    double evaluate_line(Pt2& line, 
+                        point_list& red, 
+                        weight_list& r_weight,
+                        point_list& blue,
+                        weight_list& b_weights,
+                        std::function<double(double, double)> const& f);
 }
+
 #endif //PYSCAN_HALFPLANE_HPP

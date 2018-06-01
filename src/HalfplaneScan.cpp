@@ -4,11 +4,12 @@
 #include <vector>
 #include <tuple>
 #include <functional>
+#include <cassert>
+#include <iostream>
 
-#include "Utilities.hpp"
-#include "Statistics.hpp"
 #include "HalfplaneScan.hpp"
 
+//#define DEBUG 
 
 namespace pyscan {
 
@@ -33,8 +34,7 @@ namespace pyscan {
             done[i] = true;
             std::size_t prev_j = i;
             std::size_t j = p[i];
-            while (i != j)
-            {
+            while (i != j) {
                 std::swap(vec[prev_j], vec[j]);
                 done[j] = true;
                 prev_j = j;
@@ -44,89 +44,74 @@ namespace pyscan {
     }
 
 
-    double order_function(Point<> const& p1, Point<> const& p2) {
-        double y = p1[2] * p2[0] - p2[2] * p1[0];
-        double x = p1[2] * p2[1] - p2[2] * p1[1];
-        if (y >= 0) {
-            return atan2(y, x);
-        } else {
-            return M_PI + atan2(y, x);
-        }
-
-    }
 
     std::tuple<Point<>, double> max_halfplane(
             point_list& point_net,
-            point_list& red, weight_list& red_weight,
-            point_list& blue, weight_list& blue_weight,
-            std::function<double(double, double)> f) {
-        double totalR = 0;
-        double totalB = 0;
-        for (auto& rw : red_weight) {
-            totalR += rw;
-        }
-        for (auto& bw : blue_weight) {
-            totalB += bw;
-        }
+            point_list& red,
+            weight_list& red_w,
+            point_list& blue,
+            weight_list& blue_w,
+            std::function<double(double, double)> const& f) {
+
+        /*
+         *
+         */
+        assert(red.size() == red_w.size());
+        assert(blue.size() == blue_w.size());
+
+        double red_total = std::accumulate(red_w.begin(), red_w.end(), 0.0, std::plus<>());
+        double blue_total = std::accumulate(blue_w.begin(), blue_w.end(), 0.0, std::plus<>());;
 
         double max_discrepancy = -std::numeric_limits<double>::infinity();
-        Point<> max_line;
+        Pt2 max_line;
 
-        for (size_t i = 0; i < point_net.size() - 1; i++) {
-            auto p_0 = point_net[i];
+        for (auto p_it = point_net.begin(); p_it != point_net.end() - 1; p_it++) {
+            auto p_0 = *p_it;
 
-            auto order_f = [&p_0] (Point<> const& p1) {
+            auto order_f = [&] (Point<> const& p1) {
                 return order_function(p_0, p1);
             };
-            auto pb = point_net.begin() + i + 1;
 
-            std::sort(pb, point_net.end(), [&p_0] (Point<> const& p1, Point<> const& p2) {
+            auto pb = p_it + 1;
+            std::sort(pb, point_net.end(), [&] (Point<> const& p1, Point<> const& p2) {
                 return order_f(p1) < order_f(p2);
             });
 
-            auto l1 = intersection(p_0, *pb);
-
+            auto l1 = correct_orientation(p_0, *pb);
             std::vector<double> red_delta(point_net.end() - pb, 0.0);
             std::vector<double> blue_delta(point_net.end() - pb, 0.0);
             std::vector<double> angles(point_net.end() - pb, 0.0);
             for (size_t j = 0; j < angles.size(); j++) {
                 angles[j] = order_f(*(pb + j));
             }
-            double red_curr = 0;
-            for (size_t j = 0; j < red.size(); j++) {
-                auto angle_it = std::upper_bound(angles.begin(), angles.end(), order_f(red[i]));
-                if (angle_it == angles.begin()) {
-                    continue
-                } else {
-                    size_t ix = angle_it - angles.begin() - 1;
-                    if (l1.above_closed(red[i])) {
-                        red_delta[ix] -= red_weight[i];
-                        red_curr += red_weight[i];
+            auto set_delta = [&] (auto& deltas, auto b_it, auto e_it, auto w_it) {
+                double w_curr = 0;
+                for (; b_it != e_it; ++b_it) {
+                    auto angle_it = std::upper_bound(angles.begin(), angles.end(), order_f(*b_it));
+                    if (angle_it == angles.begin()) {
+                        if (l1.above_closed(*b_it)) {
+                            w_curr += *w_it;
+                        } 
                     } else {
-                        red_delta[ix] += red_weight[i];
+                        assert(angle_it - angles.begin() - 1 >= 0);
+                        size_t ix = angle_it - angles.begin() - 1;
+                        if (l1.above_closed(*b_it)) {
+                            deltas[ix] -= *w_it;
+                            w_curr += *w_it;
+                        } else {
+                            deltas[ix] += *w_it;
+                        }
                     }
+                    w_it++;
                 }
-            }
-            double blue_curr = 0;
-            for (size_t j = 0; j < blue.size(); j++) {
-                auto angle_it = std::upper_bound(angles.begin(), angles.end(), order_f(blue[i]));
-                if (angle_it == angles.begin()) {
-                    continue
-                } else {
-                    size_t ix = angle_it - angles.begin() - 1;
-                    if (l1.above_closed(red[i])) {
-                        blue_delta[ix] -= blue_weight[i];
-                        blue_curr += blue_weight[i];
-                    } else {
-                        blue_delta[ix] += blue_weight[i];
-                    }
-                }
-            }
-
+                return w_curr;
+            };
+            double red_curr = set_delta(red_delta, red.begin(), red.end(), red_w.begin());
+            double blue_curr = set_delta(blue_delta, blue.begin(), blue.end(), blue_w.begin());
             for (size_t j = 0; j < angles.size(); j++) {
-                double stat = f(red_curr, blue_curr);
+                double stat = f(red_curr / red_total, blue_curr / blue_total);
                 if (max_discrepancy <= stat) {
-                    max_line = intersection(p_0, *(j + pb));
+                    max_line = correct_orientation(p_0, *(j + pb));
                     max_discrepancy = stat;
                 }
                 red_curr += red_delta[j];
@@ -137,8 +122,231 @@ namespace pyscan {
     }
 
 
-    Point<3> lift_halfspace(Point<2> const& h, Point<3> const& p) {
+    double set_labeled_delta(weight_list& deltas, 
+                            std::vector<double> const& angles,
+                            point_list const& pts, 
+                            weight_list& ws, 
+                            label_list& lbl,
+                            size_t label_count) {
+        double w_curr = 0;
+        std::vector<double> orders(pts.size(), 0.0);
+        for (size_t j = 0; j < orders.size(); j++) {
+            orders[j] = order_f(pts[i]); //Change so it loops from 0 to 2pi
+        }
+        auto permutation = sort_permutation(pts, orders, std::lest<double>());
+        apply_permutation_in_place(orders, permutation);
+        apply_permutation_in_place(ws, permutation);
+        apply_permutation_in_place(lbl, permutation);
+        {
+            std::vector<size_t> ix(label_count, -1);
+            std::vector<bool> first_quad(label_count, false);
+            std::vector<bool> second_quad(label_count, false);
 
+            // record the starting end ending index of each labeled set.
+            for (size_t i = 0; i < lbl.size(); ++i) {
+                auto c_lbl = lbl[i];
+                if (ix[c_lbl] == -1) {
+                    ix[c_lbl] = i;
+                } else {
+                    auto curr_angle = orders[start_ix[c_lbl]];
+                    bool fq = (orders[c_lbl] > curr_angle + M_PI / 2) && 
+                              (curr_angle + M_PI >= orders[c_lbl]);
+                    first_quad[c_lbl] = first_quad[c_lbl] || fq;
+                    bool sq = (orders[c_lbl] => curr_angle + M_PI) && 
+                              (curr_angle + 3 * M_PI / 4 >= orders[c_lbl]);
+                    second_quad[c_lbl] = second_quad[c_lbl] || sq;
+                }
+                end_ix[lbl[i]] = i;
+                pt_count[lbl[i]] += 1;
+            }
+        }
+
+        // Now handle each labeled set. If the pivot point is contained inside of the 
+        // convex hull of the labeled set then ignore the contributing delta and 
+        // just add to the current weight.
+    }
+
+    std::tuple<Point<>, double> max_halfplane_label(
+            point_list& point_net,
+            point_list& red,
+            weight_list& red_w,
+            label_list& red_labels,
+            point_list& blue,
+            weight_list& blue_w,
+            label_list& blue_labels,
+            std::function<double(double, double)> const& f) {
+        /*
+        * The maximum label must be less than the maximum number of points. 
+        * Labels are assumed to be contigous.
+        */
+        assert(red.size() == red_w.size());
+        assert(blue.size() == blue_w.size());
+        assert(blue_labels.size() == blue_w.size());
+        assert(red_labels.size() == red_w.size());
+
+        double red_total = std::accumulate(red_w.begin(), red_w.end(), 0.0, std::plus<>());
+        double blue_total = std::accumulate(blue_w.begin(), blue_w.end(), 0.0, std::plus<>());;
+
+        double max_discrepancy = -std::numeric_limits<double>::infinity();
+        Pt2 max_line;
+
+        for (auto p_it = point_net.begin(); p_it != point_net.end() - 1; p_it++) {
+            auto p_0 = *p_it;
+
+            auto order_f = [&] (Point<> const& p1) {
+                return order_function(p_0, p1);
+            };
+
+            auto cmpf = [&](Point<> const& p1, Point<> const& p2) {
+                return order_f(p1) < order_f(p2);
+            }
+            auto pb = p_it + 1;
+            std::sort(pb, point_net.end(), cmpf);
+
+            auto l1 = correct_orientation(p_0, *pb);
+            std::vector<double> red_delta(point_net.end() - pb, 0.0);
+            std::vector<double> blue_delta(point_net.end() - pb, 0.0);
+            std::vector<double> angles(point_net.end() - pb, 0.0);
+
+            auto set_delta = [&] (auto& deltas, auto& pts, auto& ws, auto& lbl) {
+            
+                //Set initial label count and initial weight
+                std::vector<int64_t> label_counts(lbl.size(), 0);
+                double w_curr = 0;
+                {
+                    auto bl = lbl.begin(); 
+                    auto bp = pts.begin();
+                    auto bw = ws.begin();
+                    while (bl != lbl.end()) {
+                        if (l1.above_closed(*bp)) {
+                            if (label_counts[*bl] == 0) {
+                                w_curr += *bw;
+                            }
+                            label_counts[*bl] += 1;
+                        } 
+                        bl++;
+                        bp++;
+                        bw++;
+                    }
+                } 
+
+                // Order these so that they are in order
+                auto permutation = sort_permutation(pts, cmpf);
+                //apply_permutation_in_place(orders, permutation);
+                apply_permutation_in_place(ws, permutation);
+                apply_permutation_in_place(lbl, permutation);
+                apply_permutation_in_place(pts, permutation);
+                {
+
+                    auto bl = lbl.begin(); 
+                    auto bw = ws.begin();
+                    auto bp = pts.begin();
+                    auto bn = pb;
+                    auto bd = deltas.begin();
+                    //Set to first line
+                    while (order_f(*bp) < order_f(*bn)) {
+                        bl++; bw++; bp++;
+                    }
+                    ba++;
+                    //Now walk through the lines.
+                    for (; bn != point_net.end(); ++bn, ++bd) {
+                        double delta = 0;
+                        for (; order_f(*bp) < order_f(*bn); bl++, bw++, bp++) {
+                            if (l1.above_closed(*bp)) {
+                                //Removing points
+                                label_counts[*bl] -= 1;
+                                if (label_counts[*bl] <= 0) {
+                                    delta -= *bw;
+                                }
+                            } else {
+                                //Adding points
+                                if (label_counts[*bl] == 0) {
+                                    delta += *bw;
+                                }
+                                label_counts[*bl] += 1;
+                            }
+                        }
+                        *bd = delta;
+                    }
+                }
+                return w_curr;
+            };
+            double red_curr = set_delta(red_delta, red, red_w.begin(), red_labels.begin());
+            double blue_curr = set_delta(blue_delta, blue, blue_w.begin(), blue_labels.begin());
+            auto pn = pb;
+            auto rd = red_delta.begin();
+            auto bd = blue_delta.begin();
+            for (; pn != point_net.end(); ++pn, ++rd, ++bd) {
+                double stat = f(red_curr / red_total, blue_curr / blue_total);
+                if (max_discrepancy <= stat) {
+                    max_line = correct_orientation(p_0, *pn);
+                    max_discrepancy = stat;
+                }
+                red_curr += *rd;
+                blue_curr += *bd;
+            }
+        }
+        return std::make_tuple(max_line, max_discrepancy);
+    }
+
+
+    double under_line(Pt2& line, point_list& points, weight_list& weights) {
+        double curr = 0;
+        auto pt_it = points.begin();
+        auto w_it = weights.begin();
+        for (; pt_it != points.end(); ++pt_it) {
+            if (line.above_closed(*pt_it)) {
+                curr += *w_it;
+            }
+            ++w_it;
+        }
+        return curr;
+    }
+
+    double evaluate_line(Pt2& line, 
+                        point_list& red, 
+                        weight_list& red_w,
+                        point_list& blue,
+                        weight_list& blue_w,
+                        std::function<double(double, double)> const& f) {
+        double red_total = std::accumulate(red_w.begin(), red_w.end(), 0.0, std::plus<>());
+        double blue_total = std::accumulate(blue_w.begin(), blue_w.end(), 0.0, std::plus<>());
+        double rf = under_line(line, red, red_w) / red_total;
+        double bf = under_line(line, blue, blue_w) / blue_total;
+        return f(rf, bf);
+    }
+
+    std::tuple<Pt2, double> max_halfplane_simple(
+            point_list& point_net,
+            point_list& red,
+            weight_list red_w,
+            point_list blue,
+            weight_list& blue_w,
+            std::function<double(double, double)> const& f) {
+        assert(red.size() == red_w.size());
+        assert(blue.size() == blue_w.size());
+       
+        double max_f = -std::numeric_limits<double>::infinity();
+        Pt2 max_line;
+
+        for (auto pt_it = point_net.begin(); pt_it != point_net.end() - 1; ++pt_it){
+            for (auto pt_it2 = pt_it + 1; pt_it2 != point_net.end(); ++pt_it2) {
+                auto line = correct_orientation(*pt_it, *pt_it2);
+                double new_max = evaluate_line(line, red, red_w, blue, blue_w, f);
+                if (max_f <= new_max) {
+                    max_f = new_max;
+                    max_line = line;
+                }
+            }
+        }
+        return std::make_tuple(max_line, max_f);
+    }
+
+    Point<3> lift_halfspace(Point<2> const& h, Point<3> const& p) {
+        /*
+         * Maps a halfspace in 2d to one in 3d using the correct lifting based on the single fixed point in affine.
+         */
+        return {h[0] * p[2], h[1] * p[2], -p[0] * h[0] - p[1] * h[1] - p[3] * h[2], h[2] * p[2]};
     }
 
     Point<2> dropPoint(Point<3> const& fixed_point, Point<3> const& p1) {
@@ -148,5 +356,34 @@ namespace pyscan {
         return {p1[0] * fixed_point[2] - fixed_point[0] * p1[2],
                 p1[1] * fixed_point[2] - fixed_point[1] * p1[2],
                 p1[3] * fixed_point[2] - fixed_point[3] * p1[2]};
+    }
+
+    std::tuple<Pt3, double> max_halfspace(
+            point3_list& point_net,
+            point3_list& red,
+            weight_list& red_w,
+            point3_list& blue,
+            weight_list& blue_w,
+            std::function<double(double, double)> const& f) {
+        Pt3 max_halfspace;
+        double max_stat = -std::numeric_limits<double>::infinity();
+        for (auto pt_it = point_net.begin(); pt_it != point_net.end() - 2; ++pt_it) {
+            auto curr_pt = *pt_it;
+            auto drop = [&] (Pt3 const& pt) {
+                return dropPoint(curr_pt, pt);
+            };
+            std::vector<Pt2> drop_net(point_net.end() - pt_it - 1, Pt2());
+            std::vector<Pt2> drop_red(red.size(), Pt2());
+            std::vector<Pt2> drop_blue(blue.size(), Pt2());
+            std::transform(pt_it + 1, point_net.end(), drop_net.begin(), drop);
+            std::transform(red.begin(), red.end(), drop_red.begin(), drop);
+            std::transform(blue.begin(), blue.end(), drop_blue.begin(), drop);
+            auto pair_mx = max_halfplane(drop_net, drop_red, red_w, drop_blue, blue_w, f);
+            if (std::get<1>(pair_mx) >= max_stat) {
+                max_stat = std::get<1>(pair_mx);
+                max_halfspace = lift_halfspace(std::get<0>(pair_mx), curr_pt);
+            }
+        }
+        return std::make_tuple(max_halfspace, max_stat);
     }
 }

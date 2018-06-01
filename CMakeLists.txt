@@ -15,7 +15,6 @@ set(SOURCE_FILES
         src/FunctionApprox.cpp
         src/FunctionApprox.hpp
         src/Point.hpp
-        src/Point.cpp
         src/RectangleScan.cpp
         src/RectangleScan.hpp
         src/Statistics.hpp
@@ -24,17 +23,16 @@ set(SOURCE_FILES
         src/HalfplaneScan.hpp
         src/DiskScan.cpp
         src/DiskScan.hpp
-        src/Vecky.hpp
-        src/Utilities.cpp)
+        src/Utilities.cpp src/DiskScan2.hpp src/DiskScan2.cpp)
 
 set(PY_SOURCE_FILES
-        src/pyscan.cpp)
+        src/pyscan.cpp src/DiskScan2.hpp src/DiskScan2.cpp)
 
 set(test true)
 
 
 if (test)
-    set(TEST_FILES test/Utilities.hpp test/Utilities.cpp)
+    set(TEST_FILES test/Utilities.hpp test/Utilities.cpp src/DiskScan2.hpp src/DiskScan2.cpp)
 
     configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
     execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
@@ -67,7 +65,7 @@ if (test)
     endif()
 
     # Now simply link against gtest or gtest_main as needed. Eg
-    add_executable(DiskScan_test test/DiskScan_unittest.cpp ${TEST_FILES} ${SOURCE_FILES})
+    add_executable(DiskScan_test test/DiskScan_unittest.cpp ${TEST_FILES} ${SOURCE_FILES} src/DiskScan2.hpp src/DiskScan2.cpp)
     target_link_libraries(DiskScan_test gtest_main)
     add_test(NAME DiskScan_test COMMAND DiskScan_test)
 
@@ -75,13 +73,20 @@ if (test)
     target_link_libraries(RectangleScan_test gtest_main)
     add_test(NAME RectangleScan_test COMMAND RectangleScan_test)
 
-    add_executable(FunctionApprox_test test/FunctionApprox_unittest.cpp ${TEST_FILES} ${SOURCE_FILES})
+    add_executable(FunctionApprox_test test/FunctionApprox_unittest.cpp src/Utilities.cpp src/FunctionApprox.cpp test/Utilities.cpp)
     target_link_libraries(FunctionApprox_test gtest_main)
     add_test(NAME FunctionApprox_test COMMAND FunctionApprox_test)
 
+    add_executable(Point_test test/Point_unittest.cpp)
+    target_link_libraries(Point_test gtest_main)
+    add_test(NAME Point_test COMMAND Point_test)
+
+    add_executable(Halfplane_test test/Halfplane_unittest.cpp src/HalfplaneScan.cpp test/Utilities.cpp)
+    target_link_libraries(Halfplane_test gtest_main)
+    add_test(NAME Halfplane_test COMMAND Halfplane_test)
 endif()
 
 
-add_library(pyscan SHARED ${SOURCE_FILES} ${PY_SOURCE_FILES})
+add_library(pyscan SHARED ${SOURCE_FILES} ${PY_SOURCE_FILES} src/DiskScan2.hpp src/DiskScan2.cpp)
 target_link_libraries(pyscan ${Boost_LIBRARIES})
 set_target_properties(pyscan PROPERTIES PREFIX "")
