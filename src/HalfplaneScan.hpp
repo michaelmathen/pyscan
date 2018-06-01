@@ -47,6 +47,36 @@ namespace pyscan {
                         point_list& blue,
                         weight_list& b_weights,
                         std::function<double(double, double)> const& f);
+
+  double evaluate_line_labeled(Pt2& line, 
+                        point_list& red, 
+                        weight_list& red_w,
+                        label_list& red_labels,
+                        point_list& blue,
+                        weight_list& blue_w,
+                        label_list& blue_labels,
+                        std::function<double(double, double)> const& f);
+
+
+   std::tuple<Point<>, double> max_halfplane_labeled(
+            point_list& point_net,
+            point_list& red,
+            weight_list& red_w,
+            label_list& red_labels,
+            point_list& blue,
+            weight_list& blue_w,
+            label_list& blue_labels,
+            std::function<double(double, double)> const& f);
+
+    std::tuple<Pt2, double> max_halfplane_simple_labeled(
+            point_list& point_net,
+            point_list& red,
+            weight_list& red_w,
+            label_list& red_labels,
+            point_list& blue,
+            weight_list& blue_w,
+            label_list& blue_labels,
+            std::function<double(double, double)> const& f);
 }
 
 #endif //PYSCAN_HALFPLANE_HPP

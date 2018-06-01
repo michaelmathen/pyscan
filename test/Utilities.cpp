@@ -43,28 +43,20 @@ namespace pyscantest {
     }
 
 
-//     auto randomLPoints(int test_size, size_t num_labels) -> std::vector<pyscan::LPoint<>> {
-//         std::random_device rd;
-//         std::default_random_engine generator(rd());
-//         std::uniform_real_distribution<double> distribution (0.0,1.0);
-//         std::uniform_int_distribution<size_t> label_dist(0, num_labels - 1);
-//         std::vector<pyscan::LPoint<>> points;
-//         std::vector<double> m_map(num_labels, -1);
-//         std::vector<double> b_map(num_labels, -1);
-//         for (int i = 0; i < test_size; i++) {
-//             size_t label = label_dist(generator);
-//             if (m_map[label] < 0) {
-//               m_map[label] = distribution(generator);
-//               b_map[label] = distribution(generator);
-//             }
-//             points.emplace_back(label,
-//               m_map[label],
-//               b_map[label],
-//               distribution(generator),
-//               distribution(generator));
-//         }
-//         return points;
-//     }
+    auto randomLabels(int test_size, size_t num_labels) -> pyscan::label_list {
+        std::random_device rd;
+        std::default_random_engine generator(rd());
+        pyscan::label_list labels;
+        using label_t = pyscan::label_list::value_type;
+
+        std::uniform_int_distribution<label_t> label_dist(0, num_labels - 1);
+        for (int i = 0; i < test_size; i++) {
+            size_t label = label_dist(generator);
+            labels.emplace_back(label);
+        }
+        return labels;
+    }
+
 // auto randomLPointsUnique(int test_size) -> std::vector<pyscan::LPoint<>> {
 //         std::random_device rd;
 //         std::default_random_engine generator(rd());

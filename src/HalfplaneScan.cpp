@@ -122,51 +122,19 @@ namespace pyscan {
     }
 
 
-    double set_labeled_delta(weight_list& deltas, 
-                            std::vector<double> const& angles,
-                            point_list const& pts, 
-                            weight_list& ws, 
-                            label_list& lbl,
-                            size_t label_count) {
-        double w_curr = 0;
-        std::vector<double> orders(pts.size(), 0.0);
-        for (size_t j = 0; j < orders.size(); j++) {
-            orders[j] = order_f(pts[i]); //Change so it loops from 0 to 2pi
-        }
-        auto permutation = sort_permutation(pts, orders, std::lest<double>());
-        apply_permutation_in_place(orders, permutation);
-        apply_permutation_in_place(ws, permutation);
-        apply_permutation_in_place(lbl, permutation);
-        {
-            std::vector<size_t> ix(label_count, -1);
-            std::vector<bool> first_quad(label_count, false);
-            std::vector<bool> second_quad(label_count, false);
-
-            // record the starting end ending index of each labeled set.
-            for (size_t i = 0; i < lbl.size(); ++i) {
-                auto c_lbl = lbl[i];
-                if (ix[c_lbl] == -1) {
-                    ix[c_lbl] = i;
-                } else {
-                    auto curr_angle = orders[start_ix[c_lbl]];
-                    bool fq = (orders[c_lbl] > curr_angle + M_PI / 2) && 
-                              (curr_angle + M_PI >= orders[c_lbl]);
-                    first_quad[c_lbl] = first_quad[c_lbl] || fq;
-                    bool sq = (orders[c_lbl] => curr_angle + M_PI) && 
-                              (curr_angle + 3 * M_PI / 4 >= orders[c_lbl]);
-                    second_quad[c_lbl] = second_quad[c_lbl] || sq;
-                }
-                end_ix[lbl[i]] = i;
-                pt_count[lbl[i]] += 1;
+    double unique_accumulate(weight_list const& weights, label_list const& labels) {
+        std::vector<bool> label_counts(labels.size(), false);
+        double curr = 0;
+        for (size_t i = 0; i < labels.size(); i++) {
+            if (!label_counts[labels[i]]) {
+                curr += weights[i];
+                label_counts[labels[i]] = true; 
             }
         }
-
-        // Now handle each labeled set. If the pivot point is contained inside of the 
-        // convex hull of the labeled set then ignore the contributing delta and 
-        // just add to the current weight.
+        return curr;
     }
 
-    std::tuple<Point<>, double> max_halfplane_label(
+    std::tuple<Point<>, double> max_halfplane_labeled(
             point_list& point_net,
             point_list& red,
             weight_list& red_w,
@@ -184,8 +152,8 @@ namespace pyscan {
         assert(blue_labels.size() == blue_w.size());
         assert(red_labels.size() == red_w.size());
 
-        double red_total = std::accumulate(red_w.begin(), red_w.end(), 0.0, std::plus<>());
-        double blue_total = std::accumulate(blue_w.begin(), blue_w.end(), 0.0, std::plus<>());;
+        double red_total = unique_accumulate(red_w, red_labels);
+        double blue_total = unique_accumulate(blue_w, blue_labels);;
 
         double max_discrepancy = -std::numeric_limits<double>::infinity();
         Pt2 max_line;
@@ -199,14 +167,13 @@ namespace pyscan {
 
             auto cmpf = [&](Point<> const& p1, Point<> const& p2) {
                 return order_f(p1) < order_f(p2);
-            }
+            };
             auto pb = p_it + 1;
             std::sort(pb, point_net.end(), cmpf);
 
             auto l1 = correct_orientation(p_0, *pb);
             std::vector<double> red_delta(point_net.end() - pb, 0.0);
             std::vector<double> blue_delta(point_net.end() - pb, 0.0);
-            std::vector<double> angles(point_net.end() - pb, 0.0);
 
             auto set_delta = [&] (auto& deltas, auto& pts, auto& ws, auto& lbl) {
             
@@ -231,7 +198,10 @@ namespace pyscan {
                 } 
 
                 // Order these so that they are in order
-                auto permutation = sort_permutation(pts, cmpf);
+
+                std::vector<double> local_orders(pts.size(), 0.0);
+                std::transform(pts.begin(), pts.end(), local_orders.begin(), order_f);
+                auto permutation = sort_permutation(local_orders, std::less<>());
                 //apply_permutation_in_place(orders, permutation);
                 apply_permutation_in_place(ws, permutation);
                 apply_permutation_in_place(lbl, permutation);
@@ -247,11 +217,11 @@ namespace pyscan {
                     while (order_f(*bp) < order_f(*bn)) {
                         bl++; bw++; bp++;
                     }
-                    ba++;
+                    bn++;
                     //Now walk through the lines.
                     for (; bn != point_net.end(); ++bn, ++bd) {
                         double delta = 0;
-                        for (; order_f(*bp) < order_f(*bn); bl++, bw++, bp++) {
+                        for (; bp != pts.end() && order_f(*bp) < order_f(*bn); bl++, bw++, bp++) {
                             if (l1.above_closed(*bp)) {
                                 //Removing points
                                 label_counts[*bl] -= 1;
@@ -271,8 +241,8 @@ namespace pyscan {
                 }
                 return w_curr;
             };
-            double red_curr = set_delta(red_delta, red, red_w.begin(), red_labels.begin());
-            double blue_curr = set_delta(blue_delta, blue, blue_w.begin(), blue_labels.begin());
+            double red_curr = set_delta(red_delta, red, red_w, red_labels);
+            double blue_curr = set_delta(blue_delta, blue, blue_w, blue_labels);
             auto pn = pb;
             auto rd = red_delta.begin();
             auto bd = blue_delta.begin();
@@ -319,8 +289,8 @@ namespace pyscan {
     std::tuple<Pt2, double> max_halfplane_simple(
             point_list& point_net,
             point_list& red,
-            weight_list red_w,
-            point_list blue,
+            weight_list& red_w,
+            point_list& blue,
             weight_list& blue_w,
             std::function<double(double, double)> const& f) {
         assert(red.size() == red_w.size());
@@ -333,6 +303,67 @@ namespace pyscan {
             for (auto pt_it2 = pt_it + 1; pt_it2 != point_net.end(); ++pt_it2) {
                 auto line = correct_orientation(*pt_it, *pt_it2);
                 double new_max = evaluate_line(line, red, red_w, blue, blue_w, f);
+                if (max_f <= new_max) {
+                    max_f = new_max;
+                    max_line = line;
+                }
+            }
+        }
+        return std::make_tuple(max_line, max_f);
+    }
+
+
+    double under_line_labeled(Pt2& line, point_list& points, weight_list& weights, label_list& labels) {
+        std::vector<bool> label_counts(labels.size(), false);
+        double curr = 0;
+        auto pt_it = points.begin();
+        auto w_it = weights.begin();
+        auto l_it = labels.begin();
+        for (; pt_it != points.end(); ++pt_it, ++w_it, ++l_it) {
+            if (line.above_closed(*pt_it) && !label_counts[*l_it]) {
+                curr += *w_it;
+                label_counts[*l_it] = true;
+            }
+        }
+        return curr;
+    }
+
+    double evaluate_line_labeled(Pt2& line, 
+                        point_list& red, 
+                        weight_list& red_w,
+                        label_list& red_labels,
+                        point_list& blue,
+                        weight_list& blue_w,
+                        label_list& blue_labels,
+                        std::function<double(double, double)> const& f) {
+
+        auto rp = red.begin();
+        auto bp = blue.begin();
+        double red_total = unique_accumulate(red_w, red_labels);
+        double blue_total = unique_accumulate(blue_w, blue_labels);
+        double rf = under_line_labeled(line, red, red_w, red_labels) / red_total;
+        double bf = under_line_labeled(line, blue, blue_w, blue_labels) / blue_total;
+        return f(rf, bf);
+    }
+
+
+    std::tuple<Pt2, double> max_halfplane_simple_labeled(
+            point_list& point_net,
+            point_list& red,
+            weight_list& red_w,
+            label_list& red_labels,
+            point_list& blue,
+            weight_list& blue_w,
+            label_list& blue_labels,
+            std::function<double(double, double)> const& f) {
+       
+        double max_f = -std::numeric_limits<double>::infinity();
+        Pt2 max_line;
+
+        for (auto pt_it = point_net.begin(); pt_it != point_net.end() - 1; ++pt_it){
+            for (auto pt_it2 = pt_it + 1; pt_it2 != point_net.end(); ++pt_it2) {
+                auto line = correct_orientation(*pt_it, *pt_it2);
+                double new_max = evaluate_line_labeled(line, red, red_w, red_labels, blue, blue_w, blue_labels, f);
                 if (max_f <= new_max) {
                     max_f = new_max;
                     max_line = line;

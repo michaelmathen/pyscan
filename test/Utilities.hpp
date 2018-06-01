@@ -21,5 +21,7 @@ namespace pyscantest {
     Vec2 maxVec2(std::vector<Vec2> const& vec, 
     	std::function<double(Vec2)> const& f);
 
+    auto randomLabels(int test_size, size_t num_labels) -> pyscan::label_list;
+
 }
 #endif //PYSCAN_UTILITIES_HPP
