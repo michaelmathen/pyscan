@@ -15,14 +15,6 @@
 
 namespace pyscan {
 
-    double getX(Pt2 const& p) {
-        return p[0] / p[2];
-    }
-
-    double getY(Pt2 const& p) {
-        return p[1] / p[2];
-    }
-
     bool colinear(Pt2 const& pt1,
                   Pt2 const& pt2,
                   Pt2 const& pt3){
@@ -236,14 +228,14 @@ namespace pyscan {
                 //Create a vector between the two points
                 double orthoX, orthoY;
                 findPerpVect(*i, *j, &orthoX, &orthoY);
-                double cX = ((*i)[0] + (*j)[0]) / 2.0;
-                double cY = ((*i)[1] + (*j)[1]) / 2.0;
+                double cX = (getX(*i) + getX(*j)) / 2.0;
+                double cY = (getY(*i) + getY(*j)) / 2.0;
                 auto isNotCol = [&i, &j](Point<> const& pt) {
                     return !colinear(*i, *j, pt);
                 };
                 // Partition these into a set of adding points and removing points
                 auto partitionF = [orthoX, orthoY, cX, cY](Point<> const &pt) {
-                    return (pt[0] - cX) * orthoX + (pt[1] - cY) * orthoY <= 0;
+                    return (getX(pt) - cX) * orthoX + (getY(pt) - cY) * orthoY <= 0;
                 };
 
                 auto orderF = [orthoX, orthoY, &i, &j, cX, cY](Point<> const &pt) {
@@ -350,6 +342,20 @@ namespace pyscan {
         return scan(m_val / m_total, b_val / b_total);
     }
 
+    auto evaluateRegion(pyscan::lpoint_list const& m_pts, pyscan::lpoint_list const& b_pts,
+                        pyscan::Disk const& disk, std::function<double(double, double)> const& scan)-> double {
+
+        double m_total = computeLabelTotal(m_pts.begin(), m_pts.end());
+        double m_val = computeLabelTotalF(m_pts.begin(), m_pts.end(), [&](auto const& pt) {
+             return disk.contains(pt);
+        });
+
+        double b_total = computeLabelTotal(b_pts.begin(), b_pts.end());
+        double b_val = computeLabelTotalF(b_pts.begin(), b_pts.end(), [&](auto const& pt) {
+            return disk.contains(pt);
+        });
+        return scan(m_val / m_total, b_val / b_total);
+    }
 
     std::tuple<Disk, double> diskScanSlow(point_list const& net, wpoint_list const& sampleM, wpoint_list const& sampleB,
                       std::function<double(double, double)> const& scan) {

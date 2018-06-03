@@ -191,6 +191,25 @@ namespace pyscan {
         y = p[1] / p[2];
     }
 
+
+    template<int dim>
+    inline double getX(Point<dim> const& p1) {
+        static_assert(dim > 0, "getX can only be used when dim > 0");
+        return p1[0] / p1[dim];
+    }
+
+    template<int dim>
+    inline double getY(Point<dim> const& p1) {
+        static_assert(dim > 1, "getY can only be used when dim > 1");
+        return p1[1] / p1[dim];
+    }
+
+    template<int dim>
+    inline double getZ(Point<dim> const& p1) {
+        static_assert(dim > 2, "getZ can only be used when dim > 2");
+        return p1[2] / p1[dim];
+    }
+
     template <int dim>
     inline bool sameLoc(Point<dim> const& p1, Point<dim> const& p2) {
         return p1.approx_eq(p2);

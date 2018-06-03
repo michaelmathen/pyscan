@@ -42,7 +42,7 @@ namespace {
 
 
 
-    TEST(DiskTest, vers1) {
+    TEST(DiskTest, matching) {
 
         const static int n_size = 50;
         const static int s_size = 1000;
@@ -150,21 +150,24 @@ namespace {
             EXPECT_EQ(curr_counts[4], 1);
     }
 
-    /*
+
     void label_test(size_t n_size, size_t s_size, size_t labels) {
       const static double rho = .01;
-      auto n_pts = pyscantest::randomLPoints(n_size, labels);
+      auto n_pts = pyscantest::randomPoints(n_size);
       auto m_pts = pyscantest::randomLPoints(s_size, labels);
       auto b_pts = pyscantest::randomLPoints(s_size, labels);
-      auto d1 = pyscan::diskScanSlowStatLabels(n_pts, m_pts, b_pts, rho);
-
-      auto f = [&](double m, double b) {
-          return pyscan::kulldorff(m, b, rho);
+      auto scan = [](double m, double b) {
+          return fabs(m - b);
       };
-      EXPECT_FLOAT_EQ(d1.fValue(), evaluateRegion(m_pts, b_pts, d1, f));
-      auto d2 = pyscan::diskScanStatLabels(n_pts, m_pts, b_pts, rho);
-      EXPECT_FLOAT_EQ(d1.fValue(), d2.fValue());
-      EXPECT_FLOAT_EQ(d2.fValue(), evaluateRegion(m_pts, b_pts, d2, f));
+
+      pyscan::Disk d1, d2;
+      double d1value, d2value;
+      std::tie(d1, d1value) = pyscan::diskScanSlowLabels(n_pts, m_pts, b_pts, scan);
+
+      EXPECT_FLOAT_EQ(d1value, evaluateRegion(m_pts, b_pts, d1, scan));
+      std::tie(d2, d2value) = pyscan::diskScanLabels(n_pts, m_pts, b_pts, scan);
+      EXPECT_FLOAT_EQ(d1value, d2value);
+      EXPECT_FLOAT_EQ(d2value, evaluateRegion(m_pts, b_pts, d2, scan));
       EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
       EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
       EXPECT_FLOAT_EQ(d1.getR(), d2.getR());
@@ -178,62 +181,66 @@ namespace {
       label_test(25, 100, 5);
     }
 
+
     TEST(DiskTestLabel, alluniquelabel) {
 
         const static int n_size = 25;
         const static int s_size = 100;
         const static double rho = .01;
-        auto n_lpts = pyscantest::randomLPointsUnique(n_size);
+
+        auto f = [&](double m, double b) {
+            return fabs(m - b);
+        };
+        auto n_pts = pyscantest::randomPoints(n_size);
         auto m_lpts = pyscantest::randomLPointsUnique(s_size);
         auto b_lpts = pyscantest::randomLPointsUnique(s_size);
 
-        auto n_pts = pyscantest::removeLabels(n_lpts);
         auto m_pts = pyscantest::removeLabels(m_lpts);
         auto b_pts = pyscantest::removeLabels(b_lpts);
 
-        auto d1 = pyscan::diskScanStatLabels(n_lpts, m_lpts, b_lpts, rho);
-        auto d2 = pyscan::diskScanStat(n_pts, m_pts, b_pts, rho);
+        //pyscan::Disk d1, d2;
+        //double d1value, d2value;
+        auto [d1, d1value] = pyscan::diskScanLabels(n_pts, m_lpts, b_lpts, f);
+        auto [d2, d2value] = pyscan::diskScan(n_pts, m_pts, b_pts, f);
 
-        auto d3 = pyscan::diskScanSlowStatLabels(n_lpts, m_lpts, b_lpts, rho);
-        auto d4 = pyscan::diskScanSlowStat(n_pts, m_pts, b_pts, rho);
+        auto [d3, d3value] = pyscan::diskScanSlowLabels(n_pts, m_lpts, b_lpts, f);
+        auto [d4, d4value] = pyscan::diskScanSlow(n_pts, m_pts, b_pts, f);
 
-        auto f = [&](double m, double b) {
-            return pyscan::kulldorff(m, b, rho);
-        };
-        EXPECT_FLOAT_EQ(d1.fValue(), evaluateRegion(m_pts, b_pts, d1, f));
-        EXPECT_FLOAT_EQ(d2.fValue(), evaluateRegion(m_pts, b_pts, d2, f));
-        EXPECT_FLOAT_EQ(d1.fValue(), d2.fValue());
-        EXPECT_FLOAT_EQ(d1.fValue(), d3.fValue());
-        EXPECT_FLOAT_EQ(d2.fValue(), d4.fValue());
-        EXPECT_FLOAT_EQ(d3.fValue(), d4.fValue());
+
+        EXPECT_FLOAT_EQ(d1value, evaluateRegion(m_pts, b_pts, d1, f));
+        EXPECT_FLOAT_EQ(d2value, evaluateRegion(m_pts, b_pts, d2, f));
+        EXPECT_FLOAT_EQ(d1value, d2value);
+        EXPECT_FLOAT_EQ(d1value, d3value);
+        EXPECT_FLOAT_EQ(d2value, d4value);
+        EXPECT_FLOAT_EQ(d3value, d4value);
 
         EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
         EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
         EXPECT_FLOAT_EQ(d1.getR(), d2.getR());
     }
 
-    TEST(DiskTestLabelSlow, Kulldorff) {
+
+    TEST(DiskTestLabelSlow, matching) {
 
         const static int n_size = 25;
         const static int s_size = 100;
         const static double rho = .01;
-        auto n_lpts = pyscantest::randomLPointsUnique(n_size);
+        auto n_pts = pyscantest::randomPoints(n_size);
         auto m_lpts = pyscantest::randomLPointsUnique(s_size);
         auto b_lpts = pyscantest::randomLPointsUnique(s_size);
 
-        auto n_pts = pyscantest::removeLabels(n_lpts);
         auto m_pts = pyscantest::removeLabels(m_lpts);
         auto b_pts = pyscantest::removeLabels(b_lpts);
 
-        auto d1 = pyscan::diskScanSlowStatLabels(n_lpts, m_lpts, b_lpts, rho);
-        auto d2 = pyscan::diskScanSlowStat(n_pts, m_pts, b_pts, rho);
-
         auto f = [&](double m, double b) {
-            return pyscan::kulldorff(m, b, rho);
+            return fabs(m - b);
         };
-        EXPECT_FLOAT_EQ(d1.fValue(), evaluateRegion(m_pts, b_pts, d1, f));
-        EXPECT_FLOAT_EQ(d2.fValue(), evaluateRegion(m_pts, b_pts, d2, f));
-        EXPECT_FLOAT_EQ(d1.fValue(), d2.fValue());
+        auto [d1, d1value] = pyscan::diskScanSlowLabels(n_pts, m_lpts, b_lpts, f);
+        auto [d2, d2value] = pyscan::diskScanSlow(n_pts, m_pts, b_pts, f);
+
+        EXPECT_FLOAT_EQ(d1value, evaluateRegion(m_pts, b_pts, d1, f));
+        EXPECT_FLOAT_EQ(d2value, evaluateRegion(m_pts, b_pts, d2, f));
+        EXPECT_FLOAT_EQ(d1value, d2value);
         EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
         EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
         EXPECT_FLOAT_EQ(d1.getR(), d2.getR());
@@ -244,15 +251,14 @@ namespace {
       curr_counts[2] = 1;
 
       std::vector<pyscan::LPoint<>> bunch_of_points = {
-        pyscan::LPoint<>(0, .1, .2, 0.0, .1),
-        pyscan::LPoint<>(0, .1, .2, .1, .2),
-        pyscan::LPoint<>(0, .1, .2, .1, .2),
-        pyscan::LPoint<>(1, .1, .2, .1, .2),
-        pyscan::LPoint<>(2, .1, .2, .1, .2),
+        pyscan::LPoint<>(0, .1, 0.0, .1, 1.0),
+        pyscan::LPoint<>(0, .1, .1, .2, 1.0),
+        pyscan::LPoint<>(0, .1, .1, .2, 1.0),
+        pyscan::LPoint<>(1, .1, .1, .2, 1.0),
+        pyscan::LPoint<>(2, .1, .1, .2, 1.0),
       };
 
       double fv = pyscan::computeLabelTotal(bunch_of_points.begin(), bunch_of_points.end(),
-                                  pyscan::getMeasured,
                                   curr_counts);
 
       EXPECT_FLOAT_EQ(fv, .2);
@@ -262,10 +268,9 @@ namespace {
 
       curr_counts = std::unordered_map<size_t, size_t>();
       fv = pyscan::computeLabelTotalF(bunch_of_points.begin(), bunch_of_points.end(),
-                                      pyscan::getMeasured,
                                       curr_counts,
                                       [&] (pyscan::Point<> const& pt) {
-                                        return pt.getX() >.05;
+                                        return getX(pt) >.05;
                                       });
       EXPECT_FLOAT_EQ(fv, .3);
       EXPECT_EQ(curr_counts[0], 2);
@@ -273,44 +278,4 @@ namespace {
       EXPECT_EQ(curr_counts[2], 1);
     }
 
-*/
-//    TEST(RectangleScanLabel, Kulldorff) {
-//
-//        const static int n_size = 50;
-//        const static int s_size = 1000;
-//        const static double rho = .01;
-//        auto n_pts = pyscantest::randomLPoints(n_size, 10);
-//        auto m_pts = pyscantest::randomLPoints(s_size, 10);
-//        auto b_pts = pyscantest::randomLPoints(s_size, 10);
-//        auto d1 = pyscan::maxRectSlowStatLabels(n_pts, m_pts, b_pts, rho);
-//
-//        auto f = [&](double m, double b) {
-//            return pyscan::kulldorff(m, b, rho);
-//        };
-//        EXPECT_FLOAT_EQ(d1.fValue(), evaluateRegion(m_pts, b_pts, d1, f));
-//
-//        //auto d2 = pyscan::maxRectStatLabels(n_pts, m_pts, b_pts, rho);
-//        //EXPECT_FLOAT_EQ(d2.fValue(), evaluateRegion(m_pts, b_pts, d2, f));
-//        //EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
-//        //EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
-//        //EXPECT_FLOAT_EQ(d1.getR(), d2.getR());
-//
-//    }
-    //TODO write labeled disk scan tests.
-
-
-
-
-// Tests factorial of 0.
 }
-// Step 3. Call RUN_ALL_TESTS() in main().
-//
-// We do this by linking in src/gtest_main.cc file, which consists of
-// a main() function which calls RUN_ALL_TESTS() for us.
-//
-// This runs all the tests you've defined, prints the result, and
-// returns 0 if successful, or 1 otherwise.
-//
-// Did you notice that we didn't register the tests?  The
-// RUN_ALL_TESTS() macro magically knows about all the tests we
-// defined.  Isn't this convenient?

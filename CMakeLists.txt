@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(pyscan)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 #set(CMAKE_C_FLAGS_DEBUG "-DDEBUG")
 find_package( Boost 1.36.0 COMPONENTS python REQUIRED)
 find_package( PythonLibs 2.7 REQUIRED )

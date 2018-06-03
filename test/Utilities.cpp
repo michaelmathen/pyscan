@@ -3,6 +3,7 @@
 //
 
 #include <random>
+#include <algorithm>
 
 #include "Utilities.hpp"
 
@@ -39,6 +40,20 @@ namespace pyscantest {
         return wpoints;
     }
 
+    auto randomLPoints(int test_size, int label_count) -> std::vector<pyscan::LPoint<>> {
+        auto pts = randomVec(test_size);
+        auto lbls = randomLabels(test_size, label_count);
+        std::vector<pyscan::LPoint<>> lpoints(test_size, pyscan::LPoint<>());
+        auto wp = lpoints.begin();
+        auto lp = lbls.begin();
+        std::for_each(pts.begin(), pts.end(), [&](auto const& pt) {
+            *wp = pyscan::LPoint<>(*lp, 1.0, pt[0], pt[1], 1.0);
+            lp++;
+            wp++;
+        });
+        return lpoints;
+    }
+
     Vec2 maxVec2(std::vector<Vec2> const& vec,
         std::function<double(Vec2)> const& f) {
 
@@ -50,6 +65,7 @@ namespace pyscantest {
         }
         return maxV;
     }
+
 
 
     auto randomLabels(int test_size, size_t num_labels) -> pyscan::label_list {
@@ -66,6 +82,28 @@ namespace pyscantest {
         return labels;
     }
 
+    auto randomLPointsUnique(int test_size) -> std::vector<pyscan::LPoint<>> {
+        auto pts = randomVec(test_size);
+        std::vector<pyscan::LPoint<>> lpoints(test_size, pyscan::LPoint<>());
+        auto wp = lpoints.begin();
+        size_t curr_label = 0;
+        std::for_each(pts.begin(), pts.end(), [&](auto const& pt) {
+            *wp = pyscan::LPoint<>(curr_label, 1.0, pt[0], pt[1], 1.0);
+            curr_label++;
+            wp++;
+        });
+        return lpoints;
+    }
+
+    auto removeLabels(pyscan::lpoint_list const& pts) -> pyscan::wpoint_list {
+      
+        pyscan::wpoint_list wlist(pts.size(), pyscan::WPoint<>());
+        std::transform(pts.begin(), pts.end(), wlist.begin(), [&](pyscan::LPoint<> const& lpt){
+            return pyscan::WPoint<>(lpt.weight, lpt[0], lpt[1], lpt[2]);  
+        });
+        return wlist;
+    }
+    
 // auto randomLPointsUnique(int test_size) -> std::vector<pyscan::LPoint<>> {
 //         std::random_device rd;
 //         std::default_random_engine generator(rd());

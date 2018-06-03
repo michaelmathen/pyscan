@@ -71,6 +71,9 @@ namespace pyscan {
     auto evaluateRegion(pyscan::wpoint_list const& m_pts, pyscan::wpoint_list const& b_pts,
                         pyscan::Disk const& disk, std::function<double(double, double)> const& scan)-> double;
 
+    auto evaluateRegion(pyscan::lpoint_list const& m_pts, pyscan::lpoint_list const& b_pts,
+                        pyscan::Disk const& disk, std::function<double(double, double)> const& scan)-> double;
+
     void solveCircle3(Point<> const& pt1, Point<> const& pt2, Point<> const& pt3,
                       double &a, double &b);
 

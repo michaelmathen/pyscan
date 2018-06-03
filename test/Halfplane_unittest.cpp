@@ -63,19 +63,19 @@ namespace {
         auto stat = [] (double m, double b) {
           return fabs(m - b);
         };
-        auto d1 = pyscan::max_halfplane_labeled(n_pts, m_pts, m_weight, m_labels, b_pts, b_weight, b_labels, stat);
-        auto d2 = pyscan::max_halfplane_simple_labeled(n_pts, m_pts, m_weight, m_labels, b_pts, b_weight, b_labels, stat);
+        auto [d1, d1value] = pyscan::max_halfplane_labeled(n_pts, m_pts, m_weight, m_labels, b_pts, b_weight, b_labels, stat);
+        auto [d2, d2value] = pyscan::max_halfplane_simple_labeled(n_pts, m_pts, m_weight, m_labels, b_pts, b_weight, b_labels, stat);
 
-        EXPECT_FLOAT_EQ(std::get<1>(d2), 
-          pyscan::evaluate_line_labeled(std::get<0>(d2), m_pts, m_weight, m_labels, 
+        EXPECT_FLOAT_EQ(d2value,
+          pyscan::evaluate_line_labeled(d2, m_pts, m_weight, m_labels,
                                 b_pts, b_weight, b_labels, stat));
 
         // EXPECT_FLOAT_EQ(std::get<1>(d1), 0.0);
-        EXPECT_FLOAT_EQ(std::get<1>(d1), 
-          pyscan::evaluate_line_labeled(std::get<0>(d1), m_pts, m_weight, m_labels,
+        EXPECT_FLOAT_EQ(d1value,
+          pyscan::evaluate_line_labeled(d1, m_pts, m_weight, m_labels,
                                 b_pts, b_weight, b_labels, stat));
 
-        EXPECT_FLOAT_EQ(std::get<1>(d1), std::get<1>(d2));
+        EXPECT_FLOAT_EQ(d1value, d2value);
 
 
         //std::cout << std::get<1>(d1) << std::endl;
