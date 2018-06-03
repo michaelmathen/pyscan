@@ -77,6 +77,16 @@ namespace pyscan {
             weight_list& blue_w,
             label_list& blue_labels,
             std::function<double(double, double)> const& f);
+
+    std::tuple<Pt3, double> max_halfspace_labeled(
+            point3_list& point_net,
+            point3_list& red,
+            weight_list& red_w,
+            label_list& red_labels,
+            point3_list& blue,
+            weight_list& blue_w,
+            label_list& blue_labels,
+            std::function<double(double, double)> const& f);
 }
 
 #endif //PYSCAN_HALFPLANE_HPP

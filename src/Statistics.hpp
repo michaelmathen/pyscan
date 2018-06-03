@@ -15,7 +15,7 @@ namespace pyscan {
         if (mr < rho || br < rho || br > 1 - rho || mr > 1 - rho) {
             return 0;
         }
-        if (abs(1 - abs(mr / br)) <= std::numeric_limits<double>::epsilon()) {
+        if (fabs(1 - fabs(mr / br)) <= std::numeric_limits<double>::epsilon()) {
             return 0;
         }
         if (mr == 0) {
@@ -59,7 +59,7 @@ namespace pyscan {
     }
 
     inline double linear(double mr, double br) {
-        return  abs(mr - br);
+        return  fabs(mr - br);
     }
 
     // template<typename Reg, typename F>

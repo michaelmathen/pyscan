@@ -65,7 +65,7 @@ if (test)
     endif()
 
     # Now simply link against gtest or gtest_main as needed. Eg
-    add_executable(DiskScan_test test/DiskScan_unittest.cpp ${TEST_FILES} ${SOURCE_FILES} src/DiskScan2.hpp src/DiskScan2.cpp)
+    add_executable(DiskScan_test test/DiskScan_unittest.cpp src/HalfplaneScan.cpp src/DiskScan.cpp src/Utilities.cpp test/Utilities.cpp src/DiskScan2.cpp)
     target_link_libraries(DiskScan_test gtest_main)
     add_test(NAME DiskScan_test COMMAND DiskScan_test)
 

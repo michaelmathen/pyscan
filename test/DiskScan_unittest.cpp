@@ -3,11 +3,13 @@
 //
 
 
-#include "../src/RectangleScan.hpp"
+//#include "../src/RectangleScan.hpp"
 #include "../src/DiskScan.hpp"
+#include "../src/Statistics.hpp"
 #include "Utilities.hpp"
 
-#include <limits.h>
+#include <tuple>
+#include <limits>
 #include <random>
 #include <iostream>
 
@@ -38,22 +40,29 @@ namespace {
 //
 // </TechnicalDetails>
 
-    TEST(DiskTest, Kulldorff) {
+
+
+    TEST(DiskTest, vers1) {
 
         const static int n_size = 50;
         const static int s_size = 1000;
         const static double rho = .01;
         auto n_pts = pyscantest::randomPoints(n_size);
-        auto m_pts = pyscantest::randomPoints(s_size);
-        auto b_pts = pyscantest::randomPoints(s_size);
-        auto d1 = pyscan::diskScanSlowStat(n_pts, m_pts, b_pts, rho);
-        auto d2 = pyscan::diskScanStat(n_pts, m_pts, b_pts, rho);
-
-        auto f = [&](double m, double b) {
-            return pyscan::kulldorff(m, b, rho);
+        auto m_pts = pyscantest::randomWPoints(s_size);
+        auto b_pts = pyscantest::randomWPoints(s_size);
+        auto scan = [](double m, double b) {
+            return fabs(m - b);
         };
-        EXPECT_FLOAT_EQ(d1.fValue(), evaluateRegion(m_pts, b_pts, d1, f));
-        EXPECT_FLOAT_EQ(d2.fValue(), evaluateRegion(m_pts, b_pts, d2, f));
+
+        double d1value, d2value;
+        pyscan::Disk d1;
+        pyscan::Disk d2;
+
+        std::tie(d2, d2value) = pyscan::diskScan(n_pts, m_pts, b_pts, scan);
+        EXPECT_FLOAT_EQ(d2value, evaluateRegion(m_pts, b_pts, d2, scan));
+        std::tie(d1, d1value) = pyscan::diskScanSlow(n_pts, m_pts, b_pts, scan);
+        EXPECT_FLOAT_EQ(d1value, evaluateRegion(m_pts, b_pts, d1, scan));
+
         EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
         EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
         EXPECT_FLOAT_EQ(d1.getR(), d2.getR());
@@ -141,7 +150,7 @@ namespace {
             EXPECT_EQ(curr_counts[4], 1);
     }
 
-
+    /*
     void label_test(size_t n_size, size_t s_size, size_t labels) {
       const static double rho = .01;
       auto n_pts = pyscantest::randomLPoints(n_size, labels);
@@ -264,7 +273,7 @@ namespace {
       EXPECT_EQ(curr_counts[2], 1);
     }
 
-
+*/
 //    TEST(RectangleScanLabel, Kulldorff) {
 //
 //        const static int n_size = 50;

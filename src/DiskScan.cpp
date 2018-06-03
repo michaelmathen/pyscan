@@ -15,7 +15,49 @@
 
 namespace pyscan {
 
-    void solveCircle3(Point<> const& pt1, Point<> const& pt2, Point<> const& pt3,
+    double getX(Pt2 const& p) {
+        return p[0] / p[2];
+    }
+
+    double getY(Pt2 const& p) {
+        return p[1] / p[2];
+    }
+
+    bool colinear(Pt2 const& pt1,
+                  Pt2 const& pt2,
+                  Pt2 const& pt3){
+        double x1, x2, x3, y1, y2, y3;
+        getLoc(pt1, x1, y1);
+        getLoc(pt2, x2, y2);
+        getLoc(pt3, x3, y3);
+
+        double
+                a11 = x2 - x1, a12 = y2 - y1,
+                a21 = x2 - x3, a22 = y2 - y3;
+        return (a11 * a22 - a12 * a21 == 0);
+    }
+
+
+    bool onLineSegment(Pt2 const& pt1,
+                       Pt2 const& pt2,
+                       Pt2 const& pt3) {
+        if (colinear(pt1, pt2, pt3)) {
+            if (sameLoc(pt1, pt2) || sameLoc(pt2, pt3))
+                return true;
+            //Now we know that the point is on the same line
+            if (getX(pt1) != getX(pt2)) {
+                double theta = (getY(pt1) - getX(pt3)) / (getX(pt1) - getX(pt2));
+                return (theta <= 1) && (theta >= 0);
+            } else {
+                double theta = (getY(pt1) - getY(pt3)) / (getY(pt1) - getY(pt2));
+                return (theta <= 1) && (theta >= 0);
+            }
+        } else {
+            return false;
+        }
+    }
+
+    void solveCircle3(Pt2 const& pt1, Pt2 const& pt2, Pt2 const& pt3,
                       double &a, double &b) {
         double x1, x2, x3, y1, y2, y3;
         getLoc(pt1, x1, y1);
@@ -39,7 +81,7 @@ namespace pyscan {
         b = ai21 * b1 + ai22 * b2;
     }
 
-    void solveCircle3(Point<> const& pt1, Point<> const& pt2, Point<> const& pt3,
+    void solveCircle3(Pt2 const& pt1, Pt2 const& pt2, Pt2 const& pt3,
                      double &a, double &b, double &r) {
         double x1, x2, x3, y1, y2, y3;
         getLoc(pt1, x1, y1);
@@ -64,7 +106,7 @@ namespace pyscan {
         r = sqrt((x1 - a) * (x1 - a) + (y1 - b) * (y1 - b));
     }
 
-    void findPerpVect(Point<> const& p1, Point<> const& p2, double* u, double* v) {
+    void findPerpVect(Pt2 const& p1, Pt2 const& p2, double* u, double* v) {
         double x1, x2, y1, y2;
         getLoc(p1, x1, y1);
         getLoc(p2, x2, y2);
@@ -78,28 +120,31 @@ namespace pyscan {
     }
 
 
-    template<typename T, typename F, typename G>
+
+
+
+    template<typename T, typename F>
     inline void partial_counts(T begin, T end,
                                std::vector<double> const& partitions,
-                               std::vector<double>& counts, F orderF, G valueF) {
+                               std::vector<double>& counts, F orderF) {
         //Partitions based on the break points.
         for (; begin != end; begin++) {
             auto lb = std::lower_bound(partitions.begin(), partitions.end(),
                                   orderF(*begin));
-            counts[lb - partitions.begin()] += valueF(*begin);
+            counts[lb - partitions.begin()] += getWeight(*begin);
         }
     }
 
 
-    template<typename T, typename F, typename G>
+    template<typename T, typename F>
     inline void partial_counts_label(T begin, T end,
                                std::vector<double> const& partitions,
-                               std::vector<crescent_t >& counts, F orderF, G valueF) {
+                               std::vector<crescent_t >& counts, F orderF) {
         //Partitions based on the break points.
         for (; begin != end; begin++) {
             auto lb = std::lower_bound(partitions.begin(), partitions.end(),
                                   orderF(*begin));
-            counts[lb - partitions.begin()].emplace_back(begin->getLabel(), valueF(*begin));
+            counts[lb - partitions.begin()].emplace_back(begin->label, getWeight(*begin));
         }
     }
 
@@ -152,10 +197,11 @@ namespace pyscan {
       return os;
     }
 
-    template <typename F>
-    Disk diskScanLabels(std::vector<LPoint<>>& net,
-                        std::vector<LPoint<>>& sampleM,
-                        std::vector<LPoint<>>& sampleB, F scan) {
+
+    std::tuple<Disk, double> diskScanLabels(point_list& net,
+                        lpoint_list& sampleM,
+                        lpoint_list& sampleB,
+                        std::function<double(double, double)> const& scan) {
         /*
          * Each point is defined with a label. For each division we store the set of
          * labels.
@@ -165,12 +211,12 @@ namespace pyscan {
         auto bsBegin = sampleB.begin();
         auto msEnd = sampleM.end();
         auto bsEnd = sampleB.end();
-        double m_Total = computeLabelTotal(msBegin, msEnd, getMeasured);
-        double b_Total = computeLabelTotal(bsBegin, bsEnd, getBaseline);
+        double m_Total = computeLabelTotal(msBegin, msEnd);
+        double b_Total = computeLabelTotal(bsBegin, bsEnd);
 
         auto nB = net.begin();
         auto nE = net.end();
-        std::vector <LPoint<>> netSampleSorted(nB, nE);
+        std::vector <Point<>> netSampleSorted(nB, nE);
 
         Disk currMax;
         double maxStat = 0;
@@ -190,17 +236,17 @@ namespace pyscan {
                 //Create a vector between the two points
                 double orthoX, orthoY;
                 findPerpVect(*i, *j, &orthoX, &orthoY);
-                double cX = (get<0>(*i) + get<0>(*j)) / 2.0;
-                double cY = (get<1>(*i) + get<1>(*j)) / 2.0;
-                auto isNotCol = [&i, &j](LPoint<> const& pt) {
+                double cX = ((*i)[0] + (*j)[0]) / 2.0;
+                double cY = ((*i)[1] + (*j)[1]) / 2.0;
+                auto isNotCol = [&i, &j](Point<> const& pt) {
                     return !colinear(*i, *j, pt);
                 };
                 // Partition these into a set of adding points and removing points
-                auto partitionF = [orthoX, orthoY, cX, cY](LPoint<> const &pt) {
-                    return (get<0>(pt) - cX) * orthoX + (get<1>(pt) - cY) * orthoY <= 0;
+                auto partitionF = [orthoX, orthoY, cX, cY](Point<> const &pt) {
+                    return (pt[0] - cX) * orthoX + (pt[1] - cY) * orthoY <= 0;
                 };
 
-                auto orderF = [orthoX, orthoY, &i, &j, cX, cY](LPoint<> const &pt) {
+                auto orderF = [orthoX, orthoY, &i, &j, cX, cY](Point<> const &pt) {
                     // If the point lines up with either of the reference
                     // point then we take this to be a disk defined by only
                     // the reference points.
@@ -210,7 +256,7 @@ namespace pyscan {
                     solveCircle3(*i, *j, pt, a, b);
                     return orthoX * (a - cX) + orthoY * (b - cY);
                 };
-                auto compF = [&orderF](LPoint<> const &pt1, LPoint<> const &pt2) {
+                auto compF = [&orderF](Point<> const &pt1, Point<> const &pt2) {
                     return orderF(pt1) < orderF(pt2);
                 };
 
@@ -221,7 +267,7 @@ namespace pyscan {
                 // will have two sets an added set and a current set.
                 // added set is for stuff that will never leave. The current set on the other hand
                 // will correspond to every trajectory that we overlap.
-                auto onSegment = [&](LPoint<> const& pt) {
+                auto onSegment = [&](Point<> const& pt) {
                     return onLineSegment(*i, *j, pt);
                 };
 
@@ -229,8 +275,8 @@ namespace pyscan {
                 //These points are colinear so have been removed from the scan.
                 std::unordered_map<size_t, size_t> m_curr_set;
                 std::unordered_map<size_t, size_t> b_curr_set;
-                double m_count = computeLabelTotalF(asIterEnd, msEnd, getMeasured, m_curr_set, onSegment);
-                double b_count = computeLabelTotalF(bsIterEnd, bsEnd, getBaseline, b_curr_set, onSegment);
+                double m_count = computeLabelTotalF(asIterEnd, msEnd, m_curr_set, onSegment);
+                double b_count = computeLabelTotalF(bsIterEnd, bsEnd, b_curr_set, onSegment);
 
                 std::sort(sortedB, nIterEnd, compF);
                 std::vector<double> orderV;
@@ -249,16 +295,12 @@ namespace pyscan {
                 std::vector<crescent_t> bCountsR(static_cast<size_t>(nE - nB), crescent_t());
 
                 /*Probably most of the time is spent here*/
-                partial_counts_label(msBegin, mHigherIt, orderV, mCountsR, orderF,
-                                     getMeasured);
-                m_count += computeLabelTotal(msBegin, mHigherIt, getMeasured, m_curr_set);
-                partial_counts_label(bsBegin, bHigherIt, orderV, bCountsR, orderF,
-                                     getBaseline);
-                b_count += computeLabelTotal(bsBegin, bHigherIt, getBaseline, b_curr_set);
-                partial_counts_label(mHigherIt, asIterEnd, orderV, mCountsA, orderF,
-                               getMeasured);
-                partial_counts_label(bHigherIt, bsIterEnd, orderV, bCountsA, orderF,
-                               getBaseline);
+                partial_counts_label(msBegin, mHigherIt, orderV, mCountsR, orderF);
+                m_count += computeLabelTotal(msBegin, mHigherIt, m_curr_set);
+                partial_counts_label(bsBegin, bHigherIt, orderV, bCountsR, orderF);
+                b_count += computeLabelTotal(bsBegin, bHigherIt, b_curr_set);
+                partial_counts_label(mHigherIt, asIterEnd, orderV, mCountsA, orderF);
+                partial_counts_label(bHigherIt, bsIterEnd, orderV, bCountsA, orderF);
                 /*----------------------------------------------*/
                 //Now scan over the counts.
 
@@ -273,92 +315,116 @@ namespace pyscan {
                     if (maxStat <= newStat) {
                         double a, b, r;
                         solveCircle3(*i, *j, *(sortedB + k), a, b, r);
-                        Disk currDisk(newStat, a, b, r);
+                        Disk currDisk(a, b, r);
                         currMax = currDisk;
                         maxStat = newStat;
                     }
                 }
             }
         }
-        return currMax;
+        return std::make_tuple(currMax, maxStat);
     }
 
-    bool contains(double a, double b, double r, Point<> const& pt) {
-        double la = (pt.getX() - a), lb = (pt.getY() - b);
+    bool contains(double a, double b, double r, Pt2 const& pt) {
+        double la = (getX(pt) - a);
+        double lb = (getY(pt) - b);
         return la * la + lb * lb <= r * r;
     }
 
-    template <typename F>
-    Disk diskScanSlow(std::vector<Point<>>& net, std::vector<Point<>>& sampleM, std::vector<Point<>>& sampleB, F scan) {
-        double m_Total = 0;
-        double b_Total = 0;
-        for (auto& aIt : sampleM)
-            m_Total += getMeasured(aIt);
-        for (auto& bIt : sampleB)
-            b_Total += getBaseline(bIt);
+    auto evaluateRegion(pyscan::wpoint_list const& m_pts, pyscan::wpoint_list const& b_pts,
+                        pyscan::Disk const& disk, std::function<double(double, double)> const& scan) -> double {
 
-        Disk maxDisk(0, 0, 0, 0);
+        double m_val = 0 ,m_total = 0, b_val = 0, b_total = 0;
+        std::for_each(m_pts.begin(), m_pts.end(), [&](auto const& pt){
+            if (disk.contains(pt)) {
+                m_val += pyscan::getWeight(pt);
+            }
+            m_total += pyscan::getWeight(pt);
+        });
+        std::for_each(b_pts.begin(), b_pts.end(), [&](auto const& pt){
+            if (disk.contains(pt)) {
+                b_val += pyscan::getWeight(pt);
+            }
+            b_total += pyscan::getWeight(pt);
+        });
+        return scan(m_val / m_total, b_val / b_total);
+    }
+
+
+    std::tuple<Disk, double> diskScanSlow(point_list const& net, wpoint_list const& sampleM, wpoint_list const& sampleB,
+                      std::function<double(double, double)> const& scan) {
+        double m_Total = computeTotal(sampleM.begin(), sampleM.end());
+        double b_Total = computeTotal(sampleB.begin(), sampleB.end());
+
+        Disk maxDisk;
+        double max_stat = 0;
         for (auto i = net.begin(); i != net.end() - 2; i++) {
             for (auto j = i + 1; j != net.end() - 1; j++) {
                 for (auto k = j + 1; k != net.end(); k++) {
                     if (!colinear(*i, *j, *k)) {
+                        double a, b, r;
+                        solveCircle3(*i, *j, *k, a, b, r);
+                        Disk disk(a, b, r);
                         double m_curr = 0;
                         double b_curr = 0;
-                        double a, b, r;
-                        solveCircle3(*i, *j, *k, a, b, r);
                         for (auto& p : sampleM) {
-                           if (contains(a, b, r, p)) {
-                              m_curr += getMeasured(p);
-                           }
-                        }
-                        for (auto& p : sampleB) {
                             if (contains(a, b, r, p)) {
-                                b_curr += getBaseline(p);
+                                m_curr += getWeight(p);
                             }
                         }
-                        if (scan(m_curr / m_Total, b_curr / b_Total) >= maxDisk.fValue()) {
-                            maxDisk = Disk(scan(m_curr / m_Total, b_curr / b_Total), a, b, r);
+
+                        for (auto& p : sampleB) {
+                            if (contains(a, b, r, p)) {
+                                b_curr += getWeight(p);
+                            }
                         }
 
+                        if (scan(m_curr / m_Total, b_curr / b_Total) >= max_stat) {
+                            maxDisk = Disk(a, b, r);
+                            max_stat = scan(m_curr / m_Total, b_curr / b_Total);
+                        }
                     }
                 }
             }
         }
-        return maxDisk;
+        return std::make_tuple(maxDisk, max_stat);
     }
 
-    template <typename F>
-    Disk diskScanSlowLabels(std::vector<LPoint<>>& net, std::vector<LPoint<>>& sampleM, std::vector<LPoint<>>& sampleB, F scan) {
-        double m_Total = computeLabelTotal(sampleM.begin(), sampleM.end(), getMeasured);
-        double b_Total = computeLabelTotal(sampleB.begin(), sampleB.end(), getBaseline);
+    std::tuple<Disk, double> diskScanSlowLabels(point_list& net, lpoint_list& sampleM, lpoint_list& sampleB,
+                            std::function<double(double, double)> const& scan) {
+        double m_Total = computeLabelTotal(sampleM.begin(), sampleM.end());
+        double b_Total = computeLabelTotal(sampleB.begin(), sampleB.end());
 
-        Disk maxDisk(0, 0, 0, 0);
+        Disk maxDisk(0, 0, 0);
+        double max_scan = 0;
         for (auto i = net.begin(); i != net.end() - 2; i++) {
             for (auto j = i + 1; j != net.end() - 1; j++) {
                 for (auto k = j + 1; k != net.end(); k++) {
                     if (!colinear(*i, *j, *k)) {
                         double a, b, r;
                         solveCircle3(*i, *j, *k, a, b, r);
-                        auto filterF = [&] (Point<> const& pt) {
+                        auto filterF = [&] (Pt2 const& pt) {
                           return contains(a, b, r, pt);
                         };
-                        double m_curr = computeLabelTotalF(sampleM.begin(), sampleM.end(), getMeasured,
+                        double m_curr = computeLabelTotalF(sampleM.begin(), sampleM.end(),
                                         filterF);
-                        double b_curr = computeLabelTotalF(sampleB.begin(), sampleB.end(), getBaseline,
+                        double b_curr = computeLabelTotalF(sampleB.begin(), sampleB.end(),
                                         filterF);
-                        if (scan(m_curr / m_Total, b_curr / b_Total) >= maxDisk.fValue()) {
-                            maxDisk = Disk(scan(m_curr / m_Total, b_curr / b_Total), a, b, r);
+                        if (scan(m_curr / m_Total, b_curr / b_Total) >= max_scan) {
+                            maxDisk = Disk( a, b, r);
+                            max_scan = scan(m_curr / m_Total, b_curr / b_Total);
                         }
-
                     }
                 }
             }
         }
-        return maxDisk;
+        return std::make_tuple(maxDisk, max_scan);
     }
 
-    template <typename F>
-    Disk diskScan(std::vector<Point<>>& net, std::vector<Point<>>& sampleM, std::vector<Point<>>& sampleB, F scan) {
+    std::tuple<Disk, double> diskScan(point_list& net,
+                  wpoint_list& sampleM,
+                  wpoint_list& sampleB,
+                  std::function<double(double, double)> const& scan) {
       //Calculate the total measured and baseline value.
       double m_Total = 0;
       double b_Total = 0;
@@ -366,14 +432,17 @@ namespace pyscan {
       auto bsBegin = sampleB.begin();
       auto msEnd = sampleM.end();
       auto bsEnd = sampleB.end();
-      for (auto aIt = msBegin; aIt != msEnd; aIt++)
-          m_Total += getMeasured(*aIt);
-      for (auto bIt = bsBegin; bIt != bsEnd; bIt++)
-          b_Total += getBaseline(*bIt);
+      std::for_each(msBegin, msEnd, [&](WPoint<> const& pt) {
+          m_Total += getWeight(pt);
+      });
+
+      std::for_each(bsBegin, bsEnd, [&](WPoint<> const& pt) {
+          b_Total += getWeight(pt);
+      });
 
       auto nB = net.begin();
       auto nE = net.end();
-      std::vector <Point<>> netSampleSorted(nB, nE);
+      std::vector <Pt2> netSampleSorted(nB, nE);
 
       Disk currMax;
       double maxStat = 0;
@@ -397,17 +466,17 @@ namespace pyscan {
           //Create a vector between the two points
           double orthoX, orthoY;
           findPerpVect(*i, *j, &orthoX, &orthoY);
-          double cX = (get<0>(*i) + get<0>(*j)) / 2.0;
-          double cY = (get<1>(*i) + get<1>(*j)) / 2.0;
-          auto isNotCol = [&i, &j](Point<> const& pt) {
+          double cX = (getX(*i) + getX(*j)) / 2.0;
+          double cY = (getY(*i) + getY(*j)) / 2.0;
+          auto isNotCol = [&i, &j](Pt2 const& pt) {
             return !colinear(*i, *j, pt);
           };
           // Partition these into a set of adding points and removing points
-          auto partitionF = [orthoX, orthoY, cX, cY](Point<> const &pt) {
-              return (get<0>(pt) - cX) * orthoX + (get<1>(pt) - cY) * orthoY <= 0;
+          auto partitionF = [orthoX, orthoY, cX, cY](Pt2 const &pt) {
+              return (getX(pt) - cX) * orthoX + (getY(pt) - cY) * orthoY <= 0;
           };
 
-          auto orderF = [orthoX, orthoY, &i, &j, cX, cY](Point<> const &pt) {
+          auto orderF = [orthoX, orthoY, &i, &j, cX, cY](Pt2 const &pt) {
               // If the point lines up with either of the reference
               // point then we take this to be a disk defined by only
               // the reference points.
@@ -417,7 +486,7 @@ namespace pyscan {
               solveCircle3(*i, *j, pt, a, b);
               return orthoX * (a - cX) + orthoY * (b - cY);
           };
-          auto compF = [&orderF](Point<> const &pt1, Point<> const &pt2) {
+          auto compF = [&orderF](Pt2 const &pt1, Pt2 const &pt2) {
               return orderF(pt1) < orderF(pt2);
           };
 
@@ -427,14 +496,14 @@ namespace pyscan {
 
           double mCount = 0;
           double bCount = 0;
-          std::for_each(asIterEnd, msEnd, [i, j, &mCount](Point<> const &pt) {
+          std::for_each(asIterEnd, msEnd, [i, j, &mCount](WPoint<> const &pt) {
               if (onLineSegment(*i, *j, pt)) {
-                mCount += getMeasured(pt);
+                mCount += getWeight(pt);
               }
           });
-          std::for_each(bsIterEnd, bsEnd, [i, j, &bCount](Point<> const &pt) {
+          std::for_each(bsIterEnd, bsEnd, [i, j, &bCount](WPoint<> const &pt) {
               if (onLineSegment(*i, *j, pt)) {
-                bCount += getBaseline(pt);
+                bCount += getWeight(pt);
               }
           });
 
@@ -452,14 +521,12 @@ namespace pyscan {
           std::fill(mCountsA.begin(), mCountsA.end(), 0);
           std::fill(bCountsA.begin(), bCountsA.end(), 0);
           /*Probably most of the time is spent here*/
-          partial_counts(msBegin, mHigherIt, orderV, mCountsR, orderF, getMeasured);
-          mCount = computeTotal(msBegin, mHigherIt, getMeasured) + mCount;
-          partial_counts(bsBegin, bHigherIt, orderV, bCountsR, orderF, getBaseline);
-          bCount = computeTotal(bsBegin, bHigherIt, getBaseline) + bCount;
-          partial_counts(mHigherIt, asIterEnd, orderV, mCountsA, orderF,
-                         getMeasured);
-          partial_counts(bHigherIt, bsIterEnd, orderV, bCountsA, orderF,
-                         getBaseline);
+          partial_counts(msBegin, mHigherIt, orderV, mCountsR, orderF);
+          mCount = computeTotal(msBegin, mHigherIt) + mCount;
+          partial_counts(bsBegin, bHigherIt, orderV, bCountsR, orderF);
+          bCount = computeTotal(bsBegin, bHigherIt) + bCount;
+          partial_counts(mHigherIt, asIterEnd, orderV, mCountsA, orderF);
+          partial_counts(bHigherIt, bsIterEnd, orderV, bCountsA, orderF);
           /*----------------------------------------------*/
           //Now scan over the counts.
           auto size = nIterEnd - sortedB;
@@ -472,43 +539,13 @@ namespace pyscan {
             if (maxStat <= newStat) {
                 double a, b, r;
                 solveCircle3(*i, *j, *(sortedB + k), a, b, r);
-                Disk currDisk(newStat, a, b, r);
+                Disk currDisk(a, b, r);
                 currMax = currDisk;
                 maxStat = newStat;
             }
           }
         }
       }
-      return currMax;
-    }
-    /*
-    Disk diskScanStatLabels(std::vector<LPoint<int, 2>>& net, std::vector<LPoint<int, 2>>& sampleM, std::vector<LPoint<int, 2>>& sampleB, double rho) {
-        return diskScanLabels(net, sampleM, sampleB, [&rho](double mr, double br){
-            return kulldorff(mr, br, rho);
-        });
-    }
-    */
-    Disk diskScanStatLabels(std::vector<LPoint<>>& net, std::vector<LPoint<>>& sampleM, std::vector<LPoint<>>& sampleB, double rho) {
-        return diskScanLabels(net, sampleM, sampleB, [&rho](double mr, double br){
-            return kulldorff(mr, br, rho);
-        });
-    }
-
-    Disk diskScanSlowStatLabels(std::vector<LPoint<>>& net, std::vector<LPoint<>>& sampleM, std::vector<LPoint<>>& sampleB, double rho) {
-        return diskScanSlowLabels(net, sampleM, sampleB, [&rho](double mr, double br){
-            return kulldorff(mr, br, rho);
-        });
-    }
-
-    Disk diskScanStat(std::vector<Point<>>& net, std::vector<Point<>>& sampleM, std::vector<Point<>>& sampleB, double rho) {
-        return diskScan(net, sampleM, sampleB, [&rho](double mr, double br){
-            return kulldorff(mr, br, rho);
-        });
-    }
-
-    Disk diskScanSlowStat(std::vector<Point<>>& net, std::vector<Point<>>& sampleM, std::vector<Point<>>& sampleB, double rho) {
-        return diskScanSlow(net, sampleM, sampleB, [&rho](double mr, double br){
-            return kulldorff(mr, br, rho);
-        });
+      return std::make_tuple(currMax, maxStat);
     }
 }

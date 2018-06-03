@@ -417,4 +417,36 @@ namespace pyscan {
         }
         return std::make_tuple(max_halfspace, max_stat);
     }
+
+
+    std::tuple<Pt3, double> max_halfspace_labeled(
+            point3_list& point_net,
+            point3_list& red,
+            weight_list& red_w,
+            label_list& red_labels,
+            point3_list& blue,
+            weight_list& blue_w,
+            label_list& blue_labels,
+            std::function<double(double, double)> const& f) {
+        Pt3 max_halfspace;
+        double max_stat = -std::numeric_limits<double>::infinity();
+        for (auto pt_it = point_net.begin(); pt_it != point_net.end() - 2; ++pt_it) {
+            auto curr_pt = *pt_it;
+            auto drop = [&] (Pt3 const& pt) {
+                return dropPoint(curr_pt, pt);
+            };
+            std::vector<Pt2> drop_net(point_net.end() - pt_it - 1, Pt2());
+            std::vector<Pt2> drop_red(red.size(), Pt2());
+            std::vector<Pt2> drop_blue(blue.size(), Pt2());
+            std::transform(pt_it + 1, point_net.end(), drop_net.begin(), drop);
+            std::transform(red.begin(), red.end(), drop_red.begin(), drop);
+            std::transform(blue.begin(), blue.end(), drop_blue.begin(), drop);
+            auto pair_mx = max_halfplane_labeled(drop_net, drop_red, red_w, red_labels, drop_blue, blue_w, blue_labels, f);
+            if (std::get<1>(pair_mx) >= max_stat) {
+                max_stat = std::get<1>(pair_mx);
+                max_halfspace = lift_halfspace(std::get<0>(pair_mx), curr_pt);
+            }
+        }
+        return std::make_tuple(max_halfspace, max_stat);
+    }
 }

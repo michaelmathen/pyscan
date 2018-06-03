@@ -30,7 +30,16 @@ namespace pyscantest {
         return points;
     }
 
-    Vec2 maxVec2(std::vector<Vec2> const& vec, 
+    auto randomWPoints(int test_size) -> std::vector<pyscan::WPoint<>> {
+        auto pts = randomVec(test_size);
+        std::vector<pyscan::WPoint<>> wpoints(test_size, 0);
+        std::transform(pts.begin(), pts.end(), wpoints.begin(), [](auto const& pt) {
+            return pyscan::WPoint<>(1.0, pt[0], pt[1], 1.0);
+        });
+        return wpoints;
+    }
+
+    Vec2 maxVec2(std::vector<Vec2> const& vec,
         std::function<double(Vec2)> const& f) {
 
         Vec2 maxV = *vec.begin();

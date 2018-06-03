@@ -74,8 +74,17 @@ namespace pyscan {
 
 
         virtual bool approx_eq(Point<dim> const& pt) const {
-            for (int i = 0; i < dim + 1; i++) {
-                if (!aeq(coords[i], pt.coords[i])) {
+            double scale1 = coords[dim];
+            double scale2 = pt[dim];
+            if (aeq(coords[dim], 0) && aeq(pt[dim], 0)) {
+                scale1 = 1;
+                scale2 = 1;
+            } else if (aeq(coords[dim], 0) != aeq(pt[dim], 0)) {
+                return false;
+            }
+
+            for (int d = 0; d < dim; d++) {
+                if (!aeq(coords[d] / scale1, pt[d] / scale2)) {
                     return false;
                 }
             }
@@ -89,15 +98,15 @@ namespace pyscan {
            return coords[i];
         }
 
-        bool above_closed(Point<dim> const& p1) const {
+        virtual bool above_closed(Point<dim> const& p1) const {
             return alte(dot(*this, p1), 0.0);
         }
 
-        bool above(Point<dim> const& p1) const {
+        virtual bool above(Point<dim> const& p1) const {
             return alt(dot(*this, p1), 0.0);
         }
 
-        bool parallel(Point<dim> const& l) const {
+        virtual bool parallel(Point<dim> const& l) const {
             for (int i = 0; i < dim; i++) {
                 if (!aeq(coords[i], l[i])) {
                     return false;
@@ -123,9 +132,9 @@ namespace pyscan {
 
 
     inline Point<2> intersection(Point<2> const& p1, Point<2> const& p2) {
-        return Point<>(det2(p1[1], p1[2], p2[1], p2[2]),
+        return {det2(p1[1], p1[2], p2[1], p2[2]),
                        -det2(p1[0], p1[2], p2[0], p2[2]),
-                       det2(p1[0], p1[1], p2[0], p2[1]));
+                       det2(p1[0], p1[1], p2[0], p2[1])};
     }
 
 
@@ -177,6 +186,51 @@ namespace pyscan {
         }
     }
 
+    inline void getLoc(Pt2 const& p, double& x, double& y) {
+        x = p[0] / p[2];
+        y = p[1] / p[2];
+    }
 
+    template <int dim>
+    inline bool sameLoc(Point<dim> const& p1, Point<dim> const& p2) {
+        return p1.approx_eq(p2);
+    }
+
+
+    template<int dim=2>
+    class WPoint : public Point<dim> {
+    public:
+
+        double weight;
+        template <typename ...Coords>
+        WPoint(double weight, Coords... rest) : Point<dim>(rest...), weight(weight) {
+        }
+
+        WPoint() : Point<dim>() {
+            weight = 0;
+        }
+    };
+
+    template<int dim=2>
+    class LPoint : public WPoint<dim> {
+    public:
+
+        size_t label;
+        template <typename ...Coords>
+        LPoint(size_t label, double weight, Coords... rest) : WPoint<dim>(weight, rest...), label(label) {
+        }
+
+        LPoint() : WPoint<dim>() {
+            label = 0;
+        }
+    };
+
+    template<int dim>
+    inline double getWeight(WPoint<dim> const& p) {
+        return p.weight;
+    }
+
+    using wpoint_list = std::vector<WPoint<>>;
+    using lpoint_list = std::vector<LPoint<>>;
 }
 #endif //PYSCAN_POINT_HPP

@@ -21,6 +21,7 @@ namespace pyscantest {
     Vec2 maxVec2(std::vector<Vec2> const& vec, 
     	std::function<double(Vec2)> const& f);
 
+	auto randomWPoints(int test_size) -> std::vector<pyscan::WPoint<>>;
     auto randomLabels(int test_size, size_t num_labels) -> pyscan::label_list;
 
 }
