@@ -5,6 +5,7 @@
 
 //#include "../src/RectangleScan.hpp"
 #include "../src/DiskScan.hpp"
+#include "../src/DiskScan2.hpp"
 #include "../src/Statistics.hpp"
 #include "Utilities.hpp"
 
@@ -66,6 +67,38 @@ namespace {
         EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
         EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
         EXPECT_FLOAT_EQ(d1.getR(), d2.getR());
+
+    }
+
+    TEST(DiskScan2, matching) {
+
+        const static int n_size = 50;
+        const static int s_size = 1000;
+        const static double rho = .01;
+        auto n_pts = pyscantest::randomPoints(n_size);
+        auto m_pts = pyscantest::randomPoints(s_size);
+        auto b_pts = pyscantest::randomPoints(s_size);
+        std::vector<double> m_weight(s_size, 1.0);
+        std::vector<double> b_weight(s_size, 1.0);
+
+        auto stat = [] (double m, double b) {
+            return fabs(m - b);
+        };
+        auto [d1, d1value] = pyscan::max_disk(n_pts, m_pts, m_weight, b_pts, b_weight, stat);
+
+        auto m_wpts = pyscantest::addWeights(m_pts);
+        auto b_wpts = pyscantest::addWeights(b_pts);
+        auto [d2, d2value] = pyscan::diskScanSlow(n_pts, m_wpts, b_wpts, stat);
+
+        EXPECT_FLOAT_EQ(d2value,
+                        pyscan::evaluateRegion(m_wpts, b_wpts, d2, stat));
+
+        // EXPECT_FLOAT_EQ(std::get<1>(d1), 0.0);
+        EXPECT_FLOAT_EQ(d1value,
+                        pyscan::evaluateRegion(m_wpts,
+                                              b_wpts, d1, stat));
+
+        EXPECT_FLOAT_EQ(d1value, d2value);
 
     }
 
@@ -151,6 +184,35 @@ namespace {
     }
 
 
+    void label_test2(size_t n_size, size_t s_size, size_t labels) {
+        const static double rho = .01;
+        auto n_pts = pyscantest::randomPoints(n_size);
+        auto m_pts = pyscantest::randomPoints(s_size);
+        auto b_pts = pyscantest::randomPoints(s_size);
+
+        std::vector<double> m_weight(s_size, 1.0);
+        std::vector<double> b_weight(s_size, 1.0);
+        auto m_labels = pyscantest::randomLabels(s_size, 30);
+        auto b_labels = pyscantest::randomLabels(s_size, 30);
+        auto m_lpts = pyscantest::addLabels(pyscantest::addWeights(m_pts), m_labels);
+        auto b_lpts = pyscantest::addLabels(pyscantest::addWeights(b_pts), b_labels);
+        auto scan = [](double m, double b) {
+            return fabs(m - b);
+        };
+
+        pyscan::Disk d1, d2;
+        double d1value, d2value;
+        std::tie(d1, d1value) = pyscan::diskScanSlowLabels(n_pts, m_lpts, b_lpts, scan);
+
+        EXPECT_FLOAT_EQ(d1value, evaluateRegion(m_lpts, b_lpts, d1, scan));
+        std::tie(d2, d2value) = pyscan::max_disk_labeled(n_pts, m_pts, m_weight, m_labels, b_pts,b_weight, b_labels, scan);
+        EXPECT_FLOAT_EQ(d1value, d2value);
+        EXPECT_FLOAT_EQ(d2value, evaluateRegion(m_lpts, b_lpts, d2, scan));
+        EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
+        EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
+        EXPECT_FLOAT_EQ(d1.getR(), d2.getR());
+    }
+
     void label_test(size_t n_size, size_t s_size, size_t labels) {
       const static double rho = .01;
       auto n_pts = pyscantest::randomPoints(n_size);
@@ -181,6 +243,13 @@ namespace {
       label_test(25, 100, 5);
     }
 
+    TEST(DiskScan2, allsamelabel) {
+        label_test2(25, 100, 1);
+    }
+
+    TEST(DiskScan2, mixedlabels) {
+        label_test2(25, 100, 5);
+    }
 
     TEST(DiskTestLabel, alluniquelabel) {
 

@@ -49,10 +49,10 @@ namespace pyscan {
     };
 
     std::tuple<Disk, double> max_disk(
-            point3_list& point_net,
-            point3_list& red,
+            point_list& point_net,
+            point_list& red,
             weight_list& red_w,
-            point3_list& blue,
+            point_list& blue,
             weight_list& blue_w,
             std::function<double(double, double)> const& f);
 
@@ -67,21 +67,21 @@ namespace pyscan {
             std::function<double(double, double)> const& f);
 
 
-    std::tuple<Disk, double> max_disk_slow(point3_list& point_net,
-                       point3_list& red,
-                       weight_list& red_w,
-                       point3_list& blue,
-                       weight_list& blue_w,
-                       std::function<double(double, double)> const& f);
-
-    std::tuple<Disk, double> max_disk_slow_labeled(
-            point_list& point_net,
-            point_list& red,
-            weight_list& red_w,
-            label_list& red_labels,
-            point_list& blue,
-            weight_list& blue_w,
-            label_list& blue_labels,
-            std::function<double(double, double)> const& f);
+//    std::tuple<Disk, double> max_disk_slow(point3_list& point_net,
+//                       point3_list& red,
+//                       weight_list& red_w,
+//                       point3_list& blue,
+//                       weight_list& blue_w,
+//                       std::function<double(double, double)> const& f);
+//
+//    std::tuple<Disk, double> max_disk_slow_labeled(
+//            point_list& point_net,
+//            point_list& red,
+//            weight_list& red_w,
+//            label_list& red_labels,
+//            point_list& blue,
+//            weight_list& blue_w,
+//            label_list& blue_labels,
+//            std::function<double(double, double)> const& f);
 }
 #endif //PYSCAN_DISKSCAN2_HPP

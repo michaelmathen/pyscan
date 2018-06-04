@@ -17,8 +17,8 @@ namespace pyscan {
             std::function<double(double, double)> const& f) {
 
         std::vector<Pt3> lifted_net(point_net.size(), Pt3());
-        std::vector<Pt3> lifted_red(point_net.size(), Pt3());
-        std::vector<Pt3> lifted_blue(point_net.size(), Pt3());
+        std::vector<Pt3> lifted_red(red.size(), Pt3());
+        std::vector<Pt3> lifted_blue(blue.size(), Pt3());
         auto lift = [] (Pt2 const& pt) {
             double x = pt[0] / pt[2];
             double y = pt[1] / pt[2];
@@ -46,8 +46,8 @@ namespace pyscan {
             std::function<double(double, double)> const& f) {
 
         std::vector<Pt3> lifted_net(point_net.size(), Pt3());
-        std::vector<Pt3> lifted_red(point_net.size(), Pt3());
-        std::vector<Pt3> lifted_blue(point_net.size(), Pt3());
+        std::vector<Pt3> lifted_red(red.size(), Pt3());
+        std::vector<Pt3> lifted_blue(blue.size(), Pt3());
         auto lift = [] (Pt2 const& pt) {
             double x = pt[0] / pt[2];
             double y = pt[1] / pt[2];

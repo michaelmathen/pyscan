@@ -96,14 +96,31 @@ namespace pyscantest {
     }
 
     auto removeLabels(pyscan::lpoint_list const& pts) -> pyscan::wpoint_list {
-      
+
         pyscan::wpoint_list wlist(pts.size(), pyscan::WPoint<>());
         std::transform(pts.begin(), pts.end(), wlist.begin(), [&](pyscan::LPoint<> const& lpt){
-            return pyscan::WPoint<>(lpt.weight, lpt[0], lpt[1], lpt[2]);  
+            return pyscan::WPoint<>(lpt.weight, lpt[0], lpt[1], lpt[2]);
         });
         return wlist;
     }
-    
+
+    auto addWeights(pyscan::point_list const& pts) -> pyscan::wpoint_list {
+        pyscan::wpoint_list list;
+        for_each(pts.begin(), pts.end(), [&](auto const& pt){
+            list.emplace_back(pyscan::WPoint<>(1.0, pt[0], pt[1], pt[2]));
+        });
+        return list;
+    }
+
+    auto addLabels(pyscan::wpoint_list const& pts, pyscan::label_list const& labels) -> pyscan::lpoint_list {
+        pyscan::lpoint_list list;
+        auto l_it = labels.begin();
+        for_each(pts.begin(), pts.end(), [&](auto const& pt){
+            list.emplace_back(pyscan::LPoint<>(1.0, pt.weight, pt[0], pt[1], pt[2]));
+            l_it++;
+        });
+        return list;
+    }
 // auto randomLPointsUnique(int test_size) -> std::vector<pyscan::LPoint<>> {
 //         std::random_device rd;
 //         std::default_random_engine generator(rd());
