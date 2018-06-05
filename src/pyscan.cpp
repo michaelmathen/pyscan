@@ -2,10 +2,12 @@
 // Created by mmath on 7/7/17.
 //
 
+#include <functional>
+
 #include "RectangleScan.hpp"
-#include "EpsSamples.hpp"
 #include "HalfplaneScan.hpp"
 #include "DiskScan.hpp"
+#include "DiskScan2.hpp"
 
 #include <boost/iterator_adaptors.hpp>
 #include <boost/python.hpp>
@@ -15,154 +17,159 @@
 namespace py = boost::python;
 
 
-
 template<typename T>
 std::vector<T> to_std_vector(const py::object& iterable) {
     return std::vector<T>(py::stl_input_iterator<T>(iterable),
                           py::stl_input_iterator<T>());
 }
 
-auto toLine(py::object const& el)-> pyscan::Line {
-    if (py::len(el) == 2) {
-        return pyscan::Line(py::extract<double>(el[0]), py::extract<double>(el[1]), 0);
-    } else {
-        return pyscan::Line(py::extract<double>(el[0]), py::extract<double>(el[1]), py::extract<int>(el[2]));
-    }
-}
-
-auto toPoint(py::object const& el)-> pyscan::Line2 {
-    return pyscan::Line2(py::extract<double>(el[0]), py::extract<double>(el[1]));
-}
-
-auto toLineList(py::object const& el) -> pyscan::LineList {
-    pyscan::LineList l;
-    for (auto beg = py::stl_input_iterator<py::object>(el);
-         beg != py::stl_input_iterator<py::object>(); beg++) {
-        l.push_back(toLine(*beg));
+auto toPointList(py::object const& el) -> pyscan::point_list {
+    pyscan::point_list l;
+    for (auto beg = py::stl_input_iterator<pyscan::Point<>>(el);
+         beg != py::stl_input_iterator<pyscan::Point<>>(); beg++) {
+        l.push_back(*beg);
     }
     return l;
 }
 
-auto toPointList(py::object const& el) -> pyscan::PointList {
-    pyscan::PointList l;
-    for (auto beg = py::stl_input_iterator<py::object>(el);
-         beg != py::stl_input_iterator<py::object>(); beg++) {
-        l.push_back(toPoint(*beg));
+
+
+
+namespace pyscan {
+
+
+
+    auto toLPt(const py::object& pts, 
+            const py::object& weights,
+            const py::object& labels) -> pyscan::lpoint_list {
+
+        auto bp = py::stl_input_iterator<Pt2>(pts);
+        auto ep = py::stl_input_iterator<Pt2>();
+        auto bw = py::stl_input_iterator<double>(pts);
+        auto ew = py::stl_input_iterator<double>();
+        auto bl = py::stl_input_iterator<size_t>(labels);
+        auto el = py::stl_input_iterator<size_t>();
+        //assert(((ep - bp) == (ew - bw)) && ((ew -bw) == (el - bl)));
+
+        pyscan::lpoint_list list;
+        while(bp != ep) {
+            list.emplace_back(pyscan::LPoint<>(*bl, *bw, (*bp)[0], (*bp)[1], (*bp)[2]));
+            bp++;
+            bw++;
+            bl++;
+        }
+        return list;
     }
-    return l;
-}
 
-py::tuple toPyLine2(pyscan::Line const& line) {
-    return py::make_tuple(std::get<0>(line), std::get<1>(line));
-}
+    auto toWPt(const py::object& pts, 
+            const py::object& weights) -> pyscan::wpoint_list {
 
-py::tuple toPyPoint(pyscan::Line2 const& pt) {
-    return py::make_tuple(std::get<0>(pt), std::get<1>(pt));
-}
+        auto bp = py::stl_input_iterator<Pt2>(pts);
+        auto ep = py::stl_input_iterator<Pt2>();
+        auto bw = py::stl_input_iterator<double>(pts);
+        auto ew = py::stl_input_iterator<double>();
+        //assert(((ep - bp) == (ew - bw)) && ((ew -bw) == (el - bl)));
 
-template <typename T, typename F>
-py::list toPyList(T const& lists, F converter) {
-    py::list l;
-    for (auto& point : lists) {
-        l.append(converter(point));
+        pyscan::wpoint_list list;
+        while(bp != ep) {
+            list.emplace_back(pyscan::WPoint<>(*bw, (*bp)[0], (*bp)[1], (*bp)[2]));
+            bp++;
+            bw++;
+        }
+        return list;
     }
-    return l;
-}
 
-py::list cellsToList(const std::vector<pyscan::Cell>& v) {
-    py::list l;
-    for (auto cell : v) {
-        l.append(py::make_tuple(std::get<0>(cell),
-                                toPyList(std::get<1>(cell), toPyLine2),
-                                toPyList(std::get<2>(cell), toPyPoint),
-                                std::get<3>(cell)));
+    std::function<double(double, double)> rho_f(std::function<double(double, double, double)> const& f, double rho) {
+       return [&](double x, double y) {
+           return f(x, y, rho);
+       };
     }
-    return l;
-}
 
-py::list testSetWrapper(py::object& iterable, int r) {
-    pyscan::LineList lines;
-    py::stl_input_iterator<py::object> end;
-    for (auto obj = py::stl_input_iterator<py::object>(iterable); end != obj; obj++) {
-        lines.push_back(toLine(*obj));
+    Subgrid maxSubgridLinKull(Grid const& grid, double eps, double rho) {
+      return maxSubgridLinearSimple(grid, eps, rho_f(regularized_kulldorff, rho));
     }
-    pyscan::PointList points;
-    auto cells = pyscan::randomCuttings(lines, points, r);
-    auto test_set = pyscan::dualizeToLines(cells);
 
-    py::list output_lines;
-    for (auto line : test_set) {
-        output_lines.append(py::make_tuple(std::get<0>(line), std::get<1>(line)));
+    Subgrid maxSubgridLinKullTheory(Grid const& grid, double eps, double rho){
+        return maxSubgridLinearTheory(grid, eps, rho_f(regularized_kulldorff, rho));
     }
-    return output_lines;
+
+    Subgrid maxSubgridLinGamma(Grid const& grid, double eps) {
+        return maxSubgridLinearSimple(grid, eps, rho_f(gamma, 0.0));
+    }
+
+    Subgrid maxSubgridKullSlow(Grid const &grid, double rho) {
+        return maxSubgridNonLinear(grid, rho_f(kulldorff, rho));
+    }
+
+
+    Subgrid maxSubgridLinearSlow(Grid const& grid, double a, double b) {
+        return maxSubgridNonLinear(grid, [&](double red, double blue) {
+            return a * red + b * blue;
+        });
+    }
+
+    py::tuple maxDisk(const py::object& net, 
+            const py::object& sampleM, 
+            const py::object& weightM,
+            const py::object& sampleB,
+            const py::object& weightB,
+             double rho) {
+        auto net_points = to_std_vector<pyscan::Point<>>(net);
+        auto sample_p_M = toWPt(sampleM, weightM);
+        auto sample_p_B = toWPt(sampleB, weightB);
+        Disk d1;
+        double d1value;
+        std::tie(d1, d1value) = diskScanSlow(net_points, sample_p_M, 
+            sample_p_B, 
+            rho_f(kulldorff, rho));
+        return py::make_tuple(d1, d1value);
+    }
+
+    py::tuple maxDiskLabels(const py::object& net, 
+            const py::object& sampleM, 
+            const py::object& weightM,
+            const py::object& labelM,
+            const py::object& sampleB,
+            const py::object& weightB,
+            const py::object& labelB,
+             double rho) {
+        auto net_points = to_std_vector<pyscan::Point<>>(net);
+        auto lpointsM = toLPt(sampleM, weightM, labelM);
+        auto lpointsB = toLPt(sampleB, weightB, labelB);
+        Disk d1;
+        double d1value;
+        std::tie(d1, d1value) = diskScanLabels(net_points, lpointsM, lpointsB, rho_f(kulldorff, rho));
+        return py::make_tuple(d1, d1value);
+    }
+
+    // pyscan::Rectangle maxRectLabelsD(const py::object& net, const py::object& sampleM, const py::object& sampleB, double rho) {
+    //     auto net_points = to_std_vector<pyscan::LPoint<>>(net);
+    //     auto sample_p_M = to_std_vector<pyscan::LPoint<>>(sampleM);
+    //     auto sample_p_B = to_std_vector<pyscan::LPoint<>>(sampleB);
+    //     return pyscan::maxRectStatLabels(net_points, sample_p_M, sample_p_B, rho_f(kulldorff, rho));
+    // }
+};
+
+
+
+
+
+pyscan::Grid makeGrid(const py::object& sample_r, const py::object& weight_r, const py::object& sample_b,
+                      const py::object& weight_b, size_t r) {
+    auto points_r = to_std_vector<pyscan::Point<>>(sample_r);
+    auto points_b = to_std_vector<pyscan::Point<>>(sample_b);
+    auto v_weight_r = to_std_vector<double>(weight_r);
+    auto v_weight_b = to_std_vector<double>(weight_b);
+    return pyscan::Grid(r, points_r, v_weight_r, points_b, v_weight_b);
 }
 
-py::list splitCellWrapper(pyscan::Trapezoid const& trap, py::object const& lines, py::object const& line) {
-    pyscan::LineList lineVector = toLineList(lines);
-    pyscan::PointList pointVector;
-    std::vector<pyscan::Cell> output;
-    pyscan::splitCell(pyscan::Cell(trap, lineVector, pointVector, lineVector.size()), toLine(line), output);
-    return cellsToList(output);
-}
-
-pyscan::Grid makeGrid(const py::object& sample_r, const py::object& sample_b, size_t r) {
-    std::vector<pyscan::Point<>> points_r = to_std_vector<pyscan::Point<>>(sample_r);
-    std::vector<pyscan::Point<>> points_b = to_std_vector<pyscan::Point<>>(sample_b);
-    return pyscan::Grid(r, points_r.begin(), points_r.end(), points_b.begin(), points_b.end());
-}
-
-pyscan::Grid makeNetGrid(const py::object& net, const py::object& sample_r, const py::object& sample_b) {
-    std::vector<pyscan::Point<>> net_p = to_std_vector<pyscan::Point<>>(net);
-    std::vector<pyscan::Point<>> points_r = to_std_vector<pyscan::Point<>>(sample_r);
-    std::vector<pyscan::Point<>> points_b = to_std_vector<pyscan::Point<>>(sample_b);
-    return pyscan::Grid(net_p.begin(), net_p.end(), points_r.begin(), points_r.end(), points_b.begin(), points_b.end());
-}
-
-//pyscan::Grid makeSampleGrid(const py::object& s_m, const py::object& s_b, size_t r) {
-//    std::vector<pyscan::Point<>> m_sample = to_std_vector<pyscan::Point<>>(s_m);
-//    std::vector<pyscan::Point<>> b_sample = to_std_vector<pyscan::Point<>>(s_b);
-//    return pyscan::Grid(r, m_sample.begin(), m_sample.end(), b_sample.begin(), b_sample.end());
-//
+//pyscan::Grid makeNetGrid(const py::object& net, const py::object& sample_r, const py::object& sample_b) {
+//    std::vector<pyscan::Point<>> net_p = to_std_vector<pyscan::Point<>>(net);
+//    std::vector<pyscan::Point<>> points_r = to_std_vector<pyscan::Point<>>(sample_r);
+//    std::vector<pyscan::Point<>> points_b = to_std_vector<pyscan::Point<>>(sample_b);
+//    return pyscan::Grid(net_p.begin(), net_p.end(), points_r.begin(), points_r.end(), points_b.begin(), points_b.end());
 //}
 
-pyscan::Halfspace<2> maxHalfplaneStat(const py::object& net, const py::object& sample, double rho) {
-    std::vector<pyscan::Point<>> net_points = to_std_vector<pyscan::Point<>>(net);
-    std::vector<pyscan::Point<>> sample_points = to_std_vector<pyscan::Point<>>(sample);
-    auto pairs = maxHalfplaneStat(net_points.begin(), net_points.end(), sample_points.begin(), sample_points.end(), rho);
-    return std::get<0>(pairs);
-}
-
-pyscan::Halfspace<2> maxHalfplaneGamma(const py::object& net, const py::object& sample, double rho) {
-    std::vector<pyscan::Point<>> net_points = to_std_vector<pyscan::Point<>>(net);
-    std::vector<pyscan::Point<>> sample_points = to_std_vector<pyscan::Point<>>(sample);
-    auto pairs = maxHalfplaneGamma(net_points.begin(), net_points.end(), sample_points.begin(), sample_points.end(), rho);
-    return std::get<0>(pairs);
-}
-
-pyscan::Halfspace<2> maxHalfplaneLin(const py::object& net, const py::object& sample, double rho) {
-    std::vector<pyscan::Point<>> net_points = to_std_vector<pyscan::Point<>>(net);
-    std::vector<pyscan::Point<>> sample_points = to_std_vector<pyscan::Point<>>(sample);
-    auto pairs = maxHalfplaneLin(net_points.begin(), net_points.end(), sample_points.begin(), sample_points.end());
-    return std::get<0>(pairs);
-}
-
-
-pyscan::Disk maxDisk(const py::object& net, const py::object& sampleM, const py::object& sampleB, double rho) {
-    std::vector<pyscan::Point<>> net_points = to_std_vector<pyscan::Point<>>(net);
-    std::vector<pyscan::Point<>> sample_p_M = to_std_vector<pyscan::Point<>>(sampleM);
-    std::vector<pyscan::Point<>> sample_p_B = to_std_vector<pyscan::Point<>>(sampleB);
-
-    return diskScanStat(net_points, sample_p_M, sample_p_B, rho);
-}
-
-
-
-pyscan::Disk maxDiskLabelsD(const py::object& net, const py::object& sampleM, const py::object& sampleB, double rho) {
-    auto net_points = to_std_vector<pyscan::LPoint<>>(net);
-    auto sample_p_M = to_std_vector<pyscan::LPoint<>>(sampleM);
-    auto sample_p_B = to_std_vector<pyscan::LPoint<>>(sampleB);
-    return diskScanStatLabels(net_points, sample_p_M, sample_p_B, rho);
-}
 
 /*
 pyscan::Disk maxDiskLabelsI(const py::object& net, const py::object& sampleM, const py::object& sampleB, double rho) {
@@ -172,42 +179,7 @@ pyscan::Disk maxDiskLabelsI(const py::object& net, const py::object& sampleM, co
     return diskScanStatLabels(net_points, sample_p_M, sample_p_B, rho);
 }
  */
-pyscan::Rectangle maxRectLabelsD(const py::object& net, const py::object& sampleM, const py::object& sampleB, double rho) {
-    auto net_points = to_std_vector<pyscan::LPoint<>>(net);
-    auto sample_p_M = to_std_vector<pyscan::LPoint<>>(sampleM);
-    auto sample_p_B = to_std_vector<pyscan::LPoint<>>(sampleB);
-    return pyscan::maxRectStatLabels(net_points, sample_p_M, sample_p_B, rho);
-}
-/*
-pyscan::Subgrid maxRectLabelsI(const py::object& net, const py::object& sampleM, const py::object& sampleB, double rho) {
-    auto net_points = to_std_vector<pyscan::LPoint<int>>(net);
-    auto sample_p_M = to_std_vector<pyscan::LPoint<int>>(sampleM);
-    auto sample_p_B = to_std_vector<pyscan::LPoint<int>>(sampleB);
-    return pyscan::maxLabeledRectStat(net_points, sample_p_M, sample_p_B, rho);
-}
-*/
-double local_xLoc(double a1, double a2, double a3, double a4) {
-    return pyscan::xLoc(a1, a2, a3, a4);
-}
 
-py::list randomCuttings(const py::object& iterable, int r) {
-    pyscan::LineList lines;
-    py::stl_input_iterator<py::object> end;
-    for (auto obj = py::stl_input_iterator<py::object>(iterable); end != obj; obj++) {
-        lines.push_back(toLine(*obj));
-    }
-    pyscan::PointList points;
-    return cellsToList(pyscan::randomCuttings(lines, points, r));
-}
-
-py::list createPartitionWrapper(const py::object& iterable, int r) {
-    pyscan::PointList points;
-    py::stl_input_iterator<py::object> end;
-    for (auto obj = py::stl_input_iterator<py::object>(iterable); end != obj; obj++) {
-        points.push_back(toPoint(*obj));
-    }
-    return cellsToList(pyscan::createPartition(points, r));
-}
 
 BOOST_PYTHON_MODULE(pyscan) {
     using namespace py;
@@ -245,81 +217,31 @@ BOOST_PYTHON_MODULE(pyscan) {
             .def("__repr__", &pyscan::Subgrid::toString)
             .def("fValue", &pyscan::Subgrid::fValue);
 
-    py::class_<pyscan::Point<2>>("Point", py::init<double, double, double, double>())
-            .def("getWeight", &pyscan::Point<>::getWeight)
-            .def("setRedWeight", &pyscan::Point<>::setRedWeight)
-            .def("setBlueWeight", &pyscan::Point<>::setBlueWeight)
-            .def("getRedWeight", &pyscan::Point<>::getRedWeight)
-            .def("getBlueWeight", &pyscan::Point<>::getBlueWeight)
-            .def("__str__", &pyscan::Point<>::toString)
-            .def("__repr__", &pyscan::Point<>::toString)
-            .def("getX", &pyscan::Point<>::getX)
-            .def("getY", &pyscan::Point<>::getY);
+    py::class_<pyscan::Pt2>("Point", py::init<double, double>())
+            .def("approx_eq", &pyscan::Point<>::approx_eq)
+            .def("__getitem__", &pyscan::Point<>::operator[])
+            .def("above", &pyscan::Point<>::above)
+            .def("above_closed", &pyscan::Point<>::above_closed)
+            .def("parallel", &pyscan::Point<>::parallel)
+            .def("getX", &pyscan::getX<2>)
+            .def("getY", &pyscan::getY<2>);
 
-    /*
-    py::class_<pyscan::Point<double, 3>>("__point3d", py::init<double, double, double, double, double>())
-            .def("getWeight", &pyscan::Point<double, 3>::getWeight)
-	          .def("setRedWeight", &pyscan::Point<double, 3>::setRedWeight)
-	          .def("setBlueWeight", &pyscan::Point<double, 3>::setBlueWeight)
-            .def("getRedWeight", &pyscan::Point<double, 3>::getRedWeight)
-            .def("getBlueWeight", &pyscan::Point<double, 3>::getBlueWeight)
-            .def("__str__", &pyscan::Point<double, 3>::toString)
-            .def("__repr__", &pyscan::Point<double, 3>::toString);
-    */
-    py::class_<pyscan::Disk>("Disk", py::init<double, double, double, double>())
+    py::def("dot", &pyscan::dot<2>);
+    py::def("intersection", &pyscan::intersection);
+    py::def("correct_orientation", &pyscan::correct_orientation);
+    py::def("above_closed_interval", &pyscan::above_closed_interval);
+    py::def("above_interval", &pyscan::above_interval);
+
+
+    py::class_<pyscan::Disk>("Disk", py::init<double, double, double>())
             .add_property("a", &pyscan::Disk::getA, &pyscan::Disk::setA)
             .add_property("b", &pyscan::Disk::getB, &pyscan::Disk::setB)
             .add_property("radius", &pyscan::Disk::getR, &pyscan::Disk::setR)
-            .def("contains", &pyscan::Disk::contains)
-            .def("fValue", &pyscan::Disk::fValue);
-
-    py::class_<pyscan::LPoint<2>, py::bases<pyscan::Point<2>>>("LPoint", py::init<size_t, double, double, double, double>())
-	          .def("getLabel", &pyscan::LPoint<2>::getLabel);
-
-    py::class_<pyscan::BloomFilter>("BloomFilter", py::init<int, double>())
-            .def("insert", &pyscan::BloomFilter::insert)
-            .def("mightBePresent", &pyscan::BloomFilter::mightBePresent);
-
-    py::class_<pyscan::Trapezoid>("Trapezoid", py::init<double, double, double, double, double, double>())
-            .def("crossing", &pyscan::Trapezoid::crossing)
-            .def("crossesLeftSide", &pyscan::Trapezoid::crossesLeftSide)
-            .def("crossesRightSide", &pyscan::Trapezoid::crossesRightSide)
-            .def("crossesTop", &pyscan::Trapezoid::crossesTop)
-            .def("crossesBottom", &pyscan::Trapezoid::crossesBottom)
-            .def_readonly("top_a", &pyscan::Trapezoid::top_a)
-            .def_readonly("top_b", &pyscan::Trapezoid::top_b)
-            .def_readonly("left_x", &pyscan::Trapezoid::left_x)
-            .def_readonly("right_x", &pyscan::Trapezoid::right_x)
-            .def_readonly("bottom_a", &pyscan::Trapezoid::bottom_a)
-            .def("__print__", &pyscan::Trapezoid::print)
-            .def("__repr__", &pyscan::Trapezoid::print)
-            .def_readonly("bottom_b", &pyscan::Trapezoid::bottom_b);
-
-    py::class_<pyscan::Halfspace<2>>("__halfspace2", py::init<double, double, double>())
-            .def("geta", &pyscan::Halfspace<2>::get<0>)
-            .def("getb", &pyscan::Halfspace<2>::get<1>)
-            .def("fValue", &pyscan::Halfspace<2>::fValue);
-
-    py::class_<pyscan::Halfspace<3>>("__halfspace3", py::init<double, double, double, double>())
-            .def("geta1", &pyscan::Halfspace<3>::get<0>)
-            .def("geta2", &pyscan::Halfspace<3>::get<1>)
-            .def("getb", &pyscan::Halfspace<3>::get<2>)
-            .def("fValue", &pyscan::Halfspace<3>::fValue);
+            .def("contains", &pyscan::Disk::contains);
 
 
-    /*
-     class_<pyscan::SlabTree<int>>("SlabTree", py::init<pyscan::Grid<int>, int>())
-            .def("measure", &pyscan::SlabTree<int>::measure)
-            .def("measureSubgrid", &pyscan::SlabTree<int>::measureSubgrid);
-    */
-
-    py::def("testSet", testSetWrapper);
-    py::def("createPartition", createPartitionWrapper);
-    py::def("xLoc", local_xLoc);
-    py::def("splitCell", splitCellWrapper);
-    py::def("randomCuttings", randomCuttings);
     py::def("makeGrid", makeGrid);
-    py::def("makeNetGrid", makeNetGrid);
+    //py::def("makeNetGrid", makeNetGrid);
     //py::def("makeSampleGrid", makeSampleGrid);
 
     pyscan::Subgrid (*f1)(pyscan::Grid const&, double) = &pyscan::maxSubgridKullSlow;
@@ -337,14 +259,10 @@ BOOST_PYTHON_MODULE(pyscan) {
 
     py::def("maxSubgridTheoryKull", pyscan::maxSubgridLinKullTheory);
 
-    py::def("maxHalfPlaneStat", &maxHalfplaneStat);
-    py::def("maxHalfPlaneLin", &maxHalfplaneLin);
-    py::def("maxHalfPlaneGamma", &maxHalfplaneGamma);
-    py::def("maxDisk", &maxDisk);
     //py::def("maxDiskLabels", &maxDiskLabelsI);
-    py::def("maxDiskLabels", &maxDiskLabelsD);
+    py::def("maxDiskLabels", &pyscan::maxDiskLabels);
     //py::def("maxRectLabels", &maxRectLabelsI);
-    py::def("maxRectLabels", &maxRectLabelsD);
+    //py::def("maxRectLabels", &maxRectLabelsD);
 
 
 }

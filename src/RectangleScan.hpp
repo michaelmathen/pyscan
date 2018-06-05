@@ -29,31 +29,6 @@ namespace pyscan {
     using subgrid = std::tuple<int, int, int, int, double>;
 
 
-    template<typename P_it, typename I_it, typename Comp, typename Wf>
-    void quantiles(P_it begin, P_it end, I_it i_begin, I_it i_end, Comp comp, Wf wf) {
-        std::sort(begin, end, comp);
-
-        //std::random_device rd;
-        //std::mt19937 gen(rd());
-        //std::uniform_real_distribution<double> dis(0, 1);
-        int r = i_end - i_begin;
-        double total_weight = 0;
-        std::for_each(begin, end, [&](decltype(*begin) const& pt) {
-            total_weight += wf(pt);
-        });
-
-        double eps_s = total_weight / r;
-        double curr_weight = 0;
-        std::for_each(begin, end, [&](decltype(*begin) const& pt) {
-            curr_weight += wf(pt);
-            if (curr_weight > eps_s) {
-                *i_begin = pt;
-                i_begin++;
-                curr_weight = 0;
-            }
-        });
-    }
-
     template<typename Bound_t>
     class RectBase {
         Bound_t u_x, u_y, l_x, l_y;
@@ -78,7 +53,7 @@ namespace pyscan {
         }
 
         bool contains(Point<> const& pt) const {
-            return u_x >= get<0>(pt) && get<0>(pt) >= l_x && u_y >= get<1>(pt) && get<1>(pt) >= l_y;
+            return u_x >= getX(pt) && getX(pt) >= l_x && u_y >= getY(pt) && getY(pt) >= l_y;
         }
 
         void setValue(double v) {
@@ -112,8 +87,8 @@ namespace pyscan {
         double total_red_weight = 0;
         double total_blue_weight = 0;
     public:
-        Grid(size_t r_arg, point_it r_begin, point_it r_end, point_it b_begin, point_it b_end);
-        Grid(point_it net_begin, point_it net_end, point_it r_begin, point_it r_end, point_it b_begin, point_it b_end);
+        Grid(size_t r_arg, point_list& red, weight_list& red_w, point_list& blue, weight_list& blue_w);
+        Grid(point_list& net, point_list& red, weight_list& red_w, point_list& blue, weight_list& blue_w);
         double totalRedWeight() const;
         double totalBlueWeight() const;
         double redCount(size_t row, size_t col) const;
@@ -285,34 +260,12 @@ namespace pyscan {
         void setRight(size_t right);
     };
 
-    Rectangle maxRectStatLabels(std::vector<LPoint<>> const& net,
-                                 std::vector<LPoint<>> const& m_points,
-                                 std::vector<LPoint<>> const& b_points,
-                                 double rho);
-
-    Subgrid maxSubgridKullSlow(Grid const &grid, double rho);
-    Subgrid maxSubgridLinearSlow(Grid const& grid, double a, double b);
-
-    /*
-     * Simple 1/eps^3 algorithm that computes the max subgrid over a linear function.
-     */
-    Subgrid maxSubgridLinearSimple(Grid const &grid, double a, double b);
-    Subgrid maxSubgridLinearSimpleStat(Grid const& grid);
-
-
-    Subgrid maxSubgridLinKull(Grid const& grid, double eps, double rho);
-    Subgrid maxSubgridLinKullTheory(Grid const& grid, double eps, double rho);
-    Subgrid maxSubgridLinGamma(Grid const& grid, double eps);
 
     Subgrid maxSubgridLinearG(Grid const &grid, int r_prime, double a, double b);
 
-    Rectangle maxRectSlowStatLabels(std::vector<LPoint<>> const& net,
-                                 std::vector<LPoint<>> const& m_points,
-                                 std::vector<LPoint<>> const& b_points,
-                                 double rho);
-    //template<typename F>
-    //subgrid maxSubgridConvex(Grid const& grid, int r_prime, F func) {
-
-    //}
+    Subgrid maxSubgridLinearSimple(Grid const& grid, double eps, std::function<double(double, double)> const& f);
+    Subgrid maxSubgridLinearSimple(Grid const &grid, double a, double b);
+    Subgrid maxSubgridNonLinear(Grid const &grid, std::function<double(double, double)> const& func);
+    Subgrid maxSubgridLinearTheory(Grid const& grid, double eps, std::function<double(double, double)> const& f);
 }
 #endif //PYSCAN_RECTANGLESCAN_HPP

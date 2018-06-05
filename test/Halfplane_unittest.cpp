@@ -63,8 +63,10 @@ namespace {
         auto stat = [] (double m, double b) {
           return fabs(m - b);
         };
-        auto [d1, d1value] = pyscan::max_halfplane_labeled(n_pts, m_pts, m_weight, m_labels, b_pts, b_weight, b_labels, stat);
-        auto [d2, d2value] = pyscan::max_halfplane_simple_labeled(n_pts, m_pts, m_weight, m_labels, b_pts, b_weight, b_labels, stat);
+        pyscan::Point<> d1, d2;
+        double d1value, d2value;
+        std::tie(d1, d1value) = pyscan::max_halfplane_labeled(n_pts, m_pts, m_weight, m_labels, b_pts, b_weight, b_labels, stat);
+        std::tie(d2, d2value) = pyscan::max_halfplane_simple_labeled(n_pts, m_pts, m_weight, m_labels, b_pts, b_weight, b_labels, stat);
 
         EXPECT_FLOAT_EQ(d2value,
           pyscan::evaluate_line_labeled(d2, m_pts, m_weight, m_labels,

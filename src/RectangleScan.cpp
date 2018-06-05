@@ -14,7 +14,11 @@ namespace pyscan {
     /*
      * Takes a grid resolution,r, and a red set of points and a blue set of points. Computes a grid from this.z
      */
-    Grid::Grid(size_t r_arg, point_it r_begin, point_it r_end, point_it b_begin, point_it b_end) :
+    Grid::Grid(size_t r_arg,
+        point_list& red_points, 
+        weight_list& red_weight,
+        point_list& blue_points,
+        weight_list& blue_weight) :
         r(r_arg),
         red_counts(r_arg * r_arg, 0),
         blue_counts(r_arg * r_arg, 0),
@@ -24,89 +28,90 @@ namespace pyscan {
 
         //Compute the grid from the n_begin and n_end and then fill in the values with the two sampled things.
         auto compX = [](Point<> const &p1, Point<> const &p2) {
-            return get<0>(p1) < get<0>(p2);
+            return getX(p1) < getX(p2);
         };
         auto compY = [](Point<> const &p1, Point<> const &p2) {
-            return get<1>(p1) < get<1>(p2);
+            return getY(p1) < getY(p2);
         };
 
-        auto getR = [](Point<> const& p1) {
-            return p1.getRedWeight();
-        };
 
-        auto getB = [](Point<> const& p1) {
-            return p1.getBlueWeight();
-        };
+        auto r_begin = red_points.begin();
+        auto r_end = red_points.end();
 
-        std::vector<Point<>> x_pts(r, Point<>());
-        std::vector<Point<>> y_pts(r, Point<>());
-        quantiles(r_begin, r_end, x_pts.begin(), x_pts.begin() + r / 2, compX, getR);
-        quantiles(b_begin, b_end, x_pts.begin() + r / 2, x_pts.end() , compX, getB);
-        quantiles(r_begin, r_end, y_pts.begin(), y_pts.begin() + r / 2, compY, getR);
-        quantiles(b_begin, b_end, x_pts.begin() + r / 2, x_pts.end() , compY, getB);
+        auto b_begin = blue_points.begin();
+        auto b_end = blue_points.end();
+
+        std::vector<Point<>> x_pts(r, Pt2());
+        std::vector<Point<>> y_pts(r, Pt2());
+        quantiles(r_begin, r_end, x_pts.begin(), x_pts.begin() + r / 2, red_weight.begin(), compX);
+        quantiles(b_begin, b_end, x_pts.begin() + r / 2, x_pts.end() , blue_weight.begin(), compX);
+        quantiles(r_begin, r_end, y_pts.begin(), y_pts.begin() + r / 2, red_weight.begin(), compY);
+        quantiles(b_begin, b_end, x_pts.begin() + r / 2, x_pts.end() , blue_weight.begin(), compY);
 
 
 
         for (auto &el : x_pts) {
-            x_coords.push_back(el.getX());
+            x_coords.push_back(getX(el));
         }
         for (auto &el : y_pts) {
-            y_coords.push_back(el.getY());
+            y_coords.push_back(getY(el));
         }
         std::sort(x_coords.begin(), x_coords.end());
         std::sort(y_coords.begin(), y_coords.end());
-        for (auto point_it = r_begin; point_it != r_end; point_it++) {
-            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), get<0>(*point_it)) - x_coords.begin() - 1;
-            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), get<1>(*point_it)) - y_coords.begin() - 1;
+        auto rw_it = red_weight.begin();
+        for (auto point_it = r_begin; point_it != r_end; point_it++, rw_it++) {
+            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), getX(*point_it)) - x_coords.begin() - 1;
+            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), getY(*point_it)) - y_coords.begin() - 1;
             if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
-                red_counts[iy * r + ix] += point_it->getRedWeight();
+                red_counts[iy * r + ix] += *rw_it;
             }
-            total_red_weight += point_it->getRedWeight();
+            total_red_weight += *rw_it;
         }
+        auto bw_it = blue_weight.begin();
         for (auto point_it = b_begin; point_it != b_end; point_it++) {
-            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), get<0>(*point_it)) - x_coords.begin() - 1;
-            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), get<1>(*point_it)) - y_coords.begin() - 1;
+            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), getX(*point_it)) - x_coords.begin() - 1;
+            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), getY(*point_it)) - y_coords.begin() - 1;
             if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
-                blue_counts[iy * r + ix] += point_it->getBlueWeight();
+                blue_counts[iy * r + ix] += *bw_it;
             }
-            total_blue_weight += point_it->getBlueWeight();
+            total_blue_weight += *bw_it;
         }
     }
 
-    Grid::Grid(point_it net_begin, point_it net_end, point_it r_begin, point_it r_end, point_it b_begin, point_it b_end) :
-                                                                                                r(net_end - net_begin),
-                                                                                         red_counts(r * r, 0),
-                                                                                         blue_counts(r * r, 0),
-                                                                                         x_coords(),
-                                                                                         y_coords() {
-        //std::cout << "NetRect constructor called" << std::endl;
+    Grid::Grid(point_list& net, point_list& red, weight_list& red_w, point_list& blue, weight_list& blue_w) :
+            r(net.size()),
+            red_counts(r * r, 0),
+            blue_counts(r * r, 0),
+            x_coords(),
+            y_coords() {
 
-
-        for_each(net_begin, net_end, [&](Point<> const& pt) {
-            x_coords.push_back(pt.getX());
+        for_each(net.begin(), net.end(), [&](Point<> const& pt) {
+            x_coords.push_back(getX(pt));
         });
-        for_each(net_begin, net_end, [&] (Point<> const& pt) {
-            y_coords.push_back(pt.getY());
+        for_each(net.begin(), net.end(), [&] (Point<> const& pt) {
+            y_coords.push_back(getY(pt));
         });
         std::sort(x_coords.begin(), x_coords.end());
         std::sort(y_coords.begin(), y_coords.end());
-        for (auto point_it = r_begin; point_it != r_end; point_it++) {
-            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), get<0>(*point_it)) - x_coords.begin() - 1;
-            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), get<1>(*point_it)) - y_coords.begin() - 1;
+        auto r_w_it = red_w.begin();
+        for (auto& pt : red) {
+            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), getX(pt)) - x_coords.begin() - 1;
+            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), getY(pt)) - y_coords.begin() - 1;
             if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
-                red_counts[iy * r + ix] += point_it->getRedWeight();
+                red_counts[iy * r + ix] += *r_w_it;
             }
-            total_red_weight += point_it->getRedWeight();
+            total_red_weight += *r_w_it;
+            r_w_it++;
         }
-        for (auto point_it = b_begin; point_it != b_end; point_it++) {
-            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), get<0>(*point_it)) - x_coords.begin() - 1;
-            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), get<1>(*point_it)) - y_coords.begin() - 1;
+        auto b_w_it = blue_w.begin();
+        for (auto& pt : blue) {
+            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), getX(pt)) - x_coords.begin() - 1;
+            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), getY(pt)) - y_coords.begin() - 1;
             if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
-                blue_counts[iy * r + ix] += point_it->getBlueWeight();
+                blue_counts[iy * r + ix] += *b_w_it;
             }
-            total_blue_weight += point_it->getBlueWeight();
+            total_blue_weight += *b_w_it;
         }
-
     }
 
     double Grid::totalRedWeight() const {
@@ -175,8 +180,7 @@ namespace pyscan {
      * Simple 1/eps^4 algorithm described in the paper that just computes every subgrid.
      * This will work on a nonlinear function.
      */
-    template<typename F>
-    Subgrid maxSubgridNonLinear(Grid const &grid, F func, double rho) {
+    Subgrid maxSubgridNonLinear(Grid const &grid, std::function<double(double, double)> const& func) {
         std::vector<double> red_count(grid.size(), 0);
         std::vector<double> blue_count(grid.size(), 0);
         double t_red = static_cast<double>(grid.totalRedWeight());
@@ -198,7 +202,7 @@ namespace pyscan {
                     for (size_t l = k; l < grid.size(); l++) {
                         red_l_count += red_count[l];
                         blue_l_count += blue_count[l];
-                        double maxf = func(red_l_count / t_red, blue_l_count / t_blue, rho);
+                        double maxf = func(red_l_count / t_red, blue_l_count / t_blue);
                         //std::cout << red_l_count / t_red << " " << blue_l_count / t_blue << " " << maxf << std::endl;
                         if (maxf > max.fValue()) {
                             max = Subgrid(l, j, k, i, maxf);
@@ -212,18 +216,7 @@ namespace pyscan {
     }
 
 
-    Subgrid maxSubgridKullSlow(Grid const &grid, double rho) {
-        return maxSubgridNonLinear(grid, kulldorff, rho);
-    }
-
-
-    Subgrid maxSubgridLinearSlow(Grid const& grid, double a, double b) {
-        return maxSubgridNonLinear(grid, [&](double red, double blue, double rho) {
-            return a * red + b * blue;
-        }, 0);
-    }
-
-    Subgrid maxSubgridLinearSimpleInt(Grid const &grid, double a, double b) {
+    Subgrid maxSubgridLinearSimple(Grid const &grid, double a, double b) {
         std::vector<double> weight(grid.size(), 0);
         Subgrid max = Subgrid(0, 0, 0, 0, -std::numeric_limits<double>::infinity());
         for (size_t i = 0; i < grid.size(); i++) {
@@ -253,31 +246,27 @@ namespace pyscan {
         return max;
     }
 
-    Subgrid maxSubgridLinearSimple(Grid const& grid, double a, double b) {
-        return maxSubgridLinearSimpleInt(grid, a, b);
-    }
-
-
-    template<typename F>
-    Subgrid maxSubgridLinearSStat(Grid const& grid, double eps, F f) {
+    Subgrid maxSubgridLinearSimple(Grid const& grid, double eps,
+        std::function<double(double, double)> const& f) {
         /*
          * This uses the
          */
+        auto phi = [&] (Vec2 const& v) {return f(v[0], v[1]); };
         Subgrid curr_subgrid(0, 0, 0, 0, -std::numeric_limits<double>::infinity());
         Subgrid max_subgrid(0, 0, 0, 0, -std::numeric_limits<double>::infinity());
         double maxV = 0;
-        auto linemaxF = [&] (VecD const& dir) {
-            curr_subgrid = maxSubgridLinearSimpleInt(grid, dir[0], dir[1]);
-            VecD curr_mb(grid.redSubWeight(curr_subgrid), grid.blueSubWeight(curr_subgrid));
+        auto linemaxF = [&] (Vec2 const& dir) {
+            curr_subgrid = maxSubgridLinearSimple(grid, dir[0], dir[1]);
+            Vec2 curr_mb{grid.redSubWeight(curr_subgrid), grid.blueSubWeight(curr_subgrid)};
 
-            double curr_val = f(curr_mb);
+            double curr_val = phi(curr_mb);
             if (curr_val > maxV) {
                 max_subgrid = curr_subgrid;
                 maxV = curr_val;
             }
             return curr_mb;
         };
-        approximateHull(eps, f, linemaxF);
+        approximateHull(eps, phi, linemaxF);
         return max_subgrid;
     }
 
@@ -295,193 +284,178 @@ namespace pyscan {
         return n * log2D(n);
     }
 
-    template<typename F>
-    Subgrid maxSubgridLinearTheorySStat(Grid const& grid, double eps, F f) {
+
+    Subgrid maxSubgridLinearTheory(Grid const& grid, double eps, 
+        std::function<double(double, double)> const& f) {
         /*
          * This uses the
          */
+        auto phi = [&] (Vec2 const& v) {return f(v[0], v[1]); };
         Subgrid curr_subgrid(0, 0, 0, 0, -std::numeric_limits<double>::infinity());
         Subgrid max_subgrid(0, 0, 0, 0, -std::numeric_limits<double>::infinity());
         double maxV = 0;
-        auto linemaxF = [&] (VecD const& dir) {
+        auto linemaxF = [&] (Vec2 const& dir) {
             curr_subgrid = maxSubgridLinearG(grid, grid.size() * r_ratio(grid.size()), dir[0], dir[1]);
-            VecD curr_mb(grid.redSubWeight(curr_subgrid), grid.blueSubWeight(curr_subgrid));
+            Vec2 curr_mb{grid.redSubWeight(curr_subgrid), grid.blueSubWeight(curr_subgrid)};
 
-            double curr_val = f(curr_mb);
+            double curr_val = phi(curr_mb);
             if (curr_val > maxV) {
                 max_subgrid = curr_subgrid;
                 maxV = curr_val;
             }
             return curr_mb;
         };
-        approximateHull(eps, f, linemaxF);
+        approximateHull(eps, phi, linemaxF);
         return max_subgrid;
     }
 
-
-    Subgrid maxSubgridLinKull(Grid const& grid, double eps, double rho) {
-      return maxSubgridLinearSStat(grid, eps, [&](VecD const& p) {
-            return regularized_kulldorff(p[0], p[1], rho);
-      });
-    }
-    Subgrid maxSubgridLinKullTheory(Grid const& grid, double eps, double rho){
-        return maxSubgridLinearTheorySStat(grid, eps, [&](VecD const& p) {
-            return regularized_kulldorff(p[0], p[1], rho);
-        });
-    }
-
-    Subgrid maxSubgridLinGamma(Grid const& grid, double eps) {
-        return maxSubgridLinearSStat(grid, eps, [&](VecD const &p) {
-            return gamma(p[0], p[1], 0);
-        });
-    }
 
     //////////////////////////////////////////////////////////////////////////////////
     //Begining OF LABELED RECTANGLE CODE//////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////
 
-    template< typename T, typename F>
-    double computeLabelTotalRect(T begin, T end, F func) {
-        std::unordered_set<size_t> label_set;
-        double total = 0;
-        for (; begin != end; ++begin) {
-            if (label_set.end() == label_set.find(begin->getLabel())) {
-                total += func(*begin);
-                label_set.insert(begin->getLabel());
-            }
-        }
-        return total;
-    }
+//    template< typename T, typename F>
+//    double computeLabelTotalRect(T begin, T end, F func) {
+//        std::unordered_set<size_t> label_set;
+//        double total = 0;
+//        for (; begin != end; ++begin) {
+//            if (label_set.end() == label_set.find(begin->getLabel())) {
+//                total += func(*begin);
+//                label_set.insert(begin->getLabel());
+//            }
+//        }
+//        return total;
+//    }
+//
 
+    // template <typename F>
+    // Rectangle maxRectSlowLabels(std::vector<LPoint<>> const& net,
+    //                             std::vector<LPoint<>> const& m_points,
+    //                             std::vector<LPoint<>> const& b_points,
+    //                             F func) {
 
-    template <typename F>
-    Rectangle maxRectSlowLabels(std::vector<LPoint<>> const& net,
-                                std::vector<LPoint<>> const& m_points,
-                                std::vector<LPoint<>> const& b_points,
-                                F func) {
+    //     double m_Total = computeLabelTotalRect(m_points.begin(), m_points.end(), [](Point<2> const& pt){
+    //         return getMeasured(pt);
+    //     });
+    //     double b_Total = computeLabelTotalRect(b_points.begin(), b_points.end(), [](Point<2> const& pt){
+    //         return getBaseline(pt);
+    //     });
+    //     Rectangle maxRect(0, 0, 0, 0, 0.0);
+    //     //Create a top and bottom line
+    //     for (auto onb1 = net.begin(); onb1 != (net.end() - 3); onb1++) {
+    //         for (auto onb2 = onb1 + 1; onb2 != (net.end() - 2); onb2++) {
+    //           for (auto onb3 = onb2 + 1; onb2 != (net.end() - 1); onb3++) {
+    //             for (auto onb4 = onb3 + 1; onb3 != net.end(); onb4++) {
+    //               auto ux = std::max({onb1->getX(), onb2->getX(), onb3->getX(), onb4->getX()});
+    //               auto lx = std::min({onb1->getX(), onb2->getX(), onb3->getX(), onb4->getX()});
+    //               auto uy = std::max({onb1->getY(), onb2->getY(), onb3->getY(), onb4->getY()});
+    //               auto ly = std::min({onb1->getY(), onb2->getY(), onb3->getY(), onb4->getY()});
+    //               Rectangle rect(ux, uy, lx, ly, 0.0);
 
-        double m_Total = computeLabelTotalRect(m_points.begin(), m_points.end(), [](Point<2> const& pt){
-            return getMeasured(pt);
-        });
-        double b_Total = computeLabelTotalRect(b_points.begin(), b_points.end(), [](Point<2> const& pt){
-            return getBaseline(pt);
-        });
-        Rectangle maxRect(0, 0, 0, 0, 0.0);
-        //Create a top and bottom line
-        for (auto onb1 = net.begin(); onb1 != (net.end() - 3); onb1++) {
-            for (auto onb2 = onb1 + 1; onb2 != (net.end() - 2); onb2++) {
-              for (auto onb3 = onb2 + 1; onb2 != (net.end() - 1); onb3++) {
-                for (auto onb4 = onb3 + 1; onb3 != net.end(); onb4++) {
-                  auto ux = std::max({onb1->getX(), onb2->getX(), onb3->getX(), onb4->getX()});
-                  auto lx = std::min({onb1->getX(), onb2->getX(), onb3->getX(), onb4->getX()});
-                  auto uy = std::max({onb1->getY(), onb2->getY(), onb3->getY(), onb4->getY()});
-                  auto ly = std::min({onb1->getY(), onb2->getY(), onb3->getY(), onb4->getY()});
-                  Rectangle rect(ux, uy, lx, ly, 0.0);
+    //               double new_stat = evaluateRegion( m_points, b_points, rect, func);
+    //               if (new_stat >= maxRect.fValue()) {
+    //                 maxRect = rect;
+    //                 maxRect.setValue(new_stat);
+    //               }
+    //             }
+    //           }
+    //         }
+    //     }
+    //     return maxRect;
+    // }
 
-                  double new_stat = evaluateRegion( m_points, b_points, rect, func);
-                  if (new_stat >= maxRect.fValue()) {
-                    maxRect = rect;
-                    maxRect.setValue(new_stat);
-                  }
-                }
-              }
-            }
-        }
-        return maxRect;
-    }
+    // Rectangle maxRectSlowStatLabels(std::vector<LPoint<>> const& net,
+    //                              std::vector<LPoint<>> const& m_points,
+    //                              std::vector<LPoint<>> const& b_points, double rho) {
+    //     return maxRectSlowLabels(net, m_points, b_points, [&rho](double mr, double br){
+    //         return kulldorff(mr, br, rho);
+    //     });
+    // }
+    // template <typename F>
+    // Rectangle maxRectLabels(std::vector<LPoint<>> const& net,
+    //                          std::vector<LPoint<>> const& m_points,
+    //                          std::vector<LPoint<>> const& b_points,
+    //                          F func) {
 
-    Rectangle maxRectSlowStatLabels(std::vector<LPoint<>> const& net,
-                                 std::vector<LPoint<>> const& m_points,
-                                 std::vector<LPoint<>> const& b_points, double rho) {
-        return maxRectSlowLabels(net, m_points, b_points, [&rho](double mr, double br){
-            return kulldorff(mr, br, rho);
-        });
-    }
-    template <typename F>
-    Rectangle maxRectLabels(std::vector<LPoint<>> const& net,
-                             std::vector<LPoint<>> const& m_points,
-                             std::vector<LPoint<>> const& b_points,
-                             F func) {
+    //     double m_Total = computeLabelTotalRect(m_points.begin(), m_points.end(), [](Point<2> const& pt){
+    //         return pt.getRedWeight();
+    //     });
+    //     double b_Total = computeLabelTotalRect(b_points.begin(), b_points.end(), [](Point<2> const& pt){
+    //         return pt.getBlueWeight();
+    //     });
+    //     Rectangle maxRect(0, 0, 0, 0, 0.0);
+    //     //Create a top and bottom line
+    //     for (auto onb1 = net.begin(); onb1 != (net.end() - 2); onb1++) {
+    //         for (auto onb2 = onb1 + 1; onb2 != (net.end() - 1); onb2++) {
+    //             auto nb1 = get<1>(*onb1) >= get<1>(*onb2) ? onb1 : onb2;
+    //             auto nb2 = get<1>(*onb1) < get<1>(*onb2) ? onb1 : onb2;
 
-        double m_Total = computeLabelTotalRect(m_points.begin(), m_points.end(), [](Point<2> const& pt){
-            return pt.getRedWeight();
-        });
-        double b_Total = computeLabelTotalRect(b_points.begin(), b_points.end(), [](Point<2> const& pt){
-            return pt.getBlueWeight();
-        });
-        Rectangle maxRect(0, 0, 0, 0, 0.0);
-        //Create a top and bottom line
-        for (auto onb1 = net.begin(); onb1 != (net.end() - 2); onb1++) {
-            for (auto onb2 = onb1 + 1; onb2 != (net.end() - 1); onb2++) {
-                auto nb1 = get<1>(*onb1) >= get<1>(*onb2) ? onb1 : onb2;
-                auto nb2 = get<1>(*onb1) < get<1>(*onb2) ? onb1 : onb2;
+    //             std::vector<LPoint<>> divisions;
+    //             std::vector<LPoint<>> m_slab;
+    //             std::vector<LPoint<>> b_slab;
+    //             auto between_f = [&](LPoint<> const& pt){
+    //                 return get<1>(pt) <= get<1>(*nb1) && get<1>(*nb2) <= get<1>(pt);
+    //             };
+    //             auto pointXComp = [](LPoint<> const& p1, LPoint<> const& p2){
+    //                 return get<0>(p1) < get<0>(p2);
+    //             };
+    //             std::remove_copy_if(net.begin(), net.end(), std::back_inserter(divisions), between_f);
+    //             //Filter the m_slab and b_slab points
+    //             std::remove_copy_if(m_points.begin(), m_points.end(), std::back_inserter(m_slab), between_f);
+    //             std::remove_copy_if(b_points.begin(), b_points.end(), std::back_inserter(b_slab), between_f);
+    //             std::sort(divisions.begin(), divisions.end(), pointXComp);
 
-                std::vector<LPoint<>> divisions;
-                std::vector<LPoint<>> m_slab;
-                std::vector<LPoint<>> b_slab;
-                auto between_f = [&](LPoint<> const& pt){
-                    return get<1>(pt) <= get<1>(*nb1) && get<1>(*nb2) <= get<1>(pt);
-                };
-                auto pointXComp = [](LPoint<> const& p1, LPoint<> const& p2){
-                    return get<0>(p1) < get<0>(p2);
-                };
-                std::remove_copy_if(net.begin(), net.end(), std::back_inserter(divisions), between_f);
-                //Filter the m_slab and b_slab points
-                std::remove_copy_if(m_points.begin(), m_points.end(), std::back_inserter(m_slab), between_f);
-                std::remove_copy_if(b_points.begin(), b_points.end(), std::back_inserter(b_slab), between_f);
-                std::sort(divisions.begin(), divisions.end(), pointXComp);
+    //             //Now position the points into each division
+    //             using part_t = std::vector<std::vector<LPoint<>>>;
+    //             part_t m_parts(divisions.size() + 1,  std::vector<LPoint<>>());
+    //             part_t b_parts(divisions.size() + 1, std::vector<LPoint<>>());
 
-                //Now position the points into each division
-                using part_t = std::vector<std::vector<LPoint<>>>;
-                part_t m_parts(divisions.size() + 1,  std::vector<LPoint<>>());
-                part_t b_parts(divisions.size() + 1, std::vector<LPoint<>>());
+    //             auto place_pts = [&] (part_t & parts, decltype(m_points) all_pts) {
+    //                 for (auto& pt : all_pts) {
+    //                     auto loc_it = std::lower_bound(divisions.begin(), divisions.end(), pt, pointXComp);
+    //                     parts[loc_it - divisions.begin()].emplace_back(pt);
+    //                 }
+    //             };
+    //             place_pts(m_parts, m_slab);
+    //             place_pts(b_parts, b_slab);
 
-                auto place_pts = [&] (part_t & parts, decltype(m_points) all_pts) {
-                    for (auto& pt : all_pts) {
-                        auto loc_it = std::lower_bound(divisions.begin(), divisions.end(), pt, pointXComp);
-                        parts[loc_it - divisions.begin()].emplace_back(pt);
-                    }
-                };
-                place_pts(m_parts, m_slab);
-                place_pts(b_parts, b_slab);
+    //             for (int i = 0; i < divisions.size() - 1; i++) {
+    //                 double m_count = 0;
+    //                 double b_count = 0;
+    //                 std::unordered_set<size_t> active_m_labels;
+    //                 std::unordered_set<size_t> active_b_labels;
+    //                 for (int j = i + 1; j < divisions.size(); j++) {
+    //                     for (auto m_b = m_parts[j].begin(); m_b != m_parts[j].end(); ++m_b) {
+    //                         if (active_m_labels.find(m_b->getLabel()) != active_m_labels.end()) {
+    //                             m_count += m_b->getRedWeight();
+    //                             active_m_labels.insert(m_b->getLabel());
+    //                         }
+    //                     }
+    //                     for (auto b_b = b_parts[j].begin(); b_b != b_parts[j].end(); ++b_b) {
+    //                         if (active_m_labels.find(b_b->getLabel()) != active_b_labels.end()) {
+    //                             b_count += b_b->getRedWeight();
+    //                             active_b_labels.insert(b_b->getLabel());
+    //                         }
+    //                     }
+    //                     double new_val = func(m_count / m_Total, b_count / b_Total);
+    //                     if (new_val > maxRect.fValue()) {
+    //                         maxRect = Rectangle(get<0>(divisions[i]), get<1>(*nb1), get<0>(divisions[j]), get<1>(*nb2), new_val);
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     return maxRect;
+    // }
 
-                for (int i = 0; i < divisions.size() - 1; i++) {
-                    double m_count = 0;
-                    double b_count = 0;
-                    std::unordered_set<size_t> active_m_labels;
-                    std::unordered_set<size_t> active_b_labels;
-                    for (int j = i + 1; j < divisions.size(); j++) {
-                        for (auto m_b = m_parts[j].begin(); m_b != m_parts[j].end(); ++m_b) {
-                            if (active_m_labels.find(m_b->getLabel()) != active_m_labels.end()) {
-                                m_count += m_b->getRedWeight();
-                                active_m_labels.insert(m_b->getLabel());
-                            }
-                        }
-                        for (auto b_b = b_parts[j].begin(); b_b != b_parts[j].end(); ++b_b) {
-                            if (active_m_labels.find(b_b->getLabel()) != active_b_labels.end()) {
-                                b_count += b_b->getRedWeight();
-                                active_b_labels.insert(b_b->getLabel());
-                            }
-                        }
-                        double new_val = func(m_count / m_Total, b_count / b_Total);
-                        if (new_val > maxRect.fValue()) {
-                            maxRect = Rectangle(get<0>(divisions[i]), get<1>(*nb1), get<0>(divisions[j]), get<1>(*nb2), new_val);
-                        }
-                    }
-                }
-            }
-        }
-        return maxRect;
-    }
-
-    Rectangle maxRectStatLabels(std::vector<LPoint<>> const& net,
-                                 std::vector<LPoint<>> const& m_points,
-                                 std::vector<LPoint<>> const& b_points,
-                                 double rho) {
-        return maxRectLabels(net, m_points, b_points, [&](double mr, double br){
-            return kulldorff(mr, br, rho);
-        });
-    }
+    // Rectangle maxRectStatLabels(std::vector<LPoint<>> const& net,
+    //                              std::vector<LPoint<>> const& m_points,
+    //                              std::vector<LPoint<>> const& b_points,
+    //                              double rho) {
+    //     return maxRectLabels(net, m_points, b_points, [&](double mr, double br){
+    //         return kulldorff(mr, br, rho);
+    //     });
+    // }
 
     //////////////////////////////////////////////////////////////////////////////////
     //END OF LABELED RECTANGLE CODE//////////////////////////////////////////////////

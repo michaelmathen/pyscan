@@ -3,8 +3,9 @@
 //
 #include <random>
 
-#include "BloomFilter.hpp"
 #include "Utilities.hpp"
+
+#include "BloomFilter.hpp"
 
 namespace pyscan {
 
