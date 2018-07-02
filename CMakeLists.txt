@@ -2,10 +2,15 @@ cmake_minimum_required(VERSION 3.5)
 project(pyscan)
 
 set(CMAKE_CXX_STANDARD 14)
-#set(CMAKE_C_FLAGS_DEBUG "-DDEBUG")
-find_package( Boost 1.36.0 COMPONENTS python REQUIRED)
-find_package( PythonLibs 2.7 REQUIRED )
+set(CMAKE_C_FLAGS_DEBUG "-fPIC")
+
+#set(Python_ADDITIONAL_VERSIONS 3.5)
+find_package( PythonLibs 3 REQUIRED )
 include_directories( ${PYTHON_INCLUDE_DIRS} )
+#set(Boost_USE_STATIC_LIBS True)
+#set(Boost_PYTHON_VERSION_TAG "-py35")
+find_package( Boost 1.36.0 COMPONENTS python-py35 REQUIRED)
+
 include_directories(${Boost_INCLUDE_DIRS})
 set(SOURCE_FILES
         src/BloomFilter.cpp
@@ -23,7 +28,7 @@ set(SOURCE_FILES
         src/HalfplaneScan.hpp
         src/DiskScan.cpp
         src/DiskScan.hpp
-        src/Utilities.cpp src/DiskScan2.hpp src/DiskScan2.cpp)
+        src/Utilities.cpp src/DiskScan2.hpp src/DiskScan2.cpp src/PolyTree.cpp)
 
 set(PY_SOURCE_FILES
         src/pyscan.cpp src/DiskScan2.hpp src/DiskScan2.cpp)

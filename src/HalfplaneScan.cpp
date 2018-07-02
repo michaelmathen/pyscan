@@ -53,6 +53,7 @@ namespace pyscan {
             for (size_t j = 0; j < angles.size(); j++) {
                 angles[j] = order_f(*(pb + j));
             }
+	   //TODO this is probably an off by one error.
             auto set_delta = [&] (auto& deltas, auto b_it, auto e_it, auto w_it) {
                 double w_curr = 0;
                 for (; b_it != e_it; ++b_it) {
@@ -80,6 +81,7 @@ namespace pyscan {
             for (size_t j = 0; j < angles.size(); j++) {
                 double stat = f(red_curr / red_total, blue_curr / blue_total);
                 if (max_discrepancy <= stat) {
+                    //   std::cout << red_curr / red_total << std::endl;
                     max_line = correct_orientation(p_0, *(j + pb));
                     max_discrepancy = stat;
                 }

@@ -48,8 +48,6 @@ namespace pyscan {
         quantiles(r_begin, r_end, y_pts.begin(), y_pts.begin() + r / 2, red_weight.begin(), compY);
         quantiles(b_begin, b_end, x_pts.begin() + r / 2, x_pts.end() , blue_weight.begin(), compY);
 
-
-
         for (auto &el : x_pts) {
             x_coords.push_back(getX(el));
         }

@@ -53,9 +53,27 @@ namespace pyscan {
             coords.fill(0);
         }
 
+        virtual std::string str() const {
+            std::stringstream ss;
+            ss << *this;
+            return ss.str();
+        }
+
+        double normalization_factor(Point<dim> const& pt) const {
+            /*
+             * Assumes that these are parallel. pt = (ax, ay, ac) so this returns
+             * a
+             */
+            for (size_t i = 0; i < dim; i++) {
+                if (!aeq(coords[i], 0.0)) {
+                    return pt[i] / coords[i];
+                }
+            }
+            return 1;
+        }
 
         friend std::ostream& operator<<(std::ostream& os, Point const& pt)  { 
-            os << "pyscan::Point(";
+            os << "Point(";
             for (auto &el : pt.coords) {
                 os << el << ", ";
             }
@@ -102,20 +120,24 @@ namespace pyscan {
             return alte(dot(*this, p1), 0.0);
         }
 
+        virtual bool below_closed(Point<dim> const& p1) const {
+            return alte(0.0, dot(*this, p1));
+        }
+
         virtual bool above(Point<dim> const& p1) const {
             return alt(dot(*this, p1), 0.0);
         }
 
-        virtual bool parallel(Point<dim> const& l) const {
-            for (int i = 0; i < dim; i++) {
-                if (!aeq(coords[i], l[i])) {
-                    return false;
-                }
-            }
-            return true;
+        virtual bool below(Point<dim> const& p1) const {
+            return alt(0.0, dot(*this, p1));
         }
+
+
     };
 
+    inline bool parallel(Point<2> const& l1, Point<2> const& l2) {
+        return aeq(intersection(l1, l2)[2], 0);
+    }
 
     template<int dim>
     inline double dot(Point<dim> const& p1, Point<dim> const& p2) {
@@ -169,22 +191,6 @@ namespace pyscan {
     using point3_it = point3_list::iterator;
     using label_list = std::vector<long>;
 
-
-    inline bool above_closed_interval(Pt2 const& l, Pt2 const& seg, Pt2 const& p1, Pt2 const& p2) {
-       if (l.parallel(seg)) {
-           return alte(l[2], seg[2]);
-       } else {
-          return l.above_closed(p1) && l.above_closed(p2);
-       }
-    }
-
-    inline bool above_interval(Pt2 const& l, Pt2 const& seg, Pt2 const& p1, Pt2 const& p2) {
-        if (l.parallel(seg)) {
-            return alt(l[2], seg[2]);
-        } else {
-            return l.above(p1) && l.above(p2);
-        }
-    }
 
     inline void getLoc(Pt2 const& p, double& x, double& y) {
         x = p[0] / p[2];

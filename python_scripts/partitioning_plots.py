@@ -34,7 +34,7 @@ partitioning_map = {'pmat_poly_pts_color': '#e41a1c',
                     "pchan_poly_lts_name": 'Chan Poly Lines',
                     "pchan_trap_pts_name": 'Chan Trap Points',
                     "pchan_trap_lts_name": 'Chan Trap Lines',
-                    "box_name" : "KD Tree Sample",
+                    "box_name" : "Ham Tree Sample",
                     "sample_name": "Random Sample",
                     "output_size": "Output Size",
                     "input_size": "Input Size",
@@ -122,8 +122,12 @@ def plot_partitioning_test_axis(ax, fnames, result_name, vparam_name):
     ax.set_ylabel(partitioning_map[result_name])
 
 
-def plot_partitioning(fnames, result_name, output_name, vparam_name, x_min, x_max):
+def plot_partitioning(fnames, result_name, output_name, vparam_name, x_min=-1, x_max=2, log_y=False, log_x=False):
     f, ax = plt.subplots()
+    if log_y:
+        ax.set_yscale("log")
+    if log_x:
+        ax.set_xscale("log")
     plot_partitioning_test_axis(ax, fnames, result_name, vparam_name)
     # ax.set_xlim([x_min, x_max])
     f.savefig(output_name,
@@ -135,13 +139,18 @@ def plot_partitioning(fnames, result_name, output_name, vparam_name, x_min, x_ma
 
 
 
-def plot_discrepancy(fnames, names, result_name, vparam_name, output_name, log_x=False, log_y=False):
+def plot_discrepancy(fnames, names, result_name, vparam_name, output_name, xlabel=None, ylabel=None, log_x=False, log_y=False):
     f, ax = plt.subplots()
 
-    # if log_y:
-    #     ax.set_yscale("log")
-    # if log_x:
-    #ax.set_xscale("log")
+    if log_y:
+        ax.set_yscale("log")
+    if log_x:
+        ax.set_xscale("log")
+
+    if xlabel is None:
+        xlabel = vparam_name
+    if ylabel is None:
+        ylabel = result_name
 
     min_result = math.inf
     max_result = -math.inf
@@ -154,12 +163,17 @@ def plot_discrepancy(fnames, names, result_name, vparam_name, output_name, log_x
         indices = sorted(range(len(vparam)), key = lambda x: vparam[x])
 
         vparam = [vparam[i] for i in indices]
-        results = [.0134 - results[i] for i in indices]
+        results = [0.015352402939208653 - results[i] for i in indices]
 
+        # ax.plot(np.log10(vparam), results, marker=partitioning_map[name + "_m"],
+        #                                  color=partitioning_map[name + "_color"],
+        #                                  #label=partitioning_map[name + "_name"],
+        #         linestyle="None")
         plotting_tools.kernel_error_plot(ax, np.log10(vparam), results, vparam_name, result_name,
                                          marker=partitioning_map[name + "_m"],
                                          color=partitioning_map[name + "_color"],
-                                         label=partitioning_map[name + "_name"], sig1=.15, alpha=.2, error_bars=False)
+                                         label=partitioning_map[name + "_name"], sig1=.1, alpha=.2, error_bars=False)
+
 
         # ax.plot(np.log10(vparam), results,
         #             marker=partitioning_map[name + "_m"],
@@ -167,12 +181,13 @@ def plot_discrepancy(fnames, names, result_name, vparam_name, output_name, log_x
         #             label=partitioning_map[name + "_name"]
         #             )
     #ax.plot([-2, 3], [.0134, .0134], '-', label="Max Discrepancy", linestyle="dashed")
+
     ax.get_xaxis().set_major_formatter(tick.FormatStrFormatter("$10^{%.1f}$"))
-    ax.set_xlabel(partitioning_map[vparam_name])
+    ax.set_xlabel("Time (sec)")
     ax.set_ylabel("Discrepancy Error")
     ax.legend(loc="best")
-    ax.set_xlim([-.2, 1])
-    ax.set_ylim([0, .012])
+    ax.set_xlim([-.7,2])
+    ax.set_ylim([0, .015])
     f.savefig(output_name,
                 bbox_inches='tight',
                 dpi=partitioning_map["dpi"],
@@ -193,20 +208,16 @@ fieldnames = ["vparam", "r", "input_size", "output_size", "cell_size",
 
 if __name__ == "__main__":
 
+    #
+    input_directory = "small_comparisons7/"
 
-    input_directory = "small_comparisons5/"
-    # plot_partitioning([input_directory + "input_size_pmat_poly_dts.csv",
-    #                    input_directory + "input_size_pmat_poly_lts.csv",
-    #                    input_directory + "input_size_pmat_poly_pts.csv",
-    #                    input_directory + "input_size_box.csv",
-    #                    input_directory + "input_size_pchan_poly_dts.csv"],
-    #                   "error",
-    #                   input_directory + "input_size_error_plots.pdf"
-    #                   )
-
-    # for i in ["input_size"]:
+    # for i in ["input_size", "output_size"]:
     #     #i = "output_size"
     #     for j in ["error", "time"]:
+    #         if i == "output_size" and j == "error":
+    #             log_y = True
+    #         else:
+    #             log_y = False
     #         plot_partitioning([input_directory + i +"_pmat_poly_dts.csv",
     #                            input_directory + i + "_pmat_poly_lts.csv",
     #                            input_directory + i + "_pmat_poly_pts.csv",
@@ -219,125 +230,32 @@ if __name__ == "__main__":
     #                           input_directory + i + "_" + j + "_plots.pdf",
     #                           i
     #                           ,16,
-    #                           128)
+    #                           128,
+    #                           log_y=log_y)
 
 
-    input_directory = "Discrepancy5/"
+    input_directory = "Discrepancy7/"
     plot_discrepancy([
               input_directory + "chan_discrepancy.csv",
-               input_directory + "chans_discrepancy.csv",
-               input_directory + "mat_discrepancy.csv",
-               input_directory + "naive_discrepancy.csv",
-               input_directory + "quad_discrepancy.csv"
+              input_directory + "chans_discrepancy.csv",
+             input_directory + "mat_discrepancy.csv",
+                input_directory + "naive_discrepancy.csv",
+                input_directory + "quad_discrepancy.csv"
                ],
-              ["pchan",
+              [
+               "pchan",
                "pchans",
                "pmat_poly_pts",
                "sample",
-               "box"],
+              "box"
+              ],
                 "m_disc",
               "time",
                 input_directory + "s" + "_plots.pdf",
               log_y=False,
-              log_x=True)
+              log_x=False)
 
 
-    # plot_partitioning(["input_size_pchan_poly_lts__2_100000_200_1",
-    #                    "input_size_pchan_poly_pts__2_100000_200_1",
-    #                     "input_size_pchan_trap_lts__2_100000_200_1",
-    #                     "input_size_pchan_trap_pts__2_100000_200_1",
-    #                    "input_size_box_100000_200_1",
-    #                    "input_sampling_chan.csv"],
-    #                   "time",
-    #                   "input_size_time_pchan_plot_2_100000_200_1"
-    #                   )
-    #
-    # plot_partitioning(["input_size_pchan_poly_lts__2_100000_200_1",
-    #                    "input_size_pchan_poly_pts__2_100000_200_1",
-    #                     "input_size_pchan_trap_lts__2_100000_200_1",
-    #                     "input_size_pchan_trap_pts__2_100000_200_1",
-    #                    "input_size_box_100000_200_1",
-    #                    "input_sampling_chan.csv"],
-    #                   "error",
-    #                   "input_size_error_pchan_plot_2_100000_200_1"
-    #                   )
-
-    # plot_partitioning(["r_pchan_poly_lts__100000_200_1",
-    #                    "r_pchan_poly_pts__100000_200_1",
-    #                    "r_pchan_trap_lts__100000_200_1",
-    #                    "r_pchan_trap_pts__100000_200_1"],
-    #                   "time",
-    #                   "r_time_pchan_plot_100000_200_1"
-    #                   )
-    #
-    # plot_partitioning(["r_pchan_poly_lts__100000_200_1",
-    #                    "r_pchan_poly_pts__100000_200_1",
-    #                    "r_pchan_trap_lts__100000_200_1",
-    #                    "r_pchan_trap_pts__100000_200_1"],
-    #                   "error",
-    #                   "r_error_pchan_plot_2_100000_200_1"
-    #                   )
-    #
-    #
-    #
-    # plot_partitioning(["output_size_pmat_poly_lts__4_10000_200_1",
-    #                    "output_size_pmat_poly_pts__4_10000_200_1",
-    #                    "output_size_pmat_trap_lts__4_10000_200_1",
-    #                    "output_size_pmat_trap_pts__4_10000_200_1",
-    #                    "output_sampling_mat.csv"],
-    #                   "time",
-    #                   "output_size_time_pmat_plot_4_10000_200_1"
-    #                   )
-    #
-    # plot_partitioning(["output_size_pmat_poly_lts__4_10000_200_1",
-    #                    "output_size_pmat_poly_pts__4_10000_200_1",
-    #                    "output_size_pmat_trap_lts__4_10000_200_1",
-    #                    "output_size_pmat_trap_pts__4_10000_200_1",
-    #                    "output_sampling_mat.csv"],
-    #                   "error",
-    #                   "output_size_error_pmat_plot_4_10000_200_1"
-    #                   )
-    #
-    # plot_partitioning(["input_size_pmat_poly_lts__4_10000_200_1",
-    #                    "input_size_pmat_poly_pts__4_10000_200_1",
-    #                    "input_size_pmat_trap_lts__4_10000_200_1",
-    #                    "input_size_pmat_trap_pts__4_10000_200_1",
-    #                    "input_sampling_mat.csv"],
-    #                   "time",
-    #                   "input_size_time_pmat_plot_4_10000_200_1"
-    #                   )
-    #
-    # plot_partitioning(["input_size_pmat_poly_lts__4_10000_200_1",
-    #                    "input_size_pmat_poly_pts__4_10000_200_1",
-    #                    "input_size_pmat_trap_lts__4_10000_200_1",
-    #                    "input_size_pmat_trap_pts__4_10000_200_1",
-    #                    "input_sampling_mat.csv"],
-    #                   "error",
-    #                   "input_size_error_pmat_plot_2_10000_200_1"
-    #                   )
-    #
-    # plot_partitioning(["r_pmat_poly_lts__10000_200_1",
-    #                    "r_pmat_poly_pts__10000_200_1",
-    #                    "r_pmat_trap_lts__10000_200_1",
-    #                    "r_pmat_trap_pts__10000_200_1"],
-    #                   "time",
-    #                   "r_time_pmat_plot_10000_200_1"
-    #                   )
-    #
-    # plot_partitioning(["r_pmat_poly_lts__10000_200_1",
-    #                    "r_pmat_poly_pts__10000_200_1",
-    #                    "r_pmat_trap_lts__10000_200_1",
-    #                    "r_pmat_trap_pts__10000_200_1"],
-    #                   "error",
-    #                   "r_error_pmat_plot_2_10000_200_1"
-    #                   )
-
-#     # plot_partitioning(["timing_plot_r4_poly_pts.csv",
-#     #                     "timing_plot_r4_poly_pts.csv",
-#     #                    "timing_plot_r4_trap_lts.csv",
-#     #                     "timing_plot_r4_trap_pts.csv"],
-#     #                   "error"
-#     #                   )
 
 
 

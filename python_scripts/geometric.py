@@ -73,6 +73,7 @@ def approx_eq_below(a, b):
 def restrict(x, min_x, max_x):
     return min(max_x, max(x, min_x))
 
+
 class Line:
 
     def __repr__(self):

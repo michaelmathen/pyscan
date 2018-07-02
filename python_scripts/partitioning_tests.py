@@ -140,24 +140,24 @@ def b_test(pts, b_low, b_high, output_size, count=20):
     sample_size = testing_framework(pts, b_low, b_high, count, part_f="pchan", vparam="b",
                       test_set_f="dts",
                       cutting_f="poly", output_size=output_size)
-    #
-    # for cutting in ["poly"]:
-    #     for l_name in ["dts", "lts", "pts"]:
-    #         testing_framework(pts, b_low, b_high, count, part_f="pmat", vparam="b",
-    #                           test_set_f=l_name,
-    #                           cutting_f=cutting, output_size=output_size)
+
+    for cutting in ["poly"]:
+        for l_name in ["dts", "lts", "pts"]:
+            testing_framework(pts, b_low, b_high, count, part_f="pmat", vparam="b",
+                              test_set_f=l_name,
+                              cutting_f=cutting, output_size=output_size)
 
 
 def output_size(pts, output_low, output_high, count=10):
     #testing output size
-    testing_framework(pts, output_low, output_high, count, b=22, part_f="pchan",
-                        test_set_f="dts",
-                        cutting_f="poly")
-    testing_framework(pts, output_low, output_high, count, b=22, part_f="pchans",
-                                    test_set_f="dts",
-                                    cutting_f="poly")
-    #testing_framework(pts, output_low, output_high, count, part_f="sample")
-    # testing_framework(pts, output_low, output_high, count, part_f="box")
+    # testing_framework(pts, output_low, output_high, count, b=22, part_f="pchan",
+    #                     test_set_f="dts",
+    #                     cutting_f="poly")
+    # testing_framework(pts, output_low, output_high, count, b=22, part_f="pchans",
+    #                                 test_set_f="dts",
+    #                                 cutting_f="poly")
+    testing_framework(pts, output_low, output_high, count, part_f="sample")
+    testing_framework(pts, output_low, output_high, count, part_f="box")
     #
     # for l_name in [ "dts", "lts", "pts"]:
     #     testing_framework(pts, output_low, output_high, count, part_f="pmat",
@@ -172,12 +172,12 @@ def input_size(pts, input_low, input_high, output_size, count=10):
     #         testing_framework(pts, input_low, input_high, count, vparam="input_size", part_f="pmat",
     #                           test_set_f=l_name, cutting_f=cutting, output_size=output_size,
     #                           b=16)
-
-    sample_size = testing_framework(pts, input_low, input_high, count, b=22, part_f="pchan", output_size=output_size, vparam="input_size")
-    sample_size = testing_framework(pts, input_low, input_high, count, b=22, part_f="pchans", output_size=output_size, vparam="input_size")
     #
-    # testing_framework(pts, input_low, input_high, count, part_f="sample", output_size=output_size, vparam="input_size")
-    # testing_framework(pts, input_low, input_high, count, part_f="box", vparam="input_size")
+    # sample_size = testing_framework(pts, input_low, input_high, count, b=22, part_f="pchan", output_size=output_size, vparam="input_size")
+    # sample_size = testing_framework(pts, input_low, input_high, count, b=22, part_f="pchans", output_size=output_size, vparam="input_size")
+
+    testing_framework(pts, input_low, input_high, count, part_f="sample", output_size=output_size, vparam="input_size")
+    testing_framework(pts, input_low, input_high, count, part_f="box", vparam="input_size")
 
 
 if __name__ == "__main__":

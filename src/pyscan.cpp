@@ -32,12 +32,18 @@ auto toPointList(py::object const& el) -> pyscan::point_list {
     return l;
 }
 
-
-
-
 namespace pyscan {
 
+    auto sized_region(double size) -> std::function<double(double, double)> {
+        /*
+         * Useful for finding a region of a certain size.
+         */
 
+        return [size] (double m, double b) {
+            //std::cout << 1 - fabs(m - size) << " " << size << std::endl;
+            return 1 - fabs(m - size);
+        };
+    }
 
     auto toLPt(const py::object& pts, 
             const py::object& weights,
@@ -45,7 +51,7 @@ namespace pyscan {
 
         auto bp = py::stl_input_iterator<Pt2>(pts);
         auto ep = py::stl_input_iterator<Pt2>();
-        auto bw = py::stl_input_iterator<double>(pts);
+        auto bw = py::stl_input_iterator<double>(weights);
         auto ew = py::stl_input_iterator<double>();
         auto bl = py::stl_input_iterator<size_t>(labels);
         auto el = py::stl_input_iterator<size_t>();
@@ -85,43 +91,72 @@ namespace pyscan {
        };
     }
 
-    Subgrid maxSubgridLinKull(Grid const& grid, double eps, double rho) {
-      return maxSubgridLinearSimple(grid, eps, rho_f(regularized_kulldorff, rho));
+    Subgrid maxSubgridLin(Grid const& grid, double eps, std::function<double(double, double)> const& f) {
+      return maxSubgridLinearSimple(grid, eps, f);
     }
 
-    Subgrid maxSubgridLinKullTheory(Grid const& grid, double eps, double rho){
-        return maxSubgridLinearTheory(grid, eps, rho_f(regularized_kulldorff, rho));
+    Subgrid maxSubgridLinTheory(Grid const& grid, double eps, std::function<double(double, double)> const& f){
+        return maxSubgridLinearTheory(grid, eps, f);
     }
 
-    Subgrid maxSubgridLinGamma(Grid const& grid, double eps) {
-        return maxSubgridLinearSimple(grid, eps, rho_f(gamma, 0.0));
+    Subgrid maxSubgridSlow(Grid const &grid, std::function<double(double, double)> const& f) {
+        return maxSubgridNonLinear(grid, f);
     }
 
-    Subgrid maxSubgridKullSlow(Grid const &grid, double rho) {
-        return maxSubgridNonLinear(grid, rho_f(kulldorff, rho));
+    py::tuple maxHalfspace(const py::object& net,
+                        const py::object& sampleM,
+                        const py::object& weightM,
+                        const py::object& sampleB,
+                        const py::object& weightB,
+                        std::function<double(double, double)> const& f) {
+        auto net_points = to_std_vector<pyscan::Point<>>(net);
+        auto red = to_std_vector<Pt2>(sampleM);
+        auto red_w = to_std_vector<double>(weightM);
+        auto blue = to_std_vector<Pt2>(sampleB);
+        auto blue_w = to_std_vector<double>(weightB);
+        Pt2 d1;
+        double d1value;
+        std::tie(d1, d1value) = max_halfplane(net_points,
+                red, red_w, blue, blue_w, f);
+        return py::make_tuple(d1, d1value);
     }
 
-
-    Subgrid maxSubgridLinearSlow(Grid const& grid, double a, double b) {
-        return maxSubgridNonLinear(grid, [&](double red, double blue) {
-            return a * red + b * blue;
-        });
+    py::tuple maxHalfspaceLabels(const py::object& net,
+                           const py::object& sampleM,
+                           const py::object& weightM,
+                           const py::object& labelM,
+                           const py::object& sampleB,
+                           const py::object& weightB,
+                           const py::object& labelB,
+                           std::function<double(double, double)> const& f) {
+        auto net_points = to_std_vector<pyscan::Point<>>(net);
+        auto red = to_std_vector<Pt2>(sampleM);
+        auto red_w = to_std_vector<double>(weightM);
+        auto red_l = to_std_vector<long>(labelM);
+        auto blue = to_std_vector<Pt2>(sampleB);
+        auto blue_w = to_std_vector<double>(weightB);
+        auto blue_l = to_std_vector<long>(labelB);
+        Pt2 d1;
+        double d1value;
+        std::tie(d1, d1value) = max_halfplane_labeled(net_points,
+                                              red, red_w, red_l,
+                                                      blue, blue_w, blue_l, f);
+        return py::make_tuple(d1, d1value);
     }
-
-    py::tuple maxDisk(const py::object& net, 
+    py::tuple maxDisk(const py::object& net,
             const py::object& sampleM, 
             const py::object& weightM,
             const py::object& sampleB,
             const py::object& weightB,
-             double rho) {
+            std::function<double(double, double)> const& f) {
         auto net_points = to_std_vector<pyscan::Point<>>(net);
         auto sample_p_M = toWPt(sampleM, weightM);
         auto sample_p_B = toWPt(sampleB, weightB);
         Disk d1;
         double d1value;
-        std::tie(d1, d1value) = diskScanSlow(net_points, sample_p_M, 
+        std::tie(d1, d1value) = diskScan(net_points, sample_p_M, 
             sample_p_B, 
-            rho_f(kulldorff, rho));
+            f);
         return py::make_tuple(d1, d1value);
     }
 
@@ -132,14 +167,58 @@ namespace pyscan {
             const py::object& sampleB,
             const py::object& weightB,
             const py::object& labelB,
-             double rho) {
+            std::function<double(double, double)> const& f) {
         auto net_points = to_std_vector<pyscan::Point<>>(net);
         auto lpointsM = toLPt(sampleM, weightM, labelM);
         auto lpointsB = toLPt(sampleB, weightB, labelB);
         Disk d1;
         double d1value;
-        std::tie(d1, d1value) = diskScanLabels(net_points, lpointsM, lpointsB, rho_f(kulldorff, rho));
+        std::tie(d1, d1value) = diskScanLabels(net_points, lpointsM, lpointsB, f);
         return py::make_tuple(d1, d1value);
+    }
+
+      py::tuple maxHalfplane(const py::object& net, 
+            const py::object& sampleM, 
+            const py::object& weightM,
+            const py::object& sampleB,
+            const py::object& weightB,
+            std::function<double(double, double)> const& f) {
+        auto net_points = to_std_vector<pyscan::Point<>>(net);
+        auto sample_p_M = to_std_vector<Pt2>(sampleM);
+        auto sample_p_B = to_std_vector<Pt2>(sampleB);
+        auto weight_p_M = to_std_vector<double>(weightM);
+        auto weight_p_B = to_std_vector<double>(weightB);
+        Point<> d1;
+        double d1value;
+        std::tie(d1, d1value) = max_halfplane(net_points, 
+            sample_p_M,
+            weight_p_M,
+            sample_p_B,
+            weight_p_B, 
+            f);
+        return py::make_tuple(d1, d1value);
+    }
+
+    py::tuple maxHalfplaneLabeled(const py::object& net, 
+            const py::object& sampleM, 
+            const py::object& weightM,
+            const py::object& labelM,
+            const py::object& sampleB,
+            const py::object& weightB,
+            const py::object& labelB,
+            std::function<double(double, double)> const& f) {
+        auto net_points = to_std_vector<Pt2>(net);
+        auto lpointsM = toLPt(sampleM, weightM, labelM);
+        auto lpointsB = toLPt(sampleB, weightB, labelB);
+        Disk d1;
+        double d1value;
+        std::tie(d1, d1value) = diskScanLabels(net_points, lpointsM, lpointsB, f);
+        return py::make_tuple(d1, d1value);
+    }
+
+
+    double evaluate(std::function<double(double, double)> const& f, double m, double b) {
+        return f(m, b);
     }
 
     // pyscan::Rectangle maxRectLabelsD(const py::object& net, const py::object& sampleM, const py::object& sampleB, double rho) {
@@ -217,14 +296,36 @@ BOOST_PYTHON_MODULE(pyscan) {
             .def("__repr__", &pyscan::Subgrid::toString)
             .def("fValue", &pyscan::Subgrid::fValue);
 
-    py::class_<pyscan::Pt2>("Point", py::init<double, double>())
+    py::class_<pyscan::Pt2>("Point", py::init<double, double, double>())
             .def("approx_eq", &pyscan::Point<>::approx_eq)
             .def("__getitem__", &pyscan::Point<>::operator[])
             .def("above", &pyscan::Point<>::above)
             .def("above_closed", &pyscan::Point<>::above_closed)
             .def("parallel", &pyscan::Point<>::parallel)
+            .def("__str__", &pyscan::Point<>::str)
+            .def("__repr__", &pyscan::Point<>::str)
             .def("getX", &pyscan::getX<2>)
             .def("getY", &pyscan::getY<2>);
+
+    py::class_<std::function<double(double, double)> >("CFunction", py::no_init);
+
+    py::scope().attr("KULLDORF") = std::function<double(double, double)>(
+        [&](double m, double b) {
+            return pyscan::kulldorff(m, b, .0001);
+    });
+
+    py::scope().attr("DISC") = std::function<double(double, double)>(
+        [&](double m, double b) {
+            return fabs(m - b);
+    });
+
+    py::scope().attr("RKULLDORF") = std::function<double(double, double)>(
+        [&](double m, double b) {
+            return pyscan::regularized_kulldorff(m, b, .0001);
+    });
+
+    py::def("evaluate", &pyscan::evaluate);
+    py::def("size_region", &pyscan::sized_region);
 
     py::def("dot", &pyscan::dot<2>);
     py::def("intersection", &pyscan::intersection);
@@ -240,27 +341,20 @@ BOOST_PYTHON_MODULE(pyscan) {
             .def("contains", &pyscan::Disk::contains);
 
 
-    py::def("makeGrid", makeGrid);
+    py::def("make_grid", makeGrid);
     //py::def("makeNetGrid", makeNetGrid);
     //py::def("makeSampleGrid", makeSampleGrid);
 
-    pyscan::Subgrid (*f1)(pyscan::Grid const&, double) = &pyscan::maxSubgridKullSlow;
-    pyscan::Subgrid (*f2)(pyscan::Grid const&, double, double) = &pyscan::maxSubgridLinearSlow;
 
-    py::def("maxSubgridKullSlow", f1);
-    py::def("maxSubgridLinearSlow", f2);
-
-    pyscan::Subgrid (*m1)(pyscan::Grid const&, double, double) = &pyscan::maxSubgridLinearSimple;
-    py::def("maxSubgridLinearSimple", m1);
-    py::def("maxSubgridLinear", &pyscan::maxSubgridLinearG);
-
-    pyscan::Subgrid (*fl1)(pyscan::Grid const&, double, double) = &pyscan::maxSubgridLinKull;
-    py::def("maxSubgridKull", fl1);
-
-    py::def("maxSubgridTheoryKull", pyscan::maxSubgridLinKullTheory);
+    py::def("max_subgrid_slow", &pyscan::maxSubgridSlow);
+    py::def("max_subgrid_linear_simple", &pyscan::maxSubgridLin);
+    py::def("max_subgrid_linear", &pyscan::maxSubgridLinTheory);
 
     //py::def("maxDiskLabels", &maxDiskLabelsI);
-    py::def("maxDiskLabels", &pyscan::maxDiskLabels);
+    py::def("max_halfplane", &pyscan::maxHalfspace);
+    py::def("max_halfplane_labels", &pyscan::maxHalfspaceLabels);
+    py::def("max_disk", &pyscan::maxDisk);
+    py::def("max_disk_labels", &pyscan::maxDiskLabels);
     //py::def("maxRectLabels", &maxRectLabelsI);
     //py::def("maxRectLabels", &maxRectLabelsD);
 
