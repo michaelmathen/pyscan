@@ -3,16 +3,20 @@
 //
 
 #include <functional>
+#include <iostream>
+
+
+#include <boost/iterator_adaptors.hpp>
+#include <boost/python.hpp>
+#include <boost/python/stl_iterator.hpp>
+
+
 
 #include "RectangleScan.hpp"
 #include "HalfplaneScan.hpp"
 #include "DiskScan.hpp"
 #include "DiskScan2.hpp"
-
-#include <boost/iterator_adaptors.hpp>
-#include <boost/python.hpp>
-#include <boost/python/stl_iterator.hpp>
-#include <iostream>
+#include "FunctionApprox.hpp"
 
 namespace py = boost::python;
 
@@ -31,6 +35,15 @@ auto toPointList(py::object const& el) -> pyscan::point_list {
     }
     return l;
 }
+
+template<class T>
+py::list std_vector_to_py_list(const std::vector<T>& v) {
+    py::object get_iter = py::iterator<std::vector<T> >();
+    py::object iter = get_iter(v);
+    py::list l(iter);
+    return l;
+}
+
 
 namespace pyscan {
 
@@ -216,6 +229,29 @@ namespace pyscan {
         return py::make_tuple(d1, d1value);
     }
 
+    py::object approx_hull(double eps, std::function<double(pyscan::Vec2)> const& phi, const py::object& traj_pts) {
+        auto pts = to_std_vector<Pt2>(traj_pts);
+        auto max_f = [&] (Vec2 direction) {
+            double max_dir = -std::numeric_limits<double>::infinity();
+            Pt2 curr_pt {0.0, 0.0, 0.0};
+            for (auto& pt : pts) {
+                double curr_dir = direction[0] * pyscan::getX(pt) + direction[1] * pyscan::getY(pt);
+                if (max_dir < curr_dir) {
+                    max_dir = curr_dir;
+                    curr_pt = pt;
+                }
+            }
+            return Vec2{pyscan::getX(curr_pt), pyscan::getY(curr_pt)};
+        };
+        std::vector<pyscan::Point<>> core_set_pts;
+        {
+            auto vecs = eps_core_set(eps, phi, max_f);
+            for (auto &v :vecs) {
+                core_set_pts.push_back(pyscan::Point<>(v[0], v[1], 1.0));
+            }
+        }
+        return std_vector_to_py_list(core_set_pts);
+    }
 
     double evaluate(std::function<double(double, double)> const& f, double m, double b) {
         return f(m, b);
@@ -301,9 +337,9 @@ BOOST_PYTHON_MODULE(pyscan) {
             .def("__getitem__", &pyscan::Point<>::operator[])
             .def("above", &pyscan::Point<>::above)
             .def("above_closed", &pyscan::Point<>::above_closed)
-            .def("parallel", &pyscan::Point<>::parallel)
             .def("__str__", &pyscan::Point<>::str)
             .def("__repr__", &pyscan::Point<>::str)
+            .def("__eq__", &pyscan::Point<>::operator==)
             .def("getX", &pyscan::getX<2>)
             .def("getY", &pyscan::getY<2>);
 
@@ -330,8 +366,6 @@ BOOST_PYTHON_MODULE(pyscan) {
     py::def("dot", &pyscan::dot<2>);
     py::def("intersection", &pyscan::intersection);
     py::def("correct_orientation", &pyscan::correct_orientation);
-    py::def("above_closed_interval", &pyscan::above_closed_interval);
-    py::def("above_interval", &pyscan::above_interval);
 
 
     py::class_<pyscan::Disk>("Disk", py::init<double, double, double>())
@@ -357,6 +391,6 @@ BOOST_PYTHON_MODULE(pyscan) {
     py::def("max_disk_labels", &pyscan::maxDiskLabels);
     //py::def("maxRectLabels", &maxRectLabelsI);
     //py::def("maxRectLabels", &maxRectLabelsD);
-
+    py::def("approximate_hull", pyscan::approx_hull);
 
 }

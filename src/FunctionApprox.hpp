@@ -6,6 +6,7 @@
 #define PYSCAN_FUNCTIONAPPROX_HPP
 #include <functional>
 #include <cmath>
+#include <vector>
 #include <array>
 
 namespace pyscan {
@@ -40,5 +41,9 @@ namespace pyscan {
 	double approximateHull(double eps,
 	        	std::function<double(Vec2)> phi, //function to maximize
 	            std::function<Vec2(Vec2)> lineMaxF);
+
+	std::vector<Vec2> eps_core_set(double eps,
+								   std::function<double(Vec2)> phi, //function to maximize
+								   std::function<Vec2(Vec2)> lineMaxF);
 }
 #endif //PYSCAN_FUNCTIONAPPROX_HPP

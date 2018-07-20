@@ -199,4 +199,66 @@ namespace pyscan {
                         //This finds the region with the largest baseline amount, but smallest measured amount in terms of the stat fun
                         approximateHull(eps, Vec2{-1, 0}, Vec2{0, 1}, phi, lineMaxF));
     }
+
+    std::vector<Vec2> eps_core_set(double eps,
+                                   Vec2 const cc, Vec2 const& cl,
+                                   std::function<double(Vec2)> phi, //function to maximize
+                                   std::function<Vec2(Vec2)> lineMaxF) {
+
+            auto avg = [&] (Vec2 const& v1, Vec2 const& v2) {
+                Vec2 v_out = v1 + v2;
+                Vec2 tmp;
+                double norm = 1.0 / sqrt(v_out[0] * v_out[0] + v_out[1] * v_out[1]);
+                tmp[0] = v_out[0] * norm;
+                tmp[1] = v_out[1] * norm;
+                return tmp;
+            };
+
+            int ux, uy, lx, ly;
+            struct Frame {
+                Vec2 d_cc, d_cl, p_cc, p_cl;
+                Frame(Vec2 const& di, Vec2 const& dj, Vec2 const& cc, Vec2 const& cl) :
+                        d_cc(di), d_cl(dj), p_cc(cc), p_cl(cl) {}
+            };
+            auto pcc = lineMaxF(cc), pcl = lineMaxF(cl);
+            std::vector<Vec2> pts{ pcc, pcl };
+            std::deque<Frame> frameStack;
+            frameStack.emplace_back(cc, cl, pcc, pcl);
+            while(!frameStack.empty()) {
+                Frame lf = frameStack.front();
+                frameStack.pop_front();
+                double di = dot(lf.d_cc, lf.p_cc);
+                double dj = dot(lf.d_cl, lf.p_cl);
+                double vi = phi(lf.p_cc);
+                double vj = phi(lf.p_cl);
+                double maxRValue = std::max({vi, vj});
+                Vec2 p_ext;
+
+                if (lineIntersection(lf.d_cc, di, lf.d_cl, dj, p_ext)) {
+                    double vw = phi(p_ext);
+                    if (vw - maxRValue > eps) {
+
+                        Vec2 m_vec = avg(lf.d_cc, lf.d_cl);
+                        auto line_max = lineMaxF(m_vec);
+                        pts.push_back(line_max);
+                        frameStack.emplace_back(lf.d_cc, m_vec, lf.p_cc, line_max);
+                        frameStack.emplace_back(m_vec, lf.d_cl, line_max, lf.p_cl);
+                    }
+                }
+            }
+            return pts;
+    }
+
+    std::vector<Vec2> eps_core_set(double eps,
+                        std::function<double(Vec2)> phi, //function to maximize
+                        std::function<Vec2(Vec2)> lineMaxF) {
+        auto core_set1 = eps_core_set(eps, Vec2{1, 0}, Vec2{0, -1}, phi, lineMaxF)
+            ,core_set2 = eps_core_set(eps, Vec2{0, 1}, Vec2{1, 0}, phi, lineMaxF)
+            ,core_set3 = eps_core_set(eps, Vec2{1, 0}, Vec2{-1, 0}, phi, lineMaxF)
+            ,core_set4 = eps_core_set(eps, Vec2{-1, 0}, Vec2{0, -1}, phi, lineMaxF);
+        core_set1.insert(core_set1.end(), core_set2.begin(), core_set2.end());
+        core_set1.insert(core_set1.end(), core_set3.begin(), core_set3.end());
+        core_set1.insert(core_set1.end(), core_set4.begin(), core_set4.end());
+        return core_set1;
+    }
   }

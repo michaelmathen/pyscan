@@ -1,8 +1,9 @@
 import random
 import bisect
+from geometric import line_discrepancy, stat, exact_discrepancy
 import math
 import partitioning as Part
-from partitioning import line_discrepancy, stat, exact_discrepancy
+
 import itertools
 import csv
 import time

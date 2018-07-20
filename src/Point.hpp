@@ -132,7 +132,6 @@ namespace pyscan {
             return alt(0.0, dot(*this, p1));
         }
 
-
     };
 
     inline bool parallel(Point<2> const& l1, Point<2> const& l2) {

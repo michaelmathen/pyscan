@@ -1,7 +1,7 @@
 from geometric import approx_above, \
     approx_eq, Line, to_dual_line, \
     Segment, to_dual_pt, deduplicate_points, \
-    to_line, Wedge, l_wedge, r_wedge
+    to_line, Wedge, l_wedge, r_wedge, line_discrepancy, l3tol2
 import pprint
 import itertools
 import random
@@ -767,7 +767,7 @@ class PolyTree2:
         for poly, _, segment in self.zone(seg, curr_node, is_seg=True):
             poly.insert_segment(segment)
 
-    def partition(self, root, parent, max_number):
+    def partition(self, root, parent, max_number, eps=.4):
         """
         Partitions this current node so that each cell contains min_pt_count of cells.
 
@@ -775,24 +775,61 @@ class PolyTree2:
         """
         if root is None:
             root = self.root
-        cells = deque()
-        cells.append((root, parent, True))
+
+        mv = statistics.median([y - x for x, y in root.get_points()])
+        segment = root.line_to_segment(Line(1, mv))
+        upper, lower, new_parent = self.insert_segment(parent, root, segment)
+
+        cells = [FirstList((-upper.pt_count() - lower.pt_count(), upper, lower, new_parent))]
         output_cells = []
-        while cells:
-            root, parent, order_x = cells.pop()
-            if root.pt_count() <= max_number:
-                output_cells.append((root, parent))
+        # print(cell_count)
+        while 2 * len(cells) + len(output_cells) < max_number:
+            # print(len(out_cells) + len(cells), cell_count)
+            _, upper_cell, lower_cell, parent = heapq.heappop(cells)
+            if not upper_cell.get_points():
+                output_cells.append((upper_cell, parent))
+                mv = statistics.median([y - x for x, y in lower_cell.get_points()])
+                segment = lower_cell.line_to_segment(Line(1, mv))
+                upper, lower, new_parent = self.insert_segment(parent, lower_cell, segment)
+                heapq.heappush(cells, FirstList((-upper.pt_count() - lower.pt_count(), upper, lower, new_parent)))
+            elif not lower_cell.get_points():
+                output_cells.append((lower_cell, parent))
+                mv = statistics.median([y - x for x, y in upper_cell.get_points()])
+                segment = upper_cell.line_to_segment(Line(1, mv))
+                upper, lower, new_parent = self.insert_segment(parent, upper_cell, segment)
+                heapq.heappush(cells, FirstList((-upper.pt_count() - lower.pt_count(), upper, lower, new_parent)))
             else:
-                if order_x:
-                    mv = statistics.median([y - x for x, y in root.get_points()])
-                    segment = root.line_to_segment(Line(1, mv))
-                else:
-                    mv = statistics.median([y + x for x, y in root.get_points()])
-                    segment = root.line_to_segment(Line(-1, mv))
-                upper, lower, new_parent = self.insert_segment(parent, root, segment)
-                cells.append((upper, new_parent, not order_x))
-                cells.append((lower, new_parent, not order_x))
+                r_pts = upper_cell.get_points()
+                l_pts = lower_cell.get_points()
+                n = int(2 / eps + 1)
+                s = int(2 / (eps * eps) + 1)
+                while True:
+                    try:
+                        net_sample = random.sample(r_pts, min(n // 2, len(r_pts))) + random.sample(l_pts,
+                                                                                                   min(n // 2, len(l_pts)))
+                        r_samp = random.sample(r_pts, min(s, len(r_pts)))
+                        l_samp = random.sample(l_pts, min(s, len(l_pts)))
+
+                        _, l = line_discrepancy(net_sample, r_samp, [1] * len(r_samp), l_samp, [1] * len(l_samp),
+                                                lambda r, b: 2 - abs(r - .5) ** 2 - abs(b - .5) ** 2)
+                        l = l3tol2(l)
+                        break
+                    except ZeroDivisionError:
+                        continue
+
+                seg_u = upper_cell.line_to_segment(l)
+                seg_l = lower_cell.line_to_segment(l)
+                upper_u, lower_u, new_parent_u = self.insert_segment(parent, upper_cell, seg_u)
+                upper_l, lower_l, new_parent_l = self.insert_segment(parent, lower_cell, seg_l)
+
+                heapq.heappush(cells, FirstList((-upper_u.pt_count() - lower_u.pt_count(), upper_u, lower_u, new_parent_u)))
+                heapq.heappush(cells, FirstList((-upper_l.pt_count() - lower_l.pt_count(), upper_l, lower_l, new_parent_l)))
+
+        for _,c1, c2, p in cells:
+            output_cells.append((c1, p))
+            output_cells.append((c2, p))
         return output_cells
+
 
     def zone(self, line, curr_node=None, is_seg=False):
         """

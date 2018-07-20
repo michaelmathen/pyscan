@@ -8,156 +8,15 @@ import itertools
 import sampling
 import bisect
 import heapq
-from geometric import approx_eq
+from geometric import approx_eq, part_order_function, line_discrepancy
 from seidel_tree import to_line, Segment, Line, \
     approx_above, approx_eq_above
 import poly_tree as poly
 import geometric as geom
 
 
-def stat(m, b):
-    if approx_eq(m, 0) and approx_eq(b, 0):
-        return 0
-    elif approx_eq(b, 0) or approx_eq(b, 1):
-        return 0
-    elif approx_eq(m, 0):
-        return math.log(1 / (1 - b))
-    elif approx_eq(m, 1):
-        return math.log(1 / b)
-    else:
-        return m * math.log(m / b) + (1 - m) * math.log((1 - m) / (1 - b))
 
 
-def order_function(p1, p2):
-    y = p2[0] - p1[0]
-    x = p2[1] - p1[1]
-    if y >= 0:
-        return math.atan2(y, x)
-    else:
-        return math.pi + math.atan2(y, x)
-
-def part_order_function(p1, p2):
-    x = p2[0] - p1[0]
-    y = p2[1] - p1[1]
-    if y >= 0:
-        return math.atan2(y, x)
-    else:
-        return 2 * math.pi + math.atan2(y, x)
-
-
-class Line3:
-
-    def __init__(self, a, b, c):
-        self.a = a
-        self.b = b
-        self.c = c
-
-    def pt_eq_below_exact(self, pt):
-        return self.a * pt[0] + self.b * pt[1] + self.c <= 0
-
-    def pt_eq_below(self, pt):
-        return approx_eq_above(self.a * pt[0] + self.b * pt[1] + self.c, 0)
-
-def det2(a1, a2, b1, b2):
-    return a1 * b2 - a2 * b1
-
-def det3(p_0, p_1):
-    a = det2(p_0[1], 1, p_1[1], 1)
-    b = -det2(p_0[0], 1, p_1[0], 1)
-    c = det2(p_0[0], p_0[1], p_1[0], p_1[1])
-    return a, b, c
-
-def to_line3(pivot, pt):
-    if pt[0] - pivot[0] >= 0:
-        a, b, c = det3(pivot, pt)
-    else:
-        a, b, c = det3(pt, pivot)
-    return Line3(a, b, c)
-
-def exact_discrepancy(line, red_points, red_weights, blue_points, blue_weights):
-    r = sum(w for p, w in zip(red_points, red_weights) if line.pt_eq_below(p))
-    b = sum(w for p, w in zip(blue_points, blue_weights) if line.pt_eq_below(p))
-    return abs(r / sum(red_weights) - b / sum(blue_weights))
-
-def line_discrepancy(net_sample, red_points, red_weights, blue_points, blue_weights, disc=stat):
-    """
-    :param big_samp:
-    :param small_samp:
-    :param weights:
-    :param pt_num:
-    :param n: The sub-sampling size of the small sample.
-    :return:
-    """
-    #net_sample = random.sample(blue_points, n // 2) + random.sample(red_points, n // 2)
-    max_discrepancy = -math.inf
-    max_line = Line3(0, 0, 1)
-    a = 0
-    b = 0
-    if red_weights:
-        a = 1.0 / sum(red_weights)
-    if blue_weights:
-        b = 1.0 / sum(blue_weights)
-
-    for i in range(len(net_sample) - 1):
-        sample_part = net_sample[i + 1:]
-
-        p_0 = net_sample[i]
-        order_f = lambda x: order_function(p_0, x)
-
-        red_delta = [0] * (len(sample_part))
-        blue_delta = [0] * (len(sample_part))
-
-        sample_part.sort(key=lambda x: order_f(x))
-        angles = [order_f(p) for p in sample_part]
-        #all_lines = [to_line3(p_0, p) for p in sample_part]
-
-        l1 = to_line3(p_0, sample_part[0])
-        red_curr = 0
-        blue_curr = 0
-        for p_1, w in zip(red_points, red_weights):
-
-            insertion_pt = bisect.bisect_left(angles, order_f(p_1))
-            if insertion_pt == 0 and l1.pt_eq_below(p_1):
-                red_curr += w
-            else:
-                insertion_pt -= 1
-                if l1.pt_eq_below(p_1):
-                    red_curr += w
-                    red_delta[insertion_pt] += -w
-                else:
-                    red_delta[insertion_pt] += w
-
-        for p_1, w in zip(blue_points, blue_weights):
-            insertion_pt = bisect.bisect_left(angles, order_f(p_1))
-
-            if insertion_pt == 0 and l1.pt_eq_below(p_1):
-                blue_curr += w
-            else:
-                insertion_pt -= 1
-                if l1.pt_eq_below(p_1):
-                    blue_curr += w
-                    blue_delta[insertion_pt] += -w
-                else:
-                    blue_delta[insertion_pt] += w
-
-
-        red_curr = sum(w for p, w in zip(red_points, red_weights) if l1.pt_eq_below(p))
-        blue_curr = sum(w for p, w in zip(blue_points, blue_weights) if l1.pt_eq_below(p))
-        # red_curr += red_delta[0]
-        # blue_curr += blue_delta[0]
-        for db, ds, p_1 in zip(red_delta, blue_delta, sample_part):
-
-            if max_discrepancy <= disc(red_curr * a, blue_curr * b):
-                max_line = to_line3(p_0, p_1)
-                max_discrepancy = disc(red_curr * a, blue_curr * b)
-            # r = sum(w for p, w in zip(red_points, red_weights) if to_line3(p_0, p_1).pt_eq_below(p))
-            # b = sum(w for p, w in zip(blue_points, blue_weights) if to_line3(p_0, p_1).pt_eq_below(p))
-            # print(r, b, red_curr, blue_curr)
-            red_curr += db
-            blue_curr += ds
-
-
-    return max_discrepancy, max_line
 
 class FirstList(list):
     def __lt__(self, other):
@@ -284,8 +143,8 @@ def get_median(pts, ix):
     ord_vals = map(lambda x: x[ix], pts)
     return statistics.median(ord_vals)
 
-
-def point_cuts(pts,  cell_count, eps=.2):
+#.05 .1 .2, .4, 1
+def point_cuts2(pts,  cell_count, eps=.05):
     """
     Divides the points into sets less than max_number.
     Uses alternating x, y order for the points. By doing this
@@ -307,6 +166,7 @@ def point_cuts(pts,  cell_count, eps=.2):
         r_pts = [p for p in curr_pts if mv < p[0]]
         l_pts = [p for p in curr_pts if p[0] <= mv]
         n = int(2 / eps + 1)
+        #print(n)
         s = int(2 / (eps * eps) + 1)
 
         #print(len(net_sample))
@@ -345,6 +205,75 @@ def point_cuts(pts,  cell_count, eps=.2):
 
 
     return [cp for _, cp in cells]
+
+
+#.05 .1 .2, .4, 1
+def point_cuts(pts,  cell_count, eps=0.05   ):
+    """
+    Divides the points into sets less than max_number.
+    Uses alternating x, y order for the points. By doing this
+    we get a set of cells with parameter n^7.9...
+    :param pts:
+    :param max_number:
+    :return:
+    """
+    cells = []
+
+
+    mv = get_median(pts, 0)
+    r_pts = [p for p in pts if mv < p[0]]
+    l_pts = [p for p in pts if p[0] <= mv]
+
+    cells = []
+    heapq.heappush(cells, FirstList((-len(r_pts) - len(l_pts), r_pts, l_pts)))
+
+    #print(cell_count)
+    while 2 * len(cells) < cell_count:
+        #print(len(out_cells) + len(cells), cell_count)
+        _, r_pts, l_pts = heapq.heappop(cells)
+        if not l_pts:
+            mv = get_median(r_pts, 0)
+            r_pts = [p for p in r_pts if mv < p[0]]
+            l_pts = [p for p in r_pts if p[0] <= mv]
+            heapq.heappush(cells, FirstList((-len(r_pts) - len(l_pts), r_pts, l_pts)))
+        elif not r_pts:
+            mv = get_median(l_pts, 0)
+            r_pts = [p for p in l_pts if mv < p[0]]
+            l_pts = [p for p in l_pts if p[0] <= mv]
+            heapq.heappush(cells, FirstList((-len(r_pts) - len(l_pts), r_pts, l_pts)))
+        else:
+            n = int(2 / eps + 1)
+            s = int(2 / (eps * eps) + 1)
+            net_sample = random.sample(r_pts, min(n // 2, len(r_pts))) + random.sample(l_pts, min(n // 2, len(l_pts)))
+            r_samp = random.sample(r_pts, min(s, len(r_pts)))
+            l_samp = random.sample(l_pts, min(s, len(l_pts)))
+
+            _, l = line_discrepancy(net_sample, r_samp, [1] * len(r_samp), l_samp, [1] * len(l_samp), lambda r, b: 2 - abs(r - .5)**2 - abs(b - .5)**2)
+            rl_pts = []
+            ru_pts = []
+            for p in r_pts:
+                if l.pt_eq_below(p):
+                    rl_pts.append(p)
+                else:
+                    ru_pts.append(p)
+            ll_pts = []
+            lu_pts = []
+            for p in l_pts:
+                if l.pt_eq_below(p):
+                    ll_pts.append(p)
+                else:
+                    lu_pts.append(p)
+            heapq.heappush(cells, FirstList((-len(rl_pts) - len(ru_pts), rl_pts, ru_pts)))
+            heapq.heappush(cells, FirstList((-len(ll_pts) - len(lu_pts), ll_pts, lu_pts)))
+
+
+    pt_cells = []
+    for _, cp1, cp2 in cells:
+        pt_cells.append(cp1)
+        pt_cells.append(cp2)
+
+    return pt_cells
+
 
 """
  TODO Move the poly tree algorithm over here and create a chan version of it.
@@ -710,18 +639,18 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import matplotlib
     import partitioning_tests
-    import line_testing
-    pts = partitioning_tests.upload_crimes("crimes.csv")
 
+    pts = partitioning_tests.upload_crimes("crimes.csv")
+    #pts = [(random.random(), random.random()) for i in range(1000000)]
     pts = random.sample(pts, 100000)
 
     matplotlib.rcParams['figure.figsize'] = [20.0, 20.0]
 
 
-    tree = chan_partitions2(pts, b = 28, min_cell_size=100)
+    tree = chan_partitions2(pts, b = 28, min_cell_size=5000)
 
     f, ax = plt.subplots()
-    s_pts = random.sample(pts, 10000)
+    #s_pts = random.sample(pts, 10000)
     x, y = zip(*pts)
     ax.scatter(x, y, marker='.')
 

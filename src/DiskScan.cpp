@@ -6,9 +6,11 @@
 #include <ostream>
 
 #include <set>
+#include <deque>
 #include <unordered_set>
 #include <assert.h>
 
+#include "SparseGrid.hpp"
 #include "Statistics.hpp"
 #include "Point.hpp"
 #include "DiskScan.hpp"
@@ -82,15 +84,20 @@ namespace pyscan {
         // Setup a matrix equation of the form Ax = b
 
         // A
-        double a11 = x2 - x1, a12 = y2 - y1, a21 = x2 - x3, a22 = y2 - y3;
+        double a11 = x2 - x1,
+                a12 = y2 - y1,
+                a21 = x2 - x3,
+                a22 = y2 - y3;
         // b
-        double b1 = (y2 * y2 + x2 * x2 - y1 * y1 - x1 * x1) / 2, b2 = (y2 * y2
-                                                                       + x2 * x2 - y3 * y3 - x3 * x3) / 2;
+        double b1 = (y2 * y2 + x2 * x2 - y1 * y1 - x1 * x1) / 2,
+                b2 = (y2 * y2 + x2 * x2 - y3 * y3 - x3 * x3) / 2;
 
         double detA = a11 * a22 - a12 * a21;
         // inverse of A
-        double ai11 = a22 / detA, ai12 = -a12 / detA, ai21 = -a21 / detA, ai22 = a11
-                                                                                 / detA;
+        double ai11 = a22 / detA,
+                ai12 = -a12 / detA,
+                ai21 = -a21 / detA,
+                ai22 = a11 / detA;
 
         // A^{-1} b = x
         a = ai11 * b1 + ai12 * b2;
@@ -553,5 +560,237 @@ namespace pyscan {
         }
       }
       return std::make_tuple(currMax, maxStat);
+    }
+
+
+    template<typename T, typename TW>
+    std::tuple<Disk, double> disk_scan_restricted(Point<> const& p1,
+                                                Point<> const& p2,
+                                                T& net,
+                                                TW& sampleM,
+                                                TW& sampleB,
+                                                double min_dist,
+                                                double max_dist,
+                                                double m_Total,
+                                                double b_Total,
+                                                std::function<double(double, double)> const& scan) {
+
+
+        Disk currMax;
+        double maxStat = 0;
+
+        auto nB = net.begin(), nE = net.end();
+        auto msBegin = sampleM.begin(), msEnd = sampleM.end();
+        auto bsBegin = sampleB.begin(), bsEnd = sampleB.end();
+
+        //Create a vector between the two points
+        double orthoX, orthoY;
+        findPerpVect(p1, p2, &orthoX, &orthoY);
+        double cX = (getX(p1) + getX(p2)) / 2.0;
+        double cY = (getY(p1) + getY(p2)) / 2.0;
+        auto isNotCol = [&p1, &p2](Pt2 const& pt) {
+            return !colinear(p1, p2, pt);
+        };
+        // Partition these into a set of adding points and removing points
+        auto partitionF = [orthoX, orthoY, cX, cY](Pt2 const &pt) {
+            return (getX(pt) - cX) * orthoX + (getY(pt) - cY) * orthoY <= 0;
+        };
+
+        auto orderF = [orthoX, orthoY, p1, p2, cX, cY](Pt2 const &pt) {
+            // If the point lines up with either of the reference
+            // point then we take this to be a disk defined by only
+            // the reference points.
+            // We are projecting a vector created between
+            //the disk center and center point between the two points.
+            double a, b;
+            solveCircle3(p1, p2, pt, a, b);
+            return orthoX * (a - cX) + orthoY * (b - cY);
+        };
+        auto compF = [&orderF](Pt2 const &pt1, Pt2 const &pt2) {
+            return orderF(pt1) < orderF(pt2);
+        };
+
+        auto asIterEnd = std::partition(msBegin, msEnd, isNotCol);
+        auto bsIterEnd = std::partition(bsBegin, bsEnd, isNotCol);
+        nE = std::partition(nB, nE, isNotCol);
+
+        auto tooBigTooSmall = [&] (Point<> const& pt) {
+            double a, b, r;
+            solveCircle3(p1, p2, pt, a, b, r);
+            return min_dist < r && r <= max_dist;
+        };
+
+        nE = std::partition(nB, nE, tooBigTooSmall);
+
+        double mCount = 0;
+        double bCount = 0;
+        std::for_each(asIterEnd, msEnd, [p1, p2, &mCount](WPoint<> const &pt) {
+            if (onLineSegment(p1, p2, pt)) {
+                mCount += getWeight(pt);
+            }
+        });
+        std::for_each(bsIterEnd, bsEnd, [p1, p2, &bCount](WPoint<> const &pt) {
+            if (onLineSegment(p1, p2, pt)) {
+                bCount += getWeight(pt);
+            }
+        });
+
+        std::sort(nB, nE, compF);
+        std::vector<double> orderV;
+        orderV.reserve(nE - nB);
+        for (auto b = nB; b != nE; b++) {
+            orderV.push_back(orderF(*b));
+        }
+        auto mHigherIt = std::partition(msBegin, asIterEnd, partitionF);
+        auto bHigherIt = std::partition(bsBegin, bsIterEnd, partitionF);
+
+        std::vector<double> mCountsA(nE - nB, 0);
+        std::vector<double> bCountsA(nE - nB, 0);
+        std::vector<double> mCountsR(nE - nB, 0);
+        std::vector<double> bCountsR(nE - nB, 0);
+        std::fill(mCountsR.begin(), mCountsR.end(), 0);
+        std::fill(bCountsR.begin(), bCountsR.end(), 0);
+        std::fill(mCountsA.begin(), mCountsA.end(), 0);
+        std::fill(bCountsA.begin(), bCountsA.end(), 0);
+        /*Probably most of the time is spent here*/
+        partial_counts(msBegin, mHigherIt, orderV, mCountsR, orderF);
+        mCount = computeTotal(msBegin, mHigherIt) + mCount;
+        partial_counts(bsBegin, bHigherIt, orderV, bCountsR, orderF);
+        bCount = computeTotal(bsBegin, bHigherIt) + bCount;
+        partial_counts(mHigherIt, asIterEnd, orderV, mCountsA, orderF);
+        partial_counts(bHigherIt, bsIterEnd, orderV, bCountsA, orderF);
+        /*----------------------------------------------*/
+        //Now scan over the counts.
+        auto size = nE - nB;
+        for (int k = 0; k < size; k++) {
+            mCount += mCountsA[k] - mCountsR[k];
+            bCount += bCountsA[k] - bCountsR[k];
+            double m_hat = mCount / m_Total;
+            double b_hat = bCount / b_Total;
+            double newStat = scan(m_hat, b_hat);
+            if (maxStat <= newStat) {
+                double a, b, r;
+                solveCircle3(p1, p2, *(nB + k), a, b, r);
+                Disk currDisk(a, b, r);
+                currMax = currDisk;
+                maxStat = newStat;
+            }
+        }
+        return std::make_tuple(currMax, maxStat);
+    }
+
+
+    template <typename P, typename T>
+    void insert_queue(std::deque<P> &items, T b_it, T e_it) {
+        for (auto b = b_it; b != e_it; b++) {
+            items.push_front(*b);
+        }
+    }
+
+    template <typename P, typename T>
+    void remove_queue(std::deque<P> &items, T b_it, T e_it) {
+        for (auto b = b_it; b != e_it; b++) {
+            items.pop_back();
+        }
+    }
+
+    std::tuple<Disk, double> disk_scan_scale(point_list& net,
+                                            wpoint_list& sampleM,
+                                            wpoint_list& sampleB,
+                                            uint32_t grid_r,
+                                            std::function<double(double, double)> const& scan) {
+
+            //Calculate the total measured and baseline value.
+            double m_Total = std::accumulate(sampleM.begin(), sampleM.end(), 0.0, [&](double w, WPoint<> const& p){
+                return w + getWeight(p);
+            });
+
+            double b_Total = std::accumulate(sampleB.begin(), sampleB.end(), 0.0, [&](double w, WPoint<> const& pt) {
+                return w + getWeight(pt);
+            });
+
+            SparseGrid<Point<>> grid_net(net, grid_r);
+            SparseGrid<WPoint<>> grid_sample_m(sampleM, grid_r);
+            SparseGrid<WPoint<>> grid_sample_b(sampleB, grid_r);
+
+            using net_it = typename SparseGrid<Point<>>::pt_it;
+            using pt_it = typename SparseGrid<WPoint<>>::pt_it;
+            Disk currMax;
+            double maxStat = 0;
+
+
+            for (uint32_t i = 0; i < grid_r; i++) { // through y
+
+                std::deque<Point<>> net_chunk;
+                std::deque<WPoint<>> m_sample_chunk;
+                std::deque<WPoint<>> b_sample_chunk;
+
+                for (int k = i - 3; k <= i + 1; k++) {// Through y, but ignore the last part
+                    for (int l = 0; l <= 2; l++) { // through x
+                        //Rotate this queue
+                        net_it chunk_begin, chunk_end;
+                        std::tie(chunk_begin, chunk_end) = grid_net(k, l);
+                        insert_queue(net_chunk, chunk_begin, chunk_end);
+
+                        pt_it wchunk_begin, wchunk_end;
+                        std::tie(wchunk_begin, wchunk_end) = grid_sample_m(k, l);
+                        insert_queue(m_sample_chunk, wchunk_begin, wchunk_end);
+
+                        std::tie(wchunk_begin, wchunk_end) = grid_sample_b(k, l);
+                        insert_queue(b_sample_chunk, wchunk_begin, wchunk_end);
+                    }
+                }
+                for (int j = 0; j < grid_r; j++) { // through x
+
+                    // extend this vector with points with this entire block
+                    for (int k = i - 2; k <= i + 2; i++) {
+
+                        //Rotate this queue
+                        net_it chunk_begin, chunk_end;
+                        std::tie(chunk_begin, chunk_end) = grid_net(j + 2, k);
+                        insert_queue(net_chunk, chunk_begin, chunk_end);
+
+                        pt_it wchunk_begin, wchunk_end;
+                        std::tie(wchunk_begin, wchunk_end) = grid_sample_m(j + 2, k);
+                        insert_queue(m_sample_chunk, wchunk_begin, wchunk_end);
+
+                        std::tie(wchunk_begin, wchunk_end) = grid_sample_b(j + 2, k);
+                        insert_queue(b_sample_chunk, wchunk_begin, wchunk_end);
+
+
+                        std::tie(chunk_begin, chunk_end) = grid_net(j - 3, k);
+                        remove_queue(net_chunk, chunk_begin, chunk_end);
+
+                        std::tie(wchunk_begin, wchunk_end) = grid_sample_m(j - 3, k);
+                        remove_queue(m_sample_chunk, wchunk_begin, wchunk_end);
+
+                        std::tie(wchunk_begin, wchunk_end) = grid_sample_b(j - 3, k);
+                        remove_queue(b_sample_chunk, wchunk_begin, wchunk_end);
+                    }
+
+                    net_it pt_begin, pt_end;
+                    std::tie(pt_begin, pt_end) = grid_net(i, j);
+                    for (auto pt1 = pt_begin; pt1 != pt_end - 2; pt1++) {
+                        for (auto pt2 = pt1 + 1; pt2 != pt_end - 1; pt2++) {
+                            Disk d1;
+                            double possible_max;
+                            std::tie(d1, possible_max) = disk_scan_restricted(*pt1, *pt2,
+                                    net_chunk,
+                                    m_sample_chunk,
+                                    b_sample_chunk,
+                                    grid_net.get_resolution(),
+                                    2 * grid_net.get_resolution(),
+                                    m_Total,
+                                    b_Total,
+                                    scan);
+                            if (possible_max > maxStat) {
+                                currMax = d1;
+                                maxStat = possible_max;
+                            }
+                        }
+                    }
+                }
+            }
+            return std::make_tuple(currMax, maxStat);
     }
 }

@@ -206,10 +206,75 @@ fieldnames = ["vparam", "r", "input_size", "output_size", "cell_size",
 #                   "test.png"
 #                   )
 
+
+
+def plot_partitioning_box_inside(ax, fnames, result_name, vparam_name, labels, markers):
+    min_result = math.inf
+    max_result = -math.inf
+    min_vparam = math.inf
+    max_vparam = -math.inf
+    for fname, label, marker in zip(fnames, labels, markers):
+        with open(fname) as file:
+            vparam = []
+            results = []
+
+
+            reader_obj = csv.DictReader(file)
+            row = None
+            for row in reader_obj:
+                vparam.append(float(row[vparam_name]))
+                results.append(float(row[result_name]))
+
+            indices = sorted(range(len(vparam)), key = lambda x: vparam[x])
+            vparam = [vparam[i] for i in indices]
+            results = [results[i] for i in indices]
+            min_vparam = min(min(vparam), min_vparam)
+            max_vparam = max(max(vparam), max_vparam)
+
+            min_result = min(min(results), min_result)
+            max_result = max(max(results), max_result)
+            if row is not None:
+                if result_name == "error":
+                    #plt.yscale("log")
+                    # plt.xscale("log")
+                    # ax.yaxis.set_major_locator(tick.LogLocator(base=10.0,numticks=4, subs=(0.001, )))
+                    # ax.yaxis.set_major_formatter(tick.LogFormatter(labelOnlyBase=False))
+                    ax.plot(vparam, results,
+                                label=label,
+                                marker=marker
+                            )
+
+                else:
+                    ax.plot(vparam, results,
+                                label=label,
+                                marker=marker)
+    ax.set_xlim([min_vparam, max_vparam])
+    ax.set_ylim([0, max_result])
+    ax.legend(loc="best")
+    ax.set_xlabel(partitioning_map[vparam_name])
+    ax.set_ylabel(partitioning_map[result_name])
+
+
+def plot_partitioning_box(fnames, result_name, output_name, vparam_name, labels, markers, log_y=False, log_x=False):
+    f, ax = plt.subplots()
+    if log_y:
+        ax.set_yscale("log")
+    if log_x:
+        ax.set_xscale("log")
+    plot_partitioning_box_inside(ax, fnames, result_name, vparam_name, labels, markers)
+    # ax.set_xlim([x_min, x_max])
+    f.savefig(output_name,
+                bbox_inches='tight',
+                dpi=partitioning_map["dpi"],
+                figsize=partitioning_map["shape"]
+                )
+    plt.show()
+
+
 if __name__ == "__main__":
 
     #
-    input_directory = "small_comparisons7/"
+    # input_directory = "small_comparisons7/"
 
     # for i in ["input_size", "output_size"]:
     #     #i = "output_size"
@@ -234,28 +299,65 @@ if __name__ == "__main__":
     #                           log_y=log_y)
 
 
-    input_directory = "Discrepancy7/"
-    plot_discrepancy([
-              input_directory + "chan_discrepancy.csv",
-              input_directory + "chans_discrepancy.csv",
-             input_directory + "mat_discrepancy.csv",
-                input_directory + "naive_discrepancy.csv",
-                input_directory + "quad_discrepancy.csv"
-               ],
-              [
-               "pchan",
-               "pchans",
-               "pmat_poly_pts",
-               "sample",
-              "box"
-              ],
-                "m_disc",
-              "time",
-                input_directory + "s" + "_plots.pdf",
-              log_y=False,
-              log_x=False)
+    # input_directory = "Discrepancy7/"
+    # plot_discrepancy([
+    #           input_directory + "chan_discrepancy.csv",
+    #           input_directory + "chans_discrepancy.csv",
+    #          input_directory + "mat_discrepancy.csv",
+    #             input_directory + "naive_discrepancy.csv",
+    #             input_directory + "quad_discrepancy.csv"
+    #            ],
+    #           [
+    #            "pchan",
+    #            "pchans",
+    #            "pmat_poly_pts",
+    #            "sample",
+    #           "box"
+    #           ],
+    #             "m_disc",
+    #           "time",
+    #             input_directory + "s" + "_plots.pdf",
+    #           log_y=False,
+    #           log_x=False)
 
 
 
+    #
+    input_directory = "Box_csvs/"
 
+    for i in ["input_size", "output_size"]:
+
+        for j in ["error", "time"]:
+            if i == "output_size" and j == "error":
+                log_y = True
+            else:
+                log_y = False
+            plot_partitioning_box([
+                               input_directory + i + "_box_1.csv",
+                                input_directory + i + "_ham_1.csv",
+                                input_directory + i + "_box_02.csv",
+                                input_directory + i + "_ham_02.csv",
+                                input_directory + i + "_box_005.csv",
+                input_directory + i + "_ham_005.csv"
+
+            ],
+                              j,
+                              input_directory + i + "_" + j + "_plots.pdf",
+                              i,
+                              ["Ham Tree t=3",
+                               "Double Ham Tree t=3",
+                               "Ham Tree t=11",
+                               "Double Ham Tree t=11",
+                               "Ham Tree t=41",
+                               "Double Ham Tree n=41"
+                               ], [
+                                    'x',
+                                    'v',
+                                    'o',
+                                    'p',
+                                    ".",
+                                    '>',
+                                    '<'
+                             ],
+                              log_y=log_y)
 

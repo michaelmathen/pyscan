@@ -14,7 +14,7 @@ namespace pyscan {
 
 
 
-    class Segment : Point<2> {
+    class Segment : public Point<2> {
         Point<> l_end_pt;
         Point<> r_end_pt;
     public:
@@ -24,30 +24,31 @@ namespace pyscan {
         }
         Segment() {}
 
-        Point<> get_left() const;
-        Point<> get_right() const;
-        Point<> get_line() const;
-        bool lte(Point<> const& line) const;
-        bool gte(Point<> const& line) const;
-        bool lt(Point<> const& line) const;
-        bool gt(Point<> const& line) const;
-        bool crossed(Point<> const& line) const;
-        std::tuple<Segment, Segment> split(Point<> const& line) const;
+        virtual Point<> const& get_left() const;
+        virtual Point<> const& get_right() const;
+        virtual Point<> const& get_line() const;
+        virtual bool lte(Point<> const& line) const;
+        virtual bool gte(Point<> const& line) const;
+        virtual bool lt(Point<> const& line) const;
+        virtual bool gt(Point<> const& line) const;
+        virtual bool crossed(Point<> const& line) const;
+        virtual std::tuple<Segment, Segment> split(Point<> const& seg) const;
     };
 
-    class WSegment : Segment {
+    class WSegment : public Segment {
         double weight;
     public:
-        WSegment(WPoint<> const& line,
+        WSegment(Point<> const& line,
                  Point<> const& el,
-                 Point<> const& er, double w) : Segment<>(line, el, er),
+                 Point<> const& er, double w) : Segment(line, el, er),
                      weight(w) {
         }
-        WSegment() : Segment<>(), weight(0){}
+        WSegment() : Segment(), weight(0){}
 
         double get_weight() const {
-            return w;
+            return weight;
         }
+        std::tuple<WSegment, WSegment> wsplit(Point<> const& seg) const;
     };
 
     class Node {
@@ -81,7 +82,10 @@ namespace pyscan {
                 crossing_segments(ls),
                 points(pts)
         {
-            total_weight = std::accumulate(weights.begin(), weights.end(), 0);
+            total_weight = std::accumulate(crossing_segments.begin(), crossing_segments.end(), 0,
+                    [&](double t, WSegment const& item) {
+                        return t + item.get_weight();
+            });
         }
 
     public:
@@ -115,32 +119,33 @@ namespace pyscan {
         /*
          * Find a split that approximately splits the points into 4 segments with approximately the same points.
         */
-        Segment four_point_split(double eps) const;
-
-        /*
-         * ham sandwich split till max weight
-        */
-        node_list partition_mw(double max_weight, double eps);
-
-        /*
-         * ham sandwich split till there are b cells.
-        */
-        node_list partition_mc(int b);
-
-        /*
-         *Cutting till max weight
-        */
-        node_list cutting_mw(double max_weight);
-
-        /*
-         * Cut till there are b cells.
-        */
-        node_list cutting_mc(int b);
-
+        std::tuple<Segment, Segment> four_point_split(double eps) const;
 
         double get_weight() const;
 
     };
+
+
+    /*
+    * ham sandwich split till max weight
+   */
+    node_list partition_mw(double max_weight, double eps, node_ptr const& p1);
+
+    /*
+     * ham sandwich split till there are b cells.
+    */
+    node_list partition_mc(int b, node_ptr const& p1);
+
+    /*
+     *Cutting till max weight
+    */
+    node_list cutting_mw(double max_weight, node_ptr const& p1);
+
+    /*
+     * Cut till there are b cells.
+    */
+    node_list cutting_mc(int b, node_ptr p1);
+
 
 }
 #endif //PYSCAN_CUTTINGS_HPP

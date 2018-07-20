@@ -1,4 +1,4 @@
-
+import bisect
 import pprint
 import math
 
@@ -738,5 +738,150 @@ def simplex_area_center(simplex, min_x, max_x, min_y, max_y):
         weights.append(w)
     return weighted_avg(centers, weights)
 
+def stat(m, b):
+    if approx_eq(m, 0) and approx_eq(b, 0):
+        return 0
+    elif approx_eq(b, 0) or approx_eq(b, 1):
+        return 0
+    elif approx_eq(m, 0):
+        return math.log(1 / (1 - b))
+    elif approx_eq(m, 1):
+        return math.log(1 / b)
+    else:
+        return m * math.log(m / b) + (1 - m) * math.log((1 - m) / (1 - b))
 
 
+def order_function(p1, p2):
+    y = p2[0] - p1[0]
+    x = p2[1] - p1[1]
+    if y >= 0:
+        return math.atan2(y, x)
+    else:
+        return math.pi + math.atan2(y, x)
+
+def part_order_function(p1, p2):
+    x = p2[0] - p1[0]
+    y = p2[1] - p1[1]
+    if y >= 0:
+        return math.atan2(y, x)
+    else:
+        return 2 * math.pi + math.atan2(y, x)
+
+
+class Line3:
+
+    def __init__(self, a, b, c):
+        self.a = a
+        self.b = b
+        self.c = c
+
+    def pt_eq_below_exact(self, pt):
+        return self.a * pt[0] + self.b * pt[1] + self.c <= 0
+
+    def pt_eq_below(self, pt):
+        return approx_eq_above(self.a * pt[0] + self.b * pt[1] + self.c, 0)
+
+def det2(a1, a2, b1, b2):
+    return a1 * b2 - a2 * b1
+
+def det3(p_0, p_1):
+    a = det2(p_0[1], 1, p_1[1], 1)
+    b = -det2(p_0[0], 1, p_1[0], 1)
+    c = det2(p_0[0], p_0[1], p_1[0], p_1[1])
+    return a, b, c
+
+def to_line3(pivot, pt):
+    if pt[0] - pivot[0] >= 0:
+        a, b, c = det3(pivot, pt)
+    else:
+        a, b, c = det3(pt, pivot)
+    return Line3(a, b, c)
+
+def l3tol2(line):
+    return Line(-line.a / line.b, -line.c / line.b)
+
+def exact_discrepancy(line, red_points, red_weights, blue_points, blue_weights):
+    r = sum(w for p, w in zip(red_points, red_weights) if line.pt_eq_below(p))
+    b = sum(w for p, w in zip(blue_points, blue_weights) if line.pt_eq_below(p))
+    return abs(r / sum(red_weights) - b / sum(blue_weights))
+
+
+def line_discrepancy(net_sample, red_points, red_weights, blue_points, blue_weights, disc=stat):
+    """
+    :param big_samp:
+    :param small_samp:
+    :param weights:
+    :param pt_num:
+    :param n: The sub-sampling size of the small sample.
+    :return:
+    """
+    #net_sample = random.sample(blue_points, n // 2) + random.sample(red_points, n // 2)
+    max_discrepancy = -math.inf
+    max_line = Line3(0, 0, 1)
+    a = 0
+    b = 0
+    if red_weights:
+        a = 1.0 / sum(red_weights)
+    if blue_weights:
+        b = 1.0 / sum(blue_weights)
+
+    for i in range(len(net_sample) - 1):
+        sample_part = net_sample[i + 1:]
+
+        p_0 = net_sample[i]
+        order_f = lambda x: order_function(p_0, x)
+
+        red_delta = [0] * (len(sample_part))
+        blue_delta = [0] * (len(sample_part))
+
+        sample_part.sort(key=lambda x: order_f(x))
+        angles = [order_f(p) for p in sample_part]
+        #all_lines = [to_line3(p_0, p) for p in sample_part]
+
+        l1 = to_line3(p_0, sample_part[0])
+        red_curr = 0
+        blue_curr = 0
+        for p_1, w in zip(red_points, red_weights):
+
+            insertion_pt = bisect.bisect_left(angles, order_f(p_1))
+            if insertion_pt == 0 and l1.pt_eq_below(p_1):
+                red_curr += w
+            else:
+                insertion_pt -= 1
+                if l1.pt_eq_below(p_1):
+                    red_curr += w
+                    red_delta[insertion_pt] += -w
+                else:
+                    red_delta[insertion_pt] += w
+
+        for p_1, w in zip(blue_points, blue_weights):
+            insertion_pt = bisect.bisect_left(angles, order_f(p_1))
+
+            if insertion_pt == 0 and l1.pt_eq_below(p_1):
+                blue_curr += w
+            else:
+                insertion_pt -= 1
+                if l1.pt_eq_below(p_1):
+                    blue_curr += w
+                    blue_delta[insertion_pt] += -w
+                else:
+                    blue_delta[insertion_pt] += w
+
+
+        red_curr = sum(w for p, w in zip(red_points, red_weights) if l1.pt_eq_below(p))
+        blue_curr = sum(w for p, w in zip(blue_points, blue_weights) if l1.pt_eq_below(p))
+        # red_curr += red_delta[0]
+        # blue_curr += blue_delta[0]
+        for db, ds, p_1 in zip(red_delta, blue_delta, sample_part):
+
+            if max_discrepancy <= disc(red_curr * a, blue_curr * b):
+                max_line = to_line3(p_0, p_1)
+                max_discrepancy = disc(red_curr * a, blue_curr * b)
+            # r = sum(w for p, w in zip(red_points, red_weights) if to_line3(p_0, p_1).pt_eq_below(p))
+            # b = sum(w for p, w in zip(blue_points, blue_weights) if to_line3(p_0, p_1).pt_eq_below(p))
+            # print(r, b, red_curr, blue_curr)
+            red_curr += db
+            blue_curr += ds
+
+
+    return max_discrepancy, max_line

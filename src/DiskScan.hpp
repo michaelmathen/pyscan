@@ -99,5 +99,13 @@ namespace pyscan {
                   wpoint_list& sampleM,
                   wpoint_list& sampleB,
                   std::function<double(double, double)> const& scan);
+
+
+    std::tuple<Disk, double> diskScanGrid(point_list& net,
+                                        wpoint_list& sampleM,
+                                        wpoint_list& sampleB,
+                                        uint32_t min_res,
+                                        uint32_t max_res,
+                                        std::function<double(double, double)> const& scan);
 }
 #endif //PYSCAN_DISKSCAN_HPP_HPP

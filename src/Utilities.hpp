@@ -9,6 +9,7 @@
 #include <functional>
 #include <sstream>
 #include <ostream>
+#include <cstdint>
 
 namespace pyscan {
 
@@ -88,6 +89,26 @@ namespace pyscan {
                 curr_weight = 0;
             }
         });
+    }
+
+
+
+    uint64_t morton(uint32_t a, uint32_t b) {
+
+        uint64_t x = a, y = b;
+        x = (x | (x << 16)) & 0x0000FFFF0000FFFF;
+        x = (x | (x << 8)) & 0x00FF00FF00FF00FF;
+        x = (x | (x << 4)) & 0x0F0F0F0F0F0F0F0F;
+        x = (x | (x << 2)) & 0x3333333333333333;
+        x = (x | (x << 1)) & 0x5555555555555555;
+
+        y = (y | (y << 16)) & 0x0000FFFF0000FFFF;
+        y = (y | (y << 8)) & 0x00FF00FF00FF00FF;
+        y = (y | (y << 4)) & 0x0F0F0F0F0F0F0F0F;
+        y = (y | (y << 2)) & 0x3333333333333333;
+        y = (y | (y << 1)) & 0x5555555555555555;
+
+        return x | (y << 1);
     }
 
 }

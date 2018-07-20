@@ -156,7 +156,7 @@ def output_size(pts, output_low, output_high, count=10):
     # testing_framework(pts, output_low, output_high, count, b=22, part_f="pchans",
     #                                 test_set_f="dts",
     #                                 cutting_f="poly")
-    testing_framework(pts, output_low, output_high, count, part_f="sample")
+    #testing_framework(pts, output_low, output_high, count, part_f="sample")
     testing_framework(pts, output_low, output_high, count, part_f="box")
     #
     # for l_name in [ "dts", "lts", "pts"]:
@@ -176,7 +176,7 @@ def input_size(pts, input_low, input_high, output_size, count=10):
     # sample_size = testing_framework(pts, input_low, input_high, count, b=22, part_f="pchan", output_size=output_size, vparam="input_size")
     # sample_size = testing_framework(pts, input_low, input_high, count, b=22, part_f="pchans", output_size=output_size, vparam="input_size")
 
-    testing_framework(pts, input_low, input_high, count, part_f="sample", output_size=output_size, vparam="input_size")
+    #testing_framework(pts, input_low, input_high, count, part_f="sample", output_size=output_size, vparam="input_size")
     testing_framework(pts, input_low, input_high, count, part_f="box", vparam="input_size")
 
 

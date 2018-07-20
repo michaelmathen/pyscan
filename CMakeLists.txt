@@ -15,8 +15,6 @@ include_directories(${Boost_INCLUDE_DIRS})
 set(SOURCE_FILES
         src/BloomFilter.cpp
         src/BloomFilter.hpp
-        src/EpsSamples.cpp
-        src/EpsSamples.hpp
         src/FunctionApprox.cpp
         src/FunctionApprox.hpp
         src/Point.hpp
@@ -28,10 +26,10 @@ set(SOURCE_FILES
         src/HalfplaneScan.hpp
         src/DiskScan.cpp
         src/DiskScan.hpp
-        src/Utilities.cpp src/DiskScan2.hpp src/DiskScan2.cpp src/PolyTree.cpp)
+        src/Utilities.cpp src/DiskScan2.hpp src/DiskScan2.cpp)
 
 set(PY_SOURCE_FILES
-        src/pyscan.cpp src/DiskScan2.hpp src/DiskScan2.cpp)
+        src/pyscan.cpp src/DiskScan2.hpp src/DiskScan2.cpp src/SparseGrid.hpp)
 
 set(test true)
 
@@ -92,6 +90,6 @@ if (test)
 endif()
 
 
-add_library(pyscan SHARED ${SOURCE_FILES} ${PY_SOURCE_FILES} src/DiskScan2.hpp src/DiskScan2.cpp)
+add_library(pyscan SHARED ${SOURCE_FILES} ${PY_SOURCE_FILES})
 target_link_libraries(pyscan ${Boost_LIBRARIES})
 set_target_properties(pyscan PROPERTIES PREFIX "")
