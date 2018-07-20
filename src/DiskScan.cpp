@@ -694,6 +694,7 @@ namespace pyscan {
         }
     }
 
+
     std::tuple<Disk, double> disk_scan_scale(point_list& net,
                                             wpoint_list& sampleM,
                                             wpoint_list& sampleB,
@@ -793,4 +794,223 @@ namespace pyscan {
             }
             return std::make_tuple(currMax, maxStat);
     }
+
+
+    template<typename T, typename TW>
+    std::tuple<Disk, double> label_disk_scan_restricted(
+            Point<> const& p1,
+            Point<> const& p2,
+            T& net,
+            TW& sampleM,
+            TW& sampleB,
+            double min_dist,
+            double max_dist,
+            double m_Total,
+            double b_Total,
+            std::function<double(double, double)> const& scan) {
+
+        Disk currMax;
+        double maxStat = 0;
+
+        auto nB = net.begin(), nE = net.end();
+        auto msBegin = sampleM.begin(), msEnd = sampleM.end();
+        auto bsBegin = sampleB.begin(), bsEnd = sampleB.end();
+        //Create a vector between the two points
+        double orthoX, orthoY;
+        findPerpVect(p1, p2, &orthoX, &orthoY);
+        double cX = (getX(p1) + getX(p2)) / 2.0;
+        double cY = (getY(p1) + getY(p2)) / 2.0;
+        auto isNotCol = [&p1, &p2](Point<> const &pt) {
+            return !colinear(p1, p2, pt);
+        };
+        // Partition these into a set of adding points and removing points
+        auto partitionF = [orthoX, orthoY, cX, cY](Point<> const &pt) {
+            return (getX(pt) - cX) * orthoX + (getY(pt) - cY) * orthoY <= 0;
+        };
+
+        auto orderF = [orthoX, orthoY, &p1, &p2, cX, cY](Point<> const &pt) {
+            // If the point lines up with either of the reference
+            // point then we take this to be a disk defined by only
+            // the reference points.
+            // We are projecting a vector created between
+            //the disk center and center point between the two points.
+            double a, b;
+            solveCircle3(p1, p2, pt, a, b);
+            return orthoX * (a - cX) + orthoY * (b - cY);
+        };
+        auto compF = [&orderF](Point<> const &pt1, Point<> const &pt2) {
+            return orderF(pt1) < orderF(pt2);
+        };
+
+        auto asIterEnd = std::partition(msBegin, msEnd, isNotCol);
+        auto bsIterEnd = std::partition(bsBegin, bsEnd, isNotCol);
+        nE = std::partition(nB, nE, isNotCol);
+
+
+        auto tooBigTooSmall = [&] (Point<> const& pt) {
+            double a, b, r;
+            solveCircle3(p1, p2, pt, a, b, r);
+            return min_dist < r && r <= max_dist;
+        };
+
+        nE = std::partition(nB, nE, tooBigTooSmall);
+
+        // will have two sets an added set and a current set.
+        // added set is for stuff that will never leave. The current set on the other hand
+        // will correspond to every trajectory that we overlap.
+        auto onSegment = [&](Point<> const &pt) {
+            return onLineSegment(p1, p2, pt);
+        };
+
+        //Counts the points that lie on the line segment between i and j.
+        //These points are colinear so have been removed from the scan.
+
+
+        std::unordered_map<size_t, size_t> m_curr_set;
+        std::unordered_map<size_t, size_t> b_curr_set;
+        double m_count = computeLabelTotalF(asIterEnd, msEnd, m_curr_set, onSegment);
+        double b_count = computeLabelTotalF(bsIterEnd, bsEnd, b_curr_set, onSegment);
+
+        std::sort(nB, nE, compF);
+        std::vector<double> orderV;
+        orderV.reserve(static_cast<size_t>(nE - nB));
+        for (auto b = nB; b != nE; b++) {
+            orderV.push_back(orderF(*b));
+        }
+
+        //Partition the point set into an adding and removing sets.
+        auto mHigherIt = std::partition(msBegin, asIterEnd, partitionF);
+        auto bHigherIt = std::partition(bsBegin, bsIterEnd, partitionF);
+
+        std::vector<crescent_t> mCountsA(static_cast<size_t>(nE - nB), crescent_t());
+        std::vector<crescent_t> bCountsA(static_cast<size_t>(nE - nB), crescent_t());
+        std::vector<crescent_t> mCountsR(static_cast<size_t>(nE - nB), crescent_t());
+        std::vector<crescent_t> bCountsR(static_cast<size_t>(nE - nB), crescent_t());
+
+        /*Probably most of the time is spent here*/
+        partial_counts_label(msBegin, mHigherIt, orderV, mCountsR, orderF);
+        m_count += computeLabelTotal(msBegin, mHigherIt, m_curr_set);
+        partial_counts_label(bsBegin, bHigherIt, orderV, bCountsR, orderF);
+        b_count += computeLabelTotal(bsBegin, bHigherIt, b_curr_set);
+        partial_counts_label(mHigherIt, asIterEnd, orderV, mCountsA, orderF);
+        partial_counts_label(bHigherIt, bsIterEnd, orderV, bCountsA, orderF);
+        /*----------------------------------------------*/
+        //Now scan over the counts.
+
+        auto size = nE - nB;
+        for (int k = 0; k < size; k++) {
+            m_count += updateCounts(m_curr_set, mCountsA[k], mCountsR[k]);
+            b_count += updateCounts(b_curr_set, bCountsA[k], bCountsR[k]);
+
+            double m_hat = m_count / m_Total;
+            double b_hat = b_count / b_Total;
+            double newStat = scan(m_hat, b_hat);
+            if (maxStat <= newStat) {
+                double a, b, r;
+                solveCircle3(p1, p2, *(nB + k), a, b, r);
+                Disk currDisk(a, b, r);
+                currMax = currDisk;
+                maxStat = newStat;
+            }
+        }
+        return std::make_tuple(currMax, maxStat);
+    }
+
+
+
+    std::tuple<Disk, double> label_disk_scan_scale(point_list& net,
+                                             lpoint_list& sampleM,
+                                             lpoint_list& sampleB,
+                                             uint32_t grid_r,
+                                             std::function<double(double, double)> const& scan) {
+
+        //Calculate the total measured and baseline value.
+        double m_Total = computeLabelTotal(sampleM.begin(),sampleM.end());
+        double b_Total = computeLabelTotal(sampleB.begin(), sampleB.end());
+        SparseGrid<Point<>> grid_net(net, grid_r);
+
+        SparseGrid<LPoint<>> grid_sample_m(sampleM, grid_r);
+        SparseGrid<LPoint<>> grid_sample_b(sampleB, grid_r);
+
+        using net_it = typename SparseGrid<Point<>>::pt_it;
+        using pt_it = typename SparseGrid<LPoint<>>::pt_it;
+        Disk currMax;
+        double maxStat = 0;
+
+
+        for (uint32_t i = 0; i < grid_r; i++) { // through y
+
+            std::deque<Point<>> net_chunk;
+            std::deque<LPoint<>> m_sample_chunk;
+            std::deque<LPoint<>> b_sample_chunk;
+
+            for (int k = i - 3; k <= i + 1; k++) {// Through y, but ignore the last part
+                for (int l = 0; l <= 2; l++) { // through x
+                    //Rotate this queue
+                    net_it chunk_begin, chunk_end;
+                    std::tie(chunk_begin, chunk_end) = grid_net(k, l);
+                    insert_queue(net_chunk, chunk_begin, chunk_end);
+
+                    pt_it wchunk_begin, wchunk_end;
+                    std::tie(wchunk_begin, wchunk_end) = grid_sample_m(k, l);
+                    insert_queue(m_sample_chunk, wchunk_begin, wchunk_end);
+
+                    std::tie(wchunk_begin, wchunk_end) = grid_sample_b(k, l);
+                    insert_queue(b_sample_chunk, wchunk_begin, wchunk_end);
+                }
+            }
+            for (int j = 0; j < grid_r; j++) { // through x
+
+                // extend this vector with points with this entire block
+                for (int k = i - 2; k <= i + 2; i++) {
+
+                    //Rotate this queue
+                    net_it chunk_begin, chunk_end;
+                    std::tie(chunk_begin, chunk_end) = grid_net(j + 2, k);
+                    insert_queue(net_chunk, chunk_begin, chunk_end);
+
+                    pt_it wchunk_begin, wchunk_end;
+                    std::tie(wchunk_begin, wchunk_end) = grid_sample_m(j + 2, k);
+                    insert_queue(m_sample_chunk, wchunk_begin, wchunk_end);
+
+                    std::tie(wchunk_begin, wchunk_end) = grid_sample_b(j + 2, k);
+                    insert_queue(b_sample_chunk, wchunk_begin, wchunk_end);
+
+
+                    std::tie(chunk_begin, chunk_end) = grid_net(j - 3, k);
+                    remove_queue(net_chunk, chunk_begin, chunk_end);
+
+                    std::tie(wchunk_begin, wchunk_end) = grid_sample_m(j - 3, k);
+                    remove_queue(m_sample_chunk, wchunk_begin, wchunk_end);
+
+                    std::tie(wchunk_begin, wchunk_end) = grid_sample_b(j - 3, k);
+                    remove_queue(b_sample_chunk, wchunk_begin, wchunk_end);
+                }
+
+                net_it pt_begin, pt_end;
+                std::tie(pt_begin, pt_end) = grid_net(i, j);
+                for (auto pt1 = pt_begin; pt1 != pt_end - 2; pt1++) {
+                    for (auto pt2 = pt1 + 1; pt2 != pt_end - 1; pt2++) {
+                        Disk d1;
+                        double possible_max;
+                        std::tie(d1, possible_max) = label_disk_scan_restricted(*pt1, *pt2,
+                                                                          net_chunk,
+                                                                          m_sample_chunk,
+                                                                          b_sample_chunk,
+                                                                          grid_net.get_resolution(),
+                                                                          2 * grid_net.get_resolution(),
+                                                                          m_Total,
+                                                                          b_Total,
+                                                                          scan);
+                        if (possible_max > maxStat) {
+                            currMax = d1;
+                            maxStat = possible_max;
+                        }
+                    }
+                }
+            }
+        }
+        return std::make_tuple(currMax, maxStat);
+    }
+
 }

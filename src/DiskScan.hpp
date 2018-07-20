@@ -107,5 +107,20 @@ namespace pyscan {
                                         uint32_t min_res,
                                         uint32_t max_res,
                                         std::function<double(double, double)> const& scan);
+
+
+    std::tuple<Disk, double> disk_scan_scale(point_list& net,
+                                             wpoint_list& sampleM,
+                                             wpoint_list& sampleB,
+                                             uint32_t grid_r,
+                                             std::function<double(double, double)> const& scan);
+
+
+
+    std::tuple<Disk, double> label_disk_scan_scale(point_list& net,
+                                             lpoint_list& sampleM,
+                                             lpoint_list& sampleB,
+                                             uint32_t grid_r,
+                                             std::function<double(double, double)> const& scan);
 }
 #endif //PYSCAN_DISKSCAN_HPP_HPP

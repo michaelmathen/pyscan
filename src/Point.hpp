@@ -233,6 +233,10 @@ namespace pyscan {
         WPoint() : Point<dim>() {
             weight = 0;
         }
+
+        double get_weight() const {
+            return weight;
+        }
     };
 
     template<int dim=2>
@@ -246,6 +250,10 @@ namespace pyscan {
 
         LPoint() : WPoint<dim>() {
             label = 0;
+        }
+
+        size_t get_label() const {
+            return label;
         }
     };
 

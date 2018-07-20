@@ -173,7 +173,43 @@ namespace pyscan {
         return py::make_tuple(d1, d1value);
     }
 
-    py::tuple maxDiskLabels(const py::object& net, 
+    py::tuple maxDiskScale(const py::object& net,
+                           const py::object& sampleM,
+                           const py::object& sampleB,
+                           int r,
+                           std::function<double(double, double)> const& f) {
+        auto net_points = to_std_vector<pyscan::Point<>>(net);
+        auto m_sample = to_std_vector<pyscan::WPoint<>>(sampleM);
+        auto b_sample = to_std_vector<pyscan::WPoint<>>(sampleB);
+        Disk d1;
+        double d1value;
+        std::tie(d1, d1value) = disk_scan_scale(net_points,
+                                                m_sample,
+                                                b_sample,
+                                                r,
+                                                f);
+        return py::make_tuple(d1, d1value);
+    }
+
+    py::tuple maxDiskScaleLabel(const py::object& net,
+                           const py::object& sampleM,
+                           const py::object& sampleB,
+                           int r,
+                           std::function<double(double, double)> const& f) {
+        auto net_points = to_std_vector<pyscan::Point<>>(net);
+        auto m_sample = to_std_vector<pyscan::LPoint<>>(sampleM);
+        auto b_sample = to_std_vector<pyscan::LPoint<>>(sampleB);
+        Disk d1;
+        double d1value;
+        std::tie(d1, d1value) = label_disk_scan_scale(net_points,
+                                                m_sample,
+                                                b_sample,
+                                                r,
+                                                f);
+        return py::make_tuple(d1, d1value);
+    }
+
+    py::tuple maxDiskLabels(const py::object& net,
             const py::object& sampleM, 
             const py::object& weightM,
             const py::object& labelM,
@@ -343,6 +379,12 @@ BOOST_PYTHON_MODULE(pyscan) {
             .def("getX", &pyscan::getX<2>)
             .def("getY", &pyscan::getY<2>);
 
+    py::class_<pyscan::WPoint<2>, py::bases<pyscan::Pt2>>("WPoint", py::init<double, double, double, double>())
+            .def("get_weight", &pyscan::WPoint<2>::get_weight);
+
+    py::class_<pyscan::LPoint<2>, py::bases<pyscan::WPoint<2>>>("LPoint", py::init<size_t, double, double, double, double>())
+            .def("get_label", &pyscan::LPoint<2>::get_label);
+
     py::class_<std::function<double(double, double)> >("CFunction", py::no_init);
 
     py::scope().attr("KULLDORF") = std::function<double(double, double)>(
@@ -389,6 +431,7 @@ BOOST_PYTHON_MODULE(pyscan) {
     py::def("max_halfplane_labels", &pyscan::maxHalfspaceLabels);
     py::def("max_disk", &pyscan::maxDisk);
     py::def("max_disk_labels", &pyscan::maxDiskLabels);
+    py::def("max_disk_scale_labels", &pyscan::maxDiskScaleLabel);
     //py::def("maxRectLabels", &maxRectLabelsI);
     //py::def("maxRectLabels", &maxRectLabelsD);
     py::def("approximate_hull", pyscan::approx_hull);

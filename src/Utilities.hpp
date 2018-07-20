@@ -93,7 +93,7 @@ namespace pyscan {
 
 
 
-    uint64_t morton(uint32_t a, uint32_t b) {
+    inline uint64_t morton(uint32_t a, uint32_t b) {
 
         uint64_t x = a, y = b;
         x = (x | (x << 16)) & 0x0000FFFF0000FFFF;

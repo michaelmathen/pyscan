@@ -38,23 +38,25 @@ namespace pyscan {
 
 
         SparseGrid(std::vector<T> const& items, int32_t r) : z_order_pts(items), r(r) {
-            T min_x, max_x;
+
+
+            pt_it min_x, max_x;
             std::tie(min_x, max_x) = std::minmax_element(z_order_pts.begin(),
                                                          z_order_pts.end(), [&](T const& p1, T const& p2) {
                         return getX(p1) < getX(p2);
                     });
 
 
-            T min_y, max_y;
+            pt_it min_y, max_y;
 
             std::tie(min_y, max_y) = std::minmax_element(z_order_pts.begin(), z_order_pts.end(),
                                                          [&](T const& p1, T const& p2) {
                                                              return getY(p1) < getY(p2);
                                                          });
 
-            scale = std::max(getX(max_x) - getX(min_x), getY(max_y) - getY(min_y));
-            mnx = getX(min_x);
-            mny = getY(min_y);
+            scale = std::max(getX(*max_x) - getX(*min_x), getY(*max_y) - getY(*min_y));
+            mnx = getX(*min_x);
+            mny = getY(*min_y);
 
             z_vals.reserve(z_order_pts.size());
             for (auto& pt : z_order_pts) {
