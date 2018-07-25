@@ -191,6 +191,22 @@ namespace pyscan {
         return py::make_tuple(d1, d1value);
     }
 
+    py::tuple maxDiskCached(const py::object& net,
+                           const py::object& sampleM,
+                           const py::object& sampleB,
+                           std::function<double(double, double)> const& f) {
+        auto net_points = to_std_vector<pyscan::Point<>>(net);
+        auto m_sample = to_std_vector<pyscan::WPoint<>>(sampleM);
+        auto b_sample = to_std_vector<pyscan::WPoint<>>(sampleB);
+        Disk d1;
+        double d1value;
+        std::tie(d1, d1value) = cached_disk_scan(net_points,
+                                                m_sample,
+                                                b_sample,
+                                                f);
+        return py::make_tuple(d1, d1value);
+    }
+
     py::tuple maxDiskScaleLabel(const py::object& net,
                            const py::object& sampleM,
                            const py::object& sampleB,
@@ -461,6 +477,8 @@ BOOST_PYTHON_MODULE(pyscan) {
     py::def("max_disk", &pyscan::maxDisk);
     py::def("max_disk_labels", &pyscan::maxDiskLabels);
     py::def("max_disk_scale_labels", &pyscan::maxDiskScaleLabel);
+
+    py::def("max_disk_cached", &pyscan::maxDiskCached);
     //py::def("maxRectLabels", &maxRectLabelsI);
     //py::def("maxRectLabels", &maxRectLabelsD);
     py::def("approximate_hull", pyscan::approx_hull);

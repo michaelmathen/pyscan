@@ -122,5 +122,11 @@ namespace pyscan {
                                              lpoint_list& sampleB,
                                              uint32_t grid_r,
                                              std::function<double(double, double)> const& scan);
+
+    std::tuple<Disk, double> cached_disk_scan(point_list& net,
+                                              wpoint_list& sampleM,
+                                              wpoint_list& sampleB,
+                                              std::function<double(double, double)> const& scan);
+
 }
 #endif //PYSCAN_DISKSCAN_HPP_HPP
