@@ -13,6 +13,13 @@
 
 namespace pyscan {
 
+    inline std::tuple<uint32_t, uint32_t> to_cell(Point<2> const& pt, uint32_t r, double scale, double min_x, double min_y) {
+        double x = getX(pt), y = getY(pt);
+        auto a = static_cast<uint32_t>((x - min_x) / scale * r),
+                b = static_cast<uint32_t>((y - min_y) / scale * r);
+        return std::make_tuple(a, b);
+    }
+
     inline uint64_t to_code(Point<2> const& pt, uint32_t r, double scale, double min_x, double min_y) {
         double x = getX(pt), y = getY(pt);
         auto a = static_cast<uint32_t>((x - min_x) / scale * r),
@@ -39,7 +46,9 @@ namespace pyscan {
 
         SparseGrid(std::vector<T> const& items, int32_t r) : z_order_pts(items), r(r) {
 
-
+            if (items.size() == 0) {
+                return;
+            }
             pt_it min_x, max_x;
             std::tie(min_x, max_x) = std::minmax_element(z_order_pts.begin(),
                                                          z_order_pts.end(), [&](T const& p1, T const& p2) {
@@ -77,6 +86,20 @@ namespace pyscan {
         auto get_resolution() -> double {
             return 1 / static_cast<double>(r);
         }
+
+
+        std::tuple<int32_t, int32_t> get_cell(T const& pt) {
+            return to_cell(pt, r, scale, mnx, mny);
+        }
+
+        auto begin() -> decltype(z_order_pts.begin()) {
+            return z_order_pts.begin();
+        }
+
+        auto end() -> decltype(z_order_pts.begin()) {
+            return z_order_pts.end();
+        }
+
     };
 }
 

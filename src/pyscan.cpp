@@ -289,6 +289,36 @@ namespace pyscan {
         return std_vector_to_py_list(core_set_pts);
     }
 
+
+    py::object approx_hull3(double eps, std::function<double(pyscan::Vec3)> const& phi, const py::object& traj_pts) {
+        /*
+         * Finish this.
+         */
+        auto pts = to_std_vector<Pt3>(traj_pts);
+        auto max_f = [&] (Vec3 direction) {
+            double max_dir = -std::numeric_limits<double>::infinity();
+            Pt3 curr_pt {0.0, 0.0, 0.0, 0.0};
+            for (auto& pt : pts) {
+                double curr_dir = direction[0] * pyscan::getX(pt)
+                        + direction[1] * pyscan::getY(pt)
+                        + direction[2] * pyscan::getZ(pt);
+                if (max_dir < curr_dir) {
+                    max_dir = curr_dir;
+                    curr_pt = pt;
+                }
+            }
+            return Vec3{pyscan::getX(curr_pt), pyscan::getY(curr_pt), pyscan::getZ(curr_pt)};
+        };
+        std::vector<pyscan::Point<3>> core_set_pts;
+        {
+            auto vecs = eps_core_set3(eps, phi, max_f);
+            for (auto &v :vecs) {
+                core_set_pts.push_back(pyscan::Point<3>(v[0], v[1], v[2], 1.0));
+            }
+        }
+        return std_vector_to_py_list(core_set_pts);
+    }
+
     double evaluate(std::function<double(double, double)> const& f, double m, double b) {
         return f(m, b);
     }
@@ -405,7 +435,7 @@ BOOST_PYTHON_MODULE(pyscan) {
     py::def("evaluate", &pyscan::evaluate);
     py::def("size_region", &pyscan::sized_region);
 
-    py::def("dot", &pyscan::dot<2>);
+    //py::def("dot", &pyscan::dot<2ul>);
     py::def("intersection", &pyscan::intersection);
     py::def("correct_orientation", &pyscan::correct_orientation);
 
@@ -421,7 +451,6 @@ BOOST_PYTHON_MODULE(pyscan) {
     //py::def("makeNetGrid", makeNetGrid);
     //py::def("makeSampleGrid", makeSampleGrid);
 
-
     py::def("max_subgrid_slow", &pyscan::maxSubgridSlow);
     py::def("max_subgrid_linear_simple", &pyscan::maxSubgridLin);
     py::def("max_subgrid_linear", &pyscan::maxSubgridLinTheory);
@@ -435,5 +464,7 @@ BOOST_PYTHON_MODULE(pyscan) {
     //py::def("maxRectLabels", &maxRectLabelsI);
     //py::def("maxRectLabels", &maxRectLabelsD);
     py::def("approximate_hull", pyscan::approx_hull);
+
+    py::def("approximate_hull3", pyscan::approx_hull3);
 
 }

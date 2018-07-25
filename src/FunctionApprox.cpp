@@ -44,6 +44,56 @@ namespace pyscan {
         return true;
     }
 
+    double det2(double a1, double a2, double b1, double b2) {
+        return a1 * b2 - a2 * b1;
+    }
+
+    double det3(Vec3 const& dir1, Vec3 const& dir2, Vec3 const& dir3) {
+        return dir1[0] * det2(dir2[1], dir2[2], dir3[1], dir3[2])
+               - dir1[1] * det2(dir2[0], dir2[2], dir3[0], dir3[2])
+               + dir1[2] * det2(dir2[0], dir2[1], dir3[0], dir3[1]);
+    }
+
+    bool lineIntersection(Vec3 const& dir1, double d1,
+                          Vec3 const& dir2, double d2,
+                          Vec3 const& dir3, double d3,
+                          Vec3& v_ext) {
+        /*
+         * Need to test two cases.
+         *
+         */
+
+        double dval = det3(dir1, dir2, dir3);
+        if (fabs(dval) < 8 * std::numeric_limits<double>::epsilon()) {
+            return false;
+        }
+
+        double c11 = det2(dir2[1], dir2[2], dir3[1], dir3[2]),
+                c12 = det2(dir2[0], dir2[2], dir3[0], dir3[2]),
+                c13 = det2(dir2[0], dir2[1], dir3[0], dir3[1]);
+
+        double c21 = det2(dir1[1], dir1[2], dir3[1], dir3[2]),
+                c22 = det2(dir1[0], dir1[2], dir3[0], dir3[2]),
+                c23 = det2(dir1[0], dir1[1], dir3[0], dir3[1]);
+
+        double c31 = det2(dir1[1], dir1[2], dir2[1], dir2[2]),
+                c32 = det2(dir1[0], dir1[2], dir2[0], dir2[2]),
+                c33 = det2(dir1[0], dir1[1], dir2[0], dir2[1]);
+
+
+        double denom = 1 / dval;
+        Vec3 A1 {c11 / denom, c21 / denom, c31 / denom};
+        Vec3 A2 {c12 / denom, c22 / denom, c32 / denom};
+        Vec3 A3 {c13 / denom, c23 / denom, c33 / denom};
+
+        Vec3 direc{d1, d2, d3};
+        v_ext[0] = dot(A1, direc);
+        v_ext[1] = dot(A2, direc);
+        v_ext[2] = dot(A3, direc);
+        return true;
+    }
+
+
     bool inside(Vec2 const& pos, double alpha, double rho) {
       return (alpha <= pos[0]) && (pos[0] <= 1 - alpha) &&
         (rho <= pos[1]) && (pos[1] <= 1 - rho);
@@ -191,12 +241,7 @@ namespace pyscan {
     double approximateHull(double eps,
                            std::function<double(Vec2)> phi, //function to maximize
                            std::function<Vec2(Vec2)> lineMaxF) {
-        //This top line doesn't make sense to maximize for since we will always just return the largest region.
-        //Likewise this line doesn't make any sense to optimize for since we will always try to find the null set.
-
-        //This finds the region with the largest measured amount, but smallest baseline amount in terms of the stat fun
         return std::max(approximateHull(eps, Vec2{1, 0}, Vec2{0, -1}, phi, lineMaxF),
-                        //This finds the region with the largest baseline amount, but smallest measured amount in terms of the stat fun
                         approximateHull(eps, Vec2{-1, 0}, Vec2{0, 1}, phi, lineMaxF));
     }
 
@@ -261,4 +306,87 @@ namespace pyscan {
         core_set1.insert(core_set1.end(), core_set4.begin(), core_set4.end());
         return core_set1;
     }
+
+
+
+    std::vector<Vec3> eps_core_set3(double eps,
+                                   Vec3 const cc, Vec3 const& cl, Vec3 const cu,
+                                   std::function<double(Vec3)> phi, //function to maximize
+                                   std::function<Vec3(Vec3)> lineMaxF) {
+
+        auto avg = [&] (Vec3 const& v1, Vec3 const& v2, Vec3 const& v3) {
+            auto v_out = v1 + v2 + v3;
+            return v_out / sqrt(dot(v_out, v_out));
+        };
+
+        using direc3 = std::array<Vec3, 3>;
+        int ux, uy, lx, ly;
+        struct Frame3 {
+            direc3 d;
+            direc3 p;
+            Frame3(direc3 d, direc3 p ) : d(d), p(p){}
+        };
+
+        auto pcc = lineMaxF(cc),
+                pcl = lineMaxF(cl),
+                pcu = lineMaxF(cu);
+        std::vector<Vec3> pts{ pcc, pcl, pcu };
+        std::deque<Frame3> frameStack;
+        frameStack.emplace_back(direc3{cc, cl, cu},
+                                direc3{pcc, pcl, pcu});
+        while(!frameStack.empty()) {
+            Frame3 lf = frameStack.front();
+            frameStack.pop_front();
+            double d1 = dot(lf.d[0], lf.p[0]);
+            double d2 = dot(lf.d[1], lf.p[1]);
+            double d3 = dot(lf.d[2], lf.p[2]);
+
+            double v1 = phi(lf.p[0]);
+            double v2 = phi(lf.p[1]);
+            double v3 = phi(lf.p[2]);
+
+            double maxRValue = std::max({v1, v2, v3});
+            Vec3 p_ext;
+
+            if (lineIntersection(lf.d[0], d1, lf.d[1], d2, lf.d[2], d3, p_ext)) {
+                double vw = phi(p_ext);
+                if (vw - maxRValue > eps) {
+
+                    Vec3 m_vec = avg(lf.d[0], lf.d[1], lf.d[2]);
+                    auto line_max = lineMaxF(m_vec);
+                    pts.push_back(line_max);
+                    frameStack.emplace_back(direc3{lf.d[0], m_vec, lf.d[1]},
+                                            direc3{lf.p[0], line_max, lf.p[1]});
+                    frameStack.emplace_back(direc3{lf.d[0], m_vec, lf.d[2]},
+                                            direc3{lf.p[0], line_max, lf.p[2]});
+                    frameStack.emplace_back(direc3{lf.d[1], m_vec, lf.d[2]},
+                                            direc3{lf.p[1], line_max, lf.p[2]});
+                }
+            }
+        }
+        return pts;
+    }
+
+    std::vector<Vec3> eps_core_set3(double eps,
+                                   std::function<double(Vec3)> phi, //function to maximize
+                                   std::function<Vec3(Vec3)> lineMaxF) {
+
+        auto core_set1 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, phi, lineMaxF)
+           , core_set2 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, phi, lineMaxF)
+           , core_set3 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, phi, lineMaxF)
+           , core_set4 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, phi, lineMaxF)
+           , core_set5 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, phi, lineMaxF)
+           , core_set6 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, phi, lineMaxF)
+           , core_set7 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, phi, lineMaxF)
+           , core_set8 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, phi, lineMaxF);
+        core_set1.insert(core_set1.end(), core_set2.begin(), core_set2.end());
+        core_set1.insert(core_set1.end(), core_set3.begin(), core_set3.end());
+        core_set1.insert(core_set1.end(), core_set4.begin(), core_set4.end());
+        core_set1.insert(core_set1.end(), core_set5.begin(), core_set5.end());
+        core_set1.insert(core_set1.end(), core_set6.begin(), core_set6.end());
+        core_set1.insert(core_set1.end(), core_set7.begin(), core_set7.end());
+        core_set1.insert(core_set1.end(), core_set8.begin(), core_set8.end());
+        return core_set1;
+    }
+
   }

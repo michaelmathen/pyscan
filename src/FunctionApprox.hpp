@@ -11,27 +11,53 @@
 
 namespace pyscan {
 
-	using Vec2 = std::array<double, 2>;
+    template<size_t dim>
+	using Vec = std::array<double, dim>;
 
-	inline double dot(Vec2 const& v1, Vec2 const& v2) {
-      return v1[0] * v2[0] + v1[1] * v2[1];
+    using Vec2 = Vec<2>;
+    using Vec3 = Vec<3>;
+
+    template <size_t dim>
+	inline double dot(Vec<dim> const& v1, Vec<dim> const& v2) {
+        double accum = 0;
+        for (int i = 0; i < dim; i++) {
+            accum += v1[i] * v2[i];
+        }
+      return accum;
     }
 
-    inline double mag(Vec2 const& v1) {
+    template <size_t dim>
+    inline double mag(Vec<dim> const& v1) {
     	return sqrt(dot(v1, v1));
     }
 
-    inline Vec2 operator+(Vec2 const& v1, Vec2 const& v2) {
-      return {v1[0] + v1[0], v2[1] + v2[1]};
+    template <size_t dim>
+    inline Vec<dim> operator+(Vec<dim> const& v1, Vec<dim> const& v2) {
+        Vec<dim> v_out;
+        for (int i = 0; i < dim; i++) {
+            v_out[i] += v1[i] + v2[i];
+        }
+        return v_out;
     }
 
-    inline Vec2 operator*(Vec2 const& v2, double val) {
-    	return {val * v2[0], val * v2[1]};
+    template <size_t dim>
+    inline Vec<dim> operator*(Vec<dim> const& v2, double val) {
+        Vec<dim> v_out;
+        for (int i = 0; i < dim; i++) {
+            v_out[i] += v2[i] * val;
+        }
+        return v_out;
     }
 
-    inline Vec2 operator/(Vec2 const& v2, double val) {
-    	return {v2[0] / val, v2[1] / val};
+    template<size_t dim>
+    inline Vec<dim> operator/(Vec<dim> const& v2, double val) {
+        Vec<dim> v_out;
+        for (int i = 0; i < dim; i++) {
+            v_out[i] += v2[i] / val;
+        }
+        return v_out;
     }
+
 
 	double approximateHull(double eps,
 							Vec2 const& cc, Vec2 const& cl,
@@ -45,5 +71,14 @@ namespace pyscan {
 	std::vector<Vec2> eps_core_set(double eps,
 								   std::function<double(Vec2)> phi, //function to maximize
 								   std::function<Vec2(Vec2)> lineMaxF);
+
+    std::vector<Vec3> eps_core_set3(double eps,
+                                    Vec3 const cc, Vec3 const& cl, Vec3 const cu,
+                                    std::function<double(Vec3)> phi, //function to maximize
+                                    std::function<Vec2(Vec3)> lineMaxF);
+
+    std::vector<Vec3> eps_core_set3(double eps,
+                                    std::function<double(Vec3)> phi, //function to maximize
+                                    std::function<Vec3(Vec3)> lineMaxF);
 }
 #endif //PYSCAN_FUNCTIONAPPROX_HPP

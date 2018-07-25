@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(pyscan)
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_C_FLAGS_DEBUG "-fPIC")
+set(CMAKE_C_FLAGS_DEBUG "-fPIC -g")
 
 #set(Python_ADDITIONAL_VERSIONS 3.5)
 find_package( PythonLibs 3 REQUIRED )
@@ -24,7 +24,6 @@ set(SOURCE_FILES
         src/Utilities.hpp
         src/HalfplaneScan.cpp
         src/HalfplaneScan.hpp
-        src/DiskScan.cpp
         src/DiskScan.hpp
         src/Utilities.cpp src/DiskScan2.hpp src/DiskScan2.cpp)
 
@@ -68,7 +67,7 @@ if (test)
     endif()
 
     # Now simply link against gtest or gtest_main as needed. Eg
-    add_executable(DiskScan_test test/DiskScan_unittest.cpp src/HalfplaneScan.cpp src/DiskScan.cpp src/Utilities.cpp test/Utilities.cpp src/DiskScan2.cpp)
+    add_executable(DiskScan_test test/DiskScan_unittest.cpp src/HalfplaneScan.cpp src/Utilities.cpp test/Utilities.cpp src/DiskScan2.cpp src/DiskScan.cpp)
     target_link_libraries(DiskScan_test gtest_main)
     add_test(NAME DiskScan_test COMMAND DiskScan_test)
 
