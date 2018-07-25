@@ -9,6 +9,9 @@
 #include <tuple>
 #include <iostream>
 
+#include <boost/numeric/ublas/lu.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/vector.hpp>
 
 #include "Utilities.hpp"
 #include "FunctionApprox.hpp"
@@ -63,33 +66,27 @@ namespace pyscan {
          *
          */
 
+
         double dval = det3(dir1, dir2, dir3);
         if (fabs(dval) < 8 * std::numeric_limits<double>::epsilon()) {
             return false;
         }
 
-        double c11 = det2(dir2[1], dir2[2], dir3[1], dir3[2]),
-                c12 = det2(dir2[0], dir2[2], dir3[0], dir3[2]),
-                c13 = det2(dir2[0], dir2[1], dir3[0], dir3[1]);
+        using namespace boost::numeric::ublas;
 
-        double c21 = det2(dir1[1], dir1[2], dir3[1], dir3[2]),
-                c22 = det2(dir1[0], dir1[2], dir3[0], dir3[2]),
-                c23 = det2(dir1[0], dir1[1], dir3[0], dir3[1]);
+        matrix<double> A(3, 3);
 
-        double c31 = det2(dir1[1], dir1[2], dir2[1], dir2[2]),
-                c32 = det2(dir1[0], dir1[2], dir2[0], dir2[2]),
-                c33 = det2(dir1[0], dir1[1], dir2[0], dir2[1]);
+        A(0, 0) = dir1[0], A(0, 1) = dir1[1], A(0, 2) = dir1[2],
+        A(1, 0) = dir2[0], A(1, 1) = dir2[1], A(1, 2) = dir2[2],
+        A(2, 0) = dir3[0], A(2, 1) = dir3[1], A(2, 2) = dir3[2];
 
+        vector<double> x;
+        x[0] = d1, x[1] = d2, x[2] = d3;
+        permutation_matrix<size_t> P(3);
+        lu_factorize(A, P);
+        lu_substitute(A, P, x);
 
-        double denom = 1 / dval;
-        Vec3 A1 {c11 / denom, c21 / denom, c31 / denom};
-        Vec3 A2 {c12 / denom, c22 / denom, c32 / denom};
-        Vec3 A3 {c13 / denom, c23 / denom, c33 / denom};
-
-        Vec3 direc{d1, d2, d3};
-        v_ext[0] = dot(A1, direc);
-        v_ext[1] = dot(A2, direc);
-        v_ext[2] = dot(A3, direc);
+        v_ext[0] = x[0], v_ext[1] = x[1], v_ext[2] = x[2];
         return true;
     }
 
