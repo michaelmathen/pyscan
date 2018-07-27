@@ -24,7 +24,7 @@ set(SOURCE_FILES
         src/Utilities.hpp
         src/HalfplaneScan.cpp
         src/HalfplaneScan.hpp
-        src/DiskScan.hpp
+        src/DiskScan.cpp
         src/Utilities.cpp src/DiskScan2.hpp src/DiskScan2.cpp)
 
 set(PY_SOURCE_FILES
