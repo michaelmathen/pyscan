@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <algorithm>
 
 #include "DiskScan2.hpp"
 #include "Point.hpp"
@@ -100,24 +101,38 @@ namespace pyscan {
                   std::function<double(double, double)> const& scan);
 
 
-    std::tuple<Disk, double> diskScanGrid(point_list& net,
-                                        wpoint_list& sampleM,
-                                        wpoint_list& sampleB,
-                                        uint32_t min_res,
-                                        uint32_t max_res,
+    auto disk_scan_restricted(Point<> p1,
+                              Point<>  p2,
+                              std::vector<Point<2>>& net,
+                              std::vector<WPoint<2>>& sampleM,
+                              std::vector<WPoint<2>>& sampleB,
+                              double min_dist,
+                              double max_dist,
+                              double m_Total,
+                              double b_Total,
+                              std::function<double(double, double)> const& scan)
+    -> std::tuple<Disk, double>;
+
+    template<typename T>
+    std::tuple<Disk, double> disk_scan_scale(point_list& net,
+                                        std::vector<T>& sampleM,
+                                        std::vector<T>& sampleB,
+                                        uint32_t grid_r,
                                         std::function<double(double, double)> const& scan);
 
-
-
+    template<typename T>
     std::tuple<Disk, double> cached_disk_scan(point_list& net,
-                                              wpoint_list& sampleM,
-                                              wpoint_list& sampleB,
+                                              T& sampleM,
+                                              T& sampleB,
                                               std::function<double(double, double)> const& scan);
 
-    std::tuple<Disk, double> cached_disk_scan(point_list& net,
-                                              lpoint_list& sampleM,
-                                              lpoint_list& sampleB,
-                                              std::function<double(double, double)> const& scan);
+
+
+    std::tuple<Disk, double> disk_scan_simp(point_list& net,
+                                            std::vector<WPoint<>>& sampleM,
+                                            std::vector<WPoint<>>& sampleB,
+                                            std::function<double(double, double)> const& scan);
+
 
 }
 #endif //PYSCAN_DISKSCAN_HPP_HPP

@@ -69,16 +69,13 @@ namespace pyscan {
 	            std::function<Vec2(Vec2)> lineMaxF);
 
 	std::vector<Vec2> eps_core_set(double eps,
-								   std::function<double(Vec2)> phi, //function to maximize
 								   std::function<Vec2(Vec2)> lineMaxF);
 
     std::vector<Vec3> eps_core_set3(double eps,
-                                    Vec3 const cc, Vec3 const& cl, Vec3 const cu,
-                                    std::function<double(Vec3)> phi, //function to maximize
+                                    Vec3 const& cc, Vec3 const& cl, Vec3 const& cu,
                                     std::function<Vec2(Vec3)> lineMaxF);
 
     std::vector<Vec3> eps_core_set3(double eps,
-                                    std::function<double(Vec3)> phi, //function to maximize
                                     std::function<Vec3(Vec3)> lineMaxF);
 }
 #endif //PYSCAN_FUNCTIONAPPROX_HPP

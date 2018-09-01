@@ -8,17 +8,51 @@
 #include <string>
 #include <sstream>
 #include <ostream>
+#include <cstdlib>
+#include <cmath>
+#include <iostream>
+#include <limits>
+
+#include <vector>
 #include <array>
-#include <boost/math/special_functions/next.hpp>
+#include <cstring>
+//#include <boost/math/special_functions/next.hpp>
 
 namespace pyscan {
 
-    using namespace boost::math;
+
+    inline int64_t ulpsDistance(const double a, const double b) {
+        // Save work if the floats are equal.
+        // Also handles +0 == -0
+        if (a == b) return 0;
+
+        const auto max = std::numeric_limits<int64_t>::max();
+
+        // Max distance for NaN
+        if (std::isnan(a) || std::isnan(b)) return max;
+
+        // If one's infinite and they're not equal, max distance.
+        if (std::isinf(a) || std::isinf(b)) return max;
+
+        int64_t ia, ib;
+        std::memcpy(&ia, &a, sizeof(double));
+        std::memcpy(&ib, &b, sizeof(double));
+
+        // Don't compare differently-signed floats.
+        if ((ia < 0) != (ib < 0)) return max;
+
+        // Return the absolute value of the distance in ULPs.
+        int64_t distance = ia - ib;
+        if (distance < 0) distance = -distance;
+        return distance;
+    }
+
 
 #define MAX_FLOAT_DISTANCE 5
 
     inline bool aeq(double a, double b) {
-        return fabs(float_distance(a, b)) < MAX_FLOAT_DISTANCE;
+
+        return fabs(ulpsDistance(a, b)) < MAX_FLOAT_DISTANCE;
     }
 
     inline bool alt(double a, double b) {

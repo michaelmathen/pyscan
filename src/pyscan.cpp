@@ -311,7 +311,7 @@ namespace pyscan {
         };
         std::vector<pyscan::Point<>> core_set_pts;
         {
-            auto vecs = eps_core_set(eps, phi, max_f);
+            auto vecs = eps_core_set(eps, max_f);
             for (auto &v :vecs) {
                 core_set_pts.push_back(pyscan::Point<>(v[0], v[1], 1.0));
             }
@@ -341,7 +341,7 @@ namespace pyscan {
         };
         std::vector<pyscan::Point<3>> core_set_pts;
         {
-            auto vecs = eps_core_set3(eps, phi, max_f);
+            auto vecs = eps_core_set3(eps, max_f);
             for (auto &v :vecs) {
                 core_set_pts.push_back(pyscan::Point<3>(v[0], v[1], v[2], 1.0));
             }

@@ -7,80 +7,72 @@
 
 #include <cstdint>
 #include <vector>
+#include <iostream>
+#include <map>
 
 #include "Point.hpp"
 #include "Utilities.hpp"
 
 namespace pyscan {
 
-    inline std::tuple<uint32_t, uint32_t> to_cell(Point<2> const& pt, uint32_t r, double scale, double min_x, double min_y) {
-        double x = getX(pt), y = getY(pt);
-        auto a = static_cast<uint32_t>((x - min_x) / scale * r),
-                b = static_cast<uint32_t>((y - min_y) / scale * r);
+    inline std::tuple<int32_t, int32_t> to_cell(Point<2> const& pt, int32_t r, double scale, double min_x, double min_y) {
+        double x = getX(pt),
+                y = getY(pt);
+        auto a = static_cast<int32_t>((x - min_x) / scale * r),
+                b = static_cast<int32_t>((y - min_y) / scale * r);
+        a = a == r ? r - 1 : a;
+        b = b == r ? r - 1 : b;
         return std::make_tuple(a, b);
     }
 
-    inline uint64_t to_code(Point<2> const& pt, uint32_t r, double scale, double min_x, double min_y) {
-        double x = getX(pt), y = getY(pt);
-        auto a = static_cast<uint32_t>((x - min_x) / scale * r),
-                b = static_cast<uint32_t>((y - min_y) / scale * r);
-        return morton(a, b);
+    inline int64_t to_code(Point<2> const& pt, int32_t r, double scale, double min_x, double min_y) {
+        int64_t a, b;
+        std::tie(a, b) = to_cell(pt, r, scale, min_x, min_y);
+        return b * r + a;
     }
 
     template<typename T>
     class SparseGrid {
-        std::vector<uint64_t> z_vals;
-        std::vector<T> z_order_pts;
-
+        std::multimap<int64_t, T> z_pts;
         double mnx;
         double mny;
         double scale;
-        uint32_t r;
-
-
+        int32_t r;
 
     public:
-        using pt_it = decltype(z_order_pts.begin());
-        using coord_func_t = std::function<double(T)>;
 
+        using buck_it = decltype(z_pts.begin());
 
-        SparseGrid(std::vector<T> const& items, int32_t r) : z_order_pts(items), r(r) {
-
+        SparseGrid(std::vector<T> const& items, int32_t grid_r) : r(grid_r) {
             if (items.size() == 0) {
                 return;
             }
+
+            using pt_it = decltype(items.begin());
             pt_it min_x, max_x;
-            std::tie(min_x, max_x) = std::minmax_element(z_order_pts.begin(),
-                                                         z_order_pts.end(), [&](T const& p1, T const& p2) {
+            std::tie(min_x, max_x) = std::minmax_element(items.begin(), items.end(), [&](T const& p1, T const& p2) {
                         return getX(p1) < getX(p2);
-                    });
-
-
+            });
             pt_it min_y, max_y;
-
-            std::tie(min_y, max_y) = std::minmax_element(z_order_pts.begin(), z_order_pts.end(),
+            std::tie(min_y, max_y) = std::minmax_element(items.begin(), items.end(),
                                                          [&](T const& p1, T const& p2) {
                                                              return getY(p1) < getY(p2);
                                                          });
-
             scale = std::max(getX(*max_x) - getX(*min_x), getY(*max_y) - getY(*min_y));
             mnx = getX(*min_x);
             mny = getY(*min_y);
-
-            z_vals.reserve(z_order_pts.size());
-            for (auto& pt : z_order_pts) {
-                z_vals.push_back(to_code(pt, r, scale, mnx, mny));
+            for (auto& pt : items) {
+                z_pts.emplace(to_code(pt, r, scale, mnx, mny), pt);
             }
-            auto perm = sort_permutation(z_vals.begin(), z_vals.end(), std::less<uint32_t>());
-            apply_permutation_in_place(z_order_pts, perm);
-            apply_permutation_in_place(z_vals, perm);
         }
 
-        auto operator()(int32_t i, int32_t j) -> std::tuple<pt_it, pt_it> {
-            uint64_t code = morton(i, j);
-            auto begin = std::lower_bound(z_vals.begin(), z_vals.end(), code);
-            auto end = std::upper_bound(begin, z_vals.end(), code);
-            return std::make_tuple(z_order_pts.begin() + (begin - z_vals.begin()), z_order_pts.begin() + (end - z_vals.begin()));
+        auto operator()(int32_t i, int32_t j) -> std::tuple<buck_it, buck_it> {
+
+            if ((i < 0) || (i > r) || (j < 0) || (j > r)) {
+                return std::make_tuple(z_pts.end(), z_pts.end());
+            }
+            int64_t code = i * r + j;
+            return z_pts.equal_range(code);
         }
 
         auto get_resolution() -> double {
@@ -92,12 +84,12 @@ namespace pyscan {
             return to_cell(pt, r, scale, mnx, mny);
         }
 
-        auto begin() -> decltype(z_order_pts.begin()) {
-            return z_order_pts.begin();
+        auto begin() -> decltype(z_pts.begin()) {
+            return z_pts.begin();
         }
 
-        auto end() -> decltype(z_order_pts.begin()) {
-            return z_order_pts.end();
+        auto end() -> decltype(z_pts.begin()) {
+            return z_pts.end();
         }
 
     };

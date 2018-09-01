@@ -5,6 +5,7 @@
 #ifndef PYSCAN_DISKSCAN2_HPP
 #define PYSCAN_DISKSCAN2_HPP
 
+#include <functional>
 #include "Point.hpp"
 
 namespace pyscan {

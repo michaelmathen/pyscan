@@ -641,19 +641,20 @@ if __name__ == "__main__":
     import partitioning_tests
 
     pts = partitioning_tests.upload_crimes("crimes.csv")
+    print("got here")
     #pts = [(random.random(), random.random()) for i in range(1000000)]
     pts = random.sample(pts, 100000)
-
+    print("got here")
     matplotlib.rcParams['figure.figsize'] = [20.0, 20.0]
 
 
     tree = chan_partitions2(pts, b = 28, min_cell_size=5000)
-
+    print("got here")
     f, ax = plt.subplots()
     #s_pts = random.sample(pts, 10000)
     x, y = zip(*pts)
     ax.scatter(x, y, marker='.')
-
+    print("got here")
     tree.visualize_arrangement(ax, min(x), max(x), min(y), max(y))
     plt.show()
     

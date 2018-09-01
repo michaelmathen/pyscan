@@ -2,6 +2,7 @@
 // Created by mmath on 5/22/18.
 //
 #include <tuple>
+#include <algorithm>
 #include "DiskScan2.hpp"
 #include "HalfplaneScan.hpp"
 
