@@ -490,6 +490,7 @@ BOOST_PYTHON_MODULE(pyscan) {
     py::def("max_halfplane_labels", &pyscan::maxHalfspaceLabels);
     py::def("max_disk", &pyscan::maxDisk);
     py::def("max_disk_labels", &pyscan::maxDiskLabels);
+
  //   py::def("max_disk_scale_labels", &pyscan::maxDiskScaleLabel);
 
     py::def("max_disk_cached", &pyscan::maxDiskCached);
