@@ -73,7 +73,7 @@ namespace pyscan {
 
     std::vector<Vec3> eps_core_set3(double eps,
                                     Vec3 const& cc, Vec3 const& cl, Vec3 const& cu,
-                                    std::function<Vec2(Vec3)> lineMaxF);
+                                    std::function<Vec3(Vec3)> lineMaxF);
 
     std::vector<Vec3> eps_core_set3(double eps,
                                     std::function<Vec3(Vec3)> lineMaxF);

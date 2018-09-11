@@ -28,7 +28,7 @@ set(SOURCE_FILES
         src/Utilities.cpp src/DiskScan2.hpp src/DiskScan2.cpp)
 
 set(PY_SOURCE_FILES
-        src/pyscan.cpp src/DiskScan2.hpp src/DiskScan2.cpp src/SparseGrid.hpp)
+        src/pyscan.cpp src/DiskScan2.hpp src/DiskScan2.cpp src/SparseGrid.hpp src/TrajectoryScan.cpp src/TrajectoryScan.hpp)
 
 set(test true)
 
