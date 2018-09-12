@@ -353,6 +353,8 @@ namespace pyscan {
         return f(m, b);
     }
 
+
+    
     // pyscan::Rectangle maxRectLabelsD(const py::object& net, const py::object& sampleM, const py::object& sampleB, double rho) {
     //     auto net_points = to_std_vector<pyscan::LPoint<>>(net);
     //     auto sample_p_M = to_std_vector<pyscan::LPoint<>>(sampleM);

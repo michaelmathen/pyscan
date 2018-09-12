@@ -151,10 +151,38 @@ namespace pyscan {
             approx_traj(traj_b, traj_e, chord_l, alpha, net_points);
         }
         // go through the set of measured points
-        // go through the set of baseline points
-        // Scan the resulting set of points using standard disk scanning function.
-        // return the max disk.
+        lpoint_list sampleM_points;
+        offset = 0;
+        size_t label = 0;
+        auto wb = sampleM.weights.begin();
+        for(auto b = sampleM.offsets.begin(); b != sampleM.offsets.end(); b++) {
+            auto traj_b = sampleM.traj_pts.begin() + offset;
+            auto traj_e = sampleM.traj_pts.begin() + *b;
+            offset = *b;
+            approx_traj_labels(traj_b, traj_e, label, *wb, chord_l, alpha, sampleM_points);
+            wb++;
+            label++;//increment label
+        }
 
+        // go through the set of baseline points
+        lpoint_list sampleB_points;
+        offset = 0;
+        label = 0;
+        wb = sampleB.weights.begin();
+        for(auto b = sampleB.offsets.begin(); b != sampleB.offsets.end(); b++) {
+            auto traj_b = sampleB.traj_pts.begin() + offset;
+            auto traj_e = sampleB.traj_pts.begin() + *b;
+            offset = *b;
+            approx_traj_labels(traj_b, traj_e, label, *wb, chord_l, alpha, sampleB_points);
+            wb++;
+            label++;//increment label
+        }
+
+        // Scan the resulting set of points using standard labeled disk scanning function.
+
+        // return the max disk.
+        auto grid_r = static_cast<uint32_t>(1.0 / min_r);
+        return disk_scan_scale(net_points, sampleM_points, sampleB_points, grid_r, scan);
     }
 
 }
