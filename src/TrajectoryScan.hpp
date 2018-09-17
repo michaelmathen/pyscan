@@ -16,11 +16,16 @@ namespace pyscan {
     struct traj_set {
         point_list traj_pts;
         std::vector<size_t> offsets;
-        std::vector<double> weights;
+        traj_set(point_list const& tp, std::vector<size_t> const& off) :
+            traj_pts(tp),
+            offsets(off){}
     };
 
     struct wtraj_set : public traj_set {
         std::vector<double> weights;
+        wtraj_set(point_list const& tp,
+                std::vector<size_t> const& off,
+                std::vector<double> const& weights) : traj_set(tp, off), weights(weights) {}
     };
 
 
@@ -31,6 +36,7 @@ namespace pyscan {
             double chord_l,
             double eps);
 
+    
     std::tuple<Disk, double> traj_disk_scan(traj_set &net,
                                             wtraj_set &sampleM,
                                             wtraj_set &sampleB,

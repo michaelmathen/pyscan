@@ -71,6 +71,10 @@ if (test)
     target_link_libraries(DiskScan_test gtest_main)
     add_test(NAME DiskScan_test COMMAND DiskScan_test)
 
+    add_executable(Trajectory_test test/trajectory_unittest.cpp src/FunctionApprox.cpp src/TrajectoryScan.cpp src/HalfplaneScan.cpp src/Utilities.cpp test/Utilities.cpp src/DiskScan2.cpp src/DiskScan.cpp)
+    target_link_libraries(Trajectory_test gtest_main)
+    add_test(NAME Trajectory_test COMMAND DiskScan_test)
+
     add_executable(RectangleScan_test test/RectangleScan_unittest.cpp ${TEST_FILES} ${SOURCE_FILES})
     target_link_libraries(RectangleScan_test gtest_main)
     add_test(NAME RectangleScan_test COMMAND RectangleScan_test)

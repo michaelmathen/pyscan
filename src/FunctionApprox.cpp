@@ -313,7 +313,7 @@ namespace pyscan {
     }
 
     std::vector<Vec3> eps_core_set3(double eps,
-                                   Vec3 const cc, Vec3 const& cl, Vec3 const cu,
+                                   Vec3 const& cc, Vec3 const& cl, Vec3 const& cu,
                                    std::function<Vec3(Vec3)> lineMaxF) {
 
         auto avg = [&] (Vec3 const& v1, Vec3 const& v2, Vec3 const& v3) {

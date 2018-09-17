@@ -71,10 +71,11 @@ namespace pyscan {
                 auto element = traj_points.find(i + g_size * j);
                 if (element == traj_points.end()) {
                     traj_points.emplace(i + g_size * j, std::initializer_list<Point<>>{Point<>(x_val, y_val, 1.0)});
-                }
-                element->second.emplace_back(x_val, y_val, 1.0);
-            }
+                } else {
+                    element->second.emplace_back(x_val, y_val, 1.0);
 
+                }
+            }
             for (int j = g_y + 1; j <= g_n_y; j++) {
                 double y_val = j * chord_l + ly;
                 double x_val = y_to_x((*last_pt)[0], (*last_pt)[1], (*curr_pt)[0], (*curr_pt)[1], y_val);
@@ -82,8 +83,9 @@ namespace pyscan {
                 auto element = traj_points.find(i + g_size * j);
                 if (element == traj_points.end()) {
                     traj_points.emplace(i + g_size * j, std::initializer_list<Point<>>{Point<>(x_val, y_val, 1.0)});
+                } else {
+                    element->second.emplace_back(x_val, y_val, 1.0);
                 }
-                element->second.emplace_back(x_val, y_val, 1.0);
             }
             last_pt = curr_pt;
         }
@@ -107,7 +109,7 @@ namespace pyscan {
 
             b->second.clear();
             for (auto approx_b = approx.begin(); approx_b != approx.end(); approx_b++) {
-                b->second.emplace_back((*approx_b)[0], (*approx_b)[1], 1);
+                b->second.emplace_back((*approx_b)[0], (*approx_b)[1], 1.0);
             }
         }
         return cells;
@@ -182,6 +184,7 @@ namespace pyscan {
 
         // return the max disk.
         auto grid_r = static_cast<uint32_t>(1.0 / min_r);
+        std::cout << net_points.size() << " " << sampleM_points.size() << " " << sampleB_points.size() << std::endl;
         return disk_scan_scale(net_points, sampleM_points, sampleB_points, grid_r, scan);
     }
 

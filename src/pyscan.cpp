@@ -17,9 +17,18 @@
 #include "DiskScan.hpp"
 #include "DiskScan2.hpp"
 #include "FunctionApprox.hpp"
+#include "TrajectoryScan.hpp"
 
 namespace py = boost::python;
 
+template <class K, class V>
+boost::python::dict toPythonDict(std::unordered_map<K, V> const& map) {
+    boost::python::dict dictionary;
+    for (auto iter = map.begin(); iter != map.end(); ++iter) {
+        dictionary[iter->first] = iter->second;
+    }
+    return dictionary;
+}
 
 template<typename T>
 std::vector<T> to_std_vector(const py::object& iterable) {
@@ -354,7 +363,66 @@ namespace pyscan {
     }
 
 
-    
+
+    pyscan::traj_set create_traj_set(const py::object& net) {
+        /*
+         * Expects a list of lists.
+         */
+        auto beg_net = py::stl_input_iterator<py::list>(net);
+        auto end_net = py::stl_input_iterator<py::list>();
+        pyscan::point_list net_traj_pts;
+        std::vector<size_t> net_offsets;
+        size_t next_offset = 0;
+        for (auto b = beg_net; b != end_net; b++) {
+            auto curr_traj = py::stl_input_iterator<Point<>>(*b);
+            auto end_traj = py::stl_input_iterator<Point<>>();
+            for (auto b_traj = curr_traj; b_traj != end_traj; b_traj++) {
+                next_offset += 1;
+                net_traj_pts.push_back(*b_traj);
+            }
+            net_offsets.push_back(next_offset);
+        }
+        return {net_traj_pts, net_offsets};
+    }
+
+    pyscan::wtraj_set create_wtraj_set(const py::object& pts, const py::object& weights) {
+        pyscan::traj_set trajectories = create_traj_set(pts);
+        auto cv_weights = to_std_vector<double>(weights);
+        return {trajectories.traj_pts, trajectories.offsets, cv_weights};
+    }
+
+    py::tuple traj_disk_scan_py(const py::object& net,
+                            const py::object& sampleM,
+                            const py::object& weightM,
+                            const py::object& sampleB,
+                            const py::object& weightB,
+                            double alpha,
+                            double min_r,
+                            std::function<double(double, double)> const& f) {
+
+        auto net_set = create_traj_set(net);
+        auto m_set = create_wtraj_set(sampleM, weightM);
+        auto b_set = create_wtraj_set(sampleB, weightB);
+
+        Disk d1;
+        double d1value;
+        std::tie(d1, d1value) = pyscan::traj_disk_scan(net_set, m_set, b_set, alpha, min_r, f);
+        return py::make_tuple(d1, d1value);
+    }
+
+    py::dict grid_traj_py(py::list const& traject, double chord_l) {
+        auto points = to_std_vector<Point<>>(traject);
+        auto mapped_pts = pyscan::grid_traj(points.begin(), points.end(), chord_l);
+        return toPythonDict(mapped_pts);
+    }
+
+    py::dict approx_traj_cells_py(py::list const& traject, double chord_l, double eps) {
+        auto points = to_std_vector<Point<>>(traject);
+        auto mapped_pts = pyscan::approximate_traj_cells(points.begin(), points.end(),
+                chord_l, eps);
+        return toPythonDict(mapped_pts);
+    }
+
     // pyscan::Rectangle maxRectLabelsD(const py::object& net, const py::object& sampleM, const py::object& sampleB, double rho) {
     //     auto net_points = to_std_vector<pyscan::LPoint<>>(net);
     //     auto sample_p_M = to_std_vector<pyscan::LPoint<>>(sampleM);
@@ -493,7 +561,11 @@ BOOST_PYTHON_MODULE(pyscan) {
     py::def("max_disk", &pyscan::maxDisk);
     py::def("max_disk_labels", &pyscan::maxDiskLabels);
 
- //   py::def("max_disk_scale_labels", &pyscan::maxDiskScaleLabel);
+    py::def("max_traj_disk", &pyscan::traj_disk_scan_py);
+    py::def("grid_traj", &pyscan::grid_traj_py);
+    py::def("approx_traj_cells", &pyscan::approx_traj_cells_py);
+
+    //   py::def("max_disk_scale_labels", &pyscan::maxDiskScaleLabel);
 
     py::def("max_disk_cached", &pyscan::maxDiskCached);
     py::def("max_disk_label_cached", &pyscan::maxDiskLCached);
