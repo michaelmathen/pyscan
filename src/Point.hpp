@@ -79,6 +79,7 @@ namespace pyscan {
 
         template <typename ...Coords>
         Point(Coords... rest) {
+            static_assert(sizeof...(rest) == dim + 1, "Point being created with the wrong number of arguments.");
             std::initializer_list<double> il( {rest...} );
             std::copy (il.begin(), il.end(), coords.begin());
         }
@@ -130,7 +131,7 @@ namespace pyscan {
             double scale2 = pt[dim];
             if (aeq(coords[dim], 0) && aeq(pt[dim], 0)) {
                 scale1 = 1;
-                scale2 = 1;
+                scale2 = normalization_factor(pt);
             } else if (aeq(coords[dim], 0) != aeq(pt[dim], 0)) {
                 return false;
             }

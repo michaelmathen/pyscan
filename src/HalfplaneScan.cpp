@@ -15,11 +15,11 @@
 namespace pyscan {
 
     std::tuple<Point<>, double> max_halfplane(
-            point_list& point_net,
-            point_list& red,
-            weight_list& red_w,
-            point_list& blue,
-            weight_list& blue_w,
+            point_list point_net,
+            point_list red,
+            weight_list red_w,
+            point_list blue,
+            weight_list blue_w,
             std::function<double(double, double)> const& f) {
 
         /*

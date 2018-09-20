@@ -140,7 +140,7 @@ namespace pyscan {
                                             std::function<double(double, double)> const &scan) {
 
 
-        double chord_l = 2 * sqrt(2 * alpha * min_r - alpha * alpha);
+        double chord_l = sqrt(4 * alpha * min_r - 2 * alpha * alpha);
         // Go through each trajectory and approximate it with a coreset of points
 
         // Go through the set of net points.

@@ -6,6 +6,7 @@
 #ifndef PYSCAN_TRAJECTORYSCAN_HPP
 #define PYSCAN_TRAJECTORYSCAN_HPP
 
+#include "RectangleScan.hpp"
 #include "DiskScan.hpp"
 #include "Point.hpp"
 
@@ -29,6 +30,14 @@ namespace pyscan {
     };
 
 
+
+
+    //////////////////////////////////////
+    //Full Scanning code//////////////////
+    //////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //Disk scanning Trajectory code//////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
     std::unordered_map<long, std::vector<Point<>>> grid_traj(point_it traj_b, point_it traj_e, double chord_l);
 
     std::unordered_map<long, std::vector<Point<>>> approximate_traj_cells(point_it traj_b,
@@ -43,6 +52,11 @@ namespace pyscan {
                                             double alpha,
                                             double min_r,
                                             std::function<double(double, double)> const &scan);
+
+
+
+
+
 }
 
 #endif //PYSCAN_TRAJECTORYSCAN_HPP

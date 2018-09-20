@@ -10,6 +10,7 @@
 #include <sstream>
 #include <ostream>
 #include <cstdint>
+#include <numeric>
 
 namespace pyscan {
 

@@ -14,27 +14,22 @@ find_package( Boost 1.36.0 COMPONENTS python-py35 REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 set(SOURCE_FILES
         src/BloomFilter.cpp
-        src/BloomFilter.hpp
         src/FunctionApprox.cpp
-        src/FunctionApprox.hpp
-        src/Point.hpp
         src/RectangleScan.cpp
-        src/RectangleScan.hpp
-        src/Statistics.hpp
-        src/Utilities.hpp
         src/HalfplaneScan.cpp
-        src/HalfplaneScan.hpp
         src/DiskScan.cpp
-        src/Utilities.cpp src/DiskScan2.hpp src/DiskScan2.cpp)
+        src/Utilities.cpp
+        src/DiskScan2.cpp
+        src/TrajectoryScan.cpp)
 
 set(PY_SOURCE_FILES
-        src/pyscan.cpp src/DiskScan2.hpp src/DiskScan2.cpp src/SparseGrid.hpp src/TrajectoryScan.cpp src/TrajectoryScan.hpp)
+        src/pyscan.cpp)
 
 set(test true)
 
 
 if (test)
-    set(TEST_FILES test/Utilities.hpp test/Utilities.cpp src/DiskScan2.hpp src/DiskScan2.cpp)
+    set(TEST_FILES test/Utilities.cpp ${SOURCE_FILES})
 
     configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
     execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
@@ -67,19 +62,19 @@ if (test)
     endif()
 
     # Now simply link against gtest or gtest_main as needed. Eg
-    add_executable(DiskScan_test test/DiskScan_unittest.cpp src/HalfplaneScan.cpp src/Utilities.cpp test/Utilities.cpp src/DiskScan2.cpp src/DiskScan.cpp)
+    add_executable(DiskScan_test test/DiskScan_unittest.cpp ${TEST_FILES})
     target_link_libraries(DiskScan_test gtest_main)
     add_test(NAME DiskScan_test COMMAND DiskScan_test)
 
-    add_executable(Trajectory_test test/trajectory_unittest.cpp src/FunctionApprox.cpp src/TrajectoryScan.cpp src/HalfplaneScan.cpp src/Utilities.cpp test/Utilities.cpp src/DiskScan2.cpp src/DiskScan.cpp)
+    add_executable(Trajectory_test test/trajectory_unittest.cpp ${TEST_FILES})
     target_link_libraries(Trajectory_test gtest_main)
     add_test(NAME Trajectory_test COMMAND DiskScan_test)
 
-    add_executable(RectangleScan_test test/RectangleScan_unittest.cpp ${TEST_FILES} ${SOURCE_FILES})
+    add_executable(RectangleScan_test test/RectangleScan_unittest.cpp ${TEST_FILES})
     target_link_libraries(RectangleScan_test gtest_main)
     add_test(NAME RectangleScan_test COMMAND RectangleScan_test)
 
-    add_executable(FunctionApprox_test test/FunctionApprox_unittest.cpp src/Utilities.cpp src/FunctionApprox.cpp test/Utilities.cpp)
+    add_executable(FunctionApprox_test test/FunctionApprox_unittest.cpp ${TEST_FILES})
     target_link_libraries(FunctionApprox_test gtest_main)
     add_test(NAME FunctionApprox_test COMMAND FunctionApprox_test)
 
@@ -87,12 +82,12 @@ if (test)
     target_link_libraries(Point_test gtest_main)
     add_test(NAME Point_test COMMAND Point_test)
 
-    add_executable(Halfplane_test test/Halfplane_unittest.cpp src/HalfplaneScan.cpp test/Utilities.cpp)
+    add_executable(Halfplane_test test/Halfplane_unittest.cpp ${TEST_FILES})
     target_link_libraries(Halfplane_test gtest_main)
     add_test(NAME Halfplane_test COMMAND Halfplane_test)
 endif()
 
-
+configure_file(pyscan.py ${CMAKE_CURRENT_BINARY_DIR}/pyscan.py COPYONLY)
 add_library(pyscan SHARED ${SOURCE_FILES} ${PY_SOURCE_FILES})
 target_link_libraries(pyscan ${Boost_LIBRARIES})
-set_target_properties(pyscan PROPERTIES PREFIX "")
+#set_target_properties(pyscan PROPERTIES PREFIX "")

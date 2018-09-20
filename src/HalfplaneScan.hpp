@@ -15,11 +15,11 @@ namespace pyscan {
     Pt2 dropPoint(Pt3 const& fixed_point, Pt3 const& p1);
 
     std::tuple<Pt2, double> max_halfplane(
-            point_list& point_net,
-            point_list& red,
-            weight_list& red_w,
-            point_list& blue,
-            weight_list& blue_w,
+            point_list point_net,
+            point_list red,
+            weight_list red_w,
+            point_list blue,
+            weight_list blue_w,
             std::function<double(double, double)> const& f);
 
 
