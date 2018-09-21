@@ -47,9 +47,10 @@ auto toPointList(py::object const& el) -> pyscan::point_list {
 
 template<class T>
 py::list std_vector_to_py_list(const std::vector<T>& v) {
-    py::object get_iter = py::iterator<std::vector<T> >();
-    py::object iter = get_iter(v);
-    py::list l(iter);
+    py::list l;
+    for (auto it = v.begin(); it != v.end(); it++) {
+        l.append(*it);
+    }
     return l;
 }
 
@@ -420,5 +421,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
     //py::def("maxRectLabels", &maxRectLabelsD);
     py::def("approximate_hull", pyscan::approx_hull);
     py::def("approximate_hull3", pyscan::approx_hull3);
+
+    py::def("core_set_3d_traj", &pyscan::core_set_3d_traj);
 
 }

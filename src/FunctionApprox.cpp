@@ -58,12 +58,6 @@ namespace pyscan {
                           Vec3 const& dir2, double d2,
                           Vec3 const& dir3, double d3,
                           Vec3& v_ext) {
-        /*
-         * Need to test two cases.
-         *
-         */
-
-
         double dval = det3(dir1, dir2, dir3);
         if (fabs(dval) < 8 * std::numeric_limits<double>::epsilon()) {
             return false;
@@ -77,7 +71,7 @@ namespace pyscan {
         A(1, 0) = dir2[0], A(1, 1) = dir2[1], A(1, 2) = dir2[2],
         A(2, 0) = dir3[0], A(2, 1) = dir3[1], A(2, 2) = dir3[2];
 
-        vector<double> x;
+        vector<double> x(3);
         x[0] = d1, x[1] = d2, x[2] = d3;
         permutation_matrix<size_t> P(3);
         lu_factorize(A, P);
@@ -239,6 +233,12 @@ namespace pyscan {
                         approximateHull(eps, Vec2{-1, 0}, Vec2{0, 1}, phi, lineMaxF));
     }
 
+    /*
+     * Computes the height of a triangle that has corner points p1, p2, and pt where pt is the top corner.
+     * p1, p2 -- corners of the base of the triangle
+     * pt -- top corner of the triangle
+     * return -- the height of the triangle as a double.
+     */
     double height(Vec2 const& p1, Vec2 const& p2, Vec2 const& pt) {
         double a = sqrt((p1[0] - p2[0]) *(p1[0] - p2[0]) + (p1[1] - p2[1]) *(p1[1] - p2[1]));
         double b = sqrt((p1[0] - pt[0]) *(p1[0] - pt[0]) + (p1[1] - pt[1]) *(p1[1] - pt[1]));
@@ -278,17 +278,16 @@ namespace pyscan {
 
                 Vec2 p_ext;
 
-                //TODO fix this.
-//                if (lineIntersection(lf.d_cc, di, lf.d_cl, dj, p_ext)) {
-//                    if (height(lf.p_cc, lf.p_cl, p_ext) > eps) {
-//
-//                        Vec2 m_vec = avg(lf.d_cc, lf.d_cl);
-//                        auto line_max = lineMaxF(m_vec);
-//                        pts.push_back(line_max);
-//                        frameStack.emplace_back(lf.d_cc, m_vec, lf.p_cc, line_max);
-//                        frameStack.emplace_back(m_vec, lf.d_cl, line_max, lf.p_cl);
-//                    }
-//                }
+                if (lineIntersection(lf.d_cc, di, lf.d_cl, dj, p_ext)) {
+                    if (height(lf.p_cc, lf.p_cl, p_ext) > eps) {
+
+                        Vec2 m_vec = avg(lf.d_cc, lf.d_cl);
+                        auto line_max = lineMaxF(m_vec);
+                        pts.push_back(line_max);
+                        frameStack.emplace_back(lf.d_cc, m_vec, lf.p_cc, line_max);
+                        frameStack.emplace_back(m_vec, lf.d_cl, line_max, lf.p_cl);
+                    }
+                }
             }
             return pts;
     }
@@ -297,16 +296,42 @@ namespace pyscan {
                         std::function<Vec2(Vec2)> lineMaxF) {
         auto core_set1 = eps_core_set(eps, Vec2{1, 0}, Vec2{0, -1},  lineMaxF)
             ,core_set2 = eps_core_set(eps, Vec2{0, 1}, Vec2{1, 0}, lineMaxF)
-            ,core_set3 = eps_core_set(eps, Vec2{1, 0}, Vec2{-1, 0}, lineMaxF)
-            ,core_set4 = eps_core_set(eps, Vec2{-1, 0}, Vec2{0, -1}, lineMaxF);
+            ,core_set3 = eps_core_set(eps, Vec2{-1, 0}, Vec2{0, 1}, lineMaxF)
+            ,core_set4 = eps_core_set(eps, Vec2{0, -1}, Vec2{-1, 0}, lineMaxF);
         core_set1.insert(core_set1.end(), core_set2.begin(), core_set2.end());
         core_set1.insert(core_set1.end(), core_set3.begin(), core_set3.end());
         core_set1.insert(core_set1.end(), core_set4.begin(), core_set4.end());
         return core_set1;
     }
 
-    double height(Vec3 const& p1, Vec3 const& p2, Vec3 const& p3, Vec3 const& p_ext) {
-        
+    Vec3 cross_product(Vec3 const& p1, Vec3 const& p2) {
+        return Vec3{det2(p1[1], p2[1], p1[2], p2[2]),
+                -det2(p1[0], p2[0], p1[2], p2[2]),
+                det2(p1[0], p2[0], p1[1], p2[1])};
+    }
+
+    Vec3 operator-(Vec3 const& v1, Vec3 const& v2) {
+        return Vec3{ v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2] };
+    }
+    /*
+     * p1, p2, and p3 define a plane. We want to measure the distance from the plane to the pt in the normal direction
+     * from the plane. We are using the direc_hint as a guess for the direction of the normal by choosing the normal
+     * that is positive to the direct_hint. We return the distance to the plane.
+     */
+    double height3(Vec3 const& p1,
+            Vec3 const& p2,
+            Vec3 const& p3,
+            Vec3 const& direc_hint,
+            Vec3 const& pt) {
+
+        Vec3 normal_unnorm = cross_product(p2 - p1, p3 - p1);
+        Vec3 normal = normal_unnorm / sqrt(dot(normal_unnorm, normal_unnorm));
+        if (dot(normal, direc_hint) < 0) {
+            //Flip the normal orientation
+            normal = normal * -1;
+        }
+        Vec3 w = p1 - pt;
+        return dot(w, normal);
     }
 
     std::vector<Vec3> eps_core_set3(double eps,
@@ -337,21 +362,24 @@ namespace pyscan {
             Frame3 lf = frameStack.front();
             frameStack.pop_front();
 
-// TODO fix this.
-//            if (lineIntersection(lf.d[0], d1, lf.d[1], d2, lf.d[2], d3, p_ext)) {
-//                if (height(lf.d[0], lf.d[1]) > eps) {
-//
-//                    Vec3 m_vec = avg(lf.d[0], lf.d[1], lf.d[2]);
-//                    auto line_max = lineMaxF(m_vec);
-//                    pts.push_back(line_max);
-//                    frameStack.emplace_back(direc3{lf.d[0], m_vec, lf.d[1]},
-//                                            direc3{lf.p[0], line_max, lf.p[1]});
-//                    frameStack.emplace_back(direc3{lf.d[0], m_vec, lf.d[2]},
-//                                            direc3{lf.p[0], line_max, lf.p[2]});
-//                    frameStack.emplace_back(direc3{lf.d[1], m_vec, lf.d[2]},
-//                                            direc3{lf.p[1], line_max, lf.p[2]});
-//                }
-//            }
+            Vec3 p_ext;
+            if (lineIntersection(
+                    lf.d[0], dot(lf.p[0], lf.d[0]),
+                    lf.d[1], dot(lf.p[1], lf.d[1]),
+                    lf.d[2], dot(lf.p[2], lf.d[2]), p_ext)) {
+                if (height3(lf.p[0], lf.p[1], lf.p[2], lf.d[0], p_ext) > eps) {
+
+                    Vec3 m_vec = avg(lf.d[0], lf.d[1], lf.d[2]);
+                    auto line_max = lineMaxF(m_vec);
+                    pts.push_back(line_max);
+                    frameStack.emplace_back(direc3{lf.d[0], m_vec, lf.d[1]},
+                                            direc3{lf.p[0], line_max, lf.p[1]});
+                    frameStack.emplace_back(direc3{lf.d[0], m_vec, lf.d[2]},
+                                            direc3{lf.p[0], line_max, lf.p[2]});
+                    frameStack.emplace_back(direc3{lf.d[1], m_vec, lf.d[2]},
+                                            direc3{lf.p[1], line_max, lf.p[2]});
+                }
+            }
         }
         return pts;
     }

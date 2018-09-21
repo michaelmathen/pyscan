@@ -18,25 +18,32 @@ namespace pyscan {
 
         auto bounds_x = std::minmax_element(traj_b, traj_e,
                 [&](Point<> const& p1, Point<> const& p2){
-                    return p1[0] < p2[0];
+                    return getX(p1) < getX(p2);
         });
         auto bounds_y = std::minmax_element(traj_b, traj_e, [&](Point<> const& p1, Point<> const& p2){
-            return p1[1] < p2[1];
+            return getY(p1) < getY(p2);
         });
 
-        return std::make_tuple((*bounds_x.first)[0], (*bounds_y.first)[1],
-                (*bounds_x.second)[0], (*bounds_y.second)[1]);
+        return std::make_tuple(getX(*bounds_x.first), getY(*bounds_y.first),
+                getX(*bounds_x.second), getY(*bounds_y.second));
     }
 
 
-    double x_to_y(double x_1, double x_2, double y_1, double y_2, double x) {
-        return (y_1 - y_2) * (x - x_1) / (x_1 - x_2);
+    double x_to_y(double x_1, double y_1, double x_2, double y_2, double x) {
+
+        return (y_1 - y_2) / (x_1 - x_2) * (x - x_1) + y_1;
     }
 
-    double y_to_x(double x_1, double x_2, double y_1, double y_2, double y) {
-        return (x_1 - x_2) * (y - y_1) / (y_1 - y_2);
+    double y_to_x(double x_1, double y_1, double x_2, double y_2, double y) {
+        return (x_1 - x_2) / (y_1 - y_2) * (y - y_1) + x_1;
+
     }
 
+    long index(double x, double y, double lx, double ly, double chord_l, long g_size) {
+        long i = static_cast<long>((x - lx) / chord_l);
+        long j = static_cast<long>((y - ly) / chord_l);
+        return i + g_size * j;
+    }
     /*
      * Takes a trajectory and grids it so that each grid contains points that cross it..
      */
@@ -56,17 +63,20 @@ namespace pyscan {
         long g_size = static_cast<long>((ux - lx) / chord_l) + 1;
         std::unordered_map<long, std::vector<Point<>>> traj_points;
 
+        long location = index(getX(*last_pt), getY(*last_pt), lx, ly, chord_l, g_size);
+        traj_points.emplace(location, std::initializer_list<Point<>>{*last_pt});
+
         for (auto curr_pt = last_pt + 1; curr_pt != traj_e; curr_pt++) {
 
-            auto g_x = static_cast<int>(((*last_pt)[0] - lx) / chord_l);
-            auto g_y = static_cast<int>(((*last_pt)[1] - ly) / chord_l);
-            auto g_n_x = static_cast<int>(((*curr_pt)[0] - lx) / chord_l);
-            auto g_n_y = static_cast<int>(((*curr_pt)[1] - ly) / chord_l);
+            auto g_x = static_cast<int>((getX(*last_pt) - lx) / chord_l);
+            auto g_y = static_cast<int>((getY(*last_pt) - ly) / chord_l);
+            auto g_n_x = static_cast<int>((getX(*curr_pt) - lx) / chord_l);
+            auto g_n_y = static_cast<int>((getY(*curr_pt) - ly) / chord_l);
 
 
             for (int i = g_x + 1; i <= g_n_x; i++) {
                 double x_val = i * chord_l + lx;
-                double y_val = x_to_y((*last_pt)[0], (*last_pt)[1], (*curr_pt)[0], (*curr_pt)[1], x_val);
+                double y_val = x_to_y(getX(*last_pt), getY(*last_pt), getX(*curr_pt), getY(*curr_pt), x_val);
                 int j = static_cast<int>((y_val - ly) / chord_l);
                 auto element = traj_points.find(i + g_size * j);
                 if (element == traj_points.end()) {
@@ -78,7 +88,7 @@ namespace pyscan {
             }
             for (int j = g_y + 1; j <= g_n_y; j++) {
                 double y_val = j * chord_l + ly;
-                double x_val = y_to_x((*last_pt)[0], (*last_pt)[1], (*curr_pt)[0], (*curr_pt)[1], y_val);
+                double x_val = y_to_x(getX(*last_pt), getY(*last_pt), getX(*curr_pt), getY(*curr_pt), y_val);
                 int i = static_cast<int>((x_val - lx) / chord_l);
                 auto element = traj_points.find(i + g_size * j);
                 if (element == traj_points.end()) {
@@ -87,6 +97,15 @@ namespace pyscan {
                     element->second.emplace_back(x_val, y_val, 1.0);
                 }
             }
+
+            location = index(getX(*curr_pt), getY(*curr_pt), lx, ly, chord_l, g_size);
+            auto element = traj_points.find(location);
+            if (element == traj_points.end()) {
+                traj_points.emplace(location, std::initializer_list<Point<>>{*curr_pt});
+            } else {
+                element->second.push_back(*curr_pt);
+            }
+
             last_pt = curr_pt;
         }
         return traj_points;
@@ -132,6 +151,49 @@ namespace pyscan {
         }
     }
 
+
+
+    std::vector<Point<>> core_set_3d_traj(point_list traj, double alpha) {
+
+        auto approx = eps_core_set3(alpha, [&](Vec3 const& direction) {
+            auto pt_max = std::max_element(traj.begin(), traj.end(), [&] (Point<> const& p1, Point<> const& p2){
+                double z_1 = getX(p1) * getX(p1) + getY(p1) * getY(p1);
+                double z_2 = getX(p2) * getX(p2) + getY(p2) * getY(p2);
+
+                double mag_1 = getX(p1) * direction[0] + getY(p1) * direction[1] + z_1 * direction[2];
+                double mag_2 = getX(p2) * direction[0] + getY(p2) * direction[1] + z_2 * direction[2];
+                return mag_1 < mag_2;
+            });
+            return Vec3{getX(*pt_max), getY(*pt_max), getX(*pt_max) * getX(*pt_max) + getY(*pt_max) * getY(*pt_max)};
+        });
+
+        std::vector<Point<>> output;
+        for (auto& pt : approx) {
+            // Do a flat projection back down.
+            output.emplace_back(pt[0], pt[1], 1.0);
+        }
+        return output;
+    }
+
+    void core_set_3d_traj_internal(point_it traj_b, point_it traj_e, size_t label, double weight, double alpha,
+                          lpoint_list& output) {
+
+        auto approx = eps_core_set3(alpha, [&](Vec3 const& direction) {
+            auto pt_max = std::max_element(traj_b, traj_e, [&] (Point<> const& p1, Point<> const& p2){
+                double z_1 = getX(p1) * getX(p1) + getY(p1) * getY(p1);
+                double z_2 = getX(p2) * getX(p2) + getY(p2) * getY(p2);
+
+                double mag_1 = getX(p1) * direction[0] + getY(p1) * direction[1] + z_1 * direction[2];
+                double mag_2 = getX(p2) * direction[0] + getY(p2) * direction[1] + z_2 * direction[2];
+                return mag_1 < mag_2;
+            });
+            return Vec3{getX(*pt_max), getY(*pt_max), getX(*pt_max) * getX(*pt_max) + getY(*pt_max) * getY(*pt_max)};
+        });
+
+        for (auto& pt : approx) {
+            output.emplace_back(label, weight, pt[0], pt[1], 1.0);
+        }
+    }
     std::tuple<Disk, double> traj_disk_scan(traj_set &net,
                                             wtraj_set &sampleM,
                                             wtraj_set &sampleB,

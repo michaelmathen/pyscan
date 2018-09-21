@@ -54,8 +54,7 @@ namespace pyscan {
                                             std::function<double(double, double)> const &scan);
 
 
-
-
+    std::vector<Point<>> core_set_3d_traj(point_list traj, double alpha);
 
 }
 
