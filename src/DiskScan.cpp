@@ -921,9 +921,9 @@ namespace pyscan {
 
 
     template <typename T>
-    std::tuple<Disk, double> disk_scan_scale(point_list& net,
-                                             std::vector<T>& sampleM,
-                                             std::vector<T>& sampleB,
+    std::tuple<Disk, double> disk_scan_scale(point_list const& net,
+                                             std::vector<T> const& sampleM,
+                                             std::vector<T> const& sampleB,
                                              uint32_t grid_r,
                                              std::function<double(double, double)> const& scan) {
 
@@ -1016,9 +1016,9 @@ namespace pyscan {
 
 
     template<typename T>
-    std::tuple<Disk, double> cached_disk_scan(point_list& net,
-                                              T& sampleM,
-                                              T& sampleB,
+    std::tuple<Disk, double> cached_disk_scan(point_list net,
+                                              T sampleM,
+                                              T sampleB,
                                               std::function<double(double, double)> const& scan) {
         /*
          * Computes all resolutions
@@ -1037,13 +1037,13 @@ namespace pyscan {
     }
 
 
-    template std::tuple<Disk, double> cached_disk_scan<wpoint_list>(point_list&,
-                                                       wpoint_list&,
-                                                       wpoint_list&,
+    template std::tuple<Disk, double> cached_disk_scan<wpoint_list>(point_list,
+                                                       wpoint_list,
+                                                       wpoint_list,
                                                        std::function<double(double, double)> const&);
 
-    template std::tuple<Disk, double> cached_disk_scan<lpoint_list>(point_list& net,
-                                                       lpoint_list& sampleM,
-                                                       lpoint_list& sampleB,
+    template std::tuple<Disk, double> cached_disk_scan<lpoint_list>(point_list net,
+                                                       lpoint_list sampleM,
+                                                       lpoint_list sampleB,
                                                        std::function<double(double, double)> const&);
 }

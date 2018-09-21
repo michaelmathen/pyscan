@@ -60,52 +60,11 @@ namespace pyscan {
         /*
          * Useful for finding a region of a certain size.
          */
-
         return [size] (double m, double b) {
-            //std::cout << 1 - fabs(m - size) << " " << size << std::endl;
             return 1 - fabs(m - size);
         };
     }
 
-    auto toLPt(const py::object& pts, 
-            const py::object& weights,
-            const py::object& labels) -> pyscan::lpoint_list {
-
-        auto bp = py::stl_input_iterator<Pt2>(pts);
-        auto ep = py::stl_input_iterator<Pt2>();
-        auto bw = py::stl_input_iterator<double>(weights);
-        auto ew = py::stl_input_iterator<double>();
-        auto bl = py::stl_input_iterator<size_t>(labels);
-        auto el = py::stl_input_iterator<size_t>();
-        //assert(((ep - bp) == (ew - bw)) && ((ew -bw) == (el - bl)));
-
-        pyscan::lpoint_list list;
-        while(bp != ep) {
-            list.emplace_back(pyscan::LPoint<>(*bl, *bw, (*bp)[0], (*bp)[1], (*bp)[2]));
-            bp++;
-            bw++;
-            bl++;
-        }
-        return list;
-    }
-
-    auto toWPt(const py::object& pts, 
-            const py::object& weights) -> pyscan::wpoint_list {
-
-        auto bp = py::stl_input_iterator<Pt2>(pts);
-        auto ep = py::stl_input_iterator<Pt2>();
-        auto bw = py::stl_input_iterator<double>(pts);
-        auto ew = py::stl_input_iterator<double>();
-        //assert(((ep - bp) == (ew - bw)) && ((ew -bw) == (el - bl)));
-
-        pyscan::wpoint_list list;
-        while(bp != ep) {
-            list.emplace_back(pyscan::WPoint<>(*bw, (*bp)[0], (*bp)[1], (*bp)[2]));
-            bp++;
-            bw++;
-        }
-        return list;
-    }
 
     std::function<double(double, double)> rho_f(std::function<double(double, double, double)> const& f, double rho) {
        return [&](double x, double y) {
@@ -125,238 +84,6 @@ namespace pyscan {
         return maxSubgridNonLinear(grid, f);
     }
 
-    py::tuple maxHalfspace(const py::object& net,
-                        const py::object& sampleM,
-                        const py::object& weightM,
-                        const py::object& sampleB,
-                        const py::object& weightB,
-                        std::function<double(double, double)> const& f) {
-        auto net_points = to_std_vector<pyscan::Point<>>(net);
-        auto red = to_std_vector<Pt2>(sampleM);
-        auto red_w = to_std_vector<double>(weightM);
-        auto blue = to_std_vector<Pt2>(sampleB);
-        auto blue_w = to_std_vector<double>(weightB);
-        Pt2 d1;
-        double d1value;
-        std::tie(d1, d1value) = max_halfplane(net_points,
-                red, red_w, blue, blue_w, f);
-        return py::make_tuple(d1, d1value);
-    }
-
-    py::tuple maxHalfspaceLabels(const py::object& net,
-                           const py::object& sampleM,
-                           const py::object& weightM,
-                           const py::object& labelM,
-                           const py::object& sampleB,
-                           const py::object& weightB,
-                           const py::object& labelB,
-                           std::function<double(double, double)> const& f) {
-        auto net_points = to_std_vector<pyscan::Point<>>(net);
-        auto red = to_std_vector<Pt2>(sampleM);
-        auto red_w = to_std_vector<double>(weightM);
-        auto red_l = to_std_vector<long>(labelM);
-        auto blue = to_std_vector<Pt2>(sampleB);
-        auto blue_w = to_std_vector<double>(weightB);
-        auto blue_l = to_std_vector<long>(labelB);
-        Pt2 d1;
-        double d1value;
-        std::tie(d1, d1value) = max_halfplane_labeled(net_points,
-                                              red, red_w, red_l,
-                                                      blue, blue_w, blue_l, f);
-        return py::make_tuple(d1, d1value);
-    }
-    py::tuple maxDisk(const py::object& net,
-            const py::object& sampleM, 
-            const py::object& weightM,
-            const py::object& sampleB,
-            const py::object& weightB,
-            std::function<double(double, double)> const& f) {
-        auto net_points = to_std_vector<pyscan::Point<>>(net);
-        auto sample_p_M = toWPt(sampleM, weightM);
-        auto sample_p_B = toWPt(sampleB, weightB);
-        Disk d1;
-        double d1value;
-        std::tie(d1, d1value) = diskScan(net_points, sample_p_M, 
-            sample_p_B, 
-            f);
-        return py::make_tuple(d1, d1value);
-    }
-
-//    py::tuple maxDiskScale(const py::object& net,
-//                           const py::object& sampleM,
-//                           const py::object& sampleB,
-//                           int r,
-//                           std::function<double(double, double)> const& f) {
-//        auto net_points = to_std_vector<pyscan::Point<>>(net);
-//        auto m_sample = to_std_vector<pyscan::WPoint<>>(sampleM);
-//        auto b_sample = to_std_vector<pyscan::WPoint<>>(sampleB);
-//        Disk d1;
-//        double d1value;
-//        std::tie(d1, d1value) = disk_scan_scale(net_points,
-//                                                m_sample,
-//                                                b_sample,
-//                                                r,
-//                                                f);
-//        return py::make_tuple(d1, d1value);
-//    }
-
-    py::tuple maxDiskCached(const py::object& net,
-                           const py::object& sampleM,
-                           const py::object& sampleB,
-                           std::function<double(double, double)> const& f) {
-        auto net_points = to_std_vector<pyscan::Point<>>(net);
-        auto m_sample = to_std_vector<pyscan::WPoint<>>(sampleM);
-        auto b_sample = to_std_vector<pyscan::WPoint<>>(sampleB);
-        Disk d1;
-        double d1value;
-        std::tie(d1, d1value) = cached_disk_scan(net_points,
-                                                m_sample,
-                                                b_sample,
-                                                f);
-        return py::make_tuple(d1, d1value);
-    }
-    py::tuple maxDiskLCached(const py::object& net,
-                            const py::object& sampleM,
-                            const py::object& sampleB,
-                            std::function<double(double, double)> const& f) {
-        auto net_points = to_std_vector<pyscan::Point<>>(net);
-        auto m_sample = to_std_vector<pyscan::LPoint<>>(sampleM);
-        auto b_sample = to_std_vector<pyscan::LPoint<>>(sampleB);
-        Disk d1;
-        double d1value;
-        std::tie(d1, d1value) = cached_disk_scan(net_points,
-                                                 m_sample,
-                                                 b_sample,
-                                                 f);
-        return py::make_tuple(d1, d1value);
-    }
-//    py::tuple maxDiskScaleLabel(const py::object& net,
-//                           const py::object& sampleM,
-//                           const py::object& sampleB,
-//                           int r,
-//                           std::function<double(double, double)> const& f) {
-//        auto net_points = to_std_vector<pyscan::Point<>>(net);
-//        auto m_sample = to_std_vector<pyscan::LPoint<>>(sampleM);
-//        auto b_sample = to_std_vector<pyscan::LPoint<>>(sampleB);
-//        Disk d1;
-//        double d1value;
-//        std::tie(d1, d1value) = label_disk_scan_scale(net_points,
-//                                                m_sample,
-//                                                b_sample,
-//                                                r,
-//                                                f);
-//        return py::make_tuple(d1, d1value);
-//    }
-
-    py::tuple maxDiskLabels(const py::object& net,
-            const py::object& sampleM, 
-            const py::object& weightM,
-            const py::object& labelM,
-            const py::object& sampleB,
-            const py::object& weightB,
-            const py::object& labelB,
-            std::function<double(double, double)> const& f) {
-        auto net_points = to_std_vector<pyscan::Point<>>(net);
-        auto lpointsM = toLPt(sampleM, weightM, labelM);
-        auto lpointsB = toLPt(sampleB, weightB, labelB);
-        Disk d1;
-        double d1value;
-        std::tie(d1, d1value) = diskScanLabels(net_points, lpointsM, lpointsB, f);
-        return py::make_tuple(d1, d1value);
-    }
-
-      py::tuple maxHalfplane(const py::object& net, 
-            const py::object& sampleM, 
-            const py::object& weightM,
-            const py::object& sampleB,
-            const py::object& weightB,
-            std::function<double(double, double)> const& f) {
-        auto net_points = to_std_vector<pyscan::Point<>>(net);
-        auto sample_p_M = to_std_vector<Pt2>(sampleM);
-        auto sample_p_B = to_std_vector<Pt2>(sampleB);
-        auto weight_p_M = to_std_vector<double>(weightM);
-        auto weight_p_B = to_std_vector<double>(weightB);
-        Point<> d1;
-        double d1value;
-        std::tie(d1, d1value) = max_halfplane(net_points, 
-            sample_p_M,
-            weight_p_M,
-            sample_p_B,
-            weight_p_B, 
-            f);
-        return py::make_tuple(d1, d1value);
-    }
-
-    py::tuple maxHalfplaneLabeled(const py::object& net, 
-            const py::object& sampleM, 
-            const py::object& weightM,
-            const py::object& labelM,
-            const py::object& sampleB,
-            const py::object& weightB,
-            const py::object& labelB,
-            std::function<double(double, double)> const& f) {
-        auto net_points = to_std_vector<Pt2>(net);
-        auto lpointsM = toLPt(sampleM, weightM, labelM);
-        auto lpointsB = toLPt(sampleB, weightB, labelB);
-        Disk d1;
-        double d1value;
-        std::tie(d1, d1value) = diskScanLabels(net_points, lpointsM, lpointsB, f);
-        return py::make_tuple(d1, d1value);
-    }
-
-    py::object approx_hull(double eps, std::function<double(pyscan::Vec2)> const& phi, const py::object& traj_pts) {
-        auto pts = to_std_vector<Pt2>(traj_pts);
-        auto max_f = [&] (Vec2 direction) {
-            double max_dir = -std::numeric_limits<double>::infinity();
-            Pt2 curr_pt {0.0, 0.0, 0.0};
-            for (auto& pt : pts) {
-                double curr_dir = direction[0] * pyscan::getX(pt) + direction[1] * pyscan::getY(pt);
-                if (max_dir < curr_dir) {
-                    max_dir = curr_dir;
-                    curr_pt = pt;
-                }
-            }
-            return Vec2{pyscan::getX(curr_pt), pyscan::getY(curr_pt)};
-        };
-        std::vector<pyscan::Point<>> core_set_pts;
-        {
-            auto vecs = eps_core_set(eps, max_f);
-            for (auto &v :vecs) {
-                core_set_pts.push_back(pyscan::Point<>(v[0], v[1], 1.0));
-            }
-        }
-        return std_vector_to_py_list(core_set_pts);
-    }
-
-
-    py::object approx_hull3(double eps, std::function<double(pyscan::Vec3)> const& phi, const py::object& traj_pts) {
-        /*
-         * Finish this.
-         */
-        auto pts = to_std_vector<Pt3>(traj_pts);
-        auto max_f = [&] (Vec3 direction) {
-            double max_dir = -std::numeric_limits<double>::infinity();
-            Pt3 curr_pt {0.0, 0.0, 0.0, 0.0};
-            for (auto& pt : pts) {
-                double curr_dir = direction[0] * pyscan::getX(pt)
-                        + direction[1] * pyscan::getY(pt)
-                        + direction[2] * pyscan::getZ(pt);
-                if (max_dir < curr_dir) {
-                    max_dir = curr_dir;
-                    curr_pt = pt;
-                }
-            }
-            return Vec3{pyscan::getX(curr_pt), pyscan::getY(curr_pt), pyscan::getZ(curr_pt)};
-        };
-        std::vector<pyscan::Point<3>> core_set_pts;
-        {
-            auto vecs = eps_core_set3(eps, max_f);
-            for (auto &v :vecs) {
-                core_set_pts.push_back(pyscan::Point<3>(v[0], v[1], v[2], 1.0));
-            }
-        }
-        return std_vector_to_py_list(core_set_pts);
-    }
 
     double evaluate(std::function<double(double, double)> const& f, double m, double b) {
         return f(m, b);
@@ -423,12 +150,6 @@ namespace pyscan {
         return toPythonDict(mapped_pts);
     }
 
-    // pyscan::Rectangle maxRectLabelsD(const py::object& net, const py::object& sampleM, const py::object& sampleB, double rho) {
-    //     auto net_points = to_std_vector<pyscan::LPoint<>>(net);
-    //     auto sample_p_M = to_std_vector<pyscan::LPoint<>>(sampleM);
-    //     auto sample_p_B = to_std_vector<pyscan::LPoint<>>(sampleB);
-    //     return pyscan::maxRectStatLabels(net_points, sample_p_M, sample_p_B, rho_f(kulldorff, rho));
-    // }
 };
 
 
@@ -444,28 +165,7 @@ pyscan::Grid makeGrid(const py::object& sample_r, const py::object& weight_r, co
     return pyscan::Grid(r, points_r, v_weight_r, points_b, v_weight_b);
 }
 
-//pyscan::Grid makeNetGrid(const py::object& net, const py::object& sample_r, const py::object& sample_b) {
-//    std::vector<pyscan::Point<>> net_p = to_std_vector<pyscan::Point<>>(net);
-//    std::vector<pyscan::Point<>> points_r = to_std_vector<pyscan::Point<>>(sample_r);
-//    std::vector<pyscan::Point<>> points_b = to_std_vector<pyscan::Point<>>(sample_b);
-//    return pyscan::Grid(net_p.begin(), net_p.end(), points_r.begin(), points_r.end(), points_b.begin(), points_b.end());
-//}
-
-
-/*
-pyscan::Disk maxDiskLabelsI(const py::object& net, const py::object& sampleM, const py::object& sampleB, double rho) {
-    auto net_points = to_std_vector<pyscan::LPoint<int>>(net);
-    auto sample_p_M = to_std_vector<pyscan::LPoint<int>>(sampleM);
-    auto sample_p_B = to_std_vector<pyscan::LPoint<int>>(sampleB);
-    return diskScanStatLabels(net_points, sample_p_M, sample_p_B, rho);
-}
- */
-/// @brief Type that allows for registration of conversions from
-///        python iterable types.
-struct iterable_converter
-{
-    /// @note Registers converter from a python interable type to the
-    ///       provided type.
+struct iterable_converter {
     template <typename Container>
     iterable_converter&
     from_python()
@@ -474,36 +174,22 @@ struct iterable_converter
                 &iterable_converter::convertible,
                 &iterable_converter::construct<Container>,
                 boost::python::type_id<Container>());
-
-        // Support chaining.
         return *this;
     }
 
-    /// @brief Check if PyObject is iterable.
     static void* convertible(PyObject* object)
     {
         return PyObject_GetIter(object) ? object : NULL;
     }
 
-    /// @brief Convert iterable PyObject to C++ container type.
-    ///
-    /// Container Concept requirements:
-    ///
-    ///   * Container::value_type is CopyConstructable.
-    ///   * Container can be constructed and populated with two iterators.
-    ///     I.e. Container(begin, end)
     template <typename Container>
     static void construct(
             PyObject* object,
             boost::python::converter::rvalue_from_python_stage1_data* data)
     {
         namespace python = boost::python;
-        // Object is a borrowed reference, so create a handle indicting it is
-        // borrowed for proper reference counting.
         python::handle<> handle(python::borrowed(object));
 
-        // Obtain a handle to the memory block that the converter has allocated
-        // for the C++ type.
         typedef python::converter::rvalue_from_python_storage<Container>
                 storage_type;
         void* storage = reinterpret_cast<storage_type*>(data)->storage.bytes;
@@ -522,48 +208,37 @@ struct iterable_converter
     }
 };
 
+
+template<int dim>
 struct pypoint_converter {
 
+    static_assert(dim == 3 || dim == 2, "Converter not implemented for dimensions other than 2 or 3.");
 
-    /// @note Registers converter from a python iterable type to the
-    ///       provided type.
-    pypoint_converter& from_python()
-    {
+    pypoint_converter& from_python() {
         boost::python::converter::registry::push_back(
                 &pypoint_converter::convertible,
                 &pypoint_converter::construct,
-                boost::python::type_id<pyscan::Point<>>());
+                boost::python::type_id<pyscan::Point<dim>>());
         return *this;
     }
 
-    /// @brief Check if PyObject is a string.
+    /// @brief Check if PyObject is a double tuple.
     static void* convertible(PyObject* object) {
-        if (PyTuple_Check(object) && PyTuple_Size(object) == 2)  {
-            return PyFloat_Check(PyTuple_GetItem(object, 0)) &&
-            PyFloat_Check(PyTuple_GetItem(object, 1)) ? object : NULL;
+        if (PyTuple_Check(object) && PyTuple_Size(object) == dim)  {
+            for (int i = 0; i < dim; i++) {
+               if (!PyFloat_Check(PyTuple_GetItem(object, 0))) {
+                   return NULL;
+               }
+            }
+            return object;
         }
         return NULL;
     }
 
-    /// @brief Convert PyString to Container.
-    ///
-    /// Container Concept requirements:
-    ///
-    ///   * Container::value_type is CopyConstructable from char.
-    ///   * Container can be constructed and populated with two iterators.
-    ///     I.e. Container(begin, end)
-    static void construct(
-            PyObject* object,
-            boost::python::converter::rvalue_from_python_stage1_data* data)
-    {
+    static void construct( PyObject* object, boost::python::converter::rvalue_from_python_stage1_data* data) {
         namespace python = boost::python;
-        // Object is a borrowed reference, so create a handle indicting it is
-        // borrowed for proper reference counting.
         python::handle<> handle(python::borrowed(object));
-
-        // Obtain a handle to the memory block that the converter has allocated
-        // for the C++ type.
-        typedef python::converter::rvalue_from_python_storage<pyscan::Point<>>
+        typedef python::converter::rvalue_from_python_storage<pyscan::Point<dim>>
                 storage_type;
         void* storage = reinterpret_cast<storage_type*>(data)->storage.bytes;
 
@@ -571,27 +246,43 @@ struct pypoint_converter {
         // its handle to the converter's convertible variable.  The C++
         // container is populated by passing the begin and end iterators of
         // the python object to the container's constructor.
-        double x = PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0));
-        double y = PyFloat_AsDouble(PyTuple_GetItem(object, 1));
-        data->convertible = new (storage) pyscan::Point<>(x, y, 1.0);
+        if (dim == 2) {
+            data->convertible = new (storage) pyscan::Point<>(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
+                                                                PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 1)), 1.0);
+        } else {
+            data->convertible = new (storage) pyscan::Point<3>(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
+                                                              PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 1)),
+                                                               PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 2)), 1.0);
+        }
     }
 };
 
 
+/*
+ * This converts two argument c++ tuples into python tuples automatically when they are returned from the c++ code.
+ * s -- a two element tuple of type t1 and t2
+ * returns -- a two element python tuple of type t1 and t2.
+ */
 template<typename T1, typename T2>
 struct tuple_to_python_tuple {
-
     static PyObject* convert(const std::tuple<T1, T2> &s) {
         return boost::python::incref(py::make_tuple(std::get<0>(s), std::get<1>(s)).ptr());
     }
 };
 
-void test1(std::vector<pyscan::Point<>> values)
-{
-    for (auto&& value: values)
-        std::cout << value << std::endl;
-}
 
+/*
+ * This converts returned vectors automatically into python lists when the are returned from the c++ code.
+ * s -- a vector of type T
+ * returns -- A python list containing the elements of s.
+ */
+template <typename T>
+struct vector_to_python_list {
+    static PyObject* convert(const std::vector<T> &s) {
+        auto new_list = std_vector_to_py_list(s);
+        return boost::python::incref(new_list.ptr());
+    }
+};
 
 BOOST_PYTHON_MODULE(libpyscan) {
     using namespace py;
@@ -601,7 +292,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
     */
 
     //Should convert tuples directly pyscan points.
-    pypoint_converter().from_python();
+    pypoint_converter<2>().from_python();
+    pypoint_converter<3>().from_python();
 
     // Register interable conversions.
     iterable_converter()
@@ -609,12 +301,17 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .from_python<std::vector<double> >()
                     // Each dimension needs to be convertable.
             .from_python<std::vector<pyscan::Point<> >>()
+            .from_python<std::vector<pyscan::WPoint<>>>()
+            .from_python<std::vector<pyscan::LPoint<>>>()
             .from_python<std::vector<std::vector<pyscan::Point<> > > >();
 
     to_python_converter<std::tuple<pyscan::Disk, double>, tuple_to_python_tuple<pyscan::Disk, double>>();
     to_python_converter<std::tuple<pyscan::Pt2, double>, tuple_to_python_tuple<pyscan::Pt2, double>>();
 
-    py::def("test1", &test1);
+    to_python_converter<std::vector<double>, vector_to_python_list<double>>();
+    to_python_converter<std::vector<pyscan::Point<2>>, vector_to_python_list<pyscan::Point<2>>>();
+    to_python_converter<std::vector<pyscan::Point<3>>, vector_to_python_list<pyscan::Point<3>>>();
+
     py::class_<pyscan::Grid>("Grid", py::no_init)
             .def("totalRedWeight", &pyscan::Grid::totalRedWeight)
             .def("totalBlueWeight", &pyscan::Grid::totalBlueWeight)
@@ -704,9 +401,11 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
     //py::def("maxDiskLabels", &maxDiskLabelsI);
     py::def("max_halfplane", &pyscan::max_halfplane);
-    py::def("max_halfplane_labels", &pyscan::maxHalfspaceLabels);
-    py::def("max_disk", &pyscan::maxDisk);
-    py::def("max_disk_labels", &pyscan::maxDiskLabels);
+    py::def("max_halfplane_labels", &pyscan::max_halfplane_labeled);
+    py::def("max_halfspace", &pyscan::max_halfspace);
+    py::def("max_halfspace_labels", &pyscan::max_halfspace_labeled);
+    py::def("max_disk", &pyscan::diskScan);
+    py::def("max_disk_labels", &pyscan::diskScanLabels);
 
     py::def("max_traj_disk", &pyscan::traj_disk_scan_py);
     py::def("grid_traj", &pyscan::grid_traj_py);
@@ -714,13 +413,12 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
     //   py::def("max_disk_scale_labels", &pyscan::maxDiskScaleLabel);
 
-    py::def("max_disk_cached", &pyscan::maxDiskCached);
-    py::def("max_disk_label_cached", &pyscan::maxDiskLCached);
+    py::def("max_disk_cached", &pyscan::cached_disk_scan<pyscan::wpoint_list >);
+    py::def("max_disk_label_cached", &pyscan::cached_disk_scan<pyscan::lpoint_list >);
 
     //py::def("maxRectLabels", &maxRectLabelsI);
     //py::def("maxRectLabels", &maxRectLabelsD);
     py::def("approximate_hull", pyscan::approx_hull);
-
     py::def("approximate_hull3", pyscan::approx_hull3);
 
 }

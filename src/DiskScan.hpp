@@ -114,16 +114,16 @@ namespace pyscan {
     -> std::tuple<Disk, double>;
 
     template<typename T>
-    std::tuple<Disk, double> disk_scan_scale(point_list& net,
-                                        std::vector<T>& sampleM,
-                                        std::vector<T>& sampleB,
+    std::tuple<Disk, double> disk_scan_scale(point_list const& net,
+                                        std::vector<T> const& sampleM,
+                                        std::vector<T> const& sampleB,
                                         uint32_t grid_r,
                                         std::function<double(double, double)> const& scan);
 
     template<typename T>
-    std::tuple<Disk, double> cached_disk_scan(point_list& net,
-                                              T& sampleM,
-                                              T& sampleB,
+    std::tuple<Disk, double> cached_disk_scan(point_list net,
+                                              T sampleM,
+                                              T sampleB,
                                               std::function<double(double, double)> const& scan);
 
 

@@ -47,9 +47,6 @@ namespace pyscan {
         return true;
     }
 
-    double det2(double a1, double a2, double b1, double b2) {
-        return a1 * b2 - a2 * b1;
-    }
 
     double det3(Vec3 const& dir1, Vec3 const& dir2, Vec3 const& dir3) {
         return dir1[0] * det2(dir2[1], dir2[2], dir3[1], dir3[2])
@@ -380,4 +377,55 @@ namespace pyscan {
         return core_set1;
     }
 
+    std::vector<pyscan::Point<2>> approx_hull(double eps, std::vector<Pt2> const& pts) {
+        auto max_f = [&] (Vec2 direction) {
+            double max_dir = -std::numeric_limits<double>::infinity();
+            Pt2 curr_pt {0.0, 0.0, 0.0};
+            for (auto& pt : pts) {
+                double curr_dir = direction[0] * pyscan::getX(pt) + direction[1] * pyscan::getY(pt);
+                if (max_dir < curr_dir) {
+                    max_dir = curr_dir;
+                    curr_pt = pt;
+                }
+            }
+            return Vec2{pyscan::getX(curr_pt), pyscan::getY(curr_pt)};
+        };
+        std::vector<pyscan::Point<>> core_set_pts;
+        {
+            auto vecs = eps_core_set(eps, max_f);
+            for (auto &v :vecs) {
+                core_set_pts.emplace_back(v[0], v[1], 1.0);
+            }
+        }
+        return core_set_pts;
+    }
+
+
+    std::vector<Point<3>> approx_hull3(double eps, std::vector<Pt3> const& pts) {
+        /*
+         * Finish this.
+         */
+        auto max_f = [&] (Vec3 direction) {
+            double max_dir = -std::numeric_limits<double>::infinity();
+            Pt3 curr_pt {0.0, 0.0, 0.0, 0.0};
+            for (auto& pt : pts) {
+                double curr_dir = direction[0] * pyscan::getX(pt)
+                                  + direction[1] * pyscan::getY(pt)
+                                  + direction[2] * pyscan::getZ(pt);
+                if (max_dir < curr_dir) {
+                    max_dir = curr_dir;
+                    curr_pt = pt;
+                }
+            }
+            return Vec3{pyscan::getX(curr_pt), pyscan::getY(curr_pt), pyscan::getZ(curr_pt)};
+        };
+        std::vector<pyscan::Point<3>> core_set_pts;
+        {
+            auto vecs = eps_core_set3(eps, max_f);
+            for (auto &v :vecs) {
+                core_set_pts.emplace_back(v[0], v[1], v[2], 1.0);
+            }
+        }
+        return core_set_pts;
+    }
   }

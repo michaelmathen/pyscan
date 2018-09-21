@@ -9,6 +9,8 @@
 #include <vector>
 #include <array>
 
+#include "Point.hpp"
+
 namespace pyscan {
 
     template<size_t dim>
@@ -77,5 +79,11 @@ namespace pyscan {
 
     std::vector<Vec3> eps_core_set3(double eps,
                                     std::function<Vec3(Vec3)> lineMaxF);
+
+
+
+    std::vector<Pt3> approx_hull3(double eps, std::vector<Pt3> const& pts);
+
+    std::vector<Pt2> approx_hull(double eps, std::vector<Pt2> const& pts);
 }
 #endif //PYSCAN_FUNCTIONAPPROX_HPP

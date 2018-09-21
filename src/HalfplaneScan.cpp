@@ -106,13 +106,13 @@ namespace pyscan {
     }
 
     std::tuple<Point<>, double> max_halfplane_labeled(
-            point_list& point_net,
-            point_list& red,
-            weight_list& red_w,
-            label_list& red_labels,
-            point_list& blue,
-            weight_list& blue_w,
-            label_list& blue_labels,
+            point_list point_net,
+            point_list red,
+            weight_list red_w,
+            label_list red_labels,
+            point_list blue,
+            weight_list blue_w,
+            label_list blue_labels,
             std::function<double(double, double)> const& f) {
         /*
         * The maximum label must be less than the maximum number of points. 
@@ -231,7 +231,7 @@ namespace pyscan {
     }
 
 
-    double under_line(Pt2& line, point_list& points, weight_list& weights) {
+    double under_line(Pt2 const& line, point_list const& points, weight_list const& weights) {
         double curr = 0;
         auto pt_it = points.begin();
         auto w_it = weights.begin();
@@ -244,11 +244,11 @@ namespace pyscan {
         return curr;
     }
 
-    double evaluate_line(Pt2& line, 
-                        point_list& red, 
-                        weight_list& red_w,
-                        point_list& blue,
-                        weight_list& blue_w,
+    double evaluate_line(Pt2 const& line,
+                        point_list const& red,
+                        weight_list const& red_w,
+                        point_list const& blue,
+                        weight_list const& blue_w,
                         std::function<double(double, double)> const& f) {
         double red_total = std::accumulate(red_w.begin(), red_w.end(), 0.0, std::plus<>());
         double blue_total = std::accumulate(blue_w.begin(), blue_w.end(), 0.0, std::plus<>());
@@ -258,11 +258,11 @@ namespace pyscan {
     }
 
     std::tuple<Pt2, double> max_halfplane_simple(
-            point_list& point_net,
-            point_list& red,
-            weight_list& red_w,
-            point_list& blue,
-            weight_list& blue_w,
+            point_list point_net,
+            point_list red,
+            weight_list red_w,
+            point_list blue,
+            weight_list blue_w,
             std::function<double(double, double)> const& f) {
         assert(red.size() == red_w.size());
         assert(blue.size() == blue_w.size());
@@ -284,7 +284,7 @@ namespace pyscan {
     }
 
 
-    double under_line_labeled(Pt2& line, point_list& points, weight_list& weights, label_list& labels) {
+    double under_line_labeled(Pt2 const& line, point_list const& points, weight_list const& weights, label_list const& labels) {
         std::vector<bool> label_counts(labels.size(), false);
         double curr = 0;
         auto pt_it = points.begin();
@@ -299,13 +299,13 @@ namespace pyscan {
         return curr;
     }
 
-    double evaluate_line_labeled(Pt2& line, 
-                        point_list& red, 
-                        weight_list& red_w,
-                        label_list& red_labels,
-                        point_list& blue,
-                        weight_list& blue_w,
-                        label_list& blue_labels,
+    double evaluate_line_labeled(Pt2 const& line,
+                        point_list const& red,
+                        weight_list const& red_w,
+                        label_list const& red_labels,
+                        point_list const& blue,
+                        weight_list const& blue_w,
+                        label_list const& blue_labels,
                         std::function<double(double, double)> const& f) {
 
         auto rp = red.begin();
@@ -319,13 +319,13 @@ namespace pyscan {
 
 
     std::tuple<Pt2, double> max_halfplane_simple_labeled(
-            point_list& point_net,
-            point_list& red,
-            weight_list& red_w,
-            label_list& red_labels,
-            point_list& blue,
-            weight_list& blue_w,
-            label_list& blue_labels,
+            point_list point_net,
+            point_list red,
+            weight_list red_w,
+            label_list red_labels,
+            point_list blue,
+            weight_list blue_w,
+            label_list blue_labels,
             std::function<double(double, double)> const& f) {
        
         double max_f = -std::numeric_limits<double>::infinity();
@@ -361,11 +361,11 @@ namespace pyscan {
     }
 
     std::tuple<Pt3, double> max_halfspace(
-            point3_list& point_net,
-            point3_list& red,
-            weight_list& red_w,
-            point3_list& blue,
-            weight_list& blue_w,
+            point3_list point_net,
+            point3_list red,
+            weight_list red_w,
+            point3_list blue,
+            weight_list blue_w,
             std::function<double(double, double)> const& f) {
         Pt3 max_halfspace;
         double max_stat = -std::numeric_limits<double>::infinity();
@@ -391,13 +391,13 @@ namespace pyscan {
 
 
     std::tuple<Pt3, double> max_halfspace_labeled(
-            point3_list& point_net,
-            point3_list& red,
-            weight_list& red_w,
-            label_list& red_labels,
-            point3_list& blue,
-            weight_list& blue_w,
-            label_list& blue_labels,
+            point3_list point_net,
+            point3_list red,
+            weight_list red_w,
+            label_list red_labels,
+            point3_list blue,
+            weight_list blue_w,
+            label_list blue_labels,
             std::function<double(double, double)> const& f) {
         Pt3 max_halfspace;
         double max_stat = -std::numeric_limits<double>::infinity();
