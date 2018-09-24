@@ -37,7 +37,7 @@ namespace pyscan {
     inline Vec<dim> operator+(Vec<dim> const& v1, Vec<dim> const& v2) {
         Vec<dim> v_out;
         for (int i = 0; i < dim; i++) {
-            v_out[i] += v1[i] + v2[i];
+            v_out[i] = v1[i] + v2[i];
         }
         return v_out;
     }
@@ -46,7 +46,7 @@ namespace pyscan {
     inline Vec<dim> operator*(Vec<dim> const& v2, double val) {
         Vec<dim> v_out;
         for (int i = 0; i < dim; i++) {
-            v_out[i] += v2[i] * val;
+            v_out[i] = v2[i] * val;
         }
         return v_out;
     }
@@ -55,7 +55,7 @@ namespace pyscan {
     inline Vec<dim> operator/(Vec<dim> const& v2, double val) {
         Vec<dim> v_out;
         for (int i = 0; i < dim; i++) {
-            v_out[i] += v2[i] / val;
+            v_out[i] = v2[i] / val;
         }
         return v_out;
     }
@@ -72,10 +72,6 @@ namespace pyscan {
 
 	std::vector<Vec2> eps_core_set(double eps,
 								   std::function<Vec2(Vec2)> lineMaxF);
-
-    std::vector<Vec3> eps_core_set3(double eps,
-                                    Vec3 const& cc, Vec3 const& cl, Vec3 const& cu,
-                                    std::function<Vec3(Vec3)> lineMaxF);
 
     std::vector<Vec3> eps_core_set3(double eps,
                                     std::function<Vec3(Vec3)> lineMaxF);

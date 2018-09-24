@@ -18,7 +18,10 @@
 
 namespace pyscan {
 
-
+    std::ostream& operator<<(std::ostream& object, Vec3 const& v1) {
+        object << "(" << v1[0] << ", " << v1[1] << ", " << v1[2] << ")";
+        return object;
+    }
 
 
     bool almostEqualRelative(double A, double B, double maxRelDiff) {
@@ -49,21 +52,52 @@ namespace pyscan {
 
 
     double det3(Vec3 const& dir1, Vec3 const& dir2, Vec3 const& dir3) {
-        return dir1[0] * det2(dir2[1], dir2[2], dir3[1], dir3[2])
-               - dir1[1] * det2(dir2[0], dir2[2], dir3[0], dir3[2])
-               + dir1[2] * det2(dir2[0], dir2[1], dir3[0], dir3[1]);
+        return dir1[0] * det2(dir2[1], dir3[1], dir2[2], dir3[2])
+               - dir1[1] * det2(dir2[0], dir3[0], dir2[2], dir3[2])
+               + dir1[2] * det2(dir2[0], dir3[0], dir2[1], dir3[1]);
     }
 
-    bool lineIntersection(Vec3 const& dir1, double d1,
-                          Vec3 const& dir2, double d2,
-                          Vec3 const& dir3, double d3,
+    using namespace boost::numeric::ublas;
+
+    matrix<double> inverse3x3(matrix<double> const& m) {
+        double det = m(0, 0) * (m(1, 1) * m(2, 2) - m(2, 1) * m(1, 2)) -
+                     m(0, 1) * (m(1, 0) * m(2, 2) - m(1, 2) * m(2, 0)) +
+                     m(0, 2) * (m(1, 0) * m(2, 1) - m(1, 1) * m(2, 0));
+
+        double invdet = 1 / det;
+
+        matrix<double> minv(3, 3);
+        minv(0, 0) = (m(1, 1) * m(2, 2) - m(2, 1) * m(1, 2)) * invdet;
+        minv(0, 1) = (m(0, 2) * m(2, 1) - m(0, 1) * m(2, 2)) * invdet;
+        minv(0, 2) = (m(0, 1) * m(1, 2) - m(0, 2) * m(1, 1)) * invdet;
+        minv(1, 0) = (m(1, 2) * m(2, 0) - m(1, 0) * m(2, 2)) * invdet;
+        minv(1, 1) = (m(0, 0) * m(2, 2) - m(0, 2) * m(2, 0)) * invdet;
+        minv(1, 2) = (m(1, 0) * m(0, 2) - m(0, 0) * m(1, 2)) * invdet;
+        minv(2, 0) = (m(1, 0) * m(2, 1) - m(2, 0) * m(1, 1)) * invdet;
+        minv(2, 1) = (m(2, 0) * m(0, 1) - m(0, 0) * m(2, 1)) * invdet;
+        minv(2, 2) = (m(0, 0) * m(1, 1) - m(1, 0) * m(0, 1)) * invdet;
+
+        return minv;
+    }
+
+    bool lineIntersection(Vec3 const& dir1, Vec3 const& p1,
+                          Vec3 const& dir2, Vec3 const& p2,
+                          Vec3 const& dir3, Vec3 const& p3,
                           Vec3& v_ext) {
+
+        double d1 = dot(dir1, p1);
+        double d2 = dot(dir2, p2);
+        double d3 = dot(dir3, p3);
+        //equation will be of the form.
+        // a1 x + b1 y + c1 z = d1
+        // a2 x + b2 y + c2 z = d2
+        // a3 x + b3 y + c3 z = d3
+
+        // Compute the rank of the system and see if it is singular
         double dval = det3(dir1, dir2, dir3);
-        if (fabs(dval) < 8 * std::numeric_limits<double>::epsilon()) {
+        if (aeq(fabs(dval), 0)) {
             return false;
         }
-
-        using namespace boost::numeric::ublas;
 
         matrix<double> A(3, 3);
 
@@ -71,13 +105,14 @@ namespace pyscan {
         A(1, 0) = dir2[0], A(1, 1) = dir2[1], A(1, 2) = dir2[2],
         A(2, 0) = dir3[0], A(2, 1) = dir3[1], A(2, 2) = dir3[2];
 
-        vector<double> x(3);
-        x[0] = d1, x[1] = d2, x[2] = d3;
-        permutation_matrix<size_t> P(3);
-        lu_factorize(A, P);
-        lu_substitute(A, P, x);
 
-        v_ext[0] = x[0], v_ext[1] = x[1], v_ext[2] = x[2];
+        vector<double> v(3);
+        v[0] = d1, v[1] = d2, v[2] = d3;
+        auto m = inverse3x3(A);
+
+        v_ext[0] = m(0, 0) * v[0] + m(0, 1) * v[1] + m(0, 2) * v[2];
+        v_ext[1] = m(1, 0) * v[0] + m(1, 1) * v[1] + m(1, 2) * v[2];
+        v_ext[2] = m(2, 0) * v[0] + m(2, 1) * v[1] + m(2, 2) * v[2];
         return true;
     }
 
@@ -321,21 +356,50 @@ namespace pyscan {
     double height3(Vec3 const& p1,
             Vec3 const& p2,
             Vec3 const& p3,
-            Vec3 const& direc_hint,
+            Vec3 const& normal,
             Vec3 const& pt) {
 
-        Vec3 normal_unnorm = cross_product(p2 - p1, p3 - p1);
-        Vec3 normal = normal_unnorm / sqrt(dot(normal_unnorm, normal_unnorm));
-        if (dot(normal, direc_hint) < 0) {
-            //Flip the normal orientation
-            normal = normal * -1;
-        }
-        Vec3 w = p1 - pt;
-        return dot(w, normal);
+
+        double v1 = dot(normal, p1);
+        double v2 = dot(normal, p2);
+        double v3 = dot(normal, p3);
+        double dist = std::max(std::initializer_list<double>{v1, v2, v3});
+
+        return dot(normal, pt) - dist;
+    }
+
+    Vec3 clamp_to_cube(Vec<6> bounding_cube, Vec3 const& pt) {
+        Vec3 new_pt;
+        new_pt[0] = std::min(std::max(pt[0], bounding_cube[0]), bounding_cube[1]);
+        new_pt[1] = std::min(std::max(pt[1], bounding_cube[2]), bounding_cube[3]);
+        new_pt[2] = std::min(std::max(pt[2], bounding_cube[4]), bounding_cube[5]);
+        return new_pt;
+    }
+
+
+    Vec<6> bounding_cube(std::function<Vec3(Vec3)> lineMaxF) {
+        Vec<6> cube;
+        auto vmnx = lineMaxF(Vec3{-1, 0, 0});
+        auto vmxx = lineMaxF(Vec3{1, 0, 0});
+
+        auto vmny = lineMaxF(Vec3{0, -1, 0});
+        auto vmxy = lineMaxF(Vec3{0, 1, 0});
+
+        auto vmnz = lineMaxF(Vec3{0, 0, -1});
+        auto vmxz = lineMaxF(Vec3{0, 0, 1});
+
+        cube[0] = vmnx[0];
+        cube[1] = vmxx[1];
+        cube[2] = vmny[0];
+        cube[3] = vmxy[1];
+        cube[4] = vmnz[0];
+        cube[5] = vmxz[1];
+        return cube;
     }
 
     std::vector<Vec3> eps_core_set3(double eps,
                                    Vec3 const& cc, Vec3 const& cl, Vec3 const& cu,
+                                    Vec<6> bounding_cube,
                                    std::function<Vec3(Vec3)> lineMaxF) {
 
         auto avg = [&] (Vec3 const& v1, Vec3 const& v2, Vec3 const& v3) {
@@ -354,6 +418,8 @@ namespace pyscan {
         auto pcc = lineMaxF(cc),
                 pcl = lineMaxF(cl),
                 pcu = lineMaxF(cu);
+
+
         std::vector<Vec3> pts{ pcc, pcl, pcu };
         std::deque<Frame3> frameStack;
         frameStack.emplace_back(direc3{cc, cl, cu},
@@ -362,16 +428,48 @@ namespace pyscan {
             Frame3 lf = frameStack.front();
             frameStack.pop_front();
 
-            Vec3 p_ext;
-            if (lineIntersection(
-                    lf.d[0], dot(lf.p[0], lf.d[0]),
-                    lf.d[1], dot(lf.p[1], lf.d[1]),
-                    lf.d[2], dot(lf.p[2], lf.d[2]), p_ext)) {
-                if (height3(lf.p[0], lf.p[1], lf.p[2], lf.d[0], p_ext) > eps) {
+            //If two of the endpoints of the triangle are the same then we project the problem onto the
+            //plane defined by the endpoints and the average of their direction.
 
-                    Vec3 m_vec = avg(lf.d[0], lf.d[1], lf.d[2]);
+            Vec3 p_ext;
+            // Compute the intersection of three planes with normals d0, d1, d2 and going through
+            // points p0, p1, p2
+            if (lineIntersection(
+                    lf.d[0], lf.p[0],
+                    lf.d[1], lf.p[1],
+                    lf.d[2], lf.p[2],
+                    p_ext)) {
+
+                p_ext = clamp_to_cube(bounding_cube, p_ext);
+                Vec3 m_vec = avg(lf.d[0], lf.d[1], lf.d[2]);
+                if (height3(lf.p[0], lf.p[1], lf.p[2], m_vec, p_ext) > eps) {
+                    std::cout << "Next step" << std::endl;
+                    std::cout << "point in triangle " << p_ext << std::endl;
+                    std::cout << "height = " << height3(lf.p[0], lf.p[1], lf.p[2], m_vec, p_ext) << " " << eps << std::endl;
+                    std::cout << lf.d[0] << " " << lf.d[1] << " " << lf.d[2] << std::endl;
+                    std::cout << lf.p[0] << " " << lf.p[1] << " " << lf.p[2] << std::endl;
+
                     auto line_max = lineMaxF(m_vec);
                     pts.push_back(line_max);
+
+                    Vec3 p1, p2, p3;
+                    lineIntersection(
+                            lf.d[0], lf.p[0],
+                            lf.d[1], lf.p[1],
+                            lf.d[2], lf.p[2],
+                            p1);
+                    lineIntersection(
+                            lf.d[0], lf.p[0],
+                            lf.d[1], lf.p[1],
+                            lf.d[2], lf.p[2],
+                            p2);
+                    lineIntersection(
+                            lf.d[0], lf.p[0],
+                            lf.d[1], lf.p[1],
+                            lf.d[2], lf.p[2],
+                            p3);
+
+
                     frameStack.emplace_back(direc3{lf.d[0], m_vec, lf.d[1]},
                                             direc3{lf.p[0], line_max, lf.p[1]});
                     frameStack.emplace_back(direc3{lf.d[0], m_vec, lf.d[2]},
@@ -387,14 +485,15 @@ namespace pyscan {
     std::vector<Vec3> eps_core_set3(double eps,
                                    std::function<Vec3(Vec3)> lineMaxF) {
 
-        auto core_set1 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, lineMaxF)
-           , core_set2 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, lineMaxF)
-           , core_set3 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, lineMaxF)
-           , core_set4 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, lineMaxF)
-           , core_set5 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, lineMaxF)
-           , core_set6 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, lineMaxF)
-           , core_set7 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, lineMaxF)
-           , core_set8 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, lineMaxF);
+        auto cube = bounding_cube(lineMaxF);
+        auto core_set1 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, cube, lineMaxF)
+           , core_set2 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, cube, lineMaxF)
+           , core_set3 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, cube, lineMaxF)
+           , core_set4 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, cube, lineMaxF)
+           , core_set5 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, cube, lineMaxF)
+           , core_set6 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, cube, lineMaxF)
+           , core_set7 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, cube, lineMaxF)
+           , core_set8 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, cube, lineMaxF);
         core_set1.insert(core_set1.end(), core_set2.begin(), core_set2.end());
         core_set1.insert(core_set1.end(), core_set3.begin(), core_set3.end());
         core_set1.insert(core_set1.end(), core_set4.begin(), core_set4.end());

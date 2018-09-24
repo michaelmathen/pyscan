@@ -73,6 +73,12 @@ namespace pyscan {
             auto g_n_x = static_cast<int>((getX(*curr_pt) - lx) / chord_l);
             auto g_n_y = static_cast<int>((getY(*curr_pt) - ly) / chord_l);
 
+            if (g_n_x < g_x) {
+                std::swap(g_n_x, g_x);
+            }
+            if (g_n_y < g_y) {
+                std::swap(g_n_y, g_y);
+            }
 
             for (int i = g_x + 1; i <= g_n_x; i++) {
                 double x_val = i * chord_l + lx;

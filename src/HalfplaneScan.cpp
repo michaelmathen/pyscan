@@ -185,7 +185,7 @@ namespace pyscan {
                     auto bn = pb;
                     auto bd = deltas.begin();
                     //Set to first line
-                    while (order_f(*bp) < order_f(*bn)) {
+                    while (bp != pts.end() && order_f(*bp) < order_f(*bn)) {
                         bl++; bw++; bp++;
                     }
                     bn++;
