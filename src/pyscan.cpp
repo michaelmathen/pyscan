@@ -13,7 +13,7 @@
 
 
 #include "RectangleScan.hpp"
-#include "HalfplaneScan.hpp"
+#include "HalfSpaceScan.hpp"
 #include "DiskScan.hpp"
 #include "DiskScan2.hpp"
 #include "FunctionApprox.hpp"
@@ -36,8 +36,8 @@ std::vector<T> to_std_vector(const py::object& iterable) {
                           py::stl_input_iterator<T>());
 }
 
-auto toPointList(py::object const& el) -> pyscan::point_list {
-    pyscan::point_list l;
+auto toPointList(py::object const& el) -> pyscan::point_list_t {
+    pyscan::point_list_t l;
     for (auto beg = py::stl_input_iterator<pyscan::Point<>>(el);
          beg != py::stl_input_iterator<pyscan::Point<>>(); beg++) {
         l.push_back(*beg);
@@ -62,6 +62,7 @@ namespace pyscan {
          * Useful for finding a region of a certain size.
          */
         return [size] (double m, double b) {
+            (void)b;
             return 1 - fabs(m - size);
         };
     }
@@ -98,7 +99,7 @@ namespace pyscan {
          */
         auto beg_net = py::stl_input_iterator<py::list>(net);
         auto end_net = py::stl_input_iterator<py::list>();
-        pyscan::point_list net_traj_pts;
+        pyscan::point_list_t net_traj_pts;
         std::vector<size_t> net_offsets;
         size_t next_offset = 0;
         for (auto b = beg_net; b != end_net; b++) {
@@ -307,7 +308,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .from_python<std::vector<std::vector<pyscan::Point<> > > >();
 
     to_python_converter<std::tuple<pyscan::Disk, double>, tuple_to_python_tuple<pyscan::Disk, double>>();
-    to_python_converter<std::tuple<pyscan::Pt2, double>, tuple_to_python_tuple<pyscan::Pt2, double>>();
+    to_python_converter<std::tuple<pyscan::pt2_t, double>, tuple_to_python_tuple<pyscan::pt2_t, double>>();
 
     to_python_converter<std::vector<double>, vector_to_python_list<double>>();
     to_python_converter<std::vector<pyscan::Point<2>>, vector_to_python_list<pyscan::Point<2>>>();
@@ -343,18 +344,16 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .def("__repr__", &pyscan::Subgrid::toString)
             .def("fValue", &pyscan::Subgrid::fValue);
 
-    py::class_<pyscan::Pt2>("Point", py::init<double, double, double>())
+    py::class_<pyscan::pt2_t>("Point", py::init<double, double, double>())
             .def("approx_eq", &pyscan::Point<>::approx_eq)
-            .def("__getitem__", &pyscan::Point<>::operator[])
+            .def("__getitem__", &pyscan::Point<>::operator())
             .def("above", &pyscan::Point<>::above)
             .def("above_closed", &pyscan::Point<>::above_closed)
             .def("__str__", &pyscan::Point<>::str)
             .def("__repr__", &pyscan::Point<>::str)
-            .def("__eq__", &pyscan::Point<>::operator==)
-            .def("getX", &pyscan::getX<2>)
-            .def("getY", &pyscan::getY<2>);
+            .def("__eq__", &pyscan::Point<>::operator==);
 
-    py::class_<pyscan::WPoint<2>, py::bases<pyscan::Pt2>>("WPoint", py::init<double, double, double, double>())
+    py::class_<pyscan::WPoint<2>, py::bases<pyscan::pt2_t>>("WPoint", py::init<double, double, double, double>())
             .def("get_weight", &pyscan::WPoint<2>::get_weight);
 
     py::class_<pyscan::LPoint<2>, py::bases<pyscan::WPoint<2>>>("LPoint", py::init<size_t, double, double, double, double>())
@@ -386,9 +385,9 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
 
     py::class_<pyscan::Disk>("Disk", py::init<double, double, double>())
-            .add_property("a", &pyscan::Disk::getA, &pyscan::Disk::setA)
-            .add_property("b", &pyscan::Disk::getB, &pyscan::Disk::setB)
-            .add_property("radius", &pyscan::Disk::getR, &pyscan::Disk::setR)
+            .add_property("a", &pyscan::Disk::getA)
+            .add_property("b", &pyscan::Disk::getB)
+            .add_property("radius", &pyscan::Disk::getR)
             .def("contains", &pyscan::Disk::contains);
 
 
@@ -400,11 +399,14 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_subgrid_linear_simple", &pyscan::maxSubgridLin);
     py::def("max_subgrid_linear", &pyscan::maxSubgridLinTheory);
 
-    //py::def("maxDiskLabels", &maxDiskLabelsI);
-    py::def("max_halfplane", &pyscan::max_halfplane);
-    py::def("max_halfplane_labels", &pyscan::max_halfplane_labeled);
-    py::def("max_halfspace", &pyscan::max_halfspace);
-    py::def("max_halfspace_labels", &pyscan::max_halfspace_labeled);
+
+    //Max Halfspace codes
+    py::def("max_halfplane", &pyscan::MaxHalfPlane);
+    py::def("max_halfplane_labels", &pyscan::MaxHalfPlaneLabeled);
+    py::def("max_halfspace", &pyscan::MaxHalfSpace);
+    py::def("max_halfspace_labels", &pyscan::MaxHalfSpaceLabeled);
+
+
     py::def("max_disk", &pyscan::diskScan);
     py::def("max_disk_labels", &pyscan::diskScanLabels);
 
@@ -414,8 +416,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
     //   py::def("max_disk_scale_labels", &pyscan::maxDiskScaleLabel);
 
-    py::def("max_disk_cached", &pyscan::cached_disk_scan<pyscan::wpoint_list >);
-    py::def("max_disk_label_cached", &pyscan::cached_disk_scan<pyscan::lpoint_list >);
+    py::def("max_disk_cached", &pyscan::cached_disk_scan<pyscan::wpoint_list_t >);
+    py::def("max_disk_label_cached", &pyscan::cached_disk_scan<pyscan::lpoint_list_t >);
 
     //py::def("maxRectLabels", &maxRectLabelsI);
     //py::def("maxRectLabels", &maxRectLabelsD);

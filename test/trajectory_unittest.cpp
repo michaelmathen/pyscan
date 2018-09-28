@@ -1,9 +1,9 @@
 
-#include "../src/DiskScan.hpp"
-#include "../src/DiskScan2.hpp"
-#include "../src/Statistics.hpp"
-#include "../src/TrajectoryScan.hpp"
-#include "Utilities.hpp"
+#include "DiskScan.hpp"
+#include "DiskScan2.hpp"
+#include "Statistics.hpp"
+#include "TrajectoryScan.hpp"
+#include "Test_Utilities.hpp"
 
 #include <tuple>
 #include <limits>
@@ -18,8 +18,6 @@ namespace {
     TEST(TrajectorySimplification, matching) {
 
         const static int n_size = 50;
-        const static int s_size = 1000;
-        const static double rho = .01;
         //Trajectory
         auto n_pts = pyscantest::randomPoints(n_size);
 

@@ -4,10 +4,10 @@
 
 
 //#include "../src/RectangleScan.hpp"
-#include "../src/DiskScan.hpp"
-#include "../src/DiskScan2.hpp"
-#include "../src/Statistics.hpp"
-#include "Utilities.hpp"
+#include "DiskScan.hpp"
+#include "DiskScan2.hpp"
+#include "Statistics.hpp"
+#include "Test_Utilities.hpp"
 
 #include <tuple>
 #include <limits>
@@ -47,7 +47,6 @@ namespace {
 
         const static int n_size = 50;
         const static int s_size = 1000;
-        const static double rho = .01;
         auto n_pts = pyscantest::randomPoints(n_size);
         auto m_pts = pyscantest::randomWPoints(s_size);
         auto b_pts = pyscantest::randomWPoints(s_size);
@@ -74,7 +73,6 @@ namespace {
 
         const static int n_size = 50;
         const static int s_size = 10000;
-        const static double rho = .01;
         auto n_pts = pyscantest::randomPoints(n_size);
         auto m_pts = pyscantest::randomWPoints(s_size);
         auto b_pts = pyscantest::randomWPoints(s_size);
@@ -96,7 +94,6 @@ namespace {
 
         const static int n_size = 50;
         const static int s_size = 1000;
-        const static double rho = .01;
         auto n_pts = pyscantest::randomPoints(n_size);
         auto m_pts = pyscantest::randomWPoints(s_size);
         auto b_pts = pyscantest::randomWPoints(s_size);
@@ -124,7 +121,6 @@ namespace {
 
         const static int n_size = 50;
         const static int s_size = 1000;
-        const static double rho = .01;
         auto n_pts = pyscantest::randomPoints(n_size);
         auto m_pts = pyscantest::randomWPoints(s_size);
         auto b_pts = pyscantest::randomWPoints(s_size);
@@ -132,7 +128,7 @@ namespace {
             return fabs(m - b);
         };
 
-        double d1value, d2value;
+        double d1value;
         pyscan::Disk d1;
         //pyscan::Disk d2;
         //std::tie(d2, d2value) = pyscan::diskScan(n_pts, m_pts, b_pts, scan);
@@ -155,7 +151,6 @@ namespace {
 
         const static int n_size = 50;
         const static int s_size = 1000;
-        const static double rho = .01;
         auto n_pts = pyscantest::randomPoints(n_size);
         auto m_pts = pyscantest::randomLPoints(s_size, 50);
         auto b_pts = pyscantest::randomLPoints(s_size, 50);
@@ -163,7 +158,7 @@ namespace {
             return fabs(m - b);
         };
 
-        double d1value, d2value;
+        double d1value;
         pyscan::Disk d1;
         //pyscan::Disk d2;
         //std::tie(d2, d2value) = pyscan::diskScan(n_pts, m_pts, b_pts, scan);
@@ -185,12 +180,10 @@ namespace {
 
         const static int n_size = 50;
         const static int s_size = 1000;
-        const static double rho = .01;
         auto n_pts = pyscantest::randomPoints(n_size);
-        auto m_pts = pyscantest::randomPoints(s_size);
-        auto b_pts = pyscantest::randomPoints(s_size);
-        std::vector<double> m_weight(s_size, 1.0);
-        std::vector<double> b_weight(s_size, 1.0);
+        auto m_pts = pyscantest::randomWPoints(s_size);
+        auto b_pts = pyscantest::randomWPoints(s_size);
+
 
         auto stat = [] (double m, double b) {
             return fabs(m - b);
@@ -198,20 +191,18 @@ namespace {
 
         pyscan::Disk d1, d2;
         double d1value, d2value;
-        std::tie(d1, d1value) = pyscan::max_disk(n_pts, m_pts, m_weight, b_pts, b_weight, stat);
+        std::tie(d1, d1value) = pyscan::max_disk(n_pts, m_pts, b_pts, stat);
 
-        auto m_wpts = pyscantest::addWeights(m_pts);
-        auto b_wpts = pyscantest::addWeights(b_pts);
 
-        std::tie(d2, d2value) = pyscan::diskScanSlow(n_pts, m_wpts, b_wpts, stat);
+        std::tie(d2, d2value) = pyscan::diskScanSlow(n_pts, m_pts, b_pts, stat);
 
         EXPECT_FLOAT_EQ(d2value,
-                        pyscan::evaluateRegion(m_wpts, b_wpts, d2, stat));
+                        pyscan::evaluateRegion(m_pts, b_pts, d2, stat));
 
         // EXPECT_FLOAT_EQ(std::get<1>(d1), 0.0);
         EXPECT_FLOAT_EQ(d1value,
-                        pyscan::evaluateRegion(m_wpts,
-                                              b_wpts, d1, stat));
+                        pyscan::evaluateRegion(m_pts,
+                                              b_pts, d1, stat));
 
         EXPECT_FLOAT_EQ(d1value, d2value);
 
@@ -329,7 +320,6 @@ namespace {
 //    }
 
     void label_test(size_t n_size, size_t s_size, size_t labels) {
-      const static double rho = .01;
       auto n_pts = pyscantest::randomPoints(n_size);
       auto m_pts = pyscantest::randomLPoints(s_size, labels);
       auto b_pts = pyscantest::randomLPoints(s_size, labels);
@@ -370,7 +360,6 @@ namespace {
 
         const static int n_size = 25;
         const static int s_size = 100;
-        const static double rho = .01;
 
         auto f = [&](double m, double b) {
             return fabs(m - b);
@@ -408,7 +397,6 @@ namespace {
 
         const static int n_size = 25;
         const static int s_size = 100;
-        const static double rho = .01;
         auto n_pts = pyscantest::randomPoints(n_size);
         auto m_lpts = pyscantest::randomLPointsUnique(s_size);
         auto b_lpts = pyscantest::randomLPointsUnique(s_size);
@@ -457,7 +445,7 @@ namespace {
       fv = pyscan::computeLabelTotalF(bunch_of_points.begin(), bunch_of_points.end(),
                                       curr_counts,
                                       [&] (pyscan::Point<> const& pt) {
-                                        return getX(pt) >.05;
+                                        return pt(0) >.05;
                                       });
       EXPECT_FLOAT_EQ(fv, .3);
       EXPECT_EQ(curr_counts[0], 2);

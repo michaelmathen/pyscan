@@ -2,7 +2,7 @@
 // Created by mmath on 5/22/18.
 //
 
-#include "../src/Point.hpp"
+#include "Point.hpp"
 
 #include <limits.h>
 #include <random>
@@ -11,6 +11,7 @@
 
 
 #include "gtest/gtest.h"
+
 namespace {
 
 
@@ -34,22 +35,22 @@ namespace {
     TEST(Point, dot) {
         pyscan::Point<> p1(1.0, -1.0, 3.0);
         pyscan::Point<> p2(2.0, 0.0, 1.0);
-        EXPECT_FLOAT_EQ(pyscan::dot(p1, p2), 5.0);
+        EXPECT_FLOAT_EQ(p1.dot(p2), 5.0);
         pyscan::Point<> p3(1.0, -1.0, 3.0);
         pyscan::Point<> p4(0.0, 2.0, 0.0);
-        EXPECT_FLOAT_EQ(pyscan::dot(p3, p4), -2.0);       
+        EXPECT_FLOAT_EQ(p3.dot(p4), -2.0);
     }
 
     TEST(Point, parallel) {
         pyscan::Point<> p1(0.0, 1.0, 1.0);
         pyscan::Point<> p2(0.0, 1.0, 0.0);
-        EXPECT_TRUE(pyscan::parallel(p1, p2));
+        EXPECT_TRUE(pyscan::is_parallel(p1, p2));
         pyscan::Point<> p5(0.0, 1.0, 0.0);
         pyscan::Point<> p6(0.0, 1.0, 0.0);
-        EXPECT_TRUE(pyscan::parallel(p5, p6));
+        EXPECT_TRUE(pyscan::is_parallel(p5, p6));
         pyscan::Point<> p3(0.0, 1.0, 1.0);
         pyscan::Point<> p4(-1.0, 1.0, 1.0);
-        EXPECT_TRUE(!pyscan::parallel(p3, p4));
+        EXPECT_TRUE(!pyscan::is_parallel(p3, p4));
     }
 
     TEST(Point, above) {

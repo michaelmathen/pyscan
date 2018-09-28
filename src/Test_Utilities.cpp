@@ -4,16 +4,18 @@
 
 #include <random>
 #include <algorithm>
+#include <Point.hpp>
 
-#include "Utilities.hpp"
+
+#include "Test_Utilities.hpp"
 
 namespace pyscantest {
 
-    auto randomPoints(int test_size) -> std::vector<pyscan::Point<>> {
+    auto randomPoints(int test_size) -> std::vector<pyscan::pt2_t> {
         std::random_device rd;
         std::default_random_engine generator(rd());
         std::uniform_real_distribution<double> distribution (0.0,1.0);
-        std::vector<pyscan::Point<>> points;
+        std::vector<pyscan::pt2_t> points;
         for (int i = 0; i < test_size; i++) {
             points.emplace_back(distribution(generator), distribution(generator), 1.0);
         }
@@ -40,10 +42,26 @@ namespace pyscantest {
         return wpoints;
     }
 
-    auto randomLPoints(int test_size, int label_count) -> std::vector<pyscan::LPoint<>> {
+
+    auto randomLabels(int test_size, size_t num_labels) -> pyscan::label_list_t {
+        std::random_device rd;
+        std::default_random_engine generator(rd());
+        std::vector<size_t> labels;
+        using label_t = size_t;
+
+        std::uniform_int_distribution<label_t> label_dist(0, num_labels - 1);
+        for (int i = 0; i < test_size; i++) {
+            size_t label = label_dist(generator);
+            labels.emplace_back(label);
+        }
+        return labels;
+    }
+
+
+    auto randomLPoints(int test_size, int label_count) -> std::vector<pyscan::lpt2_t> {
         auto pts = randomVec(test_size);
         auto lbls = randomLabels(test_size, label_count);
-        std::vector<pyscan::LPoint<>> lpoints(test_size, pyscan::LPoint<>());
+        std::vector<pyscan::lpt2_t> lpoints(test_size, pyscan::lpt2_t ());
         auto wp = lpoints.begin();
         auto lp = lbls.begin();
         std::for_each(pts.begin(), pts.end(), [&](auto const& pt) {
@@ -68,20 +86,6 @@ namespace pyscantest {
 
 
 
-    auto randomLabels(int test_size, size_t num_labels) -> pyscan::label_list {
-        std::random_device rd;
-        std::default_random_engine generator(rd());
-        pyscan::label_list labels;
-        using label_t = pyscan::label_list::value_type;
-
-        std::uniform_int_distribution<label_t> label_dist(0, num_labels - 1);
-        for (int i = 0; i < test_size; i++) {
-            size_t label = label_dist(generator);
-            labels.emplace_back(label);
-        }
-        return labels;
-    }
-
     auto randomLPointsUnique(int test_size) -> std::vector<pyscan::LPoint<>> {
         auto pts = randomVec(test_size);
         std::vector<pyscan::LPoint<>> lpoints(test_size, pyscan::LPoint<>());
@@ -95,28 +99,28 @@ namespace pyscantest {
         return lpoints;
     }
 
-    auto removeLabels(pyscan::lpoint_list const& pts) -> pyscan::wpoint_list {
+    auto removeLabels(pyscan::lpoint_list_t const& pts) -> pyscan::wpoint_list_t {
 
-        pyscan::wpoint_list wlist(pts.size(), pyscan::WPoint<>());
+        pyscan::wpoint_list_t wlist(pts.size(), pyscan::WPoint<>());
         std::transform(pts.begin(), pts.end(), wlist.begin(), [&](pyscan::LPoint<> const& lpt){
-            return pyscan::WPoint<>(lpt.weight, lpt[0], lpt[1], lpt[2]);
+            return pyscan::WPoint<>(lpt.get_weight(), lpt[0], lpt[1], lpt[2]);
         });
         return wlist;
     }
 
-    auto addWeights(pyscan::point_list const& pts) -> pyscan::wpoint_list {
-        pyscan::wpoint_list list;
+    auto addWeights(pyscan::point_list_t const& pts) -> pyscan::wpoint_list_t {
+        pyscan::wpoint_list_t list;
         for_each(pts.begin(), pts.end(), [&](auto const& pt){
             list.emplace_back(pyscan::WPoint<>(1.0, pt[0], pt[1], pt[2]));
         });
         return list;
     }
 
-    auto addLabels(pyscan::wpoint_list const& pts, pyscan::label_list const& labels) -> pyscan::lpoint_list {
-        pyscan::lpoint_list list;
+    auto addLabels(pyscan::wpoint_list_t const& pts, pyscan::label_list_t const& labels) -> pyscan::lpoint_list_t {
+        pyscan::lpoint_list_t list;
         auto l_it = labels.begin();
         for_each(pts.begin(), pts.end(), [&](auto const& pt){
-            list.emplace_back(pyscan::LPoint<>(1.0, pt.weight, pt[0], pt[1], pt[2]));
+            list.emplace_back(pyscan::LPoint<>(1.0, pt.get_weight(), pt[0], pt[1], pt[2]));
             l_it++;
         });
         return list;

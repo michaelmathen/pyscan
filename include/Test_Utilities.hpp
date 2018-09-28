@@ -7,7 +7,7 @@
 
 #include <functional>
 
-#include "../src/Point.hpp"
+#include "Point.hpp"
 
 
 namespace pyscantest {
@@ -22,16 +22,16 @@ namespace pyscantest {
     	std::function<double(Vec2)> const& f);
 
 	auto randomWPoints(int test_size) -> std::vector<pyscan::WPoint<>>;
-    auto randomLabels(int test_size, size_t num_labels) -> pyscan::label_list;
+    auto randomLabels(int test_size, size_t num_labels) -> pyscan::label_list_t;
 
 	auto randomLPoints(int test_size, int label_count) -> std::vector<pyscan::LPoint<>>;
 
 	auto randomLPointsUnique(int test_size) -> std::vector<pyscan::LPoint<>>;
 
-	auto removeLabels(pyscan::lpoint_list const& pts) -> pyscan::wpoint_list;
+	auto removeLabels(pyscan::lpoint_list_t const& pts) -> pyscan::wpoint_list_t;
 
-    auto addWeights(pyscan::point_list const& pts) -> pyscan::wpoint_list;
+    auto addWeights(pyscan::point_list_t const& pts) -> pyscan::wpoint_list_t;
 
-    auto addLabels(pyscan::wpoint_list const& pts, pyscan::label_list const& labels) -> pyscan::lpoint_list;
+    auto addLabels(pyscan::wpoint_list_t const& pts, pyscan::label_list_t const& labels) -> pyscan::lpoint_list_t;
 }
 #endif //PYSCAN_UTILITIES_HPP

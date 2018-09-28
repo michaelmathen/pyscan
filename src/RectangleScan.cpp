@@ -15,10 +15,10 @@ namespace pyscan {
      * Takes a grid resolution,r, and a red set of points and a blue set of points. Computes a grid from this.z
      */
     Grid::Grid(size_t r_arg,
-        point_list& red_points, 
-        weight_list& red_weight,
-        point_list& blue_points,
-        weight_list& blue_weight) :
+        point_list_t& red_points,
+        weight_list_t& red_weight,
+        point_list_t& blue_points,
+        weight_list_t& blue_weight) :
         r(r_arg),
         red_counts(r_arg * r_arg, 0),
         blue_counts(r_arg * r_arg, 0),
@@ -28,10 +28,10 @@ namespace pyscan {
 
         //Compute the grid from the n_begin and n_end and then fill in the values with the two sampled things.
         auto compX = [](Point<> const &p1, Point<> const &p2) {
-            return getX(p1) < getX(p2);
+            return p1(0) < p2(0);
         };
         auto compY = [](Point<> const &p1, Point<> const &p2) {
-            return getY(p1) < getY(p2);
+            return p1(1) < p2(1);
         };
 
 
@@ -41,25 +41,25 @@ namespace pyscan {
         auto b_begin = blue_points.begin();
         auto b_end = blue_points.end();
 
-        std::vector<Point<>> x_pts(r, Pt2());
-        std::vector<Point<>> y_pts(r, Pt2());
-        quantiles(r_begin, r_end, x_pts.begin(), x_pts.begin() + r / 2, red_weight.begin(), compX);
-        quantiles(b_begin, b_end, x_pts.begin() + r / 2, x_pts.end() , blue_weight.begin(), compX);
-        quantiles(r_begin, r_end, y_pts.begin(), y_pts.begin() + r / 2, red_weight.begin(), compY);
-        quantiles(b_begin, b_end, x_pts.begin() + r / 2, x_pts.end() , blue_weight.begin(), compY);
+        std::vector<pt2_t> x_pts(r, pt2_t());
+        std::vector<pt2_t> y_pts(r, pt2_t());
+        util::quantiles(r_begin, r_end, x_pts.begin(), x_pts.begin() + r / 2, red_weight.begin(), compX);
+        util::quantiles(b_begin, b_end, x_pts.begin() + r / 2, x_pts.end() , blue_weight.begin(), compX);
+        util::quantiles(r_begin, r_end, y_pts.begin(), y_pts.begin() + r / 2, red_weight.begin(), compY);
+        util::quantiles(b_begin, b_end, x_pts.begin() + r / 2, x_pts.end() , blue_weight.begin(), compY);
 
         for (auto &el : x_pts) {
-            x_coords.push_back(getX(el));
+            x_coords.push_back(el(0));
         }
         for (auto &el : y_pts) {
-            y_coords.push_back(getY(el));
+            y_coords.push_back(el(1));
         }
         std::sort(x_coords.begin(), x_coords.end());
         std::sort(y_coords.begin(), y_coords.end());
         auto rw_it = red_weight.begin();
         for (auto point_it = r_begin; point_it != r_end; point_it++, rw_it++) {
-            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), getX(*point_it)) - x_coords.begin() - 1;
-            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), getY(*point_it)) - y_coords.begin() - 1;
+            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), (*point_it)(0)) - x_coords.begin() - 1;
+            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), (*point_it)(1)) - y_coords.begin() - 1;
             if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
                 red_counts[iy * r + ix] += *rw_it;
             }
@@ -67,8 +67,8 @@ namespace pyscan {
         }
         auto bw_it = blue_weight.begin();
         for (auto point_it = b_begin; point_it != b_end; point_it++) {
-            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), getX(*point_it)) - x_coords.begin() - 1;
-            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), getY(*point_it)) - y_coords.begin() - 1;
+            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), (*point_it)(0)) - x_coords.begin() - 1;
+            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), (*point_it)(1)) - y_coords.begin() - 1;
             if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
                 blue_counts[iy * r + ix] += *bw_it;
             }
@@ -76,7 +76,7 @@ namespace pyscan {
         }
     }
 
-    Grid::Grid(point_list& net, point_list& red, weight_list& red_w, point_list& blue, weight_list& blue_w) :
+    Grid::Grid(point_list_t& net, point_list_t& red, weight_list_t& red_w, point_list_t& blue, weight_list_t& blue_w) :
             r(net.size()),
             red_counts(r * r, 0),
             blue_counts(r * r, 0),
@@ -84,17 +84,17 @@ namespace pyscan {
             y_coords() {
 
         for_each(net.begin(), net.end(), [&](Point<> const& pt) {
-            x_coords.push_back(getX(pt));
+            x_coords.push_back((pt)(0));
         });
         for_each(net.begin(), net.end(), [&] (Point<> const& pt) {
-            y_coords.push_back(getY(pt));
+            y_coords.push_back((pt)(1));
         });
         std::sort(x_coords.begin(), x_coords.end());
         std::sort(y_coords.begin(), y_coords.end());
         auto r_w_it = red_w.begin();
         for (auto& pt : red) {
-            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), getX(pt)) - x_coords.begin() - 1;
-            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), getY(pt)) - y_coords.begin() - 1;
+            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), pt(0)) - x_coords.begin() - 1;
+            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), pt(1)) - y_coords.begin() - 1;
             if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
                 red_counts[iy * r + ix] += *r_w_it;
             }
@@ -103,8 +103,8 @@ namespace pyscan {
         }
         auto b_w_it = blue_w.begin();
         for (auto& pt : blue) {
-            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), getX(pt)) - x_coords.begin() - 1;
-            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), getY(pt)) - y_coords.begin() - 1;
+            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), pt(0)) - x_coords.begin() - 1;
+            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), pt(1)) - y_coords.begin() - 1;
             if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
                 blue_counts[iy * r + ix] += *b_w_it;
             }
@@ -1075,7 +1075,7 @@ namespace pyscan {
         }
     }
 
-    Subgrid maxSubgridLinearG(Grid const &grid, int r_prime, double a, double b) {
+    Subgrid maxSubgridLinearG(Grid const &grid, long r_prime, double a, double b) {
         SlabTree slabT(grid, (size_t)r_prime);
 #ifdef DEBUG
         std::cout<<"finished the slab tree" << std::endl;

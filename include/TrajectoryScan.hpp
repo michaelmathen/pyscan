@@ -12,19 +12,18 @@
 
 namespace pyscan {
 
-    using point_it = point_list::iterator;
 
     struct traj_set {
-        point_list traj_pts;
+        point_list_t traj_pts;
         std::vector<size_t> offsets;
-        traj_set(point_list const& tp, std::vector<size_t> const& off) :
+        traj_set(point_list_t const& tp, std::vector<size_t> const& off) :
             traj_pts(tp),
             offsets(off){}
     };
 
     struct wtraj_set : public traj_set {
         std::vector<double> weights;
-        wtraj_set(point_list const& tp,
+        wtraj_set(point_list_t const& tp,
                 std::vector<size_t> const& off,
                 std::vector<double> const& weights) : traj_set(tp, off), weights(weights) {}
     };
@@ -54,7 +53,7 @@ namespace pyscan {
                                             std::function<double(double, double)> const &scan);
 
 
-    std::vector<Point<>> core_set_3d_traj(point_list traj, double alpha);
+    std::vector<Point<>> core_set_3d_traj(point_list_t traj, double alpha);
 
 }
 

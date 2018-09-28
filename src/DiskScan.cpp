@@ -17,13 +17,11 @@
 
 namespace pyscan {
 
-    bool colinear(Pt2 const& pt1,
-                  Pt2 const& pt2,
-                  Pt2 const& pt3){
-        double x1, x2, x3, y1, y2, y3;
-        getLoc(pt1, x1, y1);
-        getLoc(pt2, x2, y2);
-        getLoc(pt3, x3, y3);
+    bool colinear(pt2_t const& pt1,
+                  pt2_t const& pt2,
+                  pt2_t const& pt3){
+        double x1 = pt1(0), x2 = pt2(0), x3 = pt3(0),
+        y1 = pt1(1), y2 = pt2(1), y3 = pt3(1);
 
         double
                 a11 = x2 - x1, a12 = y2 - y1,
@@ -32,18 +30,18 @@ namespace pyscan {
     }
 
 
-    bool onLineSegment(Pt2 const& pt1,
-                       Pt2 const& pt2,
-                       Pt2 const& pt3) {
+    bool onLineSegment(pt2_t const& pt1,
+                       pt2_t const& pt2,
+                       pt2_t const& pt3) {
         if (colinear(pt1, pt2, pt3)) {
-            if (sameLoc(pt1, pt2) || sameLoc(pt2, pt3))
+            if (pt1.approx_eq(pt2) || pt2.approx_eq(pt3))
                 return true;
             //Now we know that the point is on the same line
-            if (getX(pt1) != getX(pt2)) {
-                double theta = (getY(pt1) - getX(pt3)) / (getX(pt1) - getX(pt2));
+            if (pt1(0) != pt2(0)) {
+                double theta = (pt1(1) - pt3(0)) / (pt1(0) - pt2(0));
                 return (theta <= 1) && (theta >= 0);
             } else {
-                double theta = (getY(pt1) - getY(pt3)) / (getY(pt1) - getY(pt2));
+                double theta = (pt1(1) - pt3(1)) / (pt1(1) - pt2(1));
                 return (theta <= 1) && (theta >= 0);
             }
         } else {
@@ -51,12 +49,11 @@ namespace pyscan {
         }
     }
 
-    void solveCircle3(Pt2 const& pt1, Pt2 const& pt2, Pt2 const& pt3,
+    void solveCircle3(pt2_t const& pt1, pt2_t const& pt2, pt2_t const& pt3,
                       double &a, double &b) {
-        double x1, x2, x3, y1, y2, y3;
-        getLoc(pt1, x1, y1);
-        getLoc(pt2, x2, y2);
-        getLoc(pt3, x3, y3);
+        double x1 = pt1(0), x2 = pt2(0), x3 = pt3(0),
+            y1 = pt1(1), y2 = pt2(1), y3 = pt3(1);
+
         // Setup a matrix equation of the form Ax = b
 
         // A
@@ -75,12 +72,10 @@ namespace pyscan {
         b = ai21 * b1 + ai22 * b2;
     }
 
-    void solveCircle3(Pt2 const& pt1, Pt2 const& pt2, Pt2 const& pt3,
+    void solveCircle3(pt2_t const& pt1, pt2_t const& pt2, pt2_t const& pt3,
                      double &a, double &b, double &r) {
-        double x1, x2, x3, y1, y2, y3;
-        getLoc(pt1, x1, y1);
-        getLoc(pt2, x2, y2);
-        getLoc(pt3, x3, y3);
+        double x1 = pt1(0), x2 = pt2(0), x3 = pt3(0),
+                y1 = pt1(1), y2 = pt2(1), y3 = pt3(1);
         // Setup a matrix equation of the form Ax = b
 
         // A
@@ -105,10 +100,9 @@ namespace pyscan {
         r = sqrt((x1 - a) * (x1 - a) + (y1 - b) * (y1 - b));
     }
 
-    void findPerpVect(Pt2 const& p1, Pt2 const& p2, double* u, double* v) {
-        double x1, x2, y1, y2;
-        getLoc(p1, x1, y1);
-        getLoc(p2, x2, y2);
+    void findPerpVect(pt2_t const& pt1, pt2_t const& pt2, double* u, double* v) {
+        double x1 = pt1(0), x2 = pt2(0),
+                y1 = pt1(1), y2 = pt2(1);
         *u = y2 - y1;
         *v = x1 - x2;
     }
@@ -117,9 +111,6 @@ namespace pyscan {
         X[0] = A[0] * B[0] + A[1] * B[1];
         X[1] = A[2] * B[0] + A[3] * B[1];
     }
-
-
-
 
 
     template<typename T, typename F>
@@ -133,10 +124,26 @@ namespace pyscan {
             if (lb == partitions.end()) {
                 continue;
             }
-            counts[lb - partitions.begin()] += getWeight(*begin);
+            counts[lb - partitions.begin()] += begin->get_weight();
         }
     }
 
+    template<typename T, typename F, typename Filter>
+    inline void partial_counts(T begin, T end,
+                               std::vector<double> const& partitions,
+                               std::vector<double>& counts, F orderF, Filter filter) {
+        //Partitions based on the break points.
+        for (; begin != end; begin++) {
+            if (filter(*begin)) {
+                auto lb = std::lower_bound(partitions.begin(), partitions.end(),
+                                           orderF(*begin));
+                if (lb == partitions.end()) {
+                    continue;
+                }
+                counts[lb - partitions.begin()] += begin->get_weight();
+            }
+        }
+    }
 
     template<typename T, typename F>
     inline void partial_counts_label(T begin, T end,
@@ -149,7 +156,7 @@ namespace pyscan {
             if (lb == partitions.end()) {
                 continue;
             }
-            counts[lb - partitions.begin()].emplace_back(begin->label, getWeight(*begin));
+            counts[lb - partitions.begin()].emplace_back(begin->get_label(), begin->get_weight());
         }
     }
 
@@ -203,10 +210,11 @@ namespace pyscan {
     }
 
 
-    std::tuple<Disk, double> diskScanLabels(point_list& net,
-                        lpoint_list& sampleM,
-                        lpoint_list& sampleB,
-                        std::function<double(double, double)> const& scan) {
+    std::tuple<Disk, double> diskScanLabels(
+            point_list_t net,
+            lpoint_list_t sampleM,
+            lpoint_list_t sampleB,
+            discrepancy_func_t const& scan) {
         /*
          * Each point is defined with a label. For each division we store the set of
          * labels.
@@ -241,14 +249,14 @@ namespace pyscan {
                 //Create a vector between the two points
                 double orthoX, orthoY;
                 findPerpVect(*i, *j, &orthoX, &orthoY);
-                double cX = (getX(*i) + getX(*j)) / 2.0;
-                double cY = (getY(*i) + getY(*j)) / 2.0;
+                double cX = ((*i)(0) + (*j)(0)) / 2.0;
+                double cY = ((*i)(1) + (*j)(1)) / 2.0;
                 auto isNotCol = [&i, &j](Point<> const& pt) {
                     return !colinear(*i, *j, pt);
                 };
                 // Partition these into a set of adding points and removing points
                 auto partitionF = [orthoX, orthoY, cX, cY](Point<> const &pt) {
-                    return (getX(pt) - cX) * orthoX + (getY(pt) - cY) * orthoY <= 0;
+                    return (pt(0) - cX) * orthoX + (pt(1) - cY) * orthoY <= 0;
                 };
 
                 auto orderF = [orthoX, orthoY, &i, &j, cX, cY](Point<> const &pt) {
@@ -330,45 +338,51 @@ namespace pyscan {
         return std::make_tuple(currMax, maxStat);
     }
 
-    bool contains(double a, double b, double r, Pt2 const& pt) {
-        double la = (getX(pt) - a);
-        double lb = (getY(pt) - b);
+    bool contains(double a, double b, double r, pt2_t const& pt) {
+        double la = (pt(0) - a);
+        double lb = (pt(1) - b);
         return la * la + lb * lb <= r * r;
     }
 
-    auto evaluateRegion(pyscan::wpoint_list const& m_pts, pyscan::wpoint_list const& b_pts,
-                        pyscan::Disk const& disk, std::function<double(double, double)> const& scan) -> double {
+    auto evaluateRegion(
+            wpoint_list_t const& m_pts,
+            wpoint_list_t const& b_pts,
+            Disk const& disk,
+            discrepancy_func_t const& scan) -> double {
 
         double m_val = 0 ,m_total = 0, b_val = 0, b_total = 0;
         std::for_each(m_pts.begin(), m_pts.end(), [&](auto const& pt){
             if (disk.contains(pt)) {
-                m_val += pyscan::getWeight(pt);
+                m_val += pt.get_weight();
             }
-            m_total += pyscan::getWeight(pt);
+            m_total += pt.get_weight();
         });
         std::for_each(b_pts.begin(), b_pts.end(), [&](auto const& pt){
             if (disk.contains(pt)) {
-                b_val += pyscan::getWeight(pt);
+                b_val += pt.get_weight();
             }
-            b_total += pyscan::getWeight(pt);
+            b_total += pt.get_weight();
         });
         return scan(m_val / m_total, b_val / b_total);
     }
 
-    auto evaluateRegion(pyscan::wpoint_list const& m_pts, pyscan::Disk const& disk) -> double {
+    double evaluateRegion(pyscan::wpoint_list_t const& m_pts, pyscan::Disk const& disk) {
 
         double m_val = 0, m_total = 0;
         std::for_each(m_pts.begin(), m_pts.end(), [&](auto const& pt){
             if (disk.contains(pt)) {
-                m_val += pyscan::getWeight(pt);
+                m_val += pt.get_weight();
             }
-            m_total += pyscan::getWeight(pt);
+            m_total += pt.get_weight();
         });
         return m_val / m_total;
     }
 
-    auto evaluateRegion(pyscan::lpoint_list const& m_pts, pyscan::lpoint_list const& b_pts,
-                        pyscan::Disk const& disk, std::function<double(double, double)> const& scan)-> double {
+    double evaluateRegion(
+            lpoint_list_t const& m_pts,
+            lpoint_list_t const& b_pts,
+            Disk const& disk,
+            discrepancy_func_t const& scan) {
 
         double m_total = computeLabelTotal(m_pts.begin(), m_pts.end());
         double m_val = computeLabelTotalF(m_pts.begin(), m_pts.end(), [&](auto const& pt) {
@@ -382,8 +396,11 @@ namespace pyscan {
         return scan(m_val / m_total, b_val / b_total);
     }
 
-    std::tuple<Disk, double> diskScanSlow(point_list const& net, wpoint_list const& sampleM, wpoint_list const& sampleB,
-                      std::function<double(double, double)> const& scan) {
+    std::tuple<Disk, double> diskScanSlow(
+            point_list_t const& net,
+            wpoint_list_t const& sampleM,
+            wpoint_list_t const& sampleB,
+            discrepancy_func_t const& scan) {
         double m_Total = computeTotal(sampleM.begin(), sampleM.end());
         double b_Total = computeTotal(sampleB.begin(), sampleB.end());
 
@@ -400,13 +417,13 @@ namespace pyscan {
                         double b_curr = 0;
                         for (auto& p : sampleM) {
                             if (contains(a, b, r, p)) {
-                                m_curr += getWeight(p);
+                                m_curr += p.get_weight();
                             }
                         }
 
                         for (auto& p : sampleB) {
                             if (contains(a, b, r, p)) {
-                                b_curr += getWeight(p);
+                                b_curr += p.get_weight();
                             }
                         }
 
@@ -421,8 +438,11 @@ namespace pyscan {
         return std::make_tuple(maxDisk, max_stat);
     }
 
-    std::tuple<Disk, double> diskScanSlowLabels(point_list& net, lpoint_list& sampleM, lpoint_list& sampleB,
-                            std::function<double(double, double)> const& scan) {
+    std::tuple<Disk, double> diskScanSlowLabels(
+            point_list_t net,
+            lpoint_list_t sampleM,
+            lpoint_list_t sampleB,
+            discrepancy_func_t const& scan) {
         double m_Total = computeLabelTotal(sampleM.begin(), sampleM.end());
         double b_Total = computeLabelTotal(sampleB.begin(), sampleB.end());
 
@@ -434,7 +454,7 @@ namespace pyscan {
                     if (!colinear(*i, *j, *k)) {
                         double a, b, r;
                         solveCircle3(*i, *j, *k, a, b, r);
-                        auto filterF = [&] (Pt2 const& pt) {
+                        auto filterF = [&] (pt2_t const& pt) {
                           return contains(a, b, r, pt);
                         };
                         double m_curr = computeLabelTotalF(sampleM.begin(), sampleM.end(),
@@ -452,10 +472,11 @@ namespace pyscan {
         return std::make_tuple(maxDisk, max_scan);
     }
 
-    std::tuple<Disk, double> diskScan(point_list& net,
-                  wpoint_list& sampleM,
-                  wpoint_list& sampleB,
-                  std::function<double(double, double)> const& scan) {
+    std::tuple<Disk, double> diskScan(
+            point_list_t net,
+            wpoint_list_t sampleM,
+            wpoint_list_t sampleB,
+            discrepancy_func_t const& scan) {
       //Calculate the total measured and baseline value.
       double m_Total = 0;
       double b_Total = 0;
@@ -464,16 +485,16 @@ namespace pyscan {
       auto msEnd = sampleM.end();
       auto bsEnd = sampleB.end();
       std::for_each(msBegin, msEnd, [&](WPoint<> const& pt) {
-          m_Total += getWeight(pt);
+          m_Total += pt.get_weight();
       });
 
       std::for_each(bsBegin, bsEnd, [&](WPoint<> const& pt) {
-          b_Total += getWeight(pt);
+          b_Total += pt.get_weight();
       });
 
       auto nB = net.begin();
       auto nE = net.end();
-      std::vector <Pt2> netSampleSorted(nB, nE);
+      std::vector <pt2_t> netSampleSorted(nB, nE);
 
       Disk currMax;
       double maxStat = 0;
@@ -497,17 +518,17 @@ namespace pyscan {
           //Create a vector between the two points
           double orthoX, orthoY;
           findPerpVect(*i, *j, &orthoX, &orthoY);
-          double cX = (getX(*i) + getX(*j)) / 2.0;
-          double cY = (getY(*i) + getY(*j)) / 2.0;
-          auto isNotCol = [&i, &j](Pt2 const& pt) {
+          double cX = ((*i)(0) + (*j)(0)) / 2.0;
+          double cY = ((*i)(1) + (*j)(1)) / 2.0;
+          auto isNotCol = [&i, &j](pt2_t const& pt) {
             return !colinear(*i, *j, pt);
           };
           // Partition these into a set of adding points and removing points
-          auto partitionF = [orthoX, orthoY, cX, cY](Pt2 const &pt) {
-              return (getX(pt) - cX) * orthoX + (getY(pt) - cY) * orthoY <= 0;
+          auto partitionF = [orthoX, orthoY, cX, cY](pt2_t const &pt) {
+              return (pt(0) - cX) * orthoX + (pt(1) - cY) * orthoY <= 0;
           };
 
-          auto orderF = [orthoX, orthoY, &i, &j, cX, cY](Pt2 const &pt) {
+          auto orderF = [orthoX, orthoY, &i, &j, cX, cY](pt2_t const &pt) {
               // If the point lines up with either of the reference
               // point then we take this to be a disk defined by only
               // the reference points.
@@ -517,7 +538,7 @@ namespace pyscan {
               solveCircle3(*i, *j, pt, a, b);
               return orthoX * (a - cX) + orthoY * (b - cY);
           };
-          auto compF = [&orderF](Pt2 const &pt1, Pt2 const &pt2) {
+          auto compF = [&orderF](pt2_t const &pt1, pt2_t const &pt2) {
               return orderF(pt1) < orderF(pt2);
           };
 
@@ -529,12 +550,12 @@ namespace pyscan {
           double bCount = 0;
           std::for_each(asIterEnd, msEnd, [i, j, &mCount](WPoint<> const &pt) {
               if (onLineSegment(*i, *j, pt)) {
-                mCount += getWeight(pt);
+                mCount += pt.get_weight();
               }
           });
           std::for_each(bsIterEnd, bsEnd, [i, j, &bCount](WPoint<> const &pt) {
               if (onLineSegment(*i, *j, pt)) {
-                bCount += getWeight(pt);
+                bCount += pt.get_weight();
               }
           });
 
@@ -581,17 +602,66 @@ namespace pyscan {
     }
 
 
-    auto disk_scan_restricted(Point<> p1,
-                            Point<> p2,
-                            std::vector<Point<2>>& net,
-                            std::vector<WPoint<2>>& sampleM,
-                            std::vector<WPoint<2>>& sampleB,
-                            double min_dist,
-                            double max_dist,
-                            double m_Total,
-                            double b_Total,
-                            std::function<double(double, double)> const& scan)
-                            -> std::tuple<Disk, double> {
+    double get_order(pt2_t const& p1, pt2_t const& p2, pt2_t const& p) {
+        //Create a vector between the two points
+        double orthoX, orthoY;
+        findPerpVect(p1, p2, &orthoX, &orthoY);
+        double cX = (p1(0) + p2(0)) / 2.0;
+        double cY = (p1(1) + p2(1)) / 2.0;
+        double a, b;
+        solveCircle3(p1, p2, p, a, b);
+        return orthoX * (a - cX) + orthoY * (b - cY);
+    }
+
+    bool valid_pt(pt2_t const& p1, pt2_t const& p2, pt2_t const& p) {
+        return !(p1.approx_eq(p) || p2.approx_eq(p) || colinear(p1, p2, p));
+    }
+
+
+    template<typename T>
+    std::tuple<std::vector<double>, double> compute_delta(
+            T it_b,
+            T it_e,
+            pt2_t const& p1,
+            pt2_t const& p2,
+            std::vector<double> const& orders,
+            Disk const& start_disk) {
+
+        double weight = 0;
+        std::vector<double> counts(orders.size(), 0.0);
+        for (; it_b != it_e; it_b++) {
+            if (valid_pt(p1, p2, *it_b)) {
+                auto lb = std::lower_bound(orders.begin(), orders.end(),
+                                       get_order(p1, p2, *it_b));
+                if (lb == orders.end()) {
+                    continue;
+                }
+                if (start_disk.contains(*it_b)) {
+                    counts[lb - orders.begin()] -= it_b->get_weight();
+                    weight += it_b->get_weight();
+                } else {
+                    counts[lb - orders.begin()] += it_b->get_weight();
+                }
+            } else {
+               if (start_disk.contains(*it_b)) {
+                   weight += it_b->get_weight();
+               }
+            }
+        }
+        return make_tuple(counts, weight);
+    }
+
+    std::tuple<Disk, double> disk_scan_restricted(
+            pt2_t p1,
+            pt2_t p2,
+            point_list_t net,
+            wpoint_list_t const& sampleM,
+            wpoint_list_t const& sampleB,
+            double min_dist,
+            double max_dist,
+            double m_Total,
+            double b_Total,
+            const discrepancy_func_t& scan) {
 
 
         Disk currMax;
@@ -603,129 +673,55 @@ namespace pyscan {
         if (p1.approx_eq(p2)) {
             return std::make_tuple(currMax, 0);
         }
-        auto nE_temp = std::partition(nB, nE, [&] (Point<> const& pt) { return !(p1.approx_eq(pt) || p2.approx_eq(pt)); });
 
-        nE = nE_temp;
-        //Create a vector between the two points
-        double orthoX, orthoY;
-        findPerpVect(p1, p2, &orthoX, &orthoY);
-        double cX = (getX(p1) + getX(p2)) / 2.0;
-        double cY = (getY(p1) + getY(p2)) / 2.0;
-        auto isNotCol = [&p1, &p2](Pt2 const& pt) {
-            return !colinear(p1, p2, pt);
-        };
+        nE = std::partition(nB, nE, [&] (pt2_t const& p) {
+            if (valid_pt(p1, p2, p)) {
+                return true;
+            } else {
+                double a, b, r;
+                solveCircle3(p1, p2, p, a, b, r);
+                return min_dist <= r && r <= max_dist;
+            }
 
+        });
 
         if (nE - nB == 0) {
             return std::make_tuple(currMax, 0);
         }
-        auto msBegin = sampleM.begin(), msEnd = sampleM.end();
-        auto bsBegin = sampleB.begin(), bsEnd = sampleB.end();
 
-
-        auto orderF = [&](Pt2 const &pt) {
-            // If the point lines up with either of the reference
-            // point then we take this to be a disk defined by only
-            // the reference points.
-            // We are projecting a vector created between
-            //the disk center and center point between the two points.
-            double a, b;
-            solveCircle3(p1, p2, pt, a, b);
-            return orthoX * (a - cX) + orthoY * (b - cY);
-        };
-        auto compF = [&orderF](Pt2 const &pt1, Pt2 const &pt2) {
-            return orderF(pt1) < orderF(pt2);
-        };
-        auto tooBigTooSmall = [&] (Point<> const& pt) {
-            double a, b, r;
-            solveCircle3(p1, p2, pt, a, b, r);
-            return min_dist < r && r <= max_dist;
-        };
-
-        nE = std::partition(nB, nE, isNotCol);
-        nE = std::partition(nB, nE, tooBigTooSmall);
-        if (nE - nB < 1) {
-            return std::make_tuple(currMax, 0);
-        }
         //Partition into the set of points that will never be considered.
         //and the set that could be considered.
         //Consider the left most and right most disks. Those two contain every point we must consider.
-        std::sort(nB, nE, compF);
+        std::sort(nB, nE, [&](pt2_t const &pt1, pt2_t const &pt2) {
+            return get_order(p1, p2, pt1) < get_order(p1, p2, pt2);
+        });
 
         Disk start_disk;
-        Disk end_disk;
         {
             double a, b, r;
-            assert(!p1.approx_eq(*nB));
-            assert(!p2.approx_eq(*nB));
-            assert(!p1.approx_eq(*(nE - 1)));
-            assert(!p2.approx_eq(*(nE - 1)));
-
             solveCircle3(p1, p2, *nB, a, b, r);
             start_disk = Disk(a, b, r);
-
-            solveCircle3(p1, p2, *(nE - 1), a, b, r);
-            end_disk = Disk(a, b, r);
         }
-
-        auto inside_disk_union = [&] (Point<> const& pt) {
-            return start_disk.contains(pt) || end_disk.contains(pt);
-        };
-
-        auto inside_start_disk = [&] (Point<> const& pt) {
-            return start_disk.contains(pt);
-        };
-
-
-        //Remove any point we don't need to consider.
-        msEnd = std::partition(msBegin, msEnd, inside_disk_union);
-        bsEnd = std::partition(bsBegin, bsEnd, inside_disk_union);
-
-        auto asIterEnd = std::partition(msBegin, msEnd, isNotCol);
-        auto bsIterEnd = std::partition(bsBegin, bsEnd, isNotCol);
-        double mCount = computeTotal(asIterEnd, msEnd);
-        double bCount = computeTotal(bsIterEnd, bsEnd);
-
-        msEnd = asIterEnd;
-        bsEnd = bsIterEnd;
 
         std::vector<double> orderV;
         orderV.reserve(nE - nB);
         for (auto b = nB; b != nE; b++) {
-            orderV.push_back(orderF(*b));
+            orderV.push_back(get_order(p1, p2, *b));
         }
 
-        //Partition the point set into an adding and removing sets.
-        auto mHigherIt = std::partition(msBegin, msEnd, inside_start_disk);
-        auto bHigherIt = std::partition(bsBegin, bsEnd, inside_start_disk);
+        //Compute delta
+        std::vector<double> mDelta, bDelta;
+        double mCount, bCount;
+        std::tie(mDelta, mCount) = compute_delta(sampleM.begin(), sampleM.end(), p1, p2, orderV, start_disk);
+        std::tie(bDelta, bCount) = compute_delta(sampleB.begin(), sampleB.end(), p1, p2, orderV, start_disk);
 
-
-        std::vector<double> mCountsA(nE - nB, 0);
-        std::vector<double> bCountsA(nE - nB, 0);
-        std::vector<double> mCountsR(nE - nB, 0);
-        std::vector<double> bCountsR(nE - nB, 0);
-        /*Probably most of the time is spent here*/
-        partial_counts(msBegin, mHigherIt, orderV, mCountsR, orderF);
-        mCount += computeTotal(msBegin, mHigherIt);
-        partial_counts(bsBegin, bHigherIt, orderV, bCountsR, orderF);
-        bCount += computeTotal(bsBegin, bHigherIt);
-
-        partial_counts(mHigherIt, msEnd, orderV, mCountsA, orderF);
-        partial_counts(bHigherIt, bsEnd, orderV, bCountsA, orderF);
-
-        mCountsR[0] = 0, mCountsA[0] = 0;
-        bCountsR[0] = 0, bCountsA[0] = 0;
-        /*----------------------------------------------*/
         //Now scan over the counts.
         auto size = nE - nB;
         for (int k = 0; k < size; k++) {
-            mCount += mCountsA[k] - mCountsR[k];
-            double val = mCountsA[k] - mCountsR[k];
-            bCount += bCountsA[k] - bCountsR[k];
+            mCount += mDelta[k];
+            bCount += bDelta[k];
             double m_hat = mCount / m_Total;
             double b_hat = bCount / b_Total;
-            //if (!aeq(mCount, evaluateRegion(sampleM, currDisk) * m_Total))
-            //    std::cout << mCount << "  " << evaluateRegion(sampleM, currDisk) * m_Total << " " << val <<  std::endl;
             double newStat = scan(m_hat, b_hat);
             if (maxStat <= newStat) {
                 double a, b, r;
@@ -770,7 +766,7 @@ namespace pyscan {
         Disk currMax;
         double maxStat = 0;
 
-        if (net.size() < 3 || sameLoc(p1, p2)) {
+        if (net.size() < 3 || p1.approx_eq(p2)) {
             return std::make_tuple(currMax, maxStat);
         }
         auto nB = net.begin(), nE = net.end();
@@ -779,14 +775,14 @@ namespace pyscan {
         //Create a vector between the two points
         double orthoX, orthoY;
         findPerpVect(p1, p2, &orthoX, &orthoY);
-        double cX = (getX(p1) + getX(p2)) / 2.0;
-        double cY = (getY(p1) + getY(p2)) / 2.0;
+        double cX = (p1(0) + p2(0)) / 2.0;
+        double cY = (p1(1) + p2(1)) / 2.0;
         auto isNotCol = [&p1, &p2](Point<> const &pt) {
-            return !colinear(p1, p2, pt) || sameLoc(p1, pt) || sameLoc(p2, pt);
+            return !colinear(p1, p2, pt) || p1.approx_eq(pt) || p2.approx_eq(pt);
         };
         // Partition these into a set of adding points and removing points
         auto partitionF = [orthoX, orthoY, cX, cY](Point<> const &pt) {
-            return (getX(pt) - cX) * orthoX + (getY(pt) - cY) * orthoY <= 0;
+            return (pt(0) - cX) * orthoX + (pt(1) - cY) * orthoY <= 0;
         };
 
         auto orderF = [orthoX, orthoY, &p1, &p2, cX, cY](Point<> const &pt) {
@@ -886,10 +882,10 @@ namespace pyscan {
     }
 
 
-    std::tuple<Disk, double> disk_scan_simp(point_list& net,
-                                       std::vector<WPoint<>>& sampleM,
-                                       std::vector<WPoint<>>& sampleB,
-                                       std::function<double(double, double)> const& scan) {
+    std::tuple<Disk, double> disk_scan_simp(point_list_t const& net,
+                                       wpoint_list_t const& sampleM,
+                                       wpoint_list_t const& sampleB,
+                                       discrepancy_func_t const& scan) {
         double m_Total = computeLTotal(sampleM);
         double b_Total = computeLTotal(sampleB);
         Disk currMax;
@@ -921,11 +917,11 @@ namespace pyscan {
 
 
     template <typename T>
-    std::tuple<Disk, double> disk_scan_scale(point_list const& net,
+    std::tuple<Disk, double> disk_scan_scale(point_list_t const& net,
                                              std::vector<T> const& sampleM,
                                              std::vector<T> const& sampleB,
                                              uint32_t grid_r,
-                                             std::function<double(double, double)> const& scan) {
+                                             discrepancy_func_t const& scan) {
 
         //Calculate the total measured and baseline value.
 
@@ -946,7 +942,6 @@ namespace pyscan {
         Disk currMax;
         double maxStat = 0;
 
-        auto last_pt = grid_net.end();
 
         auto compareFirst = [](auto const& lhs, auto const& rhs) {
             return lhs.first < rhs.first;
@@ -1016,10 +1011,11 @@ namespace pyscan {
 
 
     template<typename T>
-    std::tuple<Disk, double> cached_disk_scan(point_list net,
-                                              T sampleM,
-                                              T sampleB,
-                                              std::function<double(double, double)> const& scan) {
+    std::tuple<Disk, double> cached_disk_scan(
+            point_list_t const& net,
+            T const& sampleM,
+            T const& sampleB,
+            discrepancy_func_t const& scan) {
         /*
          * Computes all resolutions
          */
@@ -1037,13 +1033,15 @@ namespace pyscan {
     }
 
 
-    template std::tuple<Disk, double> cached_disk_scan<wpoint_list>(point_list,
-                                                       wpoint_list,
-                                                       wpoint_list,
-                                                       std::function<double(double, double)> const&);
+    template std::tuple<Disk, double> cached_disk_scan<wpoint_list_t>(
+            point_list_t const&,
+            wpoint_list_t const&,
+            wpoint_list_t const&,
+            discrepancy_func_t const& );
 
-    template std::tuple<Disk, double> cached_disk_scan<lpoint_list>(point_list net,
-                                                       lpoint_list sampleM,
-                                                       lpoint_list sampleB,
-                                                       std::function<double(double, double)> const&);
+    template std::tuple<Disk, double> cached_disk_scan<lpoint_list_t>(
+            point_list_t const&,
+            lpoint_list_t const&,
+            lpoint_list_t const& ,
+            discrepancy_func_t const&);
 }

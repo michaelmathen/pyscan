@@ -16,8 +16,8 @@
 namespace pyscan {
 
     inline std::tuple<int32_t, int32_t> to_cell(Point<2> const& pt, int32_t r, double scale, double min_x, double min_y) {
-        double x = getX(pt),
-                y = getY(pt);
+        double x = pt(0),
+                y = pt(1);
         auto a = static_cast<int32_t>((x - min_x) / scale * r),
                 b = static_cast<int32_t>((y - min_y) / scale * r);
         a = a == r ? r - 1 : a;
@@ -51,16 +51,16 @@ namespace pyscan {
             using pt_it = decltype(items.begin());
             pt_it min_x, max_x;
             std::tie(min_x, max_x) = std::minmax_element(items.begin(), items.end(), [&](T const& p1, T const& p2) {
-                        return getX(p1) < getX(p2);
+                        return p1(0) < p2(0);
             });
             pt_it min_y, max_y;
             std::tie(min_y, max_y) = std::minmax_element(items.begin(), items.end(),
                                                          [&](T const& p1, T const& p2) {
-                                                             return getY(p1) < getY(p2);
+                                                             return p1(1) < p2(1);
                                                          });
-            scale = std::max(getX(*max_x) - getX(*min_x), getY(*max_y) - getY(*min_y));
-            mnx = getX(*min_x);
-            mny = getY(*min_y);
+            scale = std::max((*max_x)(0) - (*min_x)(0), (*max_y)(1) - (*min_y)(1));
+            mnx = (*min_x)(0);
+            mny = (*min_y)(1);
             for (auto& pt : items) {
                 z_pts.emplace(to_code(pt, r, scale, mnx, mny), pt);
             }

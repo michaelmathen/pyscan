@@ -3,8 +3,8 @@
 //
 
 
-#include "../src/RectangleScan.hpp"
-#include "Utilities.hpp"
+#include "RectangleScan.hpp"
+#include "Test_Utilities.hpp"
 
 #include <limits.h>
 #include <random>

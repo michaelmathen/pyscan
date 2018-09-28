@@ -53,7 +53,7 @@ namespace pyscan {
         }
 
         bool contains(Point<> const& pt) const {
-            return u_x >= getX(pt) && getX(pt) >= l_x && u_y >= getY(pt) && getY(pt) >= l_y;
+            return u_x >= pt(0) && pt(0) >= l_x && u_y >= pt(1) && pt(1) >= l_y;
         }
 
         void setValue(double v) {
@@ -79,7 +79,7 @@ namespace pyscan {
          * Grid as defined in the SODA paper. Construction takes O(mlog r + r^2) time where
          * m = end - begin.
          */
-        size_t r;
+        long r;
         std::vector<double> red_counts;
         std::vector<double> blue_counts;
         std::vector<double> x_coords;
@@ -87,8 +87,8 @@ namespace pyscan {
         double total_red_weight = 0;
         double total_blue_weight = 0;
     public:
-        Grid(size_t r_arg, point_list& red, weight_list& red_w, point_list& blue, weight_list& blue_w);
-        Grid(point_list& net, point_list& red, weight_list& red_w, point_list& blue, weight_list& blue_w);
+        Grid(size_t r_arg, point_list_t& red, weight_list_t& red_w, point_list_t& blue, weight_list_t& blue_w);
+        Grid(point_list_t& net, point_list_t& red, weight_list_t& red_w, point_list_t& blue, weight_list_t& blue_w);
         double totalRedWeight() const;
         double totalBlueWeight() const;
         double redCount(size_t row, size_t col) const;
@@ -261,7 +261,7 @@ namespace pyscan {
     };
 
 
-    Subgrid maxSubgridLinearG(Grid const &grid, int r_prime, double a, double b);
+    Subgrid maxSubgridLinearG(Grid const &grid, long r_prime, double a, double b);
 
     Subgrid maxSubgridLinearSimple(Grid const& grid, double eps, std::function<double(double, double)> const& f);
     Subgrid maxSubgridLinearSimple(Grid const &grid, double a, double b);

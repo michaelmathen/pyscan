@@ -52,9 +52,9 @@ namespace pyscan {
 
 
     double det3(Vec3 const& dir1, Vec3 const& dir2, Vec3 const& dir3) {
-        return dir1[0] * det2(dir2[1], dir3[1], dir2[2], dir3[2])
-               - dir1[1] * det2(dir2[0], dir3[0], dir2[2], dir3[2])
-               + dir1[2] * det2(dir2[0], dir3[0], dir2[1], dir3[1]);
+        return dir1[0] * util::det2(dir2[1], dir3[1], dir2[2], dir3[2])
+               - dir1[1] * util::det2(dir2[0], dir3[0], dir2[2], dir3[2])
+               + dir1[2] * util::det2(dir2[0], dir3[0], dir2[1], dir3[1]);
     }
 
     using namespace boost::numeric::ublas;
@@ -95,7 +95,7 @@ namespace pyscan {
 
         // Compute the rank of the system and see if it is singular
         double dval = det3(dir1, dir2, dir3);
-        if (aeq(fabs(dval), 0)) {
+        if (util::aeq(fabs(dval), 0)) {
             return false;
         }
 
@@ -197,7 +197,6 @@ namespace pyscan {
             return tmp;
         };
 
-        int ux, uy, lx, ly;
         struct Frame {
             Vec2 d_cc, d_cl, p_cc, p_cl;
             Frame(Vec2 const& di, Vec2 const& dj, Vec2 const& cc, Vec2 const& cl) :
@@ -295,7 +294,6 @@ namespace pyscan {
                 return tmp;
             };
 
-            int ux, uy, lx, ly;
             struct Frame {
                 Vec2 d_cc, d_cl, p_cc, p_cl;
                 Frame(Vec2 const& di, Vec2 const& dj, Vec2 const& cc, Vec2 const& cl) :
@@ -340,9 +338,9 @@ namespace pyscan {
     }
 
     Vec3 cross_product(Vec3 const& p1, Vec3 const& p2) {
-        return Vec3{det2(p1[1], p2[1], p1[2], p2[2]),
-                -det2(p1[0], p2[0], p1[2], p2[2]),
-                det2(p1[0], p2[0], p1[1], p2[1])};
+        return Vec3{util::det2(p1[1], p2[1], p1[2], p2[2]),
+                -util::det2(p1[0], p2[0], p1[2], p2[2]),
+                util::det2(p1[0], p2[0], p1[1], p2[1])};
     }
 
     Vec3 operator-(Vec3 const& v1, Vec3 const& v2) {
@@ -399,7 +397,6 @@ namespace pyscan {
 
     std::vector<Vec3> eps_core_set3(double eps,
                                    Vec3 const& cc, Vec3 const& cl, Vec3 const& cu,
-                                    Vec<6> bounding_cube,
                                    std::function<Vec3(Vec3)> lineMaxF) {
 
         auto avg = [&] (Vec3 const& v1, Vec3 const& v2, Vec3 const& v3) {
@@ -408,7 +405,6 @@ namespace pyscan {
         };
 
         using direc3 = std::array<Vec3, 3>;
-        int ux, uy, lx, ly;
         struct Frame3 {
             direc3 d;
             direc3 p;
@@ -440,7 +436,6 @@ namespace pyscan {
                     lf.d[2], lf.p[2],
                     p_ext)) {
 
-                p_ext = clamp_to_cube(bounding_cube, p_ext);
                 Vec3 m_vec = avg(lf.d[0], lf.d[1], lf.d[2]);
                 if (height3(lf.p[0], lf.p[1], lf.p[2], m_vec, p_ext) > eps) {
                     std::cout << "Next step" << std::endl;
@@ -485,15 +480,14 @@ namespace pyscan {
     std::vector<Vec3> eps_core_set3(double eps,
                                    std::function<Vec3(Vec3)> lineMaxF) {
 
-        auto cube = bounding_cube(lineMaxF);
-        auto core_set1 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, cube, lineMaxF)
-           , core_set2 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, cube, lineMaxF)
-           , core_set3 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, cube, lineMaxF)
-           , core_set4 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, cube, lineMaxF)
-           , core_set5 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, cube, lineMaxF)
-           , core_set6 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, cube, lineMaxF)
-           , core_set7 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, cube, lineMaxF)
-           , core_set8 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, cube, lineMaxF);
+        auto core_set1 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, lineMaxF)
+           , core_set2 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, lineMaxF)
+           , core_set3 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, lineMaxF)
+           , core_set4 = eps_core_set3(eps, Vec3{0.0, 0.0, 1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, lineMaxF)
+           , core_set5 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, lineMaxF)
+           , core_set6 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, lineMaxF)
+           , core_set7 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, 1.0, 0.0 }, lineMaxF)
+           , core_set8 = eps_core_set3(eps, Vec3{0.0, 0.0, -1.0}, Vec3{-1.0, 0.0, 0.0}, Vec3{ 0.0, -1.0, 0.0 }, lineMaxF);
         core_set1.insert(core_set1.end(), core_set2.begin(), core_set2.end());
         core_set1.insert(core_set1.end(), core_set3.begin(), core_set3.end());
         core_set1.insert(core_set1.end(), core_set4.begin(), core_set4.end());
@@ -504,18 +498,20 @@ namespace pyscan {
         return core_set1;
     }
 
-    std::vector<pyscan::Point<2>> approx_hull(double eps, std::vector<Pt2> const& pts) {
+
+
+    point_list_t approx_hull(double eps, point_list_t const& pts) {
         auto max_f = [&] (Vec2 direction) {
             double max_dir = -std::numeric_limits<double>::infinity();
-            Pt2 curr_pt {0.0, 0.0, 0.0};
+            pt2_t curr_pt {0.0, 0.0, 0.0};
             for (auto& pt : pts) {
-                double curr_dir = direction[0] * pyscan::getX(pt) + direction[1] * pyscan::getY(pt);
+                double curr_dir = direction[0] * pt(0) + direction[1] * pt(1);
                 if (max_dir < curr_dir) {
                     max_dir = curr_dir;
                     curr_pt = pt;
                 }
             }
-            return Vec2{pyscan::getX(curr_pt), pyscan::getY(curr_pt)};
+            return Vec2{curr_pt(0), curr_pt(1)};
         };
         std::vector<pyscan::Point<>> core_set_pts;
         {
@@ -528,25 +524,25 @@ namespace pyscan {
     }
 
 
-    std::vector<Point<3>> approx_hull3(double eps, std::vector<Pt3> const& pts) {
+    point3_list_t approx_hull3(double eps, point3_list_t const& pts) {
         /*
          * Finish this.
          */
         auto max_f = [&] (Vec3 direction) {
             double max_dir = -std::numeric_limits<double>::infinity();
-            Pt3 curr_pt {0.0, 0.0, 0.0, 0.0};
+            pt3_t curr_pt {0.0, 0.0, 0.0, 0.0};
             for (auto& pt : pts) {
-                double curr_dir = direction[0] * pyscan::getX(pt)
-                                  + direction[1] * pyscan::getY(pt)
-                                  + direction[2] * pyscan::getZ(pt);
+                double curr_dir = direction[0] * pt(0)
+                                  + direction[1] * pt(1)
+                                  + direction[2] * pt(2);
                 if (max_dir < curr_dir) {
                     max_dir = curr_dir;
                     curr_pt = pt;
                 }
             }
-            return Vec3{pyscan::getX(curr_pt), pyscan::getY(curr_pt), pyscan::getZ(curr_pt)};
+            return Vec3{curr_pt(0), curr_pt(1), curr_pt(2)};
         };
-        std::vector<pyscan::Point<3>> core_set_pts;
+        point3_list_t core_set_pts;
         {
             auto vecs = eps_core_set3(eps, max_f);
             for (auto &v :vecs) {

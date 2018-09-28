@@ -22,7 +22,7 @@ namespace pyscan {
     template <size_t dim>
 	inline double dot(Vec<dim> const& v1, Vec<dim> const& v2) {
         double accum = 0;
-        for (int i = 0; i < dim; i++) {
+        for (size_t i = 0; i < dim; i++) {
             accum += v1[i] * v2[i];
         }
       return accum;
@@ -36,7 +36,7 @@ namespace pyscan {
     template <size_t dim>
     inline Vec<dim> operator+(Vec<dim> const& v1, Vec<dim> const& v2) {
         Vec<dim> v_out;
-        for (int i = 0; i < dim; i++) {
+        for (size_t i = 0; i < dim; i++) {
             v_out[i] = v1[i] + v2[i];
         }
         return v_out;
@@ -45,7 +45,7 @@ namespace pyscan {
     template <size_t dim>
     inline Vec<dim> operator*(Vec<dim> const& v2, double val) {
         Vec<dim> v_out;
-        for (int i = 0; i < dim; i++) {
+        for (size_t i = 0; i < dim; i++) {
             v_out[i] = v2[i] * val;
         }
         return v_out;
@@ -54,7 +54,7 @@ namespace pyscan {
     template<size_t dim>
     inline Vec<dim> operator/(Vec<dim> const& v2, double val) {
         Vec<dim> v_out;
-        for (int i = 0; i < dim; i++) {
+        for (size_t i = 0; i < dim; i++) {
             v_out[i] = v2[i] / val;
         }
         return v_out;
@@ -78,8 +78,7 @@ namespace pyscan {
 
 
 
-    std::vector<Pt3> approx_hull3(double eps, std::vector<Pt3> const& pts);
-
-    std::vector<Pt2> approx_hull(double eps, std::vector<Pt2> const& pts);
+    point3_list_t approx_hull3(double eps, point3_list_t const& pts);
+    point_list_t approx_hull(double eps, point3_list_t const& pts);
 }
 #endif //PYSCAN_FUNCTIONAPPROX_HPP

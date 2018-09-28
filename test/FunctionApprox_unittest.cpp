@@ -4,9 +4,9 @@
 
 
 
-#include "../src/FunctionApprox.hpp"
-#include "../src/Statistics.hpp"
-#include "Utilities.hpp"
+#include "FunctionApprox.hpp"
+#include "Statistics.hpp"
+#include "Test_Utilities.hpp"
 
 #include <limits.h>
 #include <random>
@@ -44,14 +44,9 @@ using namespace pyscan;
 TEST(ApproximateHullTest, Kulldorff) {
     const static int test_size = 10000;
     double rho = .001;
-    double alpha = .001;
     double eps = .01;
     auto pts = pyscantest::randomVec(test_size);
 
-    auto avg = [&] (Vec2 const& v1, Vec2 const& v2) {
-        Vec2 v_out = v1 + v2;
-        return v_out * 1.0 / mag(v_out);
-    };
 
     double maxV_approx = approximateHull(eps,
       [&](Vec2 pt) {
