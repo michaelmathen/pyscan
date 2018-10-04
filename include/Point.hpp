@@ -160,6 +160,8 @@ namespace pyscan {
 
     Point<2> intersection(const Point<2> &p1, const Point<2> &p2);
 
+    Point<3> cross_product(const Point<3> &p1, const Point<3> &p2);
+
     bool is_parallel(const Point<2> &l1, const Point<2> &l2);
 
     using pt2_t = Point<2>;
@@ -176,9 +178,12 @@ namespace pyscan {
     using point3_it_t = point3_list_t::iterator;
     using label_list_t = std::vector<size_t>;
     using wpoint_list_t = std::vector<WPoint<2>>;
+    using wpoint_it_t = wpoint_list_t::iterator;
     using lpoint_list_t = std::vector<LPoint<2>>;
+    using lpoint_it_t = lpoint_list_t::iterator;
     using wpoint3_list_t = std::vector<WPoint<3>>;
     using lpoint3_list_t = std::vector<LPoint<3>>;
+    using lpoint3_it_t = lpoint3_list_t::iterator;
 
     using discrepancy_func_t = std::function<double(double, double)>;
 

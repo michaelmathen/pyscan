@@ -100,6 +100,12 @@ namespace pyscan {
         r = sqrt((x1 - a) * (x1 - a) + (y1 - b) * (y1 - b));
     }
 
+    Disk::Disk(const pyscan::pt2_t &p1, const pyscan::pt2_t &p2, const pyscan::pt2_t &p3) {
+        double a, b;
+        solveCircle3(p1, p2, p3, a, b, this->radius);
+        this->center = pt2_t(a, b, 1.0);
+    }
+
     void findPerpVect(pt2_t const& pt1, pt2_t const& pt2, double* u, double* v) {
         double x1 = pt1(0), x2 = pt2(0),
                 y1 = pt1(1), y2 = pt2(1);
@@ -618,10 +624,10 @@ namespace pyscan {
     }
 
 
-    template<typename T>
+
     std::tuple<std::vector<double>, double> compute_delta(
-            T it_b,
-            T it_e,
+            wpoint_list_t::const_iterator it_b,
+            wpoint_list_t::const_iterator it_e,
             pt2_t const& p1,
             pt2_t const& p2,
             std::vector<double> const& orders,
@@ -651,6 +657,32 @@ namespace pyscan {
         return make_tuple(counts, weight);
     }
 
+    /*
+     * Computes a new set of iterators and also an ordered set of values
+     */
+    std::vector<double> preprocess_net(pt2_t p1, pt2_t p2, double min_dist, double max_dist, point_it_t& nB, point_it_t& nE) {
+        nE = std::partition(nB, nE, [&] (pt2_t const& p) {
+            if (valid_pt(p1, p2, p)) {
+                return true;
+            } else {
+                double a, b, r;
+                solveCircle3(p1, p2, p, a, b, r);
+                return min_dist <= r && r <= max_dist;
+            }
+
+        });
+        std::sort(nB, nE, [&](pt2_t const &pt1, pt2_t const &pt2) {
+            return get_order(p1, p2, pt1) < get_order(p1, p2, pt2);
+        });
+        std::vector<double> orderV;
+        orderV.reserve(nE - nB);
+        for (auto b = nB; b != nE; b++) {
+            orderV.push_back(get_order(p1, p2, *b));
+        }
+        return orderV;
+    }
+
+
     std::tuple<Disk, double> disk_scan_restricted(
             pt2_t p1,
             pt2_t p2,
@@ -666,49 +698,18 @@ namespace pyscan {
 
         Disk currMax;
         double maxStat = 0;
-
         //First remove all colinear, duplicate, points.
         auto nB = net.begin(), nE = net.end();
 
         if (p1.approx_eq(p2)) {
             return std::make_tuple(currMax, 0);
         }
-
-        nE = std::partition(nB, nE, [&] (pt2_t const& p) {
-            if (valid_pt(p1, p2, p)) {
-                return true;
-            } else {
-                double a, b, r;
-                solveCircle3(p1, p2, p, a, b, r);
-                return min_dist <= r && r <= max_dist;
-            }
-
-        });
-
+        //This modifies nB and nE
+        auto orderV = preprocess_net(p1, p2, min_dist, max_dist, nB, nE);
         if (nE - nB == 0) {
             return std::make_tuple(currMax, 0);
         }
-
-        //Partition into the set of points that will never be considered.
-        //and the set that could be considered.
-        //Consider the left most and right most disks. Those two contain every point we must consider.
-        std::sort(nB, nE, [&](pt2_t const &pt1, pt2_t const &pt2) {
-            return get_order(p1, p2, pt1) < get_order(p1, p2, pt2);
-        });
-
-        Disk start_disk;
-        {
-            double a, b, r;
-            solveCircle3(p1, p2, *nB, a, b, r);
-            start_disk = Disk(a, b, r);
-        }
-
-        std::vector<double> orderV;
-        orderV.reserve(nE - nB);
-        for (auto b = nB; b != nE; b++) {
-            orderV.push_back(get_order(p1, p2, *b));
-        }
-
+        Disk start_disk(p1, p2, *nB);
         //Compute delta
         std::vector<double> mDelta, bDelta;
         double mCount, bCount;
@@ -724,10 +725,7 @@ namespace pyscan {
             double b_hat = bCount / b_Total;
             double newStat = scan(m_hat, b_hat);
             if (maxStat <= newStat) {
-                double a, b, r;
-                solveCircle3(p1, p2, *(nB + k), a, b, r);
-                Disk currDisk(a, b, r);
-                currMax = currDisk;
+                currMax = Disk(p1, p2, *(nB + k));
                 maxStat = newStat;
             }
         }
@@ -750,12 +748,61 @@ namespace pyscan {
     }
 
 
+
+    std::tuple<std::vector<crescent_t>, std::vector<crescent_t>, std::unordered_map<size_t, size_t>, double>
+    compute_delta(
+            lpoint_list_t::const_iterator it_b,
+            lpoint_list_t::const_iterator it_e,
+            pt2_t const& p1,
+            pt2_t const& p2,
+            std::vector<double> const& orders,
+            Disk const& start_disk) {
+
+        double weight = 0;
+        std::vector<crescent_t> add_counts(orders.size(), crescent_t());
+        std::vector<crescent_t> remove_counts(orders.size(), crescent_t());
+
+        std::unordered_map<size_t, size_t> labels;
+        for (; it_b != it_e; it_b++) {
+            if (valid_pt(p1, p2, *it_b)) {
+                auto lb = std::lower_bound(orders.begin(), orders.end(),
+                                           get_order(p1, p2, *it_b));
+                if (lb == orders.end()) {
+                    continue;
+                }
+                if (start_disk.contains(*it_b)) {
+                    remove_counts[lb - orders.begin()].emplace_back(it_b->get_label(), it_b->get_weight());
+
+                    if (labels.find(it_b->get_label()) == labels.end()) {
+                        weight += it_b->get_weight();
+                        labels.emplace(it_b->get_label(), 1);
+                    } else {
+                        labels[it_b->get_label()] += 1;
+                    }
+                } else {
+                    add_counts[lb - orders.begin()].emplace_back(it_b->get_label(), it_b->get_weight());
+                }
+            } else {
+                if (start_disk.contains(*it_b)) {
+
+                    if (labels.find(it_b->get_label()) == labels.end()) {
+                        weight += it_b->get_weight();
+                        labels.emplace(it_b->get_label(), 1);
+                    } else {
+                        labels[it_b->get_label()] += 1;
+                    }
+                }
+            }
+        }
+        return make_tuple(add_counts, remove_counts, labels, weight);
+    }
+
     auto disk_scan_restricted(
-            Point<> const& p1,
-            Point<> const& p2,
-            std::vector<Point<2>>& net,
-            std::vector<LPoint<2>>& sampleM,
-            std::vector<LPoint<2>>& sampleB,
+            pt2_t p1,
+            pt2_t p2,
+            point_list_t net,
+            lpoint_list_t const& sampleM,
+            lpoint_list_t const& sampleB,
             double min_dist,
             double max_dist,
             double m_Total,
@@ -770,87 +817,22 @@ namespace pyscan {
             return std::make_tuple(currMax, maxStat);
         }
         auto nB = net.begin(), nE = net.end();
-        auto msBegin = sampleM.begin(), msEnd = sampleM.end();
-        auto bsBegin = sampleB.begin(), bsEnd = sampleB.end();
-        //Create a vector between the two points
-        double orthoX, orthoY;
-        findPerpVect(p1, p2, &orthoX, &orthoY);
-        double cX = (p1(0) + p2(0)) / 2.0;
-        double cY = (p1(1) + p2(1)) / 2.0;
-        auto isNotCol = [&p1, &p2](Point<> const &pt) {
-            return !colinear(p1, p2, pt) || p1.approx_eq(pt) || p2.approx_eq(pt);
-        };
-        // Partition these into a set of adding points and removing points
-        auto partitionF = [orthoX, orthoY, cX, cY](Point<> const &pt) {
-            return (pt(0) - cX) * orthoX + (pt(1) - cY) * orthoY <= 0;
-        };
 
-        auto orderF = [orthoX, orthoY, &p1, &p2, cX, cY](Point<> const &pt) {
-            // If the point lines up with either of the reference
-            // point then we take this to be a disk defined by only
-            // the reference points.
-            // We are projecting a vector created between
-            //the disk center and center point between the two points.
-            double a, b;
-            solveCircle3(p1, p2, pt, a, b);
-            return orthoX * (a - cX) + orthoY * (b - cY);
-        };
-        auto compF = [&orderF](Point<> const &pt1, Point<> const &pt2) {
-            return orderF(pt1) < orderF(pt2);
-        };
-
-        auto asIterEnd = std::partition(msBegin, msEnd, isNotCol);
-        auto bsIterEnd = std::partition(bsBegin, bsEnd, isNotCol);
-        nE = std::partition(nB, nE, isNotCol);
-
-
-        auto tooBigTooSmall = [&] (Point<> const& pt) {
-            double a, b, r;
-            solveCircle3(p1, p2, pt, a, b, r);
-            return min_dist < r && r <= max_dist;
-        };
-
-        nE = std::partition(nB, nE, tooBigTooSmall);
-
-        // will have two sets an added set and a current set.
-        // added set is for stuff that will never leave. The current set on the other hand
-        // will correspond to every trajectory that we overlap.
-        auto onSegment = [&](Point<> const &pt) {
-            return onLineSegment(p1, p2, pt);
-        };
-
-        //Counts the points that lie on the line segment between i and j.
-        //These points are colinear so have been removed from the scan.
-
-
-        std::unordered_map<size_t, size_t> m_curr_set;
-        std::unordered_map<size_t, size_t> b_curr_set;
-        double m_count = computeLabelTotalF(asIterEnd, msEnd, m_curr_set, onSegment);
-        double b_count = computeLabelTotalF(bsIterEnd, bsEnd, b_curr_set, onSegment);
-
-        std::sort(nB, nE, compF);
-        std::vector<double> orderV;
-        orderV.reserve(static_cast<size_t>(nE - nB));
-        for (auto b = nB; b != nE; b++) {
-            orderV.push_back(orderF(*b));
+        auto orderV = preprocess_net(p1, p2, min_dist, max_dist, nB, nE);
+        if (nE - nB == 0) {
+            return std::make_tuple(currMax, 0);
         }
 
-        //Partition the point set into an adding and removing sets.
-        auto mHigherIt = std::partition(msBegin, asIterEnd, partitionF);
-        auto bHigherIt = std::partition(bsBegin, bsIterEnd, partitionF);
+        Disk start_disk(p1, p2, *nB);
+        double m_count, b_count;
+        std::vector<crescent_t> mCountsR, bCountsR, mCountsA, bCountsA;
+        std::unordered_map<size_t, size_t> m_curr_set, b_curr_set;
+        std::tie(mCountsA, mCountsR, m_curr_set, m_count) = compute_delta(sampleM.begin(), sampleB.end(),
+                p1, p2, orderV, start_disk);
+        std::tie(bCountsA, bCountsR, b_curr_set, b_count) = compute_delta(sampleM.begin(), sampleB.end(),
+                p1, p2, orderV, start_disk);
 
-        std::vector<crescent_t> mCountsA(static_cast<size_t>(nE - nB), crescent_t());
-        std::vector<crescent_t> bCountsA(static_cast<size_t>(nE - nB), crescent_t());
-        std::vector<crescent_t> mCountsR(static_cast<size_t>(nE - nB), crescent_t());
-        std::vector<crescent_t> bCountsR(static_cast<size_t>(nE - nB), crescent_t());
 
-        /*Probably most of the time is spent here*/
-        partial_counts_label(msBegin, mHigherIt, orderV, mCountsR, orderF);
-        m_count += computeLabelTotal(msBegin, mHigherIt, m_curr_set);
-        partial_counts_label(bsBegin, bHigherIt, orderV, bCountsR, orderF);
-        b_count += computeLabelTotal(bsBegin, bHigherIt, b_curr_set);
-        partial_counts_label(mHigherIt, asIterEnd, orderV, mCountsA, orderF);
-        partial_counts_label(bHigherIt, bsIterEnd, orderV, bCountsA, orderF);
         /*----------------------------------------------*/
         //Now scan over the counts.
 
@@ -894,10 +876,9 @@ namespace pyscan {
         for (auto pt1 = net.begin(); pt1 != net.end() - 1; pt1++) {
             for (auto pt2 = pt1 + 1; pt2 != net.end(); pt2++) {
                 Disk d1;
-                std::vector<Point<>> new_net = net;
                 double possible_max;
                 std::tie(d1, possible_max) = disk_scan_restricted(*pt1, *pt2,
-                                                                  new_net,
+                                                                  net,
                                                                   sampleM,
                                                                   sampleB,
                                                                   0.0,

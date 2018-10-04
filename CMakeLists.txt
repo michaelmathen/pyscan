@@ -11,11 +11,33 @@ set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -g -fsanitize=address")
 
 
+
+
 find_package( PythonLibs 3 REQUIRED )
 include_directories( ${PYTHON_INCLUDE_DIRS} )
 find_package( Boost 1.36.0 COMPONENTS python3 REQUIRED)
 
-include_directories(${Boost_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include)
+execute_process(COMMAND ${CMAKE_COMMAND} .
+        RESULT_VARIABLE result
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/libgdiam-1.0.3 )
+if(result)
+    message(FATAL_ERROR "CMake step for libgdiam failed: ${result}")
+endif()
+
+
+execute_process(COMMAND ${CMAKE_COMMAND} --build .
+        RESULT_VARIABLE result
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/libgdiam-1.0.3 )
+if(result)
+    message(FATAL_ERROR "Build step for libgdiam failed: ${result}")
+endif()
+
+set(THIRDPARTY_LIBRARIES ${CMAKE_SOURCE_DIR}/thirdparty/libgdiam-1.0.3/libgdiam.so)
+
+include_directories(
+        ${Boost_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/thirdparty/libgdiam-1.0.3)
 
 set(SOURCE_FILES
         src/BloomFilter.cpp
@@ -27,7 +49,9 @@ set(SOURCE_FILES
         src/Utilities.cpp
         src/Test_Utilities.cpp
         src/DiskScan2.cpp
-        src/TrajectoryScan.cpp)
+        src/TrajectoryScan.cpp
+        #src/kernel.cpp
+        )
 
 set(HEADER include/BloomFilter.hpp
         include/DiskScan.hpp
@@ -114,4 +138,4 @@ endforeach()
 #######################################################
 configure_file(pyscan.py ${CMAKE_CURRENT_BINARY_DIR}/pyscan.py COPYONLY)
 add_library(pyscan SHARED ${SOURCE_FILES} ${PY_SOURCE_FILES})
-target_link_libraries(pyscan ${Boost_LIBRARIES})
+target_link_libraries(pyscan ${Boost_LIBRARIES} ${THIRDPARTY_LIBRARIES})

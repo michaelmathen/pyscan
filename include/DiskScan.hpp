@@ -132,6 +132,19 @@ namespace pyscan {
             double b_Total,
             const discrepancy_func_t& scan);
 
+    std::tuple<Disk, double> disk_scan_restricted(
+            pt2_t p1,
+            pt2_t p2,
+            point_list_t net,
+            lpoint_list_t const& sampleM,
+            lpoint_list_t const& sampleB,
+            double min_dist,
+            double max_dist,
+            double m_Total,
+            double b_Total,
+            const discrepancy_func_t& scan);
+
+
     template<typename T>
     std::tuple<Disk, double> disk_scan_scale(
             point_list_t const& net,
