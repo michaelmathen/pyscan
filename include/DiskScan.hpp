@@ -43,12 +43,6 @@ namespace pyscan {
         return computeLabelTotalF(begin, end, label_map, [](pt2_t const& pt){ (void)pt; return true; });
     }
 
-    template<typename T, typename Filter>
-    double computeLabelTotalF(T begin, T end, Filter filter) {
-        std::unordered_map<size_t, size_t> label_map;
-        return computeLabelTotalF(begin, end, label_map, filter);
-    }
-
     template< typename T>
     double computeLabelTotal(T begin, T end) {
         std::unordered_map<size_t, size_t> label_map;
@@ -68,17 +62,6 @@ namespace pyscan {
     }
 
 
-    double evaluateRegion(
-            wpoint_list_t const& m_pts,
-            wpoint_list_t const& b_pts,
-            Disk const& disk,
-            const discrepancy_func_t&  scan);
-
-    double evaluateRegion(
-            lpoint_list_t const& m_pts,
-            lpoint_list_t const& b_pts,
-            Disk const& disk,
-            const discrepancy_func_t& scan);
 
     void solveCircle3(
             pt2_t const& pt1,
@@ -93,32 +76,29 @@ namespace pyscan {
             double &a, double &b, double &r);
 
 
-    std::tuple<Disk, double> diskScanSlow(
+    std::tuple<Disk, double> disk_scan_slow(
             point_list_t const& net,
             wpoint_list_t const& sampleM,
             wpoint_list_t const& sampleB,
             const discrepancy_func_t& scan);
 
-    std::tuple<Disk, double> diskScanLabels(
-            point_list_t net,
-            lpoint_list_t sampleM,
-            lpoint_list_t sampleB,
+
+    std::tuple<Disk, double> disk_scan_slow_labels(
+            point_list_t const& net,
+            lpoint_list_t const& sampleM,
+            lpoint_list_t const& sampleB,
             const discrepancy_func_t& scan);
 
 
-
-    std::tuple<Disk, double> diskScanSlowLabels(
-            point_list_t net,
-            lpoint_list_t sampleM,
-            lpoint_list_t sampleB,
-            const discrepancy_func_t& scan);
-
-
-    std::tuple<Disk, double> diskScan(point_list_t net,
-                  wpoint_list_t sampleM,
-                  wpoint_list_t sampleB,
+    std::tuple<Disk, double> disk_scan(point_list_t const& net,
+                  wpoint_list_t const& sampleM,
+                  wpoint_list_t const& sampleB,
                   const discrepancy_func_t& scan);
 
+    std::tuple<Disk, double> disk_scan_labels(point_list_t const& net,
+                                       wpoint_list_t const& sampleM,
+                                       wpoint_list_t const& sampleB,
+                                       const discrepancy_func_t& scan);
 
     std::tuple<Disk, double> disk_scan_restricted(
             pt2_t p1,
@@ -161,7 +141,7 @@ namespace pyscan {
             const discrepancy_func_t& scan);
 
 
-    std::tuple<Disk, double> disk_scan_simp(
+    std::tuple<Disk, double> disk_scan_simple(
             point_list_t const& net,
             wpoint_list_t const& sampleM,
             wpoint_list_t const& sampleB,

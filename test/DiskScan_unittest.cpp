@@ -58,10 +58,10 @@ namespace {
         pyscan::Disk d1;
         pyscan::Disk d2;
 
-        std::tie(d2, d2value) = pyscan::diskScan(n_pts, m_pts, b_pts, scan);
-        EXPECT_FLOAT_EQ(d2value, evaluateRegion(m_pts, b_pts, d2, scan));
-        std::tie(d1, d1value) = pyscan::diskScanSlow(n_pts, m_pts, b_pts, scan);
-        EXPECT_FLOAT_EQ(d1value, evaluateRegion(m_pts, b_pts, d1, scan));
+        std::tie(d2, d2value) = pyscan::disk_scan(n_pts, m_pts, b_pts, scan);
+        EXPECT_FLOAT_EQ(d2value, evaluate_range(d2, m_pts, b_pts, scan));
+        std::tie(d1, d1value) = pyscan::disk_scan_slow(n_pts, m_pts, b_pts, scan);
+        EXPECT_FLOAT_EQ(d1value, evaluate_range(d1, m_pts, b_pts, scan));
 
         EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
         EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
@@ -87,7 +87,7 @@ namespace {
         pyscan::Disk d2;
         std::tie(d2, d2value) = pyscan::disk_scan_restricted(n_pts[0], n_pts[1], n_pts, m_pts, b_pts,
                 0, std::numeric_limits<double>::infinity(), m_total, b_total, scan);
-        EXPECT_FLOAT_EQ(d2value, evaluateRegion(m_pts, b_pts, d2, scan));
+        EXPECT_FLOAT_EQ(d2value, evaluate_range(d2, m_pts, b_pts, scan));
     }
 
     TEST(DiskScanSimp, matching) {
@@ -104,10 +104,10 @@ namespace {
         double d1value, d2value;
         pyscan::Disk d1;
         pyscan::Disk d2;
-        std::tie(d2, d2value) = pyscan::diskScan(n_pts, m_pts, b_pts, scan);
-        EXPECT_FLOAT_EQ(d2value, evaluateRegion(m_pts, b_pts, d2, scan));
-        std::tie(d1, d1value) = pyscan::disk_scan_simp(n_pts, m_pts, b_pts, scan);
-        EXPECT_FLOAT_EQ(d1value, evaluateRegion(m_pts, b_pts, d1, scan));
+        std::tie(d2, d2value) = pyscan::disk_scan(n_pts, m_pts, b_pts, scan);
+        EXPECT_FLOAT_EQ(d2value, evaluate_range(d2, m_pts, b_pts, scan));
+        std::tie(d1, d1value) = pyscan::disk_scan_simple(n_pts, m_pts, b_pts, scan);
+        EXPECT_FLOAT_EQ(d1value, evaluate_range(d1, m_pts, b_pts, scan));
         EXPECT_FLOAT_EQ(d1value, d2value);
 
     }
@@ -128,13 +128,13 @@ namespace {
         pyscan::Disk d1;
         //pyscan::Disk d2;
         //std::tie(d2, d2value) = pyscan::diskScan(n_pts, m_pts, b_pts, scan);
-        //EXPECT_FLOAT_EQ(d2value, evaluateRegion(m_pts, b_pts, d2, scan));
+        //EXPECT_FLOAT_EQ(d2value, evaluate_range(m_pts, b_pts, d2, scan));
         //std::tie(d1, d1value) = pyscan::disk_scan_simp(n_pts, m_pts, b_pts, scan);
 
         std::tie(d1, d1value) = disk_scan_scale(n_pts, m_pts,
                                b_pts,
                                32, scan);
-        EXPECT_FLOAT_EQ(d1value, evaluateRegion(m_pts, b_pts, d1, scan));
+        EXPECT_FLOAT_EQ(d1value, evaluate_range(d1, m_pts, b_pts, scan));
 
 //        EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
 //        EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
@@ -158,13 +158,13 @@ namespace {
 //        pyscan::Disk d1;
 //        //pyscan::Disk d2;
 //        //std::tie(d2, d2value) = pyscan::diskScan(n_pts, m_pts, b_pts, scan);
-//        //EXPECT_FLOAT_EQ(d2value, evaluateRegion(m_pts, b_pts, d2, scan));
+//        //EXPECT_FLOAT_EQ(d2value, evaluate_range(m_pts, b_pts, d2, scan));
 //        //std::tie(d1, d1value) = pyscan::disk_scan_simp(n_pts, m_pts, b_pts, scan);
 //
 //        std::tie(d1, d1value) = disk_scan_scale(n_pts, m_pts,
 //                                                b_pts,
 //                                                32, scan);
-//        EXPECT_FLOAT_EQ(d1value, evaluateRegion(m_pts, b_pts, d1, scan));
+//        EXPECT_FLOAT_EQ(d1value, evaluate_range(m_pts, b_pts, d1, scan));
 //
 ////        EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
 ////        EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
@@ -193,11 +193,11 @@ namespace {
 //        std::tie(d2, d2value) = pyscan::diskScanSlow(n_pts, m_pts, b_pts, stat);
 //
 //        EXPECT_FLOAT_EQ(d2value,
-//                        pyscan::evaluateRegion(m_pts, b_pts, d2, stat));
+//                        pyscan::evaluate_range(m_pts, b_pts, d2, stat));
 //
 //        // EXPECT_FLOAT_EQ(std::get<1>(d1), 0.0);
 //        EXPECT_FLOAT_EQ(d1value,
-//                        pyscan::evaluateRegion(m_pts,
+//                        pyscan::evaluate_range(m_pts,
 //                                              b_pts, d1, stat));
 //
 //        EXPECT_FLOAT_EQ(d1value, d2value);
@@ -306,10 +306,10 @@ namespace {
 //        double d1value, d2value;
 //        std::tie(d1, d1value) = pyscan::diskScanSlowLabels(n_pts, m_lpts, b_lpts, scan);
 //
-//        EXPECT_FLOAT_EQ(d1value, evaluateRegion(m_lpts, b_lpts, d1, scan));
+//        EXPECT_FLOAT_EQ(d1value, evaluate_range(m_lpts, b_lpts, d1, scan));
 //        std::tie(d2, d2value) = pyscan::max_disk_labeled(n_pts, m_pts, m_weight, m_labels, b_pts,b_weight, b_labels, scan);
 //        EXPECT_FLOAT_EQ(d1value, d2value);
-//        EXPECT_FLOAT_EQ(d2value, evaluateRegion(m_lpts, b_lpts, d2, scan));
+//        EXPECT_FLOAT_EQ(d2value, evaluate_range(m_lpts, b_lpts, d2, scan));
 //        EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
 //        EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
 //        EXPECT_FLOAT_EQ(d1.getR(), d2.getR());
@@ -327,10 +327,10 @@ namespace {
 //      double d1value, d2value;
 //      std::tie(d1, d1value) = pyscan::diskScanSlowLabels(n_pts, m_pts, b_pts, scan);
 //
-//      EXPECT_FLOAT_EQ(d1value, evaluateRegion(m_pts, b_pts, d1, scan));
+//      EXPECT_FLOAT_EQ(d1value, evaluate_range(m_pts, b_pts, d1, scan));
 //      std::tie(d2, d2value) = pyscan::diskScanLabels(n_pts, m_pts, b_pts, scan);
 //      EXPECT_FLOAT_EQ(d1value, d2value);
-//      EXPECT_FLOAT_EQ(d2value, evaluateRegion(m_pts, b_pts, d2, scan));
+//      EXPECT_FLOAT_EQ(d2value, evaluate_range(m_pts, b_pts, d2, scan));
 //      EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
 //      EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
 //      EXPECT_FLOAT_EQ(d1.getR(), d2.getR());
@@ -376,8 +376,8 @@ namespace {
 //        std::tie(d4, d4value) = pyscan::diskScanSlow(n_pts, m_pts, b_pts, f);
 //
 //
-//        EXPECT_FLOAT_EQ(d1value, evaluateRegion(m_pts, b_pts, d1, f));
-//        EXPECT_FLOAT_EQ(d2value, evaluateRegion(m_pts, b_pts, d2, f));
+//        EXPECT_FLOAT_EQ(d1value, evaluate_range(m_pts, b_pts, d1, f));
+//        EXPECT_FLOAT_EQ(d2value, evaluate_range(m_pts, b_pts, d2, f));
 //        EXPECT_FLOAT_EQ(d1value, d2value);
 //        EXPECT_FLOAT_EQ(d1value, d3value);
 //        EXPECT_FLOAT_EQ(d2value, d4value);
@@ -409,8 +409,8 @@ namespace {
 //        std::tie(d1, d1value) = pyscan::diskScanSlowLabels(n_pts, m_lpts, b_lpts, f);
 //        std::tie(d2, d2value) = pyscan::diskScanSlow(n_pts, m_pts, b_pts, f);
 //
-//        EXPECT_FLOAT_EQ(d1value, evaluateRegion(m_pts, b_pts, d1, f));
-//        EXPECT_FLOAT_EQ(d2value, evaluateRegion(m_pts, b_pts, d2, f));
+//        EXPECT_FLOAT_EQ(d1value, evaluate_range(m_pts, b_pts, d1, f));
+//        EXPECT_FLOAT_EQ(d2value, evaluate_range(m_pts, b_pts, d2, f));
 //        EXPECT_FLOAT_EQ(d1value, d2value);
 //        EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
 //        EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
