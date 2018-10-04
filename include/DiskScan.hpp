@@ -76,19 +76,6 @@ namespace pyscan {
             double &a, double &b, double &r);
 
 
-    std::tuple<Disk, double> disk_scan_slow(
-            point_list_t const& net,
-            wpoint_list_t const& sampleM,
-            wpoint_list_t const& sampleB,
-            const discrepancy_func_t& scan);
-
-
-    std::tuple<Disk, double> disk_scan_slow_labels(
-            point_list_t const& net,
-            lpoint_list_t const& sampleM,
-            lpoint_list_t const& sampleB,
-            const discrepancy_func_t& scan);
-
 
     std::tuple<Disk, double> disk_scan(point_list_t const& net,
                   wpoint_list_t const& sampleM,
@@ -96,8 +83,8 @@ namespace pyscan {
                   const discrepancy_func_t& scan);
 
     std::tuple<Disk, double> disk_scan_labels(point_list_t const& net,
-                                       wpoint_list_t const& sampleM,
-                                       wpoint_list_t const& sampleB,
+                                       lpoint_list_t const& sampleM,
+                                       lpoint_list_t const& sampleB,
                                        const discrepancy_func_t& scan);
 
     std::tuple<Disk, double> disk_scan_restricted(

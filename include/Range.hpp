@@ -44,7 +44,7 @@ namespace pyscan {
                 seen_labels.emplace(pt.get_label());
             }
         }
-        return weight;
+        return weight / total_weight;
     }
 
     template<typename R, typename Pt>

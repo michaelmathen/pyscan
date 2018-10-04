@@ -305,7 +305,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .from_python<std::vector<pyscan::Point<> >>()
             .from_python<std::vector<pyscan::WPoint<>>>()
             .from_python<std::vector<pyscan::LPoint<>>>()
-            .from_python<std::vector<std::vector<pyscan::Point<> > > >();
+            .from_python<std::vector<std::vector<pyscan::Point<> > > >()
+            .from_python<std::vector<std::vector<pyscan::WPoint<> > > >();
 
     to_python_converter<std::tuple<pyscan::Disk, double>, tuple_to_python_tuple<pyscan::Disk, double>>();
     to_python_converter<std::tuple<pyscan::pt2_t, double>, tuple_to_python_tuple<pyscan::pt2_t, double>>();

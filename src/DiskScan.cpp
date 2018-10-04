@@ -248,8 +248,6 @@ namespace pyscan {
     }
 
 
-
-
     std::tuple<Disk, double> disk_scan_restricted(
             pt2_t p1,
             pt2_t p2,
@@ -325,6 +323,18 @@ namespace pyscan {
 
         std::unordered_map<size_t, size_t> labels;
         for (; it_b != it_e; it_b++) {
+
+            if (start_disk.contains(*it_b)) {
+
+                auto label_it = labels.find(it_b->get_label());
+                if (label_it == labels.end()) {
+                    labels.emplace(it_b->get_label(), 1);
+                    weight += it_b->get_weight();
+                } else {
+                    labels[it_b->get_label()] += 1;
+                }
+            }
+
             if (valid_pt(p1, p2, *it_b)) {
                 auto lb = std::lower_bound(orders.begin(), orders.end(),
                                            get_order(p1, p2, *it_b));
@@ -333,25 +343,8 @@ namespace pyscan {
                 }
                 if (start_disk.contains(*it_b)) {
                     remove_counts[lb - orders.begin()].emplace_back(it_b->get_label(), it_b->get_weight());
-
-                    if (labels.find(it_b->get_label()) == labels.end()) {
-                        weight += it_b->get_weight();
-                        labels.emplace(it_b->get_label(), 1);
-                    } else {
-                        labels[it_b->get_label()] += 1;
-                    }
                 } else {
                     add_counts[lb - orders.begin()].emplace_back(it_b->get_label(), it_b->get_weight());
-                }
-            } else {
-                if (start_disk.contains(*it_b)) {
-
-                    if (labels.find(it_b->get_label()) == labels.end()) {
-                        weight += it_b->get_weight();
-                        labels.emplace(it_b->get_label(), 1);
-                    } else {
-                        labels[it_b->get_label()] += 1;
-                    }
                 }
             }
         }
@@ -372,7 +365,7 @@ namespace pyscan {
     -> std::tuple<Disk, double> {
 
         Disk currMax;
-        double maxStat = 0;
+        double maxStat = -std::numeric_limits<double>::infinity();
 
         if (net.size() < 3 || p1.approx_eq(p2)) {
             return std::make_tuple(currMax, maxStat);
@@ -406,10 +399,7 @@ namespace pyscan {
             double b_hat = b_count / b_Total;
             double newStat = scan(m_hat, b_hat);
             if (maxStat <= newStat) {
-                double a, b, r;
-                solveCircle3(p1, p2, *(nB + k), a, b, r);
-                Disk currDisk(a, b, r);
-                currMax = currDisk;
+                currMax = Disk(p1, p2, *(nB + k));
                 maxStat = newStat;
             }
         }

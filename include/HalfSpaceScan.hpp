@@ -58,8 +58,6 @@ namespace pyscan {
             assert(i < dim);
             return line(i);
         }
-
-
     };
 
 

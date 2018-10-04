@@ -27,7 +27,7 @@ namespace pyscan {
         return {x, y, x * x + y * y, 1.0};
     }
 
-    std::tuple<Disk, double> max_disk(
+    std::tuple<Disk, double> disk_scan2(
             point_list_t& point_net,
             wpoint_list_t& red,
             wpoint_list_t& blue,
@@ -47,7 +47,7 @@ namespace pyscan {
                                std::get<1>(mx_h));
     };
 
-    std::tuple<Disk, double> max_disk_labeled(
+    std::tuple<Disk, double> disk_scan2_labels(
             point_list_t& point_net,
             lpoint_list_t& red,
             lpoint_list_t& blue,

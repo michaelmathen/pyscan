@@ -41,34 +41,17 @@ namespace pyscan {
         }
     };
 
-    std::tuple<Disk, double> max_disk(
+    std::tuple<Disk, double> disk_scan2(
             point_list_t& point_net,
             wpoint_list_t& red,
             wpoint_list_t& blue,
             const discrepancy_func_t& f);
 
-    std::tuple<Disk, double> max_disk_labeled(
+    std::tuple<Disk, double> disk_scan2_labels(
             point_list_t& point_net,
             lpoint_list_t& red,
             lpoint_list_t& blue,
             const discrepancy_func_t& f);
 
-
-//    std::tuple<Disk, double> max_disk_slow(point3_list& point_net,
-//                       point3_list& red,
-//                       weight_list_t& red_w,
-//                       point3_list& blue,
-//                       weight_list_t& blue_w,
-//                       std::function<double(double, double)> const& f);
-//
-//    std::tuple<Disk, double> max_disk_slow_labeled(
-//            point_list_t& point_net,
-//            point_list_t& red,
-//            weight_list_t& red_w,
-//            label_list_t& red_labels,
-//            point_list_t& blue,
-//            weight_list_t& blue_w,
-//            label_list_t& blue_labels,
-//            std::function<double(double, double)> const& f);
 }
 #endif //PYSCAN_DISKSCAN2_HPP

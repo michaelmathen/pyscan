@@ -28,7 +28,16 @@ namespace pyscan {
                 std::vector<double> const& weights) : traj_set(tp, off), weights(weights) {}
     };
 
+    struct trajectory {
+        point_list_t pts;
+    };
 
+    struct wtrajectory : public trajectory {
+        double weight;
+    };
+
+    using trajectory_set_t = std::vector<trajectory>;
+    using wtrajectory_set_t = std::vector<wtrajectory>;
 
 
     //////////////////////////////////////
