@@ -15,7 +15,13 @@ set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -g -fsanitize=address")
 
 find_package( PythonLibs 3 REQUIRED )
 include_directories( ${PYTHON_INCLUDE_DIRS} )
-find_package( Boost 1.36.0 COMPONENTS python-py35 REQUIRED)
+
+set(version ${PYTHONLIBS_VERSION_STRING})
+STRING( REGEX REPLACE "([0-9.]+).[0-9]+(rc[0-9]+)?" "\\1" version ${version} )
+STRING( REGEX REPLACE "[^0-9]" "" version ${version} )
+find_package(Boost COMPONENTS "python${version}" REQUIRED)
+
+#find_package( Boost 1.36.0 COMPONENTS python[4 REQUIRED)
 
 execute_process(COMMAND ${CMAKE_COMMAND} .
         RESULT_VARIABLE result
