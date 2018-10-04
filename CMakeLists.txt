@@ -21,7 +21,6 @@ STRING( REGEX REPLACE "([0-9.]+).[0-9]+(rc[0-9]+)?" "\\1" version ${version} )
 STRING( REGEX REPLACE "[^0-9]" "" version ${version} )
 find_package(Boost COMPONENTS "python${version}" REQUIRED)
 
-#find_package( Boost 1.36.0 COMPONENTS python[4 REQUIRED)
 
 execute_process(COMMAND ${CMAKE_COMMAND} .
         RESULT_VARIABLE result

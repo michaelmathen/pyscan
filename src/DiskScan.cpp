@@ -157,7 +157,7 @@ namespace pyscan {
 
 
 
-    std::tuple<Disk, double> disk_scan_slow(
+    std::tuple<Disk, double> disk_scan_simple(
             point_list_t const& net,
             wpoint_list_t const& sampleM,
             wpoint_list_t const& sampleB,
@@ -165,7 +165,7 @@ namespace pyscan {
         return scan_ranges3<Disk, pt2_t, wpt2_t>(net, sampleM, sampleB, scan);
     }
 
-    std::tuple<Disk, double> disk_scan_slow_labels(
+    std::tuple<Disk, double> disk_scan_simple_labels(
             point_list_t const& net,
             lpoint_list_t const& sampleM,
             lpoint_list_t const& sampleB,

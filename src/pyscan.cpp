@@ -407,8 +407,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_halfspace_labels", &pyscan::MaxHalfSpaceLabeled);
 
 
-    py::def("max_disk", &pyscan::diskScan);
-    py::def("max_disk_labels", &pyscan::diskScanLabels);
+    py::def("max_disk", &pyscan::disk_scan);
+    py::def("max_disk_labels", &pyscan::disk_scan_labels);
 
     py::def("max_traj_disk", &pyscan::traj_disk_scan_py);
     py::def("grid_traj", &pyscan::grid_traj_py);

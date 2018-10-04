@@ -60,7 +60,7 @@ namespace {
 
         std::tie(d2, d2value) = pyscan::disk_scan(n_pts, m_pts, b_pts, scan);
         EXPECT_FLOAT_EQ(d2value, evaluate_range(d2, m_pts, b_pts, scan));
-        std::tie(d1, d1value) = pyscan::disk_scan_slow(n_pts, m_pts, b_pts, scan);
+        std::tie(d1, d1value) = pyscan::disk_scan_simple(n_pts, m_pts, b_pts, scan);
         EXPECT_FLOAT_EQ(d1value, evaluate_range(d1, m_pts, b_pts, scan));
 
         EXPECT_FLOAT_EQ(d1.getA(), d2.getA());

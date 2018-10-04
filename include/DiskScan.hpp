@@ -147,6 +147,10 @@ namespace pyscan {
             wpoint_list_t const& sampleB,
             const discrepancy_func_t& scan);
 
-
+    std::tuple<Disk, double> disk_scan_simple_labels(
+            point_list_t const& net,
+            lpoint_list_t const& sampleM,
+            lpoint_list_t const& sampleB,
+            discrepancy_func_t const& scan);
 }
 #endif //PYSCAN_DISKSCAN_HPP_HPP
