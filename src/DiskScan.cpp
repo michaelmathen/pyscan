@@ -229,12 +229,11 @@ namespace pyscan {
     std::vector<double> preprocess_net(pt2_t p1, pt2_t p2, double min_dist, double max_dist, point_it_t& nB, point_it_t& nE) {
         nE = std::partition(nB, nE, [&] (pt2_t const& p) {
             if (valid_pt(p1, p2, p)) {
-                return true;
-            } else {
                 double a, b, r;
                 solveCircle3(p1, p2, p, a, b, r);
                 return min_dist <= r && r <= max_dist;
             }
+            return false;
 
         });
         std::sort(nB, nE, [&](pt2_t const &pt1, pt2_t const &pt2) {
@@ -247,6 +246,8 @@ namespace pyscan {
         }
         return orderV;
     }
+
+
 
 
     std::tuple<Disk, double> disk_scan_restricted(

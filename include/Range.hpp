@@ -22,23 +22,25 @@ namespace pyscan {
 
     template<int dim>
     double range_weight(Range<dim> const& range, std::vector<WPoint<dim>> const& pts) {
-        double weight = 0;
+        double weight = 0, total_weight = 0;
         for (auto const& pt : pts) {
             if (range.contains(pt)) {
                 weight += pt.get_weight();
             }
+            total_weight += pt.get_weight();
         }
-        return weight;
+        return weight / total_weight;
     }
 
 
     template<int dim>
     double range_weight(Range<dim> const& range, std::vector<LPoint<dim>> const& pts) {
         std::unordered_set<size_t> seen_labels;
-        double weight = 0;
+        double weight = 0 , total_weight = 0;
         for (auto& pt : pts) {
-            if (range.contains(pt) && (seen_labels.find(pt.get_label()) == seen_labels.end())) {
-                weight += pt.get_weight();
+            if ( (seen_labels.find(pt.get_label()) == seen_labels.end())) {
+                weight += range.contains(pt) ? pt.get_weight() : 0.0;
+                total_weight += pt.get_weight();
                 seen_labels.emplace(pt.get_label());
             }
         }

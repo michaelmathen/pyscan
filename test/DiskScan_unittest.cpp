@@ -126,19 +126,9 @@ namespace {
 
         double d1value;
         pyscan::Disk d1;
-        //pyscan::Disk d2;
-        //std::tie(d2, d2value) = pyscan::diskScan(n_pts, m_pts, b_pts, scan);
-        //EXPECT_FLOAT_EQ(d2value, evaluate_range(m_pts, b_pts, d2, scan));
-        //std::tie(d1, d1value) = pyscan::disk_scan_simp(n_pts, m_pts, b_pts, scan);
-
-        std::tie(d1, d1value) = disk_scan_scale(n_pts, m_pts,
-                               b_pts,
-                               32, scan);
+        std::tie(d1, d1value) = disk_scan_scale(n_pts, m_pts, b_pts, 32, scan);
         EXPECT_FLOAT_EQ(d1value, evaluate_range(d1, m_pts, b_pts, scan));
 
-//        EXPECT_FLOAT_EQ(d1.getA(), d2.getA());
-//        EXPECT_FLOAT_EQ(d1.getB(), d2.getB());
-//        EXPECT_FLOAT_EQ(d1.getR(), d2.getR());
 
     }
 //
