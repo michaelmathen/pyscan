@@ -636,7 +636,12 @@ namespace pyscan {
         double weight = 0;
         std::vector<double> counts(orders.size(), 0.0);
         for (; it_b != it_e; it_b++) {
+            if (start_disk.contains(*it_b)) {
+                weight += it_b->get_weight();
+            }
+
             if (valid_pt(p1, p2, *it_b)) {
+
                 auto lb = std::lower_bound(orders.begin(), orders.end(),
                                        get_order(p1, p2, *it_b));
                 if (lb == orders.end()) {
@@ -644,14 +649,9 @@ namespace pyscan {
                 }
                 if (start_disk.contains(*it_b)) {
                     counts[lb - orders.begin()] -= it_b->get_weight();
-                    weight += it_b->get_weight();
                 } else {
                     counts[lb - orders.begin()] += it_b->get_weight();
                 }
-            } else {
-               if (start_disk.contains(*it_b)) {
-                   weight += it_b->get_weight();
-               }
             }
         }
         return make_tuple(counts, weight);
@@ -715,6 +715,8 @@ namespace pyscan {
         double mCount, bCount;
         std::tie(mDelta, mCount) = compute_delta(sampleM.begin(), sampleM.end(), p1, p2, orderV, start_disk);
         std::tie(bDelta, bCount) = compute_delta(sampleB.begin(), sampleB.end(), p1, p2, orderV, start_disk);
+
+        mDelta[0] = 0, bDelta[0] = 0;
 
         //Now scan over the counts.
         auto size = nE - nB;
@@ -827,9 +829,9 @@ namespace pyscan {
         double m_count, b_count;
         std::vector<crescent_t> mCountsR, bCountsR, mCountsA, bCountsA;
         std::unordered_map<size_t, size_t> m_curr_set, b_curr_set;
-        std::tie(mCountsA, mCountsR, m_curr_set, m_count) = compute_delta(sampleM.begin(), sampleB.end(),
+        std::tie(mCountsA, mCountsR, m_curr_set, m_count) = compute_delta(sampleM.begin(), sampleM.end(),
                 p1, p2, orderV, start_disk);
-        std::tie(bCountsA, bCountsR, b_curr_set, b_count) = compute_delta(sampleM.begin(), sampleB.end(),
+        std::tie(bCountsA, bCountsR, b_curr_set, b_count) = compute_delta(sampleB.begin(), sampleB.end(),
                 p1, p2, orderV, start_disk);
 
 
