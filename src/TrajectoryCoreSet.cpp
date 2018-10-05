@@ -27,7 +27,7 @@ namespace pyscan {
         glPointSet* p = kernel_set.getRobustCoreset(static_cast<int>(2 / eps) , eps / 2, KERNEL_LEVELS); // compute robust coreset
 
         point3_list_t core_set;
-        for (size_t i = 0; i < p->getNum(); i++) {
+        for (int i = 0; i < p->getNum(); i++) {
             glReal pt[3];
             p->getPoint(i, pt);
             core_set.emplace_back(pt[0], pt[1], pt[2], 1.0);

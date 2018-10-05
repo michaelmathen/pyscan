@@ -30,9 +30,9 @@
 //----------------------------------------------------------------------
 //  basic includes
 //----------------------------------------------------------------------
-#include <stdlib.h>			// standard libaries
-#include <stdio.h>			// standard I/O
-#include <iostream.h>			// C++ I/O streams
+#include <cstdlib>			// standard libaries
+#include <cstdio>			// standard I/O
+#include <iostream>			// C++ I/O streams
 #include <math.h>			// math routines
 #include <values.h>
 
