@@ -3,9 +3,12 @@
 //
 
 #include <random>
+#include <unordered_map>
 
 #include "appext.h"
 #include "Point.hpp"
+#include "FunctionApprox.hpp"
+
 #include "TrajectoryCoreSet.hpp"
 
 namespace pyscan {
@@ -16,7 +19,8 @@ namespace pyscan {
     /*
   * Compute the lower leftmost corner of a box containing these points.
   */
-    std::tuple<double, double, double, double> bounding_box(point_it traj_b, point_it traj_e) {
+    std::tuple<double, double, double, double> bounding_box(point_list_t::const_iterator traj_b,
+                                                            point_list_t::const_iterator traj_e) {
 
 
         auto bounds_x = std::minmax_element(traj_b, traj_e,
@@ -51,7 +55,8 @@ namespace pyscan {
      * Takes a trajectory and grids it so that each grid contains points that cross it..
      */
     std::unordered_map<long, std::vector<Point<>>>
-    grid_traj(point_it traj_b, point_it traj_e, double chord_l) {
+    grid_traj(point_list_t::const_iterator traj_b,
+                point_list_t::const_iterator traj_e, double chord_l) {
 
 
         auto last_pt = traj_b;
@@ -122,7 +127,8 @@ namespace pyscan {
 
 
     std::unordered_map<long, std::vector<Point<>>>
-    approximate_traj_cells(point_it traj_b, point_it traj_e, double chord_l, double eps) {
+    approximate_traj_cells(point_list_t::const_iterator traj_b,
+                            point_list_t::const_iterator traj_e, double chord_l, double eps) {
         auto cells = grid_traj(traj_b, traj_e, chord_l);
         for (auto b = cells.begin(); b != cells.end(); b++) {
             auto approx = eps_core_set(eps, [&](Vec2 const& direction) {
@@ -143,19 +149,30 @@ namespace pyscan {
         return cells;
     }
 
-    void approx_traj(point_it traj_b, point_it traj_e, double chord_l, double eps, point_list_t& output) {
+    void approx_traj(point_list_t::const_iterator traj_b, point_list_t::const_iterator traj_e,
+                        double chord_l, double eps, point_list_t& output) {
         for (auto& elements : approximate_traj_cells(traj_b, traj_e, chord_l, eps)) {
             output.insert(output.end(), elements.second.begin(), elements.second.end());
         }
     }
 
-    point_list_t approx_traj_labels(point_list_t const& trajectory_pts, double weight, double chord_l, double eps) {
 
-        point_list_t output;
+    void approx_traj_labels(point_list_t::const_iterator traj_b, point_list_t::const_iterator traj_e,
+                     double chord_l, double eps, size_t label, double weight, lpoint_list_t& output) {
         for (auto& elements : approximate_traj_cells(traj_b, traj_e, chord_l, eps)) {
             for (auto& pt : elements.second) {
-                //Create a point with the desired weight and label.
                 output.emplace_back(label, weight, pt[0], pt[1], pt[2]);
+            }
+        }
+    }
+
+    point_list_t approx_traj_grid(point_list_t const& trajectory_pts, double chord_l, double eps) {
+
+        point_list_t output;
+        for (auto& elements : approximate_traj_cells(trajectory_pts.begin(), trajectory_pts.end(), chord_l, eps)) {
+            for (auto& pt : elements.second) {
+                //Create a point with the desired weight and label.
+                output.emplace_back(pt[0], pt[1], pt[2]);
             }
         }
         return output;

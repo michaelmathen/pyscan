@@ -16,11 +16,11 @@ set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -g")
 find_package( PythonLibs 3 REQUIRED )
 include_directories( ${PYTHON_INCLUDE_DIRS} )
 
-set(version ${PYTHONLIBS_VERSION_STRING})
-STRING( REGEX REPLACE "([0-9.]+).[0-9]+(rc[0-9]+)?" "\\1" version ${version} )
-STRING( REGEX REPLACE "[^0-9]" "" version ${version} )
-find_package(Boost COMPONENTS "python${version}" REQUIRED)
-#find_package(Boost COMPONENTS "python-py35" REQUIRED)
+#set(version ${PYTHONLIBS_VERSION_STRING})
+#STRING( REGEX REPLACE "([0-9.]+).[0-9]+(rc[0-9]+)?" "\\1" version ${version} )
+#STRING( REGEX REPLACE "[^0-9]" "" version ${version} )
+#find_package(Boost COMPONENTS "python${version}" REQUIRED)
+find_package(Boost COMPONENTS "python-py35" REQUIRED)
 
 
 execute_process(COMMAND ${CMAKE_COMMAND} .

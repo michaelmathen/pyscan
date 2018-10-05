@@ -6,6 +6,7 @@
 
 #include "FunctionApprox.hpp"
 #include "TrajectoryScan.hpp"
+#include "TrajectoryCoreSet.hpp"
 
 
 namespace pyscan {
@@ -33,9 +34,9 @@ namespace pyscan {
 //            output.emplace_back(label, weight, pt[0], pt[1], 1.0);
 //        }
 //    }
-    std::tuple<Disk, double> traj_disk_scan(traj_set &net,
-                                            wtraj_set &sampleM,
-                                            wtraj_set &sampleB,
+    std::tuple<Disk, double> traj_disk_scan(trajectory_set_t const& net,
+                                            wtrajectory_set_t const& sampleM,
+                                            wtrajectory_set_t const& sampleB,
                                             double alpha,
                                             double min_r,
                                             std::function<double(double, double)> const &scan) {
@@ -46,41 +47,22 @@ namespace pyscan {
 
         // Go through the set of net points.
         point_list_t net_points;
-        size_t offset = 0;
-        for(auto b = net.offsets.begin(); b != net.offsets.end(); b++) {
-            auto traj_b = net.traj_pts.begin() + offset;
-            auto traj_e = net.traj_pts.begin() + *b;
-            offset = *b;
-            approx_traj(traj_b, traj_e, chord_l, alpha, net_points);
+        for(auto const& traj_set : net) {
+            approx_traj(traj_set.begin(), traj_set.end(), chord_l, alpha, net_points);
         }
         // go through the set of measured points
         lpoint_list_t sampleM_points;
-        offset = 0;
         size_t label = 0;
-        auto wb = sampleM.weights.begin();
-        for(auto b = sampleM.offsets.begin(); b != sampleM.offsets.end(); b++) {
-            auto traj_b = sampleM.traj_pts.begin() + offset;
-            auto traj_e = sampleM.traj_pts.begin() + *b;
-            offset = *b;
-            approx_traj_labels(traj_b, traj_e, label, *wb, chord_l, alpha, sampleM_points);
-            wb++;
+        for(auto const& b : sampleM) {
+            approx_traj_labels(b.begin(), b.end(), chord_l, alpha, label, b.weight, sampleM_points);
             label++;//increment label
         }
-
-        // go through the set of baseline points
         lpoint_list_t sampleB_points;
-        offset = 0;
         label = 0;
-        wb = sampleB.weights.begin();
-        for(auto b = sampleB.offsets.begin(); b != sampleB.offsets.end(); b++) {
-            auto traj_b = sampleB.traj_pts.begin() + offset;
-            auto traj_e = sampleB.traj_pts.begin() + *b;
-            offset = *b;
-            approx_traj_labels(traj_b, traj_e, label, *wb, chord_l, alpha, sampleB_points);
-            wb++;
+        for(auto const& b : sampleB) {
+            approx_traj_labels(b.begin(), b.end(), chord_l, alpha, label, b.weight, sampleB_points);
             label++;//increment label
         }
-
         // Scan the resulting set of points using standard labeled disk scanning function.
 
         // return the max disk.

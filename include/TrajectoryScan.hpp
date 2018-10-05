@@ -13,9 +13,16 @@
 namespace pyscan {
 
 
-
     struct trajectory {
         point_list_t pts;
+
+        virtual point_list_t::const_iterator begin() const {
+            return pts.begin();
+        }
+
+        virtual point_list_t::const_iterator end() const {
+            return pts.end();
+        }
     };
 
     struct wtrajectory : public trajectory {
@@ -32,16 +39,15 @@ namespace pyscan {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     //Disk scanning Trajectory code//////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    
-    std::tuple<Disk, double> traj_multilevel_disk_scan(const trajectory_set_t& net,
-                                                        const wtrajectory_set_t& sampleM,
-                                                        const wtrajectory_set_t &sampleB,
-                                                        double alpha,
-                                                        double min_r,
-                                                        std::function<double(double, double)> const &scan);
-    
 
-
+    std::tuple<Disk, double> traj_multilevel_disk_scan(trajectory_set_t const &net,
+                                                       wtrajectory_set_t const &sampleM,
+                                                       wtrajectory_set_t const &sampleB,
+                                                       double alpha,
+                                                       double min_r,
+                                                       std::function<double(double, double)> const &scan);
 }
+    
+
 
 #endif //PYSCAN_TRAJECTORYSCAN_HPP
