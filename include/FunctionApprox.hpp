@@ -79,6 +79,6 @@ namespace pyscan {
 
 
     point3_list_t approx_hull3(double eps, point3_list_t const& pts);
-    point_list_t approx_hull(double eps, point3_list_t const& pts);
+    point_list_t approx_hull(double eps, point_list_t const& pts);
 }
 #endif //PYSCAN_FUNCTIONAPPROX_HPP

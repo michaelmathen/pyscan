@@ -13,20 +13,6 @@
 namespace pyscan {
 
 
-    struct traj_set {
-        point_list_t traj_pts;
-        std::vector<size_t> offsets;
-        traj_set(point_list_t const& tp, std::vector<size_t> const& off) :
-            traj_pts(tp),
-            offsets(off){}
-    };
-
-    struct wtraj_set : public traj_set {
-        std::vector<double> weights;
-        wtraj_set(point_list_t const& tp,
-                std::vector<size_t> const& off,
-                std::vector<double> const& weights) : traj_set(tp, off), weights(weights) {}
-    };
 
     struct trajectory {
         point_list_t pts;
@@ -46,23 +32,15 @@ namespace pyscan {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     //Disk scanning Trajectory code//////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    std::unordered_map<long, std::vector<Point<>>> grid_traj(point_it traj_b, point_it traj_e, double chord_l);
-
-    std::unordered_map<long, std::vector<Point<>>> approximate_traj_cells(point_it traj_b,
-            point_it traj_e,
-            double chord_l,
-            double eps);
-
     
-    std::tuple<Disk, double> traj_disk_scan(traj_set &net,
-                                            wtraj_set &sampleM,
-                                            wtraj_set &sampleB,
-                                            double alpha,
-                                            double min_r,
-                                            std::function<double(double, double)> const &scan);
+    std::tuple<Disk, double> traj_multilevel_disk_scan(const trajectory_set_t& net,
+                                                        const wtrajectory_set_t& sampleM,
+                                                        const wtrajectory_set_t &sampleB,
+                                                        double alpha,
+                                                        double min_r,
+                                                        std::function<double(double, double)> const &scan);
+    
 
-
-    std::vector<Point<>> core_set_3d_traj(point_list_t traj, double alpha);
 
 }
 

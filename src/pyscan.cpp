@@ -425,8 +425,5 @@ BOOST_PYTHON_MODULE(libpyscan) {
     //py::def("maxRectLabels", &maxRectLabelsI);
     //py::def("maxRectLabels", &maxRectLabelsD);
     py::def("approximate_hull", pyscan::approx_hull);
-    py::def("approximate_hull3", pyscan::approx_hull3);
-
-    py::def("core_set_3d_traj", &pyscan::core_set_3d_traj);
 
 }
