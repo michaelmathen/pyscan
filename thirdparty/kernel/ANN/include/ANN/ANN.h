@@ -54,7 +54,8 @@
 //----------------------------------------------------------------------
 #include <stdlib.h>			// standard libs
 #include <stdio.h>			// standard I/O (for NULL)
-#include <iostream.h>			// I/O streams
+#include <iostream>			// I/O streams
+#include <ostream>
 #include <math.h>			// math includes
 #include <values.h>			// special values
 
@@ -65,7 +66,7 @@
 //	This is a simple boolean type.  Although ANSI C++ is supposed
 //	to support the type bool, many compilers do not have it.
 //----------------------------------------------------------------------
-
+using namespace std;
 					// ANN boolean type (non ANSI C++)
 enum ANNbool {ANNfalse = 0, ANNtrue = 1};
 

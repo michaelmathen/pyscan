@@ -18,6 +18,7 @@
 #include "DiskScan2.hpp"
 #include "FunctionApprox.hpp"
 #include "TrajectoryScan.hpp"
+#include "TrajectoryCoreSet.hpp"
 
 namespace py = boost::python;
 
@@ -420,6 +421,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_disk_cached", &pyscan::cached_disk_scan<pyscan::wpoint_list_t >);
     py::def("max_disk_label_cached", &pyscan::cached_disk_scan<pyscan::lpoint_list_t >);
 
+    py::def("lifting_kernel", &pyscan::lifting_coreset);
     //py::def("maxRectLabels", &maxRectLabelsI);
     //py::def("maxRectLabels", &maxRectLabelsD);
     py::def("approximate_hull", pyscan::approx_hull);

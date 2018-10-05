@@ -16,33 +16,26 @@ set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -g -fsanitize=address")
 find_package( PythonLibs 3 REQUIRED )
 include_directories( ${PYTHON_INCLUDE_DIRS} )
 
-set(version ${PYTHONLIBS_VERSION_STRING})
-STRING( REGEX REPLACE "([0-9.]+).[0-9]+(rc[0-9]+)?" "\\1" version ${version} )
-STRING( REGEX REPLACE "[^0-9]" "" version ${version} )
-find_package(Boost COMPONENTS "python${version}" REQUIRED)
+#set(version ${PYTHONLIBS_VERSION_STRING})
+#STRING( REGEX REPLACE "([0-9.]+).[0-9]+(rc[0-9]+)?" "\\1" version ${version} )
+#STRING( REGEX REPLACE "[^0-9]" "" version ${version} )
+#find_package(Boost COMPONENTS "python${version}" REQUIRED)
+find_package(Boost COMPONENTS "python-py35" REQUIRED)
 
-
-execute_process(COMMAND ${CMAKE_COMMAND} .
+execute_process(COMMAND make all
         RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/libgdiam-1.0.3 )
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/ )
 if(result)
-    message(FATAL_ERROR "CMake step for libgdiam failed: ${result}")
+    message(FATAL_ERROR "CMake step for coreset: ${result}")
 endif()
 
 
-execute_process(COMMAND ${CMAKE_COMMAND} --build .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/libgdiam-1.0.3 )
-if(result)
-    message(FATAL_ERROR "Build step for libgdiam failed: ${result}")
-endif()
-
-set(THIRDPARTY_LIBRARIES ${CMAKE_SOURCE_DIR}/thirdparty/libgdiam-1.0.3/libgdiam.so)
+set(THIRDPARTY_LIBRARIES ${CMAKE_SOURCE_DIR}/thirdparty/kernel/lib/libCoreset.a)
 
 include_directories(
         ${Boost_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/thirdparty/libgdiam-1.0.3)
+        ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/include)
 
 set(SOURCE_FILES
         src/BloomFilter.cpp
@@ -55,6 +48,7 @@ set(SOURCE_FILES
         src/Test_Utilities.cpp
         src/DiskScan2.cpp
         src/TrajectoryScan.cpp
+        src/TrajectoryCoreSet.cpp
         #src/kernel.cpp
         )
 
@@ -110,7 +104,7 @@ if (CMAKE_VERSION VERSION_LESS 2.8.11)
   include_directories("${gtest_SOURCE_DIR}/include")
 endif()
 
-SET(TEST_LINK_LIBRARIES gtest_main)
+SET(TEST_LINK_LIBRARIES gtest_main ${THIRDPARTY_LIBRARIES})
 
 ########################################
 #Compile various tests##################

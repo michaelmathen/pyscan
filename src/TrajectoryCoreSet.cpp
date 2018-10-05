@@ -4,47 +4,57 @@
 
 #include <random>
 
+#include "appext.h"
 #include "Point.hpp"
-
-#include "gdiam.hpp"
-
+#include "TrajectoryCoreSet.hpp"
 
 namespace pyscan {
 
+    const int KERNEL_LEVELS = 3;
+    point3_list_t kernel3d(point3_list_t const& pts, double eps) {
 
-    point3_list_t hexagonal_packing(size_t pt_num) {
-
-        double epsilon = 1e-5;
-
-        //TODO generate two random points.
-        point3_list_t sphere_pts;
-
-        for (size_t i = 2; i < pt_num; i++) {
-            while (true) {
-
-                //Apply updates on all points
-                for (auto& pt : sphere_pts) {
-
-                    
-                }
-            }
-        }
-    }
-
-    auto approx_mvbb(point_list_t const& pts, double eps) {
-
-        auto all_pts = new gdiam_point[pts.size()];
-        auto gpoint_mem = new gdiam_real[3 * pts.size()];
+        glReal* glpts = new glReal[3 * pts.size()];
 
         for (size_t i = 0; i < pts.size(); i++) {
-            gpoint_mem[3 * i] = pts[i](0);
-            gpoint_mem[3 * i + 1] = pts[i](1);
-            gpoint_mem[3 * i + 2] = pts[i](2);
-            all_pts[i] = &gpoint_mem[3 * i];
+            glpts[i * 3    ] = pts[i](0);
+            glpts[i * 3 + 1] = pts[i](1);
+            glpts[i * 3 + 2] = pts[i](2);
         }
-        auto bbox = gdiam_approx_mvbb(all_pts, pts.size(), eps);
+        glPointSet kernel_set;
+        kernel_set.init(3, pts.size(), glpts);
 
+
+        glPointSet* p = kernel_set.getRobustCoreset(static_cast<int>(2 / eps) , eps / 2, KERNEL_LEVELS); // compute robust coreset
+
+        point3_list_t core_set;
+        for (size_t i = 0; i < p->getNum(); i++) {
+            glReal pt[3];
+            p->getPoint(i, pt);
+            core_set.emplace_back(pt[0], pt[1], pt[2], 1.0);
+        }
+        p->dump();
+        delete[] glpts;
+        kernel_set.dump();
+        free(p);
+        return core_set;
     }
 
+
+    inline pt3_t lift_pt(pt2_t const&  pt) {
+        double x = pt(0);
+        double y = pt(1);
+        return {x, y, x * x + y * y, 1.0};
+    }
+
+    point_list_t lifting_coreset(point_list_t const& pts, double eps) {
+        point3_list_t lifted_set(pts.size(), pt3_t());
+        std::transform(pts.begin(), pts.end(), lifted_set.begin(), lift_pt);
+        auto pt3_set = kernel3d(lifted_set, eps);
+        point_list_t  output_pts;
+        for (auto& pt : pt3_set) {
+            output_pts.emplace_back(pt(0), pt(1), 1.0);
+        }
+        return output_pts;
+    }
 
 }
