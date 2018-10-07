@@ -67,7 +67,6 @@ namespace pyscan {
 
         // return the max disk.
         auto grid_r = static_cast<uint32_t>(1.0 / min_r);
-        std::cout << net_points.size() << " " << sampleM_points.size() << " " << sampleB_points.size() << std::endl;
         return disk_scan_scale(net_points, sampleM_points, sampleB_points, grid_r, scan);
     }
 

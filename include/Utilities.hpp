@@ -136,6 +136,7 @@ namespace pyscan {
 
 
         inline uint64_t morton(uint32_t a, uint32_t b);
+
     }
 }
 #endif //PYSCAN_UTILITIES_HPP

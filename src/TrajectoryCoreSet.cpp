@@ -15,6 +15,18 @@ namespace pyscan {
 
 
 
+    template <typename T>
+    void remove_duplicates(T& pts) {
+        std::sort(pts.begin(), pts.end(), [](pt2_t const& p1, pt2_t const& p2){
+            return p1(0) < p2(0);
+        });
+
+        auto end_it = std::unique(pts.begin(), pts.end(), [] (pt2_t const& p1, pt2_t const& p2) {
+            return p1.approx_eq(p2);
+        });
+        pts.erase(end_it, pts.end());
+    }
+
 
     /*
   * Compute the lower leftmost corner of a box containing these points.
@@ -51,12 +63,13 @@ namespace pyscan {
         long j = static_cast<long>((y - ly) / chord_l);
         return i + g_size * j;
     }
+
     /*
      * Takes a trajectory and grids it so that each grid contains points that cross it..
      */
-    std::unordered_map<long, std::vector<Point<>>>
-    grid_traj(point_list_t::const_iterator traj_b,
-                point_list_t::const_iterator traj_e, double chord_l) {
+    std::unordered_map<long, std::vector<Point<>>> grid_traj(point_list_t::const_iterator traj_b,
+                                                            point_list_t::const_iterator traj_e,
+                                                            double chord_l) {
 
 
         auto last_pt = traj_b;
@@ -164,6 +177,7 @@ namespace pyscan {
                 output.emplace_back(label, weight, pt[0], pt[1], pt[2]);
             }
         }
+        remove_duplicates(output);
     }
 
     point_list_t approx_traj_grid(point_list_t const& trajectory_pts, double chord_l, double eps) {
@@ -175,6 +189,7 @@ namespace pyscan {
                 output.emplace_back(pt[0], pt[1], pt[2]);
             }
         }
+        remove_duplicates(output);
         return output;
     }
 
