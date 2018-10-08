@@ -397,7 +397,6 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_disk_label_cached", &pyscan::cached_disk_scan<pyscan::lpoint_list_t >);
 
 
-
     ////////////////////////////////////////////////////////////////////
     //TrajectoryScan.hpp wrappers///////////////////////////////////////
     ////////////////////////////////////////////////////////////////////
@@ -408,9 +407,11 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_disk_traj_grid", &pyscan::max_disk_traj_grid);
 
 
+    //This grids the trajectory and assigns a single point to each cell.
+    py::def("grid_kernel", &pyscan::approx_traj_grid);
 
     //This grids the trajectory and creates an alpha hull in each one.
-    py::def("grid_direc_kernel", &pyscan::approx_traj_grid);
+    py::def("grid_direc_kernel", &pyscan::approx_traj_kernel_grid);
 
     //This is for 2d eps-kernel useful for halfspaces.
     py::def("approximate_hull", pyscan::approx_hull);

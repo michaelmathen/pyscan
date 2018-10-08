@@ -4,6 +4,8 @@
 
 #include <random>
 #include <unordered_map>
+#include <unordered_set>
+#include <cassert>
 
 #include "appext.h"
 #include "Point.hpp"
@@ -139,6 +141,82 @@ namespace pyscan {
     }
 
 
+
+    /*
+    * Takes a trajectory and grids it so that each grid contains a single point of a trajectory that crosses it.
+    */
+    point_list_t  approx_traj_grid(point_list_t const& trajectory, double grid_resolution) {
+
+
+        auto traj_b = trajectory.begin(), traj_e = trajectory.end();
+        auto last_pt = traj_b;
+
+        if (last_pt == traj_e) {
+            return {};
+        }
+
+        double lx, ly, ux, uy;
+        std::tie(lx, ly, ux, uy) = bounding_box(traj_b, traj_e);
+
+        long g_size = static_cast<long>((ux - lx) / grid_resolution) + 1;
+        std::unordered_set<long> traj_labels;
+
+        long location = index((*last_pt)(0), (*last_pt)(1), lx, ly, grid_resolution, g_size);
+        traj_labels.emplace(location);
+
+        for (auto curr_pt = last_pt + 1; curr_pt != traj_e; curr_pt++) {
+
+            auto g_x = static_cast<int>(((*last_pt)(0) - lx) / grid_resolution);
+            auto g_y = static_cast<int>(((*last_pt)(1) - ly) / grid_resolution);
+            auto g_n_x = static_cast<int>(((*curr_pt)(0) - lx) / grid_resolution);
+            auto g_n_y = static_cast<int>(((*curr_pt)(1) - ly) / grid_resolution);
+
+            if (g_n_x < g_x) {
+                std::swap(g_n_x, g_x);
+            }
+            if (g_n_y < g_y) {
+                std::swap(g_n_y, g_y);
+            }
+
+            for (int i = g_x + 1; i <= g_n_x; i++) {
+                double x_val = i * grid_resolution + lx;
+                double y_val = x_to_y((*last_pt)(0), (*last_pt)(1), (*curr_pt)(0), (*curr_pt)(1), x_val);
+                int j = static_cast<int>((y_val - ly) / grid_resolution);
+                auto element = traj_labels.find(i + g_size * j);
+                if (element == traj_labels.end()) {
+                    traj_labels.emplace(i + g_size * j);
+                }
+            }
+            for (int j = g_y + 1; j <= g_n_y; j++) {
+                double y_val = j * grid_resolution + ly;
+                double x_val = y_to_x((*last_pt)(0), (*last_pt)(1), (*curr_pt)(0), (*curr_pt)(1), y_val);
+                int i = static_cast<int>((x_val - lx) / grid_resolution);
+                auto element = traj_labels.find(i + g_size * j);
+                if (element == traj_labels.end()) {
+                    traj_labels.emplace(i + g_size * j);
+                }
+            }
+
+            location = index((*curr_pt)(0), (*curr_pt)(1), lx, ly, grid_resolution, g_size);
+            auto element = traj_labels.find(location);
+            if (element == traj_labels.end()) {
+                traj_labels.emplace(location);
+            }
+            last_pt = curr_pt;
+        }
+
+        //Now convert the set into a set of points
+        point_list_t simplified_traj;
+        for (auto label : traj_labels) {
+            long i = label % g_size;
+            long j = label / g_size;
+            double x_val = (2 * i + 1) * grid_resolution / 2 + lx;
+            double y_val = (2 * j + 1) * grid_resolution / 2 + ly;
+            simplified_traj.emplace_back(x_val, y_val, 1.0);
+        }
+        return simplified_traj;
+    }
+
     std::unordered_map<long, std::vector<Point<>>>
     approximate_traj_cells(point_list_t::const_iterator traj_b,
                             point_list_t::const_iterator traj_e, double chord_l, double eps) {
@@ -180,7 +258,7 @@ namespace pyscan {
         remove_duplicates(output);
     }
 
-    point_list_t approx_traj_grid(point_list_t const& trajectory_pts, double chord_l, double eps) {
+    point_list_t approx_traj_kernel_grid(point_list_t const& trajectory_pts, double chord_l, double eps) {
 
         point_list_t output;
         for (auto& elements : approximate_traj_cells(trajectory_pts.begin(), trajectory_pts.end(), chord_l, eps)) {
@@ -195,11 +273,10 @@ namespace pyscan {
 
 
 
-
     const int KERNEL_LEVELS = 3;
     point3_list_t kernel3d(point3_list_t const& pts, double eps) {
 
-        glReal* glpts = new glReal[3 * pts.size()];
+        auto glpts = new glReal[3 * pts.size()];
 
         for (size_t i = 0; i < pts.size(); i++) {
             glpts[i * 3    ] = pts[i](0);
@@ -207,7 +284,9 @@ namespace pyscan {
             glpts[i * 3 + 2] = pts[i](2);
         }
         glPointSet kernel_set;
-        kernel_set.init(3, pts.size(), glpts);
+        assert(pts.size() <= static_cast<size_t>(std::numeric_limits<int>::max()));
+
+        kernel_set.init(3, static_cast<int>(pts.size()), glpts);
 
 
         glPointSet* p = kernel_set.getCoreSet3(static_cast<int>(2 / eps), eps / 2); // compute robust coreset
