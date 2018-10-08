@@ -169,6 +169,8 @@ namespace pyscan {
     using lpt2_t = LPoint<2>;
     using point_list_t = std::vector<pt2_t>;
     using point_it_t = point_list_t::iterator;
+    using cpoint_it_t = point_list_t::const_iterator;
+
     using weight_list_t = std::vector<double>;
     using weight_it_t = weight_list_t::iterator;
     using pt3_t = Point<3>;
@@ -179,8 +181,12 @@ namespace pyscan {
     using label_list_t = std::vector<size_t>;
     using wpoint_list_t = std::vector<WPoint<2>>;
     using wpoint_it_t = wpoint_list_t::iterator;
+    using cwpoint_it_t = wpoint_list_t::const_iterator;
+
     using lpoint_list_t = std::vector<LPoint<2>>;
     using lpoint_it_t = lpoint_list_t::iterator;
+    using clpoint_it_t = lpoint_list_t::const_iterator;
+
     using wpoint3_list_t = std::vector<WPoint<3>>;
     using lpoint3_list_t = std::vector<LPoint<3>>;
     using lpoint3_it_t = lpoint3_list_t::iterator;

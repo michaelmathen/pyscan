@@ -204,21 +204,16 @@ struct pytrajectory_converter {
         boost::python::converter::registry::push_back(
                 &pytrajectory_converter::convertible,
                 &pytrajectory_converter::construct,
-                boost::python::type_id<pyscan::wtrajectory>());
+                boost::python::type_id<pyscan::wtrajectory_t>());
         return *this;
     }
 
     /// @brief Check if PyObject is a double tuple.
     static void* convertible(PyObject* object) {
-        if (PyTuple_Check(object) && PyTuple_Size(object) == 2)  {
+        if (PyTuple_Check(object) && PyTuple_Size(object) == 2) {
             if (PyFloat_Check(PyTuple_GetItem(object, 0)) && PyIter_Check(PyTuple_GetItem(object, 1))) {
-		auto iter_obj = PyTuple_GetItem(object, 1);
-		for (size_t i = 0; i < PyIter_Size(iter_obj); i++) {
-		    PyIter_GetItem(iter_obj, i)
-		}
-                PyIter_GetItem(	
+                return object;
             }
-            return object;
         }
         return NULL;
     }
@@ -226,7 +221,7 @@ struct pytrajectory_converter {
     static void construct( PyObject* object, boost::python::converter::rvalue_from_python_stage1_data* data) {
         namespace python = boost::python;
         python::handle<> handle(python::borrowed(object));
-        typedef python::converter::rvalue_from_python_storage<pyscan::Point<dim>>
+        typedef python::converter::rvalue_from_python_storage<pyscan::wtrajectory_t>
                 storage_type;
         void* storage = reinterpret_cast<storage_type*>(data)->storage.bytes;
 
@@ -234,14 +229,9 @@ struct pytrajectory_converter {
         // its handle to the converter's convertible variable.  The C++
         // container is populated by passing the begin and end iterators of
         // the python object to the container's constructor.
-        if (dim == 2) {
-            data->convertible = new (storage) pyscan::Point<>(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
-                                                              PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 1)), 1.0);
-        } else {
-            data->convertible = new (storage) pyscan::Point<3>(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
-                                                               PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 1)),
-                                                               PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 2)), 1.0);
-        }
+
+        data->convertible = new (storage) pyscan::WTrajectory(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
+                py::extract<pyscan::point_list_t>(PyTuple_GetItem(object, 1)));
     }
 };
 
@@ -283,6 +273,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
     //Should convert tuples directly pyscan points.
     pypoint_converter<2>().from_python();
     pypoint_converter<3>().from_python();
+
+    pytrajectory_converter().from_python();
 
     // Register interable conversions.
     iterable_converter()
@@ -404,9 +396,25 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_disk_cached", &pyscan::cached_disk_scan<pyscan::wpoint_list_t >);
     py::def("max_disk_label_cached", &pyscan::cached_disk_scan<pyscan::lpoint_list_t >);
 
-    py::def("lifting_kernel", &pyscan::lifting_coreset);
-    //py::def("maxRectLabels", &maxRectLabelsI);
-    //py::def("maxRectLabels", &maxRectLabelsD);
+
+
+    ////////////////////////////////////////////////////////////////////
+    //TrajectoryScan.hpp wrappers///////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////
+
+    py::class_<pyscan::wtrajectory_t>("WTrajectory", py::init<double, pyscan::point_list_t>())
+            .def("get_weight", &pyscan::wtrajectory_t::get_weight);
+
+    py::def("max_disk_traj_grid", &pyscan::max_disk_traj_grid);
+
+
+
+    //This grids the trajectory and creates an alpha hull in each one.
+    py::def("grid_direc_kernel", &pyscan::approx_traj_grid);
+
+    //This is for 2d eps-kernel useful for halfspaces.
     py::def("approximate_hull", pyscan::approx_hull);
 
+    //This is a 3d eps-kernel for disks.
+    py::def("lifting_kernel", &pyscan::lifting_coreset);
 }

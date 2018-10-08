@@ -73,12 +73,6 @@ namespace pyscan {
 	std::vector<Vec2> eps_core_set(double eps,
 								   std::function<Vec2(Vec2)> lineMaxF);
 
-    std::vector<Vec3> eps_core_set3(double eps,
-                                    std::function<Vec3(Vec3)> lineMaxF);
-
-
-
-    point3_list_t approx_hull3(double eps, point3_list_t const& pts);
     point_list_t approx_hull(double eps, point_list_t const& pts);
 }
 #endif //PYSCAN_FUNCTIONAPPROX_HPP
