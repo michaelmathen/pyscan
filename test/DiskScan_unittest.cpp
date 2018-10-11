@@ -77,8 +77,8 @@ namespace {
         auto m_pts = pyscantest::randomWPoints(s_size);
         auto b_pts = pyscantest::randomWPoints(s_size);
 
-        double m_total = pyscan::computeTotal(m_pts.begin(), m_pts.end());
-        double b_total = pyscan::computeTotal(b_pts.begin(), b_pts.end());
+        double m_total = pyscan::computeTotal(m_pts);
+        double b_total = pyscan::computeTotal(b_pts);
 
         double d2value;
         pyscan::Disk d2;
@@ -351,36 +351,5 @@ namespace {
 
     }
 
-    TEST(computeLabelTotalF, inserting) {
-      std::unordered_map<size_t, size_t> curr_counts;
-      curr_counts[2] = 1;
-
-      std::vector<pyscan::LPoint<>> bunch_of_points = {
-        pyscan::LPoint<>(0, .1, 0.0, .1, 1.0),
-        pyscan::LPoint<>(0, .1, .1, .2, 1.0),
-        pyscan::LPoint<>(0, .1, .1, .2, 1.0),
-        pyscan::LPoint<>(1, .1, .1, .2, 1.0),
-        pyscan::LPoint<>(2, .1, .1, .2, 1.0),
-      };
-
-      double fv = pyscan::computeLabelTotal(bunch_of_points.begin(), bunch_of_points.end(),
-                                  curr_counts);
-
-      EXPECT_FLOAT_EQ(fv, .2);
-      EXPECT_EQ(curr_counts[0], 3);
-      EXPECT_EQ(curr_counts[1], 1);
-      EXPECT_EQ(curr_counts[2], 2);
-
-      curr_counts = std::unordered_map<size_t, size_t>();
-      fv = pyscan::computeLabelTotalF(bunch_of_points.begin(), bunch_of_points.end(),
-                                      curr_counts,
-                                      [&] (pyscan::Point<> const& pt) {
-                                        return pt(0) >.05;
-                                      });
-      EXPECT_FLOAT_EQ(fv, .3);
-      EXPECT_EQ(curr_counts[0], 2);
-      EXPECT_EQ(curr_counts[1], 1);
-      EXPECT_EQ(curr_counts[2], 1);
-    }
 
 }

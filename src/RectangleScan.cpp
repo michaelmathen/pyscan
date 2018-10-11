@@ -316,37 +316,31 @@ namespace pyscan {
     //Begining OF LABELED RECTANGLE CODE//////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////
 
-    class LabelW {
-       double weight;
-       size_t label;
-
-    public:
-        size_t get_label() {
-            return label;
-        }
-
-        double get_weight() {
-            return weight;
-        }
-
-
-    };
-
 
 
 
     class LabeledGrid {
 
-        std::vector<double> x_values;
-        std::vector<double> y_values;
-        std::vector<std::vector<LabelW>> labels;
+        struct LabelW {
+            size_t label;
+            double weight;
 
+            LabelW(size_t l, double w) : label(l), weight(w) {}
+            LabelW(): label(0), weight(0) {}
+        };
+
+        using part_list_t = std::vector<double>;
+        using grid_cell_t = std::vector<LabelW>;
+        using grid_t = std::vector<grid_cell_t>;
+
+        part_list_t x_values;
+        part_list_t y_values;
+        grid_t m_labels;
+        grid_t b_labels;
 
     public:
 
         LabeledGrid(size_t r, lpoint_list_t m_points, lpoint_list_t b_points) {
-
-
             double m_total = computeTotal(m_points);
             double b_total = computeTotal(b_points);
 
@@ -356,12 +350,13 @@ namespace pyscan {
                  * I am going to assume that all the points have weight less than max_weight and then the
                  * weights are between max_weight and 2 * max_weight.
                  */
+
                 std::sort(labeled_points.begin(), labeled_points.end(), [dim](Point<> const &p1, Point<> const &p2) {
                     return p1(dim) < p2(dim);
                 });
 
                 double curr_weight = 0;
-                std::vector<double> partitions;
+                part_list_t partitions;
                 std::unordered_set<size_t> active_label_set;
                 for (auto& p : labeled_points) {
                     if (active_label_set.find(p.get_label()) == active_label_set.end()) {
@@ -377,136 +372,125 @@ namespace pyscan {
                 return partitions;
             };
 
+            auto update_parts = [&] (part_list_t &output, size_t dim) {
+                auto part_m_dim = accum_and_partition(m_points, m_total / r, dim);
+                auto part_b_dim = accum_and_partition(b_points, b_total / r, dim);
+                output.resize(part_m_dim.size() + part_b_dim.size());
+                std::merge(part_m_dim.begin(), part_m_dim.end(), part_b_dim.begin(), part_b_dim.end(), x_values.begin());
+            };
 
+            update_parts(x_values, 0);
+            update_parts(y_values, 1);
 
-            auto part_m_x = accum_and_partition(m_points, m_total / r, 0);
-            auto part_b_x = accum_and_partition(b_points, b_total / r, 0);
-            x_values.reserve()
-            std::merge(part_m_x.begin(), )
-            std::sort(m_points.begin(), m_points.end(), compX);
+            m_labels.resize(x_values.size() * y_values.size());
+            b_labels.resize(x_values.size() * y_values.size());
 
+            auto grid_insert = [&] (grid_t &cells, lpoint_list_t const& lbl_pts) {
+                for (auto &pt : lbl_pts) {
+                    long ix = std::upper_bound(x_values.begin(), x_values.end(), pt(0)) - x_values.begin();
+                    long iy = std::upper_bound(y_values.begin(), y_values.end(), pt(1)) - y_values.begin();
 
-
-
-            for (auto &el : x_pts) {
-                x_coords.push_back(el(0));
-            }
-            for (auto &el : y_pts) {
-                y_coords.push_back(el(1));
-            }
-            std::sort(x_coords.begin(), x_coords.end());
-            std::sort(y_coords.begin(), y_coords.end());
-            auto rw_it = red_weight.begin();
-            for (auto point_it = r_begin; point_it != r_end; point_it++, rw_it++) {
-                long ix = std::upper_bound(x_coords.begin(), x_coords.end(), (*point_it)(0)) - x_coords.begin() - 1;
-                long iy = std::upper_bound(y_coords.begin(), y_coords.end(), (*point_it)(1)) - y_coords.begin() - 1;
-                if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
-                    red_counts[iy * r + ix] += *rw_it;
+                    if (ix < (long) x_values.size() && iy < (long) y_values.size()) {
+                        cells[iy * x_values.size() + ix].emplace_back(pt.get_label(), pt.get_weight());
+                    }
                 }
-                total_red_weight += *rw_it;
-            }
-            auto bw_it = blue_weight.begin();
-            for (auto point_it = b_begin; point_it != b_end; point_it++) {
-                long ix = std::upper_bound(x_coords.begin(), x_coords.end(), (*point_it)(0)) - x_coords.begin() - 1;
-                long iy = std::upper_bound(y_coords.begin(), y_coords.end(), (*point_it)(1)) - y_coords.begin() - 1;
-                if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
-                    blue_counts[iy * r + ix] += *bw_it;
-                }
-                total_blue_weight += *bw_it;
-            }
 
+                //Remove duplicates in each cell.
+                // this isn't necessary, but will hopefully speed things up.
+                for (auto& cell : cells) {
+                    std::sort(cell.begin(), cell.end(), [](LabelW const& l1, LabelW const& l2) {
+                        return l1.label < l2.label;
+                    });
+                    auto it = std::unique(cell.begin(), cell.end(), []( LabelW const& l1, LabelW const& l2) {
+                        return l1.label == l2.label;
+                    });
+                    cell.resize(static_cast<unsigned long>(std::distance(cell.begin(), it)));
+
+                }
+            };
+            grid_insert(m_labels, m_points);
+            grid_insert(b_labels, b_points);
         }
 
+        grid_cell_t const& get_m(size_t ix, size_t iy) const {
+            return m_labels[iy * x_values.size() + ix];
+        }
 
+        grid_cell_t const& get_b(size_t ix, size_t iy) const {
+            return b_labels[iy * x_values.size() + ix];
+        }
+
+        double x_val(size_t ix) const {
+            return x_values[ix];
+        }
+
+        double y_val(size_t iy) const {
+            return y_values[iy];
+        }
+
+        size_t x_size() const {
+            return x_values.size();
+        }
+
+        size_t y_size() const {
+            return y_values.size();
+        }
     };
 
 
-     Rectangle max_rect_labels(lpoint_list_t m_points, lpoint_list_t b_points, const discrepancy_func_t& func) {
+     Rectangle max_rect_labels(size_t r, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func) {
 
+
+         LabeledGrid grid(r, m_points, b_points);
          double m_Total = computeTotal(m_points);
          double b_Total = computeTotal(b_points);
 
-         std::sort(m_points.begin(), m_points.end(), [](const pt2_t& p1, const pt2_t& p2){
-            return p1(0) < p2(0);
-         });
-
-         std::sort(m_points.begin(), m_points.end(), [](const pt2_t& p1, const pt2_t& p2){
-             return p1(0) < p2(0);
-         });
-
-
          Rectangle maxRect(0, 0, 0, 0, 0.0);
-         //Create a top and bottom line
-         for (auto onb1 = net.begin(); onb1 != (net.end() - 2); onb1++) {
-             for (auto onb2 = onb1 + 1; onb2 != (net.end() - 1); onb2++) {
-                 auto nb1 = get<1>(*onb1) >= get<1>(*onb2) ? onb1 : onb2;
-                 auto nb2 = get<1>(*onb1) < get<1>(*onb2) ? onb1 : onb2;
+         double max_stat = 0;
 
-                 std::vector<LPoint<>> divisions;
-                 std::vector<LPoint<>> m_slab;
-                 std::vector<LPoint<>> b_slab;
-                 auto between_f = [&](LPoint<> const& pt){
-                     return get<1>(pt) <= get<1>(*nb1) && get<1>(*nb2) <= get<1>(pt);
-                 };
-                 auto pointXComp = [](LPoint<> const& p1, LPoint<> const& p2){
-                     return get<0>(p1) < get<0>(p2);
-                 };
-                 std::remove_copy_if(net.begin(), net.end(), std::back_inserter(divisions), between_f);
-                 //Filter the m_slab and b_slab points
-                 std::remove_copy_if(m_points.begin(), m_points.end(), std::back_inserter(m_slab), between_f);
-                 std::remove_copy_if(b_points.begin(), b_points.end(), std::back_inserter(b_slab), between_f);
-                 std::sort(divisions.begin(), divisions.end(), pointXComp);
+         for (size_t lower_j = 0; lower_j < grid.y_size(); lower_j++) {
+             std::vector<std::unordered_map<size_t, double>> m_columns;
+             std::vector<std::unordered_map<size_t, double>> b_columns;
+             for (size_t upper_j = lower_j; upper_j < grid.y_size(); upper_j++) {
+                 for (size_t left_i = 0; left_i < grid.x_size(); left_i++) {
 
-                 //Now position the points into each division
-                 using part_t = std::vector<std::vector<LPoint<>>>;
-                 part_t m_parts(divisions.size() + 1,  std::vector<LPoint<>>());
-                 part_t b_parts(divisions.size() + 1, std::vector<LPoint<>>());
-
-                 auto place_pts = [&] (part_t & parts, decltype(m_points) all_pts) {
-                     for (auto& pt : all_pts) {
-                         auto loc_it = std::lower_bound(divisions.begin(), divisions.end(), pt, pointXComp);
-                         parts[loc_it - divisions.begin()].emplace_back(pt);
+                     for (auto& lw : grid.get_m(left_i, upper_j)) {
+                         m_columns[left_i][lw.label] = lw.weight;
                      }
-                 };
-                 place_pts(m_parts, m_slab);
-                 place_pts(b_parts, b_slab);
+                     for (auto& lw : grid.get_b(left_i, upper_j)) {
+                         b_columns[left_i][lw.label] = lw.weight;
+                     }
+                 }
 
-                 for (int i = 0; i < divisions.size() - 1; i++) {
-                     double m_count = 0;
-                     double b_count = 0;
-                     std::unordered_set<size_t> active_m_labels;
-                     std::unordered_set<size_t> active_b_labels;
-                     for (int j = i + 1; j < divisions.size(); j++) {
-                         for (auto m_b = m_parts[j].begin(); m_b != m_parts[j].end(); ++m_b) {
-                             if (active_m_labels.find(m_b->getLabel()) != active_m_labels.end()) {
-                                 m_count += m_b->getRedWeight();
-                                 active_m_labels.insert(m_b->getLabel());
-                             }
-                         }
-                         for (auto b_b = b_parts[j].begin(); b_b != b_parts[j].end(); ++b_b) {
-                             if (active_m_labels.find(b_b->getLabel()) != active_b_labels.end()) {
-                                 b_count += b_b->getRedWeight();
-                                 active_b_labels.insert(b_b->getLabel());
-                             }
-                         }
-                         double new_val = func(m_count / m_Total, b_count / b_Total);
-                         if (new_val > maxRect.fValue()) {
-                             maxRect = Rectangle(get<0>(divisions[i]), get<1>(*nb1), get<0>(divisions[j]), get<1>(*nb2), new_val);
-                         }
+                 for (size_t left_i = 0; left_i < grid.x_size(); left_i++) {
+                     //make sweep
+                     std::unordered_set<size_t> curr_m_labels;
+                     std::unordered_set<size_t> curr_b_labels;
+                     double m_weight = 0;
+                     double b_weight = 0;
+                     for (size_t right_i = left_i; right_i < grid.x_size(); right_i++) {
+                        for (auto label = m_columns[right_i].begin(); label != m_columns[right_i].end(); label++) {
+                            if (curr_m_labels.find(label->first) == curr_m_labels.end()) {
+                                m_weight += label->second;
+                                curr_m_labels.emplace(label->first);
+                            }
+                        }
+                        for (auto label = b_columns[right_i].begin(); label != b_columns[right_i].end(); label++) {
+                            if (curr_b_labels.find(label->first) == curr_b_labels.end()) {
+                                b_weight += label->second;
+                                curr_b_labels.emplace(label->first);
+                            }
+                        }
+
+                        if (func(m_weight / m_Total, b_weight / b_Total) > max_stat) {
+                           max_stat = func(m_weight / m_Total, b_weight / b_Total);
+                           maxRect = Rectangle(grid.x_val(right_i), grid.y_val(lower_j), grid.x_val(left_i), grid.y_val(lower_j), max_stat);
+                        }
                      }
                  }
              }
          }
          return maxRect;
-     }
-
-     Rectangle maxRectStatLabels(std::vector<LPoint<>> const& net,
-                                  std::vector<LPoint<>> const& m_points,
-                                  std::vector<LPoint<>> const& b_points,
-                                  double rho) {
-         return maxRectLabels(net, m_points, b_points, [&](double mr, double br){
-             return kulldorff(mr, br, rho);
-         });
      }
 
     //////////////////////////////////////////////////////////////////////////////////

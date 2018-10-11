@@ -396,6 +396,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_disk_cached", &pyscan::cached_disk_scan<pyscan::wpoint_list_t >);
     py::def("max_disk_label_cached", &pyscan::cached_disk_scan<pyscan::lpoint_list_t >);
 
+    py::def("max_rect_labels", &pyscan::max_rect_labels);
 
     ////////////////////////////////////////////////////////////////////
     //TrajectoryScan.hpp wrappers///////////////////////////////////////
