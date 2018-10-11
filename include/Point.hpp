@@ -13,6 +13,7 @@
 #include <cassert>
 #include <sstream>
 #include <functional>
+#include <unordered_map>
 
 #include "Utilities.hpp"
 
@@ -192,6 +193,7 @@ namespace pyscan {
     using lpoint3_it_t = lpoint3_list_t::iterator;
 
     using discrepancy_func_t = std::function<double(double, double)>;
+
 
 }
 

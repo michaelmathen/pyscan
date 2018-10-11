@@ -20,6 +20,27 @@ namespace pyscan {
     };
 
 
+    inline double computeTotal(const wpoint_list_t& pts) {
+        double total = 0;
+        for (auto const& p : pts) {
+            total += p.get_weight();
+        }
+        return total;
+    }
+
+    inline double computeTotal(const lpoint_list_t& pts) {
+        double total = 0;
+        std::unordered_set<size_t> label_set;
+        for (auto const& p : pts) {
+            if (label_set.end() == label_set.find(p.get_label())) {
+                total += p.get_weight();
+                label_set.emplace(p.get_label());
+            }
+        }
+        return total;
+    }
+
+
     template<int dim>
     double range_weight(Range<dim> const& range, std::vector<WPoint<dim>> const& pts) {
         double weight = 0, total_weight = 0;
@@ -131,5 +152,8 @@ namespace pyscan {
         }
         return std::make_tuple(max_region, max_scan);
     }
+
+
+
 }
 #endif //PYSCAN_RANGE_HPP

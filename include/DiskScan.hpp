@@ -23,45 +23,9 @@ namespace pyscan {
     using crescent_t = std::vector<LabeledVal>;
 
 
-    template<typename T, typename Filter>
-    double computeLabelTotalF(T begin, T end, std::unordered_map<size_t, size_t>& label_map, Filter filter) {
-        double total = 0;
-        for (; begin != end; ++begin) {
-            if (filter(*begin)) {
-                if (label_map.end() == label_map.find(begin->get_label())) {
-                    total += begin->get_weight();
-                    label_map[begin->get_label()] = 0;
-                }
-                label_map[begin->get_label()] = label_map[begin->get_label()] + 1;
-            }
-        }
-        return total;
-    }
-
-    template< typename T>
-    double computeLabelTotal(T begin, T end, std::unordered_map<size_t, size_t>& label_map) {
-        return computeLabelTotalF(begin, end, label_map, [](pt2_t const& pt){ (void)pt; return true; });
-    }
-
-    template< typename T>
-    double computeLabelTotal(T begin, T end) {
-        std::unordered_map<size_t, size_t> label_map;
-        return computeLabelTotal(begin, end, label_map);
-    }
 
     double updateCounts(std::unordered_map<size_t, size_t>& curr_counts,
                         crescent_t const& adding, crescent_t const& removing);
-
-    template<typename T>
-    double computeTotal(T begin, T end) {
-        double sum = 0;
-        std::for_each(begin, end, [&](WPoint<> const &pt) {
-            sum += pt.get_weight();
-        });
-        return sum;
-    }
-
-
 
     void solveCircle3(
             pt2_t const& pt1,

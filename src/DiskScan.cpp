@@ -406,22 +406,14 @@ namespace pyscan {
         return std::make_tuple(currMax, maxStat);
     }
 
-    double computeLTotal(std::vector<LPoint<>> const& pts) {
-        return computeLabelTotal(pts.begin(), pts.end());
-    }
-
-    double computeLTotal(std::vector<WPoint<>> const& pts) {
-        return computeTotal(pts.begin(), pts.end());
-    }
-
 
     template <typename T>
     std::tuple<Disk, double> disk_scan_internal(point_list_t const& net,
                                        T const& sampleM,
                                        T const& sampleB,
                                        discrepancy_func_t const& scan) {
-        double m_Total = computeLTotal(sampleM);
-        double b_Total = computeLTotal(sampleB);
+        double m_Total = computeTotal(sampleM);
+        double b_Total = computeTotal(sampleB);
         Disk currMax;
         double maxStat = 0;
 
@@ -470,8 +462,8 @@ namespace pyscan {
 
         //Calculate the total measured and baseline value.
 
-        double m_Total = computeLTotal(sampleM);
-        double b_Total = computeLTotal(sampleB);
+        double m_Total = computeTotal(sampleM);
+        double b_Total = computeTotal(sampleB);
 
 
         using Pt_t = T;
