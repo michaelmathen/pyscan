@@ -19,9 +19,11 @@ include_directories( ${PYTHON_INCLUDE_DIRS} )
 set(version ${PYTHONLIBS_VERSION_STRING})
 STRING( REGEX REPLACE "([0-9.]+).[0-9]+(rc[0-9]+)?" "\\1" version ${version} )
 STRING( REGEX REPLACE "[^0-9]" "" version ${version} )
-find_package(Boost COMPONENTS "python${version}" REQUIRED)
-#find_package(Boost COMPONENTS "python-py35" REQUIRED)
 
+find_package(Boost COMPONENTS "python${version}")
+if (NOT FOUND_Boost)
+    find_package(Boost COMPONENTS "python-py${version}" REQUIRED)
+endif()
 
 execute_process(COMMAND ${CMAKE_COMMAND} .
         RESULT_VARIABLE result
