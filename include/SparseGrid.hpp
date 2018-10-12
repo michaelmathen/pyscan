@@ -1,98 +1,62 @@
-//
-// Created by Michael on 7/12/2018.
-//
+#ifndef __SPARSE_GRID_H__
+#define __SPARSE_GRID_H__
 
-#ifndef PYSCAN_SPARSEGRID_H
-#define PYSCAN_SPARSEGRID_H
-
-#include <cstdint>
-#include <vector>
-#include <iostream>
 #include <map>
+#include <algorithm>
+#include <vector>
 
-#include "Point.hpp"
-#include "Utilities.hpp"
+template <typename T>
+class SparseGrid {
+public:
+    using iterator_t = typename std::multimap<uint64_t, T>::const_iterator;
 
-namespace pyscan {
-
-    inline std::tuple<int32_t, int32_t> to_cell(Point<2> const& pt, int32_t r, double scale, double min_x, double min_y) {
-        double x = pt(0),
-                y = pt(1);
-        auto a = static_cast<int32_t>((x - min_x) / scale * r),
-                b = static_cast<int32_t>((y - min_y) / scale * r);
-        a = a == r ? r - 1 : a;
-        b = b == r ? r - 1 : b;
-        return std::make_tuple(a, b);
+    SparseGrid(const std::vector<T>& items, uint32_t grid_r) : r(grid_r) {
+        assert(r > 0);
+        if (items.size() == 0) {
+            return;
+        }
+        
+        for (auto& pt: items) {
+            z_pts.emplace(get_code(pt), pt);
+        }
     }
 
-    inline int64_t to_code(Point<2> const& pt, int32_t r, double scale, double min_x, double min_y) {
-        int64_t a, b;
-        std::tie(a, b) = to_cell(pt, r, scale, min_x, min_y);
-        return b * r + a;
+    std::pair<iterator_t, iterator_t> operator()(uint32_t i, uint32_t j) const {
+        if ((i >= r) || (j >= r)) {
+            return std::make_pair(z_pts.end(), z_pts.end());
+        }
+        uint64_t code = j * r + i;
+        return z_pts.equal_range(code);
     }
 
-    template<typename T>
-    class SparseGrid {
-        std::multimap<int64_t, T> z_pts;
-        double mnx;
-        double mny;
-        double scale;
-        int32_t r;
+    double get_resolution() const {
+        return 1.0 / static_cast<double>(r);
+    }
 
-    public:
+    std::pair<uint32_t, uint32_t> get_cell(const T& pt) const {
+        uint32_t a = static_cast<uint32_t>(pt(0) * r);
+        uint32_t b = static_cast<uint32_t>(pt(1) * r);
+        a = (a == r) ? r - 1 : a;
+        b = (b == r) ? r - 1 : b;
+        return std::make_pair(a, b);
+    }
 
-        using buck_it = decltype(z_pts.begin());
+    uint64_t get_code(const T& pt) const {
+        auto res = get_cell(pt);
+        return res.second * r + res.first;
+    }
 
-        SparseGrid(std::vector<T> const& items, int32_t grid_r) : r(grid_r) {
-            if (items.size() == 0) {
-                return;
-            }
+    iterator_t begin() const {
+        return z_pts.cbegin();
+    }
 
-            using pt_it = decltype(items.begin());
-            pt_it min_x, max_x;
-            std::tie(min_x, max_x) = std::minmax_element(items.begin(), items.end(), [&](T const& p1, T const& p2) {
-                        return p1(0) < p2(0);
-            });
-            pt_it min_y, max_y;
-            std::tie(min_y, max_y) = std::minmax_element(items.begin(), items.end(),
-                                                         [&](T const& p1, T const& p2) {
-                                                             return p1(1) < p2(1);
-                                                         });
-            scale = std::max((*max_x)(0) - (*min_x)(0), (*max_y)(1) - (*min_y)(1));
-            mnx = (*min_x)(0);
-            mny = (*min_y)(1);
-            for (auto& pt : items) {
-                z_pts.emplace(to_code(pt, r, scale, mnx, mny), pt);
-            }
-        }
+    iterator_t end() const {
+        return z_pts.cend();
+    }
+    
+private:
+    std::multimap<uint64_t, T> z_pts;
+    uint32_t r;
+};
 
-        auto operator()(int32_t i, int32_t j) -> std::tuple<buck_it, buck_it> {
-
-            if ((i < 0) || (i > r) || (j < 0) || (j > r)) {
-                return std::make_tuple(z_pts.end(), z_pts.end());
-            }
-            int64_t code = i * r + j;
-            return z_pts.equal_range(code);
-        }
-
-        auto get_resolution() -> double {
-            return 1 / static_cast<double>(r);
-        }
-
-
-        std::tuple<int32_t, int32_t> get_cell(T const& pt) {
-            return to_cell(pt, r, scale, mnx, mny);
-        }
-
-        auto begin() -> decltype(z_pts.begin()) {
-            return z_pts.begin();
-        }
-
-        auto end() -> decltype(z_pts.begin()) {
-            return z_pts.end();
-        }
-
-    };
-}
-
-#endif //PYSCAN_SPARSEGRID_H
+#endif

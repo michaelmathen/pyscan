@@ -3,38 +3,20 @@
 //
 
 #include <random>
-#include <unordered_map>
-#include <unordered_set>
-#include <cassert>
 
 #include "appext.h"
 #include "Point.hpp"
-#include "FunctionApprox.hpp"
-
 #include "TrajectoryCoreSet.hpp"
 
 namespace pyscan {
 
 
 
-    template <typename T>
-    void remove_duplicates(T& pts) {
-        std::sort(pts.begin(), pts.end(), [](pt2_t const& p1, pt2_t const& p2){
-            return p1(0) < p2(0);
-        });
-
-        auto end_it = std::unique(pts.begin(), pts.end(), [] (pt2_t const& p1, pt2_t const& p2) {
-            return p1.approx_eq(p2);
-        });
-        pts.erase(end_it, pts.end());
-    }
-
 
     /*
   * Compute the lower leftmost corner of a box containing these points.
   */
-    std::tuple<double, double, double, double> bounding_box(point_list_t::const_iterator traj_b,
-                                                            point_list_t::const_iterator traj_e) {
+    std::tuple<double, double, double, double> bounding_box(point_it traj_b, point_it traj_e) {
 
 
         auto bounds_x = std::minmax_element(traj_b, traj_e,
@@ -65,13 +47,11 @@ namespace pyscan {
         long j = static_cast<long>((y - ly) / chord_l);
         return i + g_size * j;
     }
-
     /*
      * Takes a trajectory and grids it so that each grid contains points that cross it..
      */
-    std::unordered_map<long, std::vector<Point<>>> grid_traj(point_list_t::const_iterator traj_b,
-                                                            point_list_t::const_iterator traj_e,
-                                                            double chord_l) {
+    std::unordered_map<long, std::vector<Point<>>>
+    grid_traj(point_it traj_b, point_it traj_e, double chord_l) {
 
 
         auto last_pt = traj_b;
@@ -141,85 +121,8 @@ namespace pyscan {
     }
 
 
-
-    /*
-    * Takes a trajectory and grids it so that each grid contains a single point of a trajectory that crosses it.
-    */
-    point_list_t  approx_traj_grid(point_list_t const& trajectory, double grid_resolution) {
-
-
-        auto traj_b = trajectory.begin(), traj_e = trajectory.end();
-        auto last_pt = traj_b;
-
-        if (last_pt == traj_e) {
-            return {};
-        }
-
-        double lx, ly, ux, uy;
-        std::tie(lx, ly, ux, uy) = bounding_box(traj_b, traj_e);
-
-        long g_size = static_cast<long>((ux - lx) / grid_resolution) + 1;
-        std::unordered_set<long> traj_labels;
-
-        long location = index((*last_pt)(0), (*last_pt)(1), lx, ly, grid_resolution, g_size);
-        traj_labels.emplace(location);
-
-        for (auto curr_pt = last_pt + 1; curr_pt != traj_e; curr_pt++) {
-
-            auto g_x = static_cast<int>(((*last_pt)(0) - lx) / grid_resolution);
-            auto g_y = static_cast<int>(((*last_pt)(1) - ly) / grid_resolution);
-            auto g_n_x = static_cast<int>(((*curr_pt)(0) - lx) / grid_resolution);
-            auto g_n_y = static_cast<int>(((*curr_pt)(1) - ly) / grid_resolution);
-
-            if (g_n_x < g_x) {
-                std::swap(g_n_x, g_x);
-            }
-            if (g_n_y < g_y) {
-                std::swap(g_n_y, g_y);
-            }
-
-            for (int i = g_x + 1; i <= g_n_x; i++) {
-                double x_val = i * grid_resolution + lx;
-                double y_val = x_to_y((*last_pt)(0), (*last_pt)(1), (*curr_pt)(0), (*curr_pt)(1), x_val);
-                int j = static_cast<int>((y_val - ly) / grid_resolution);
-                auto element = traj_labels.find(i + g_size * j);
-                if (element == traj_labels.end()) {
-                    traj_labels.emplace(i + g_size * j);
-                }
-            }
-            for (int j = g_y + 1; j <= g_n_y; j++) {
-                double y_val = j * grid_resolution + ly;
-                double x_val = y_to_x((*last_pt)(0), (*last_pt)(1), (*curr_pt)(0), (*curr_pt)(1), y_val);
-                int i = static_cast<int>((x_val - lx) / grid_resolution);
-                auto element = traj_labels.find(i + g_size * j);
-                if (element == traj_labels.end()) {
-                    traj_labels.emplace(i + g_size * j);
-                }
-            }
-
-            location = index((*curr_pt)(0), (*curr_pt)(1), lx, ly, grid_resolution, g_size);
-            auto element = traj_labels.find(location);
-            if (element == traj_labels.end()) {
-                traj_labels.emplace(location);
-            }
-            last_pt = curr_pt;
-        }
-
-        //Now convert the set into a set of points
-        point_list_t simplified_traj;
-        for (auto label : traj_labels) {
-            long i = label % g_size;
-            long j = label / g_size;
-            double x_val = (2 * i + 1) * grid_resolution / 2 + lx;
-            double y_val = (2 * j + 1) * grid_resolution / 2 + ly;
-            simplified_traj.emplace_back(x_val, y_val, 1.0);
-        }
-        return simplified_traj;
-    }
-
     std::unordered_map<long, std::vector<Point<>>>
-    approximate_traj_cells(point_list_t::const_iterator traj_b,
-                            point_list_t::const_iterator traj_e, double chord_l, double eps) {
+    approximate_traj_cells(point_it traj_b, point_it traj_e, double chord_l, double eps) {
         auto cells = grid_traj(traj_b, traj_e, chord_l);
         for (auto b = cells.begin(); b != cells.end(); b++) {
             auto approx = eps_core_set(eps, [&](Vec2 const& direction) {
@@ -240,43 +143,31 @@ namespace pyscan {
         return cells;
     }
 
-    void approx_traj(point_list_t::const_iterator traj_b, point_list_t::const_iterator traj_e,
-                        double chord_l, double eps, point_list_t& output) {
+    void approx_traj(point_it traj_b, point_it traj_e, double chord_l, double eps, point_list_t& output) {
         for (auto& elements : approximate_traj_cells(traj_b, traj_e, chord_l, eps)) {
             output.insert(output.end(), elements.second.begin(), elements.second.end());
         }
     }
 
+    point_list_t approx_traj_labels(point_list_t const& trajectory_pts, double weight, double chord_l, double eps) {
 
-    void approx_traj_labels(point_list_t::const_iterator traj_b, point_list_t::const_iterator traj_e,
-                     double chord_l, double eps, size_t label, double weight, lpoint_list_t& output) {
+        point_list_t output;
         for (auto& elements : approximate_traj_cells(traj_b, traj_e, chord_l, eps)) {
             for (auto& pt : elements.second) {
+                //Create a point with the desired weight and label.
                 output.emplace_back(label, weight, pt[0], pt[1], pt[2]);
             }
         }
-        remove_duplicates(output);
-    }
-
-    point_list_t approx_traj_kernel_grid(point_list_t const& trajectory_pts, double chord_l, double eps) {
-
-        point_list_t output;
-        for (auto& elements : approximate_traj_cells(trajectory_pts.begin(), trajectory_pts.end(), chord_l, eps)) {
-            for (auto& pt : elements.second) {
-                //Create a point with the desired weight and label.
-                output.emplace_back(pt[0], pt[1], pt[2]);
-            }
-        }
-        remove_duplicates(output);
         return output;
     }
+
 
 
 
     const int KERNEL_LEVELS = 3;
     point3_list_t kernel3d(point3_list_t const& pts, double eps) {
 
-        auto glpts = new glReal[3 * pts.size()];
+        glReal* glpts = new glReal[3 * pts.size()];
 
         for (size_t i = 0; i < pts.size(); i++) {
             glpts[i * 3    ] = pts[i](0);
@@ -284,9 +175,7 @@ namespace pyscan {
             glpts[i * 3 + 2] = pts[i](2);
         }
         glPointSet kernel_set;
-        assert(pts.size() <= static_cast<size_t>(std::numeric_limits<int>::max()));
-
-        kernel_set.init(3, static_cast<int>(pts.size()), glpts);
+        kernel_set.init(3, pts.size(), glpts);
 
 
         glPointSet* p = kernel_set.getCoreSet3(static_cast<int>(2 / eps), eps / 2); // compute robust coreset

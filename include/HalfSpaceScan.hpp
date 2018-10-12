@@ -65,41 +65,41 @@ namespace pyscan {
     using halfspace2_t = HalfSpace<2>;
     using halfspace3_t = HalfSpace<3>;
 
-    std::tuple<halfspace2_t, double> MaxHalfPlane(
-            point_list_t& point_net,
-            const wpoint_list_t& red,
-            const wpoint_list_t& blue,
-            const discrepancy_func_t& f);
+    std::tuple<halfspace2_t, double> max_half_plane(
+            point_list_t &point_net,
+            const wpoint_list_t &red,
+            const wpoint_list_t &blue,
+            const discrepancy_func_t &f);
 
-    std::tuple<halfspace2_t, double> MaxHalfPlaneSimple(
-            point_list_t& point_net,
-            const wpoint_list_t& red,
-            const wpoint_list_t& blue,
-            const discrepancy_func_t& f);
+    std::tuple<halfspace2_t, double> max_half_plane_simple(
+            point_list_t &point_net,
+            const wpoint_list_t &red,
+            const wpoint_list_t &blue,
+            const discrepancy_func_t &f);
 
-    std::tuple<halfspace3_t, double> MaxHalfSpace(
-            point3_list_t& point_net,
-            const wpoint3_list_t& red,
-            const wpoint3_list_t& blue,
-            const discrepancy_func_t& f);
+    std::tuple<halfspace3_t, double> max_half_space(
+            point3_list_t &point_net,
+            const wpoint3_list_t &red,
+            const wpoint3_list_t &blue,
+            const discrepancy_func_t &f);
 
-    std::tuple<halfspace2_t, double> MaxHalfPlaneLabeled(
-            point_list_t& point_net,
-            lpoint_list_t& red,
-            lpoint_list_t& blue,
-            const discrepancy_func_t& f);
+    std::tuple<halfspace2_t, double> max_half_plane_labeled(
+            point_list_t &point_net,
+            lpoint_list_t &red,
+            lpoint_list_t &blue,
+            const discrepancy_func_t &f);
 
-    std::tuple<halfspace2_t, double> MaxHalfPlaneLabeledSimple(
-            point_list_t& point_net,
-            const lpoint_list_t& red,
-            const lpoint_list_t& blue,
-            const discrepancy_func_t& f);
+    std::tuple<halfspace2_t, double> max_half_plane_labeled_simple(
+            point_list_t &point_net,
+            const lpoint_list_t &red,
+            const lpoint_list_t &blue,
+            const discrepancy_func_t &f);
 
-    std::tuple<halfspace3_t, double>MaxHalfSpaceLabeled(
-            point3_list_t& point_net,
-            const lpoint3_list_t& red,
-            const lpoint3_list_t& blue,
-            const discrepancy_func_t& f);
+    std::tuple<halfspace3_t, double>max_half_space_labeled(
+            point3_list_t &point_net,
+            const lpoint3_list_t &red,
+            const lpoint3_list_t &blue,
+            const discrepancy_func_t &f);
 
 }
 

@@ -39,7 +39,7 @@ namespace pyscan {
         std::transform(point_net.begin(), point_net.end(), lifted_net.begin(), lift_pt);
         std::transform(red.begin(), red.end(), lifted_red.begin(), wlift_pt);
         std::transform(blue.begin(), blue.end(), lifted_blue.begin(), wlift_pt);
-        auto mx_h = MaxHalfSpace(lifted_net, lifted_red, lifted_blue, f);
+        auto mx_h = max_half_space(lifted_net, lifted_red, lifted_blue, f);
         auto h = std::get<0>(mx_h);
         double a = h[0], b = h[1], c = h[2], d = h[3];
         return std::make_tuple(Disk(-a / (2 * c), -b / (2 * c),
@@ -59,7 +59,7 @@ namespace pyscan {
         std::transform(point_net.begin(), point_net.end(), lifted_net.begin(), lift_pt);
         std::transform(red.begin(), red.end(), lifted_red.begin(), llift_pt);
         std::transform(blue.begin(), blue.end(), lifted_blue.begin(), llift_pt);
-        auto mx_h = MaxHalfSpaceLabeled(lifted_net, lifted_red,  lifted_blue, f);
+        auto mx_h = max_half_space_labeled(lifted_net, lifted_red, lifted_blue, f);
         auto h = std::get<0>(mx_h);
         double a = h[0], b = h[1], c = h[2], d = h[3];
         return std::make_tuple(Disk(-a / (2 * c), -b / (2 * c),

@@ -1,159 +1,168 @@
-//
-// Created by mmath on 10/1/18.
-//
+#ifndef __RANGE_H__
+#define __RANGE_H__
 
-#ifndef PYSCAN_RANGE_HPP
-#define PYSCAN_RANGE_HPP
-
+#include "Common.hpp"
 #include <unordered_set>
-#include "Point.hpp"
-
 
 namespace pyscan {
 
+template <int dim>
+class Range {
+public:
+    virtual bool contains(const Point<dim>& pt) const = 0;
+};
 
-    template<int dim>
-    class Range {
-    public:
-        virtual bool contains(Point <dim> const &pt) const = 0;
+template <int dim>
+inline double computeTotal(const std::vector<WPoint < dim>>& pts) {
+    double res = 0.0;
+    for (auto& x: pts) res += x.get_weight();
+    return res;
+}
 
-    };
-
-
-    inline double computeTotal(const wpoint_list_t& pts) {
-        double total = 0;
-        for (auto const& p : pts) {
-            total += p.get_weight();
+template <int dim>
+inline double computeTotal(const std::vector<LPoint < dim>>& pts) {
+    double res = 0.0;
+    std::unordered_set<size_t> seen;
+    for (auto& x: pts) {
+        if (seen.find(x.get_label()) == seen.end()) {
+            res += x.get_weight();
+            seen.emplace(x.get_label());
         }
-        return total;
     }
+    return res;
+}
 
-    inline double computeTotal(const lpoint_list_t& pts) {
-        double total = 0;
-        std::unordered_set<size_t> label_set;
-        for (auto const& p : pts) {
-            if (label_set.end() == label_set.find(p.get_label())) {
-                total += p.get_weight();
-                label_set.emplace(p.get_label());
+template <int dim>
+double range_weight(const Range<dim>& range, const std::vector<WPoint<dim>>& pts) {
+    double weight = 0.0;
+    for (auto& pt: pts) {
+        if (range.contains(pt)) {
+            weight += pt.get_weight();
+        }
+    }
+    return weight;
+}
+
+template <int dim>
+double range_weight(const Range<dim>& range, const std::vector<LPoint<dim>>& pts) {
+    std::unordered_set<size_t> seen;
+    double weight = 0.0;
+    for (auto& pt: pts) {
+        if (range.contains(pt) && seen.find(pt.get_label()) == seen.end()) {
+            weight += pt.get_weight();
+            seen.emplace(pt.get_label());
+        }
+    }
+    return weight;
+}
+
+template <typename R, typename Pt>
+double evaluate_range(
+        const R& range,
+        const std::vector<Pt>& red,
+        const std::vector<Pt>& blue,
+        const discrepancy_func_t& f) {
+
+    return f(range_weight(range, red) / computeTotal(red),
+            range_weight(range, blue) / computeTotal(blue));
+}
+
+template <typename R, int dim = 2>
+std::tuple<R, double> max_range2(
+        const point_list_t &point_net,
+        const std::vector<WPoint < dim>>& red,
+        const std::vector<WPoint<dim>>& blue,
+        const discrepancy_func_t& f) {
+
+    double max_stat = 0.0;
+    R cur_max;
+    for (size_t i = 0; i < point_net.size() - 2; ++i) {
+        for (size_t j = i + 1; j < point_net.size() - 1; ++j) {
+            R now(point_net[i], point_net[j]);
+            double cur_stat = evaluate_range(now, red, blue, f);
+            if (cur_stat > max_stat) {
+                cur_max = now;
+                max_stat = cur_stat;
             }
         }
-        return total;
     }
 
+    return std::make_tuple(cur_max, max_stat);
+}
 
-    template<int dim>
-    double range_weight(Range<dim> const& range, std::vector<WPoint<dim>> const& pts) {
-        double weight = 0, total_weight = 0;
-        for (auto const& pt : pts) {
-            if (range.contains(pt)) {
-                weight += pt.get_weight();
-            }
-            total_weight += pt.get_weight();
-        }
-        return weight / total_weight;
-    }
+template <typename R, int dim = 2>
+std::tuple<R, double> max_range2_labeled(
+        const point_list_t &point_net,
+        const std::vector<LPoint < dim>>& red,
+        const std::vector<LPoint<dim>>& blue,
 
+        const discrepancy_func_t& f) {
 
-    template<int dim>
-    double range_weight(Range<dim> const& range, std::vector<LPoint<dim>> const& pts) {
-        std::unordered_set<size_t> seen_labels;
-        double weight = 0 , total_weight = 0;
-        for (auto& pt : pts) {
-            if ( (seen_labels.find(pt.get_label()) == seen_labels.end())) {
-                weight += range.contains(pt) ? pt.get_weight() : 0.0;
-                total_weight += pt.get_weight();
-                seen_labels.emplace(pt.get_label());
+    double max_stat = 0.0;
+    R cur_max;
+    for (size_t i = 0; i < point_net.size() - 2; ++i) {
+        for (size_t j = i + 1; j < point_net.size() - 1; ++j) {
+            R now(point_net[i], point_net[j]);
+            double cur_stat = evaluate_range(now, red, blue, f);
+            if (cur_stat > max_stat) {
+                cur_max = now;
+                max_stat = cur_stat;
             }
         }
-        return weight / total_weight;
     }
+    return std::make_tuple(cur_max, max_stat);
+}
 
-    template<typename R, typename Pt>
-    double evaluate_range(R const& range,
-                            std::vector<Pt> const& red_pts,
-                            std::vector<Pt> const& blue_pts,
-                            const discrepancy_func_t & scan) {
-        return scan(range_weight(range, red_pts), range_weight(range, blue_pts));
-    }
+template <typename R, int dim = 2>
+std::tuple<R, double> max_range3(
+        const std::vector<Point<dim>> &point_net,
+        const std::vector<WPoint < dim>>& red,
+        const std::vector<WPoint<dim>>& blue,
+        const discrepancy_func_t& f) {
 
-
-    template<typename R, typename NPt, typename SPt>
-    auto scan_ranges2(std::vector<NPt> const &net,
-                      std::vector<SPt> const &red_pts,
-                      std::vector<SPt> const &blue_pts,
-                      const discrepancy_func_t &scan) -> std::tuple<R, double> {
-
-        double max_scan = -std::numeric_limits<double>::infinity();
-        R max_region;
-        for (auto p1 = net.begin(); p1 != net.end() - 1; p1++) {
-            for (auto p2 = p1 + 1; p2 != net.end(); p2++) {
-                R region(*p1, *p2);
-                double curr_scan = evaluate_range(region, red_pts, blue_pts, scan);
-                if (curr_scan > max_scan) {
-                    max_region = region;
-                    max_scan = curr_scan;
+    double max_stat = 0.0;
+    R cur_max;
+    for (size_t i = 0; i < point_net.size() - 2; ++i) {
+        for (size_t j = i + 1; j < point_net.size() - 1; ++j) {
+            for (size_t k = j + 1; k < point_net.size(); ++k) {
+                R now(point_net[i], point_net[j], point_net[k]);
+                double cur_stat = evaluate_range(now, red, blue, f);
+                if (cur_stat > max_stat) {
+                    cur_max = now;
+                    max_stat = cur_stat;
                 }
             }
         }
-        return std::make_tuple(max_region, max_scan);
     }
 
-    /*
-    * Will scan all combinatorial regions of type R that are defined by 3 points and return the region with the
-    * highest discrepancy
-    */
-    template<typename R, typename Pt, typename SPt>
-    auto scan_ranges3(std::vector<Pt> const &net,
-                      std::vector<SPt> const &red_pts,
-                      std::vector<SPt> const &blue_pts,
-                      const discrepancy_func_t &scan) -> std::tuple<R, double> {
-        double max_scan = -std::numeric_limits<double>::infinity();
-        R max_region;
-        for (auto p1 = net.begin(); p1 != net.end() - 2; p1++) {
-            for (auto p2 = p1 + 1; p2 != net.end() - 1; p2++) {
-                for (auto p3 = p2 + 1; p3 != net.end(); p3++) {
-                    R region(*p1, *p2, *p3);
-                    double curr_scan = evaluate_range(region, red_pts, blue_pts, scan);
-                    if (curr_scan > max_scan) {
-                        max_region = region;
-                        max_scan = curr_scan;
-                    }
+    return std::make_tuple(cur_max, max_stat);
+}
+
+template <typename R, int dim = 2>
+std::tuple<R, double> max_range3_labeled(
+        const std::vector<Point<dim>> &point_net,
+        const std::vector<LPoint < dim>>& red,
+        const std::vector<LPoint<dim>>& blue,
+        const discrepancy_func_t& f) {
+
+    double max_stat = 0.0;
+    R cur_max;
+    for (size_t i = 0; i < point_net.size() - 2; ++i) {
+        for (size_t j = i + 1; j < point_net.size() - 1; ++j) {
+            for (size_t k = j + 1; k < point_net.size(); ++k) {
+                R now(point_net[i], point_net[j], point_net[k]);
+                double cur_stat = evaluate_range(now, red, blue, f);
+                if (cur_stat > max_stat) {
+                    cur_max = now;
+                    max_stat = cur_stat;
                 }
             }
         }
-        return std::make_tuple(max_region, max_scan);
     }
 
-
-    /*
-     * Will scan all combinatorial regions of type R that are defined by 4 points and return the region with the
-     * highest discrepancy
-     */
-    template<typename R, typename Pt, typename SPt>
-    auto scan_ranges4(std::vector<Pt> const &net,
-                      std::vector<SPt> const &red_pts,
-                      std::vector<SPt> const &blue_pts,
-                      const discrepancy_func_t &scan) -> std::tuple<R, double> {
-        double max_scan = -std::numeric_limits<double>::infinity();
-        R max_region;
-        for (auto p1 = net.begin(); p1 != net.end() - 3; p1++) {
-            for (auto p2 = p1 + 1; p2 != net.end() - 2; p2++) {
-                for (auto p3 = p2 + 1; p3 != net.end() - 1; p3++) {
-                    for (auto p4 = p3 + 1; p4 != net.end(); p4++) {
-                        R region(*p1, *p2, *p3, *p4);
-                        double curr_scan = evaluate_range(region, red_pts, blue_pts, scan);
-                        if (curr_scan > max_scan) {
-                            max_region = region;
-                            max_scan = curr_scan;
-                        }
-                    }
-                }
-            }
-        }
-        return std::make_tuple(max_region, max_scan);
-    }
-
-
+    return std::make_tuple(cur_max, max_stat);
+}
 
 }
-#endif //PYSCAN_RANGE_HPP
+
+#endif

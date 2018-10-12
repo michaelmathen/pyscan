@@ -274,7 +274,7 @@ namespace pyscan{
             const wpoint_list_t& red,
             const wpoint_list_t& blue,
             const discrepancy_func_t& f) {
-        return scan_ranges2<halfspace2_t, pt2_t, wpt2_t>(point_net, red, blue, f);
+        return max_range2<halfspace2_t, 2>(point_net, red, blue, f);
     }
 
 
@@ -283,7 +283,7 @@ namespace pyscan{
             const lpoint_list_t& red,
             const lpoint_list_t& blue,
             const discrepancy_func_t& f) {
-        return scan_ranges2<halfspace2_t, pt2_t, lpt2_t>(point_net, red, blue, f);
+        return max_range2_labeled<halfspace2_t, 2>(point_net, red, blue, f);
     }
 
     std::tuple<halfspace3_t, double>MaxHalfSpaceLabeledSimple(
@@ -291,7 +291,7 @@ namespace pyscan{
             const lpoint3_list_t& red,
             const lpoint3_list_t& blue,
             const discrepancy_func_t& f) {
-        return scan_ranges3<halfspace3_t, pt3_t, lpt3_t>(point_net, red, blue, f);
+        return max_range3_labeled<halfspace3_t, 3>(point_net, red, blue, f);
     }
 
 }

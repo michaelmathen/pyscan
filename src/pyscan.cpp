@@ -92,7 +92,70 @@ namespace pyscan {
         return f(m, b);
     }
 
+
+
+    pyscan::traj_set create_traj_set(const py::object& net) {
+        /*
+         * Expects a list of lists.
+         */
+        auto beg_net = py::stl_input_iterator<py::list>(net);
+        auto end_net = py::stl_input_iterator<py::list>();
+        pyscan::point_list_t net_traj_pts;
+        std::vector<size_t> net_offsets;
+        size_t next_offset = 0;
+        for (auto b = beg_net; b != end_net; b++) {
+            auto curr_traj = py::stl_input_iterator<Point<>>(*b);
+            auto end_traj = py::stl_input_iterator<Point<>>();
+            for (auto b_traj = curr_traj; b_traj != end_traj; b_traj++) {
+                next_offset += 1;
+                net_traj_pts.push_back(*b_traj);
+            }
+            net_offsets.push_back(next_offset);
+        }
+        return {net_traj_pts, net_offsets};
+    }
+
+    pyscan::wtraj_set create_wtraj_set(const py::object& pts, const py::object& weights) {
+        pyscan::traj_set trajectories = create_traj_set(pts);
+        auto cv_weights = to_std_vector<double>(weights);
+        return {trajectories.traj_pts, trajectories.offsets, cv_weights};
+    }
+
+    py::tuple traj_disk_scan_py(const py::object& net,
+                            const py::object& sampleM,
+                            const py::object& weightM,
+                            const py::object& sampleB,
+                            const py::object& weightB,
+                            double alpha,
+                            double min_r,
+                            std::function<double(double, double)> const& f) {
+
+        auto net_set = create_traj_set(net);
+        auto m_set = create_wtraj_set(sampleM, weightM);
+        auto b_set = create_wtraj_set(sampleB, weightB);
+
+        Disk d1;
+        double d1value;
+        std::tie(d1, d1value) = pyscan::traj_disk_scan(net_set, m_set, b_set, alpha, min_r, f);
+        return py::make_tuple(d1, d1value);
+    }
+
+    py::dict grid_traj_py(py::list const& traject, double chord_l) {
+        auto points = to_std_vector<Point<>>(traject);
+        auto mapped_pts = pyscan::grid_traj(points.begin(), points.end(), chord_l);
+        return toPythonDict(mapped_pts);
+    }
+
+    py::dict approx_traj_cells_py(py::list const& traject, double chord_l, double eps) {
+        auto points = to_std_vector<Point<>>(traject);
+        auto mapped_pts = pyscan::approximate_traj_cells(points.begin(), points.end(),
+                chord_l, eps);
+        return toPythonDict(mapped_pts);
+    }
+
 };
+
+
 
 
 
@@ -198,45 +261,6 @@ struct pypoint_converter {
 };
 
 
-struct pytrajectory_converter {
-
-    pytrajectory_converter& from_python() {
-        boost::python::converter::registry::push_back(
-                &pytrajectory_converter::convertible,
-                &pytrajectory_converter::construct,
-                boost::python::type_id<pyscan::wtrajectory_t>());
-        return *this;
-    }
-
-    /// @brief Check if PyObject is a double tuple.
-    static void* convertible(PyObject* object) {
-        if (PyTuple_Check(object) && PyTuple_Size(object) == 2) {
-            if (PyFloat_Check(PyTuple_GetItem(object, 0)) && PyIter_Check(PyTuple_GetItem(object, 1))) {
-                return object;
-            }
-        }
-        return NULL;
-    }
-
-    static void construct( PyObject* object, boost::python::converter::rvalue_from_python_stage1_data* data) {
-        namespace python = boost::python;
-        python::handle<> handle(python::borrowed(object));
-        typedef python::converter::rvalue_from_python_storage<pyscan::wtrajectory_t>
-                storage_type;
-        void* storage = reinterpret_cast<storage_type*>(data)->storage.bytes;
-
-        // Allocate the C++ type into the converter's memory block, and assign
-        // its handle to the converter's convertible variable.  The C++
-        // container is populated by passing the begin and end iterators of
-        // the python object to the container's constructor.
-
-        data->convertible = new (storage) pyscan::WTrajectory(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
-                py::extract<pyscan::point_list_t>(PyTuple_GetItem(object, 1)));
-    }
-};
-
-
-
 /*
  * This converts two argument c++ tuples into python tuples automatically when they are returned from the c++ code.
  * s -- a two element tuple of type t1 and t2
@@ -273,8 +297,6 @@ BOOST_PYTHON_MODULE(libpyscan) {
     //Should convert tuples directly pyscan points.
     pypoint_converter<2>().from_python();
     pypoint_converter<3>().from_python();
-
-    pytrajectory_converter().from_python();
 
     // Register interable conversions.
     iterable_converter()
@@ -381,42 +403,27 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
 
     //Max Halfspace codes
-    py::def("max_halfplane", &pyscan::MaxHalfPlane);
-    py::def("max_halfplane_labels", &pyscan::MaxHalfPlaneLabeled);
-    py::def("max_halfspace", &pyscan::MaxHalfSpace);
-    py::def("max_halfspace_labels", &pyscan::MaxHalfSpaceLabeled);
+    py::def("max_halfplane", &pyscan::max_half_plane);
+    py::def("max_halfplane_labels", &pyscan::max_half_plane_labeled);
+    py::def("max_halfspace", &pyscan::max_half_space);
+    py::def("max_halfspace_labels", &pyscan::max_half_space_labeled);
 
 
     py::def("max_disk", &pyscan::disk_scan);
     py::def("max_disk_labels", &pyscan::disk_scan_labels);
 
+    py::def("max_traj_disk", &pyscan::traj_disk_scan_py);
+    py::def("grid_traj", &pyscan::grid_traj_py);
+    py::def("approx_traj_cells", &pyscan::approx_traj_cells_py);
 
     //   py::def("max_disk_scale_labels", &pyscan::maxDiskScaleLabel);
 
     py::def("max_disk_cached", &pyscan::cached_disk_scan<pyscan::wpoint_list_t >);
     py::def("max_disk_label_cached", &pyscan::cached_disk_scan<pyscan::lpoint_list_t >);
 
-    py::def("max_rect_labels", &pyscan::max_rect_labels);
-
-    ////////////////////////////////////////////////////////////////////
-    //TrajectoryScan.hpp wrappers///////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////
-
-    py::class_<pyscan::wtrajectory_t>("WTrajectory", py::init<double, pyscan::point_list_t>())
-            .def("get_weight", &pyscan::wtrajectory_t::get_weight);
-
-    py::def("max_disk_traj_grid", &pyscan::max_disk_traj_grid);
-
-
-    //This grids the trajectory and assigns a single point to each cell.
-    py::def("grid_kernel", &pyscan::approx_traj_grid);
-
-    //This grids the trajectory and creates an alpha hull in each one.
-    py::def("grid_direc_kernel", &pyscan::approx_traj_kernel_grid);
-
-    //This is for 2d eps-kernel useful for halfspaces.
+    py::def("lifting_kernel", &pyscan::lifting_coreset);
+    //py::def("maxRectLabels", &maxRectLabelsI);
+    //py::def("maxRectLabels", &maxRectLabelsD);
     py::def("approximate_hull", pyscan::approx_hull);
 
-    //This is a 3d eps-kernel for disks.
-    py::def("lifting_kernel", &pyscan::lifting_coreset);
 }

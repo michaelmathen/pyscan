@@ -13,39 +13,17 @@
 namespace pyscan {
 
 
-    using trajectory_t = point_list_t;
 
-    class WTrajectory {
-        double weight;
-        trajectory_t trajectory_pts;
-
-    public:
-        WTrajectory(double w, trajectory_t pts) : weight(w), trajectory_pts(std::move(pts)) {}
-
-        double get_weight() const {
-            return weight;
-        }
-
-        cpoint_it_t begin() const {
-            return trajectory_pts.begin();
-        }
-
-        cpoint_it_t end() const {
-            return trajectory_pts.end();
-        }
-
-        point_it_t begin() {
-            return trajectory_pts.begin();
-        }
-
-        point_it_t end() {
-            return trajectory_pts.end();
-        }
+    struct trajectory {
+        point_list_t pts;
     };
 
-    using wtrajectory_t = WTrajectory;
-    using trajectory_set_t = std::vector<trajectory_t>;
-    using wtrajectory_set_t = std::vector<wtrajectory_t>;
+    struct wtrajectory : public trajectory {
+        double weight;
+    };
+
+    using trajectory_set_t = std::vector<trajectory>;
+    using wtrajectory_set_t = std::vector<wtrajectory>;
 
 
     //////////////////////////////////////
@@ -54,16 +32,16 @@ namespace pyscan {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     //Disk scanning Trajectory code//////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-    std::tuple<Disk, double> max_disk_traj_grid(trajectory_set_t const& net,
-                                                wtrajectory_set_t const& sampleM,
-                                                wtrajectory_set_t const& sampleB,
-                                                double alpha,
-                                                double min_r,
-                                                const discrepancy_func_t &scan);
-}
+    
+    std::tuple<Disk, double> traj_multilevel_disk_scan(const trajectory_set_t& net,
+                                                        const wtrajectory_set_t& sampleM,
+                                                        const wtrajectory_set_t &sampleB,
+                                                        double alpha,
+                                                        double min_r,
+                                                        std::function<double(double, double)> const &scan);
     
 
+
+}
 
 #endif //PYSCAN_TRAJECTORYSCAN_HPP
