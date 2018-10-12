@@ -21,8 +21,8 @@ namespace {
         auto stat = [] (double m, double b) {
           return fabs(m - b);
         };
-        auto d1 = pyscan::MaxHalfPlane(n_pts, m_pts, b_pts, stat);
-        auto d2 = pyscan::MaxHalfPlaneSimple(n_pts, m_pts, b_pts, stat);
+        auto d1 = pyscan::max_halfplane(n_pts, m_pts, b_pts, stat);
+        auto d2 = pyscan::max_halfplane_simple(n_pts, m_pts, b_pts, stat);
 
         EXPECT_FLOAT_EQ(std::get<1>(d2), pyscan::evaluate_range(std::get<0>(d2), m_pts, b_pts, stat));
 
@@ -47,8 +47,8 @@ namespace {
         };
         pyscan::halfspace2_t d1, d2;
         double d1value, d2value;
-        std::tie(d1, d1value) = pyscan::MaxHalfPlaneLabeled(n_pts, m_pts, b_pts, stat);
-        std::tie(d2, d2value) = pyscan::MaxHalfPlaneLabeledSimple(n_pts, m_pts, b_pts, stat);
+        std::tie(d1, d1value) = pyscan::max_halfplane_labeled(n_pts, m_pts, b_pts, stat);
+        std::tie(d2, d2value) = pyscan::max_halfplane_labeled_simple(n_pts, m_pts, b_pts, stat);
 
         EXPECT_FLOAT_EQ(d2value, pyscan::evaluate_range(d2, m_pts, b_pts, stat));
         EXPECT_FLOAT_EQ(d1value, pyscan::evaluate_range(d1, m_pts, b_pts, stat));

@@ -15,10 +15,14 @@
 #include "RectangleScan.hpp"
 #include "HalfSpaceScan.hpp"
 #include "DiskScan.hpp"
-#include "DiskScan2.hpp"
 #include "FunctionApprox.hpp"
 #include "TrajectoryScan.hpp"
 #include "TrajectoryCoreSet.hpp"
+
+
+
+#define PY_WRAP(FNAME) py::def("FNAME", &pyscan:: FNAME)
+
 
 namespace py = boost::python;
 
@@ -365,9 +369,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
 
     py::class_<pyscan::Disk>("Disk", py::init<double, double, double>())
-            .add_property("a", &pyscan::Disk::getA)
-            .add_property("b", &pyscan::Disk::getB)
-            .add_property("radius", &pyscan::Disk::getR)
+            .def("get_origin", &pyscan::Disk::getOrigin)
+            .def("get_radius", &pyscan::Disk::getRadius)
             .def("contains", &pyscan::Disk::contains);
 
 
@@ -381,22 +384,22 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
 
     //Max Halfspace codes
-    py::def("max_halfplane", &pyscan::MaxHalfPlane);
-    py::def("max_halfplane_labels", &pyscan::MaxHalfPlaneLabeled);
-    py::def("max_halfspace", &pyscan::MaxHalfSpace);
-    py::def("max_halfspace_labels", &pyscan::MaxHalfSpaceLabeled);
+    py::def("max_halfplane", &pyscan::max_halfplane);
+    py::def("max_halfplane_labeled", &pyscan::max_halfplane_labeled);
+    py::def("max_halfspace", &pyscan::max_halfspace);
+    py::def("max_halfspace_labeled", &pyscan::max_halfspace_labeled);
 
 
-    py::def("max_disk", &pyscan::disk_scan);
-    py::def("max_disk_labels", &pyscan::disk_scan_labels);
+    py::def("max_disk", &pyscan::max_disk);
+    py::def("max_disk_labeled", &pyscan::max_disk_labeled);
 
 
     //   py::def("max_disk_scale_labels", &pyscan::maxDiskScaleLabel);
 
-    py::def("max_disk_cached", &pyscan::cached_disk_scan<pyscan::wpoint_list_t >);
-    py::def("max_disk_label_cached", &pyscan::cached_disk_scan<pyscan::lpoint_list_t >);
+    py::def("max_disk_cached", &pyscan::max_disk_cached);
+    py::def("max_disk_cached_labeled", &pyscan::max_disk_cached_labeled);
 
-    py::def("max_rect_labels", &pyscan::max_rect_labels);
+    py::def("max_rect_labeled", &pyscan::max_rect_labeled);
 
     ////////////////////////////////////////////////////////////////////
     //TrajectoryScan.hpp wrappers///////////////////////////////////////

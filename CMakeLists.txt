@@ -71,7 +71,6 @@ set(SOURCE_FILES
         src/Point.cpp
         src/Utilities.cpp
         src/Test_Utilities.cpp
-        src/DiskScan2.cpp
         src/TrajectoryScan.cpp
         src/TrajectoryCoreSet.cpp
         #src/kernel.cpp
@@ -79,7 +78,6 @@ set(SOURCE_FILES
 
 set(HEADER include/BloomFilter.hpp
         include/DiskScan.hpp
-        include/DiskScan2.hpp
         include/FunctionApprox.hpp
         include/HalfSpaceScan.hpp
         include/Point.hpp

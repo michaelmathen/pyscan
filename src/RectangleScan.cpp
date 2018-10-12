@@ -438,7 +438,7 @@ namespace pyscan {
     };
 
 
-     Rectangle max_rect_labels(size_t r, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func) {
+     Rectangle max_rect_labeled(size_t r, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func) {
 
 
          LabeledGrid grid(r, m_points, b_points);

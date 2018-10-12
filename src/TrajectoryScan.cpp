@@ -7,7 +7,7 @@
 #include "FunctionApprox.hpp"
 #include "TrajectoryScan.hpp"
 #include "TrajectoryCoreSet.hpp"
-
+#include "DiskScan.hpp"
 
 namespace pyscan {
 
@@ -44,7 +44,7 @@ namespace pyscan {
 
         // return the max disk.
         auto grid_r = static_cast<uint32_t>(1.0 / min_r);
-        return disk_scan_scale(net_points, sampleM_points, sampleB_points, grid_r, scan);
+        return max_disk_scale_labeled(net_points, sampleM_points, sampleB_points, grid_r, scan);
     }
 
 }

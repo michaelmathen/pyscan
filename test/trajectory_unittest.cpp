@@ -1,6 +1,5 @@
 
 #include "DiskScan.hpp"
-#include "DiskScan2.hpp"
 #include "Statistics.hpp"
 #include "TrajectoryScan.hpp"
 #include "Test_Utilities.hpp"

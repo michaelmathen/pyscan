@@ -7,7 +7,7 @@
 #define PYSCAN_TRAJECTORYSCAN_HPP
 
 #include "RectangleScan.hpp"
-#include "DiskScan.hpp"
+#include "Disk.hpp"
 #include "Point.hpp"
 
 namespace pyscan {

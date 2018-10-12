@@ -1,584 +1,548 @@
-//
-// Created by mmath on 9/25/17.
-//
-#include <algorithm>
-#include <unordered_map>
-#include <ostream>
-#include <iterator>
-#include <set>
-#include <deque>
-#include <unordered_set>
-#include <cassert>
-
-#include "Range.hpp"
-#include "SparseGrid.hpp"
-#include "Statistics.hpp"
-#include "Point.hpp"
 #include "DiskScan.hpp"
+#include "HalfSpaceScan.hpp"
+#include "SparseGrid.hpp"
+
+#include <unordered_map>
+#include <iostream>
 
 namespace pyscan {
 
-    bool colinear(pt2_t const& pt1,
-                  pt2_t const& pt2,
-                  pt2_t const& pt3){
-        double x1 = pt1(0), x2 = pt2(0), x3 = pt3(0),
-        y1 = pt1(1), y2 = pt2(1), y3 = pt3(1);
+    struct LabeledValue {
+        size_t label;
+        double value;
+    };
 
-        double
-                a11 = x2 - x1, a12 = y2 - y1,
-                a21 = x2 - x3, a22 = y2 - y3;
-        return (a11 * a22 - a12 * a21 == 0);
+    using crescent_t = std::vector<LabeledValue>;
+
+    inline static lpt3_t lift_lpt(const lpt2_t &pt) {
+        double x = pt(0), y = pt(1);
+        return {pt.get_label(), pt.get_weight(), x, y, x * x + y * y, 1.0};
+    }
+
+    inline static wpt3_t lift_wpt(const wpt2_t &pt) {
+        double x = pt(0), y = pt(1);
+        return {pt.get_weight(), x, y, x * x + y * y, 1.0};
+    }
+
+    inline static pt3_t lift_pt(const pt2_t &pt) {
+        double x = pt(0), y = pt(1);
+        return {x, y, x * x + y * y, 1.0};
     }
 
 
+    inline static bool colinear(const pt2_t &pt1, const pt2_t &pt2, const pt2_t &pt3) {
+        double x1 = pt1(0), x2 = pt2(0), x3 = pt3(0);
+        double y1 = pt1(1), y2 = pt2(1), y3 = pt3(1);
 
-    void solveCircle3(pt2_t const& pt1, pt2_t const& pt2, pt2_t const& pt3,
-                      double &a, double &b) {
-        double x1 = pt1(0), x2 = pt2(0), x3 = pt3(0),
-            y1 = pt1(1), y2 = pt2(1), y3 = pt3(1);
-
-        // Setup a matrix equation of the form Ax = b
-
-        // A
-        double a11 = x2 - x1, a12 = y2 - y1, a21 = x2 - x3, a22 = y2 - y3;
-        // b
-        double b1 = (y2 * y2 + x2 * x2 - y1 * y1 - x1 * x1) / 2, b2 = (y2 * y2
-                                                                       + x2 * x2 - y3 * y3 - x3 * x3) / 2;
-
-        double detA = a11 * a22 - a12 * a21;
-        // inverse of A
-        double ai11 = a22 / detA, ai12 = -a12 / detA, ai21 = -a21 / detA, ai22 = a11
-                                                                                 / detA;
-
-        // A^{-1} b = x
-        a = ai11 * b1 + ai12 * b2;
-        b = ai21 * b1 + ai22 * b2;
+        return util::aeq(util::det2(x2 - x1, y2 - y1, x2 - x3, y2 - y3), 0.0);
     }
 
-    void solveCircle3(pt2_t const& pt1, pt2_t const& pt2, pt2_t const& pt3,
-                     double &a, double &b, double &r) {
-        double x1 = pt1(0), x2 = pt2(0), x3 = pt3(0),
-                y1 = pt1(1), y2 = pt2(1), y3 = pt3(1);
-        // Setup a matrix equation of the form Ax = b
-
-        // A
-        double a11 = x2 - x1,
-                a12 = y2 - y1,
-                a21 = x2 - x3,
-                a22 = y2 - y3;
-        // b
-        double b1 = (y2 * y2 + x2 * x2 - y1 * y1 - x1 * x1) / 2,
-                b2 = (y2 * y2 + x2 * x2 - y3 * y3 - x3 * x3) / 2;
-
-        double detA = a11 * a22 - a12 * a21;
-        // inverse of A
-        double ai11 = a22 / detA,
-                ai12 = -a12 / detA,
-                ai21 = -a21 / detA,
-                ai22 = a11 / detA;
-
-        // A^{-1} b = x
-        a = ai11 * b1 + ai12 * b2;
-        b = ai21 * b1 + ai22 * b2;
-        r = sqrt((x1 - a) * (x1 - a) + (y1 - b) * (y1 - b));
-    }
-
-    Disk::Disk(const pyscan::pt2_t &p1, const pyscan::pt2_t &p2, const pyscan::pt2_t &p3) {
-        double a, b;
-        solveCircle3(p1, p2, p3, a, b, this->radius);
-        this->center = pt2_t(a, b, 1.0);
-    }
-
-    void findPerpVect(pt2_t const& pt1, pt2_t const& pt2, double* u, double* v) {
-        double x1 = pt1(0), x2 = pt2(0),
-                y1 = pt1(1), y2 = pt2(1);
-        *u = y2 - y1;
-        *v = x1 - x2;
-    }
-
-
-    double updateCounts(std::unordered_map<size_t, size_t>& curr_counts,
-                        crescent_t const& adding, crescent_t const& removing) {
-        /*
-        * The adding and removing crescents define the
-        */
-        double update_diff = 0;
-        for (auto& val_pair : adding) {
-            auto curr_el = curr_counts.find(val_pair.label);
-            //Start here.
-            if (curr_el != curr_counts.end()) {
-                curr_counts[curr_el->first] = curr_el->second + 1;
-            } else {
-                update_diff += val_pair.value;
-                curr_counts[val_pair.label] = 1;
-            }
-        }
-        for (auto& val_pair : removing) {
-            auto curr_el = curr_counts.find(val_pair.label);
-            //Start here.
-            if (curr_el != curr_counts.end()) {
-                if (curr_el->second <= 1) {
-                    update_diff -= val_pair.value;
-                    curr_counts.erase(curr_el);
-                } else {
-                    curr_counts[curr_el->first] = curr_el->second - 1;
-                }
-            } else {
-                assert("The current set contains element that are being removed in the set");
-            }
-        }
-        return update_diff;
-    }
-
-    std::ostream& operator<<(std::ostream& os, std::unordered_map<size_t, size_t> const& items) {
-      for (auto ix : items) {
-        os << ix.first << ":" << ix.second << ", ";
-      }
-      return os;
-    }
-
-
-
-    std::ostream& operator<<(std::ostream& os, crescent_t const& items) {
-      for (auto ix : items) {
-        os << ix.label  << ", ";
-      }
-      return os;
-    }
-
-
-
-    bool contains(double a, double b, double r, pt2_t const& pt) {
-        double la = (pt(0) - a);
-        double lb = (pt(1) - b);
-        return la * la + lb * lb <= r * r;
-    }
-
-
-
-
-    std::tuple<Disk, double> disk_scan_simple(
-            point_list_t const& net,
-            wpoint_list_t const& sampleM,
-            wpoint_list_t const& sampleB,
-            discrepancy_func_t const& scan) {
-        return scan_ranges3<Disk, pt2_t, wpt2_t>(net, sampleM, sampleB, scan);
-    }
-
-    std::tuple<Disk, double> disk_scan_simple_labels(
-            point_list_t const& net,
-            lpoint_list_t const& sampleM,
-            lpoint_list_t const& sampleB,
-            discrepancy_func_t const& scan) {
-        return scan_ranges3<Disk, pt2_t, lpt2_t>(net, sampleM, sampleB, scan);
-    }
-
-
-    double get_order(pt2_t const& p1, pt2_t const& p2, pt2_t const& p) {
-        //Create a vector between the two points
-        double orthoX, orthoY;
-        findPerpVect(p1, p2, &orthoX, &orthoY);
-        double cX = (p1(0) + p2(0)) / 2.0;
-        double cY = (p1(1) + p2(1)) / 2.0;
-        double a, b;
-        solveCircle3(p1, p2, p, a, b);
-        return orthoX * (a - cX) + orthoY * (b - cY);
-    }
-
-    bool valid_pt(pt2_t const& p1, pt2_t const& p2, pt2_t const& p) {
+    inline static bool valid_pt(const pt2_t &p1, const pt2_t &p2, const pt2_t &p) {
         return !(p1.approx_eq(p) || p2.approx_eq(p) || colinear(p1, p2, p));
     }
 
+    inline static void get_net_disks(
+            const pt2_t &p1, const pt2_t &p2,
+            const point_list_t &net,
+            const std::function<double(Disk)> &order_func,
+            double min_dist, double max_dist,
+            std::vector<Disk> &net_disks,
+            std::vector<double> &orderV) {
 
-
-    std::tuple<std::vector<double>, double> compute_delta(
-            wpoint_list_t::const_iterator it_b,
-            wpoint_list_t::const_iterator it_e,
-            pt2_t const& p1,
-            pt2_t const& p2,
-            std::vector<double> const& orders,
-            Disk const& start_disk) {
-
-        double weight = 0;
-        std::vector<double> counts(orders.size(), 0.0);
-        for (; it_b != it_e; it_b++) {
-            if (start_disk.contains(*it_b)) {
-                weight += it_b->get_weight();
-            }
-
-            if (valid_pt(p1, p2, *it_b)) {
-
-                auto lb = std::lower_bound(orders.begin(), orders.end(),
-                                       get_order(p1, p2, *it_b));
-                if (lb == orders.end()) {
-                    continue;
-                }
-                if (start_disk.contains(*it_b)) {
-                    counts[lb - orders.begin()] -= it_b->get_weight();
-                } else {
-                    counts[lb - orders.begin()] += it_b->get_weight();
-                }
-            }
-        }
-        return make_tuple(counts, weight);
-    }
-
-    /*
-     * Computes a new set of iterators and also an ordered set of values
-     */
-    std::vector<double> preprocess_net(pt2_t p1, pt2_t p2, double min_dist, double max_dist, point_it_t& nB, point_it_t& nE) {
-        nE = std::partition(nB, nE, [&] (pt2_t const& p) {
+        net_disks.reserve(net.size());
+        orderV.reserve(net.size());
+        std::for_each(net.begin(), net.end(), [&](const pt2_t &p) {
             if (valid_pt(p1, p2, p)) {
-                double a, b, r;
-                solveCircle3(p1, p2, p, a, b, r);
-                return min_dist <= r && r <= max_dist;
+                Disk tmp(p1, p2, p);
+                if (min_dist <= tmp.getRadius() && tmp.getRadius() <= max_dist) {
+                    net_disks.emplace_back(tmp);
+                }
             }
-            return false;
+        });
 
+        std::sort(net_disks.begin(), net_disks.end(), [&](const Disk &a, const Disk &b) {
+            return order_func(a) < order_func(b);
         });
-        std::sort(nB, nE, [&](pt2_t const &pt1, pt2_t const &pt2) {
-            return get_order(p1, p2, pt1) < get_order(p1, p2, pt2);
-        });
-        std::vector<double> orderV;
-        orderV.reserve(nE - nB);
-        for (auto b = nB; b != nE; b++) {
-            orderV.push_back(get_order(p1, p2, *b));
+        for (auto &disk: net_disks) {
+            orderV.emplace_back(order_func(disk));
         }
-        return orderV;
+
     }
 
+    inline static std::tuple<Disk, double> max_disk_restricted(
+            const pt2_t &p1, const pt2_t &p2,
+            const point_list_t &net,
+            const wpoint_list_t &red,
+            const wpoint_list_t &blue,
+            double min_dist, double max_dist,
+            double red_tot, double blue_tot,
+            const discrepancy_func_t &f) {
 
-    std::tuple<Disk, double> disk_scan_restricted(
-            pt2_t p1,
-            pt2_t p2,
-            point_list_t net,
-            wpoint_list_t const& sampleM,
-            wpoint_list_t const& sampleB,
-            double min_dist,
-            double max_dist,
-            double m_Total,
-            double b_Total,
-            const discrepancy_func_t& scan) {
-
-
-        Disk currMax;
-        double maxStat = 0;
-        //First remove all colinear, duplicate, points.
-        auto nB = net.begin(), nE = net.end();
-
+        Disk cur_max;
+        double max_stat = 0.0;
         if (p1.approx_eq(p2)) {
-            return std::make_tuple(currMax, 0);
-        }
-        //This modifies nB and nE
-        auto orderV = preprocess_net(p1, p2, min_dist, max_dist, nB, nE);
-        if (nE - nB == 0) {
-            return std::make_tuple(currMax, 0);
-        }
-        Disk start_disk(p1, p2, *nB);
-        //Compute delta
-        std::vector<double> mDelta, bDelta;
-        double mCount, bCount;
-        std::tie(mDelta, mCount) = compute_delta(sampleM.begin(), sampleM.end(), p1, p2, orderV, start_disk);
-        std::tie(bDelta, bCount) = compute_delta(sampleB.begin(), sampleB.end(), p1, p2, orderV, start_disk);
-
-        mDelta[0] = 0, bDelta[0] = 0;
-
-        //Now scan over the counts.
-        auto size = nE - nB;
-        for (int k = 0; k < size; k++) {
-            mCount += mDelta[k];
-            bCount += bDelta[k];
-            double m_hat = mCount / m_Total;
-            double b_hat = bCount / b_Total;
-            double newStat = scan(m_hat, b_hat);
-            if (maxStat <= newStat) {
-                currMax = Disk(p1, p2, *(nB + k));
-                maxStat = newStat;
-            }
-        }
-        return std::make_tuple(currMax, maxStat);
-    }
-
-
-    template <typename P, typename T>
-    void insert_queue(std::vector<P> &items, T b_it, T e_it) {
-        for (auto b = b_it; b != e_it; b++) {
-            items.push_back(b->second);
-        }
-    }
-
-
-    std::tuple<std::vector<crescent_t>, std::vector<crescent_t>, std::unordered_map<size_t, size_t>, double>
-    compute_delta(
-            lpoint_list_t::const_iterator it_b,
-            lpoint_list_t::const_iterator it_e,
-            pt2_t const& p1,
-            pt2_t const& p2,
-            std::vector<double> const& orders,
-            Disk const& start_disk) {
-
-        double weight = 0;
-        std::vector<crescent_t> add_counts(orders.size(), crescent_t());
-        std::vector<crescent_t> remove_counts(orders.size(), crescent_t());
-
-        std::unordered_map<size_t, size_t> labels;
-        for (; it_b != it_e; it_b++) {
-
-            if (start_disk.contains(*it_b)) {
-
-                auto label_it = labels.find(it_b->get_label());
-                if (label_it == labels.end()) {
-                    labels.emplace(it_b->get_label(), 1);
-                    weight += it_b->get_weight();
-                } else {
-                    labels[it_b->get_label()] += 1;
-                }
-            }
-
-            if (valid_pt(p1, p2, *it_b)) {
-                auto lb = std::lower_bound(orders.begin(), orders.end(),
-                                           get_order(p1, p2, *it_b));
-                if (lb == orders.end()) {
-                    continue;
-                }
-                if (start_disk.contains(*it_b)) {
-                    remove_counts[lb - orders.begin()].emplace_back(it_b->get_label(), it_b->get_weight());
-                } else {
-                    add_counts[lb - orders.begin()].emplace_back(it_b->get_label(), it_b->get_weight());
-                }
-            }
-        }
-        return make_tuple(add_counts, remove_counts, labels, weight);
-    }
-
-    auto disk_scan_restricted(
-            pt2_t p1,
-            pt2_t p2,
-            point_list_t net,
-            lpoint_list_t const& sampleM,
-            lpoint_list_t const& sampleB,
-            double min_dist,
-            double max_dist,
-            double m_Total,
-            double b_Total,
-            std::function<double(double, double)> const& scan)
-    -> std::tuple<Disk, double> {
-
-        Disk currMax;
-        double maxStat = -std::numeric_limits<double>::infinity();
-
-        if (net.size() < 3 || p1.approx_eq(p2)) {
-            return std::make_tuple(currMax, maxStat);
-        }
-        auto nB = net.begin(), nE = net.end();
-
-        auto orderV = preprocess_net(p1, p2, min_dist, max_dist, nB, nE);
-        if (nE - nB == 0) {
-            return std::make_tuple(currMax, 0);
+            return std::make_tuple(cur_max, 0.0);
         }
 
-        Disk start_disk(p1, p2, *nB);
-        double m_count, b_count;
-        std::vector<crescent_t> mCountsR, bCountsR, mCountsA, bCountsA;
-        std::unordered_map<size_t, size_t> m_curr_set, b_curr_set;
-        std::tie(mCountsA, mCountsR, m_curr_set, m_count) = compute_delta(sampleM.begin(), sampleM.end(),
-                p1, p2, orderV, start_disk);
-        std::tie(bCountsA, bCountsR, b_curr_set, b_count) = compute_delta(sampleB.begin(), sampleB.end(),
-                p1, p2, orderV, start_disk);
-
-
-        /*----------------------------------------------*/
-        //Now scan over the counts.
-
-        auto size = nE - nB;
-        for (int k = 0; k < size; k++) {
-            m_count += updateCounts(m_curr_set, mCountsA[k], mCountsR[k]);
-            b_count += updateCounts(b_curr_set, bCountsA[k], bCountsR[k]);
-
-            double m_hat = m_count / m_Total;
-            double b_hat = b_count / b_Total;
-            double newStat = scan(m_hat, b_hat);
-            if (maxStat <= newStat) {
-                currMax = Disk(p1, p2, *(nB + k));
-                maxStat = newStat;
-            }
-        }
-        return std::make_tuple(currMax, maxStat);
-    }
-
-
-    template <typename T>
-    std::tuple<Disk, double> disk_scan_internal(point_list_t const& net,
-                                       T const& sampleM,
-                                       T const& sampleB,
-                                       discrepancy_func_t const& scan) {
-        double m_Total = computeTotal(sampleM);
-        double b_Total = computeTotal(sampleB);
-        Disk currMax;
-        double maxStat = 0;
-
-        for (auto pt1 = net.begin(); pt1 != net.end() - 1; pt1++) {
-            for (auto pt2 = pt1 + 1; pt2 != net.end(); pt2++) {
-                Disk d1;
-                double possible_max;
-                std::tie(d1, possible_max) = disk_scan_restricted(*pt1, *pt2,
-                                                                  net,
-                                                                  sampleM,
-                                                                  sampleB,
-                                                                  0.0,
-                                                                  std::numeric_limits<double>::infinity(),
-                                                                  m_Total,
-                                                                  b_Total,
-                                                                  scan);
-                if (possible_max > maxStat) {
-                    currMax = d1;
-                    maxStat = possible_max;
-                }
-            }
-        }
-        return std::make_tuple(currMax, maxStat);
-    }
-
-    std::tuple<Disk, double> disk_scan(point_list_t const& net,
-                                                wpoint_list_t const& sampleM,
-                                                wpoint_list_t const& sampleB,
-                                                discrepancy_func_t const& scan) {
-        return disk_scan_internal(net, sampleM, sampleB, scan);
-    }
-
-    std::tuple<Disk, double> disk_scan_labels(point_list_t const& net,
-                lpoint_list_t const& sampleM,
-                lpoint_list_t const& sampleB,
-                discrepancy_func_t const& scan) {
-        return disk_scan_internal(net, sampleM, sampleB, scan);
-    }
-
-    template <typename T>
-    std::tuple<Disk, double> disk_scan_scale(point_list_t const& net,
-                                             std::vector<T> const& sampleM,
-                                             std::vector<T> const& sampleB,
-                                             uint32_t grid_r,
-                                             discrepancy_func_t const& scan) {
-
-        //Calculate the total measured and baseline value.
-
-        double m_Total = computeTotal(sampleM);
-        double b_Total = computeTotal(sampleB);
-
-
-        using Pt_t = T;
-
-        //using sp_grid = std::unordered_map<uint64_t,
-        SparseGrid<Point<>> grid_net(net, grid_r);
-
-        SparseGrid<Pt_t> grid_sample_m(sampleM, grid_r);
-        SparseGrid<Pt_t> grid_sample_b(sampleB, grid_r);
-
-        using net_it = typename SparseGrid<Point<>>::buck_it;
-        using pt_it = typename SparseGrid<Pt_t>::buck_it;
-        Disk currMax;
-        double maxStat = 0;
-
-
-        auto compareFirst = [](auto const& lhs, auto const& rhs) {
-            return lhs.first < rhs.first;
+        double orthoX = p2(1) - p1(1);
+        double orthoY = p1(0) - p2(0);
+        double cX = (p1(0) + p2(0)) / 2.0;
+        double cY = (p1(1) + p2(1)) / 2.0;
+        auto get_order = [orthoX, orthoY, cX, cY](const Disk &x) {
+            auto origin = x.getOrigin();
+            return orthoX * (origin(0) - cX) + orthoY * (origin(1) - cY);
         };
 
-        for (auto center_cell = grid_net.begin(); center_cell != grid_net.end();
-                    center_cell = std::upper_bound(center_cell, grid_net.end(), *center_cell, compareFirst)) {
-            //Returns the next cell
+        std::vector<Disk> net_disks;
+        std::vector<double> orderV;
+        get_net_disks(p1, p2, net, get_order, min_dist, max_dist, net_disks, orderV);
 
-            std::vector<Point<>> net_chunk;
-            std::vector<Pt_t> m_sample_chunk;
-            std::vector<Pt_t> b_sample_chunk;
+        if (net_disks.size() == 0) {
+            return std::make_tuple(cur_max, 0.0);
+        }
 
-            int32_t i, j;
-            std::tie(i, j) = grid_net.get_cell(center_cell->second);
-            //std::cout << i << " " << j << std::endl;
-            net_it pt_begin, pt_end;
-            std::tie(pt_begin, pt_end) = grid_net(i, j);
 
-            for (int k = i - 3; k <= i + 3; k++) {// Through y, but ignore the last part
-                for (int l = j - 3; l <= j + 3; l++) { // through x
-                    //Rotate this queue
-                    net_it chunk_begin, chunk_end;
-                    std::tie(chunk_begin, chunk_end) = grid_net(k, l);
-                    insert_queue(net_chunk, chunk_begin, chunk_end);
+        Disk start_disk = net_disks[0];
+        std::vector<double> red_delta(net_disks.size(), 0.0), blue_delta(net_disks.size(), 0.0);
+        auto compute_delta = [&get_order, &p1, &p2, &orderV, &start_disk](
+                const wpoint_list_t &list,
+                std::vector<double> &delta) {
 
-                    pt_it wchunk_begin, wchunk_end;
-                    std::tie(wchunk_begin, wchunk_end) = grid_sample_m(k, l);
-                    insert_queue(m_sample_chunk, wchunk_begin, wchunk_end);
+            double weight = 0.0;
+            for (auto &p: list) {
+                if (start_disk.contains(p)) weight += p.get_weight();
 
-                    std::tie(wchunk_begin, wchunk_end) = grid_sample_b(k, l);
-                    insert_queue(b_sample_chunk, wchunk_begin, wchunk_end);
+                if (valid_pt(p1, p2, p)) {
+                    auto lb = std::lower_bound(orderV.begin(), orderV.end(), get_order(Disk(p1, p2, p)));
+                    if (lb == orderV.end()) continue;
+                    if (start_disk.contains(p)) {
+                        delta[lb - orderV.begin()] -= p.get_weight();
+                    } else delta[lb - orderV.begin()] += p.get_weight();
+                }
+            }
+            delta[0] = 0.0;
+            return weight;
+        };
+
+        double red_weight = compute_delta(red, red_delta);
+        double blue_weight = compute_delta(blue, blue_delta);
+        for (size_t i = 0; i < net_disks.size(); ++i) {
+            red_weight += red_delta[i];
+            blue_weight += blue_delta[i];
+            double new_stat = f(red_weight / red_tot, blue_weight / blue_tot);
+            if (max_stat <= new_stat) {
+                cur_max = net_disks[i];
+                max_stat = new_stat;
+            }
+        }
+        return std::make_tuple(cur_max, max_stat);
+    }
+
+    inline static double update_weight(
+            std::unordered_map<size_t, size_t> &cur_set,
+            const crescent_t &adding, const crescent_t removing) {
+
+        double update_diff = 0.0;
+        for (auto &x: adding) {
+            auto it = cur_set.find(x.label);
+            if (it != cur_set.end()) {
+                cur_set[x.label]++;
+            } else {
+                update_diff += x.value;
+                cur_set[x.label] = 1;
+            }
+        }
+
+        for (auto &x: removing) {
+            auto it = cur_set.find(x.label);
+            assert(it != cur_set.end() && it->second > 0);
+            if (it->second == 1) {
+                update_diff -= x.value;
+                cur_set.erase(it);
+            } else {
+                cur_set[x.label]--;
+            }
+        }
+
+        return update_diff;
+    }
+
+    inline static std::tuple<Disk, double> max_disk_restricted(
+            const pt2_t &p1, const pt2_t &p2,
+            const point_list_t &net,
+            const lpoint_list_t &red,
+            const lpoint_list_t &blue,
+            double min_dist, double max_dist,
+            double red_tot, double blue_tot,
+            const discrepancy_func_t &f) {
+
+        Disk cur_max;
+        double max_stat = 0.0;
+
+        if (net.size() < 3 || p1.approx_eq(p2)) {
+            return std::make_tuple(cur_max, max_stat);
+        }
+
+        double orthoX = p2(1) - p1(1);
+        double orthoY = p1(0) - p2(0);
+        double cX = (p1(0) + p2(0)) / 2.0;
+        double cY = (p1(1) + p2(1)) / 2.0;
+        auto get_order = [orthoX, orthoY, cX, cY](const Disk &x) {
+            auto origin = x.getOrigin();
+            return orthoX * (origin(0) - cX) + orthoY * (origin(1) - cY);
+        };
+
+        std::vector<Disk> net_disks;
+        std::vector<double> orderV;
+        get_net_disks(p1, p2, net, get_order, min_dist, max_dist, net_disks, orderV);
+
+        if (net_disks.size() == 0) {
+            return std::make_tuple(cur_max, 0.0);
+        }
+
+        Disk start_disk = net_disks[0];
+        std::vector<crescent_t> red_deltaR(net_disks.size()), blue_deltaR(net_disks.size());
+        std::vector<crescent_t> red_deltaA(net_disks.size()), blue_deltaA(net_disks.size());
+        std::unordered_map<size_t, size_t> red_set, blue_set;
+        auto compute_delta = [&get_order, &p1, &p2, &orderV, &start_disk](
+                const lpoint_list_t &list,
+                std::vector<crescent_t> &deltaR,
+                std::vector<crescent_t> &deltaA,
+                std::unordered_map<size_t, size_t> &labels) {
+            double weight = 0.0;
+
+            for (auto &p : list) {
+                auto cur_label = p.get_label();
+                auto cur_weight = p.get_weight();
+                if (start_disk.contains(p)) {
+                    auto it = labels.find(cur_label);
+                    if (it == labels.end()) {
+                        labels[cur_label] = 1;
+                        weight += cur_weight;
+                    } else {
+                        labels[cur_label]++;
+                    }
+                }
+
+                if (valid_pt(p1, p2, p)) {
+                    auto lb = std::lower_bound(orderV.begin(), orderV.end(), get_order(Disk(p1, p2, p)));
+                    if (lb == orderV.end()) continue;
+                    if (start_disk.contains(p)) {
+                        deltaR[lb - orderV.begin()].emplace_back(LabeledValue{cur_label, cur_weight});
+                    } else {
+                        deltaA[lb - orderV.begin()].emplace_back(LabeledValue{cur_label, cur_weight});
+                    }
                 }
             }
 
+            deltaR[0].clear();
+            deltaA[0].clear();
 
-            if (net_chunk.size() < 3) {
-                continue;
+            return weight;
+        };
+
+        double red_weight = compute_delta(red, red_deltaR, red_deltaA, red_set);
+        double blue_weight = compute_delta(blue, blue_deltaR, blue_deltaA, blue_set);
+
+        for (size_t i = 0; i < net_disks.size(); ++i) {
+            red_weight += update_weight(red_set, red_deltaA[i], red_deltaR[i]);
+            blue_weight += update_weight(blue_set, blue_deltaA[i], blue_deltaR[i]);
+            double new_stat = f(red_weight / red_tot, blue_weight / blue_tot);
+            if (max_stat <= new_stat) {
+                cur_max = net_disks[i];
+                max_stat = new_stat;
             }
-            for (auto pt1 = pt_begin; pt1 != pt_end; pt1++) {
-                for (auto pt2 = net_chunk.begin(); pt2 != net_chunk.end(); pt2++) {
-                    if (pt1->second.approx_eq(*pt2)) {
-                        continue;
-                    }
-                    Disk d1;
-                    std::vector<Point<>> new_net = net_chunk;
-                    double possible_max;
-                    std::tie(d1, possible_max) = disk_scan_restricted(pt1->second, *pt2,
-                                                                      new_net,
-                                                                      m_sample_chunk,
-                                                                      b_sample_chunk,
-                                                                      grid_net.get_resolution(),
-                                                                      2 * grid_net.get_resolution(),
-                                                                      m_Total,
-                                                                      b_Total,
-                                                                      scan);
-                    if (possible_max > maxStat) {
-                        currMax = d1;
-                        maxStat = possible_max;
+        }
+        return std::make_tuple(cur_max, max_stat);
+    }
+
+    template<typename Pt>
+    inline static std::tuple<Disk, double> max_disk_internal(
+            const point_list_t &point_net,
+            const std::vector<Pt> &red,
+            const std::vector<Pt> &blue,
+            const discrepancy_func_t &f) {
+
+        double red_tot = computeTotal(red);
+        double blue_tot = computeTotal(blue);
+        Disk cur_max;
+        double max_stat = 0.0;
+
+        for (auto p1 = point_net.begin(); p1 != point_net.end() - 1; ++p1) {
+            for (auto p2 = p1 + 1; p2 != point_net.end(); ++p2) {
+                Disk local_max_disk;
+                double local_max_stat;
+                std::tie(local_max_disk, local_max_stat) =
+                        max_disk_restricted(*p1, *p2, point_net, red, blue,
+                                            0.0, std::numeric_limits<double>::infinity(),
+                                            red_tot, blue_tot, f);
+
+                if (local_max_stat > max_stat) {
+                    cur_max = local_max_disk;
+                    max_stat = local_max_stat;
+                }
+            }
+        }
+        return std::make_tuple(cur_max, max_stat);
+
+    }
+
+
+    std::tuple<Disk, double> max_disk(
+            const point_list_t &point_net,
+            const wpoint_list_t &red,
+            const wpoint_list_t &blue,
+            const discrepancy_func_t &f) {
+
+        return max_disk_internal(point_net, red, blue, f);
+
+    }
+
+    std::tuple<Disk, double> max_disk_labeled(
+            const point_list_t &point_net,
+            const lpoint_list_t &red,
+            const lpoint_list_t &blue,
+            const discrepancy_func_t &f) {
+
+        return max_disk_internal(point_net, red, blue, f);
+
+    }
+
+#ifdef _DEBUG
+
+    template <typename Pt>
+    inline static std::tuple<Disk, double> max_disk_restricted_simple(
+            const point_list_t& point_net,
+            const std::vector<Pt>& red,
+            const std::vector<Pt>& blue,
+            double min_dist, double max_dist,
+            const discrepancy_func_t& f) {
+        double max_stat = 0.0;
+        Disk cur_max;
+        for (size_t i = 0; i < point_net.size() - 2; ++i) {
+            for (size_t j = i + 1; j < point_net.size() - 1; ++j) {
+                for (size_t k = j + 1; k < point_net.size(); ++k) {
+                    Disk now(point_net[i], point_net[j], point_net[k]);
+                    if (now.getRadius() < min_dist || now.getRadius() > max_dist) continue;
+                    double cur_stat = evaluate_range(now, red, blue, f);
+                    if (cur_stat > max_stat) {
+                        cur_max = now;
+                        max_stat = cur_stat;
                     }
                 }
             }
         }
-        //std::cout << maxStat << std::endl;
-        return std::make_tuple(currMax, maxStat);
+
+        return std::make_tuple(cur_max, max_stat);
     }
 
+#endif
 
     template<typename T>
-    std::tuple<Disk, double> cached_disk_scan(
-            point_list_t const& net,
-            T const& sampleM,
-            T const& sampleB,
-            discrepancy_func_t const& scan) {
-        /*
-         * Computes all resolutions
-         */
-        Disk currMax;
-        double maxStat = -std::numeric_limits<double>::infinity();
+    inline static std::tuple<Disk, double> max_disk_scale_internal(
+            const point_list_t &point_net,
+            const std::vector<T> &red,
+            const std::vector<T> &blue,
+            uint32_t grid_r,
+            const discrepancy_func_t &f) {
+
+        double red_tot = computeTotal(red);
+        double blue_tot = computeTotal(blue);
+
+        SparseGrid<pt2_t> grid_net(point_net, grid_r);
+        SparseGrid<T> grid_red(red, grid_r), grid_blue(blue, grid_r);
+
+        Disk cur_max;
+        double max_stat = 0.0;
+        for (auto center_cell = grid_net.begin(); center_cell != grid_net.end();) {
+            std::vector<pt2_t> net_chunk;
+            std::vector<T> red_chunk;
+            std::vector<T> blue_chunk;
+            net_chunk.clear();
+            red_chunk.clear();
+            blue_chunk.clear();
+            uint32_t i, j;
+            std::tie(i, j) = grid_net.get_cell(center_cell->second);
+            uint32_t start_k = i < 4 ? 0 : i - 4;
+            uint32_t start_l = j < 4 ? 0 : j - 4;
+            uint32_t end_k = i + 4 < grid_r ? i + 4 : grid_r;
+            uint32_t end_l = j + 4 < grid_r ? j + 4 : grid_r;
+            auto range = grid_net(i, j);
+
+            for (uint32_t k = start_k; k <= end_k; ++k) {
+                for (uint32_t l = start_l; l <= end_l; ++l) {
+                    auto net_range = grid_net(k, l);
+                    for (auto it = net_range.first; it != net_range.second; ++it) {
+                        net_chunk.emplace_back(it->second);
+                    }
+
+                    auto red_range = grid_red(k, l);
+                    for (auto it = red_range.first; it != red_range.second; ++it)
+                        red_chunk.emplace_back(it->second);
+
+
+                    auto blue_range = grid_blue(k, l);
+                    for (auto it = blue_range.first; it != blue_range.second; ++it)
+                        blue_chunk.emplace_back(it->second);
+                }
+            }
+
+            if (net_chunk.size() >= 3) {
+                for (auto pt1 = range.first; pt1 != range.second; ++pt1) {
+                    for (auto &pt2: net_chunk) {
+                        if (pt1->second.approx_eq(pt2)) continue;
+
+                        Disk local_max_disk;
+                        double local_max_stat;
+                        std::tie(local_max_disk, local_max_stat) =
+                                max_disk_restricted(pt1->second, pt2, net_chunk, red_chunk, blue_chunk,
+                                                    grid_net.get_resolution(), 2 * grid_net.get_resolution(),
+                                                    red_tot, blue_tot, f);
+                        if (local_max_stat > max_stat) {
+                            cur_max = local_max_disk;
+                            max_stat = local_max_stat;
+                        }
+
+                    }
+                }
+            }
+
+
+            auto last = center_cell->first;
+            do {
+                ++center_cell;
+            } while (center_cell != grid_net.end() && center_cell->first == last);
+        }
+
+        return std::make_tuple(cur_max, max_stat);
+    }
+
+    std::tuple<Disk, double> max_disk_scale (
+            const point_list_t &point_net,
+            const wpoint_list_t &red,
+            const wpoint_list_t &blue,
+            uint32_t grid_r,
+            const discrepancy_func_t &f) {
+        return max_disk_scale_internal(point_net, red, blue, grid_r, f);
+    }
+
+    std::tuple<Disk, double> max_disk_scale_labeled(
+            const point_list_t &point_net,
+            const lpoint_list_t &red,
+            const lpoint_list_t &blue,
+            uint32_t grid_r,
+            const discrepancy_func_t &f) {
+        return max_disk_scale_internal(point_net, red, blue, grid_r, f);
+    }
+
+    template<typename Pt>
+    inline static std::tuple<Disk, double> max_disk_cached_internal(
+            const point_list_t &point_net,
+            const std::vector<Pt> &red,
+            const std::vector<Pt> &blue,
+            const discrepancy_func_t &f) {
+
+        Disk cur_max;
+        double max_stat = 0.0;
         for (uint32_t resolution = 2; resolution < 31; resolution++) {
             uint32_t grid_r = 1u << resolution;
-            std::cout << grid_r << std::endl;
-            auto new_max = disk_scan_scale(net, sampleM, sampleB, grid_r, scan);
-            if (maxStat < std::get<1>(new_max)) {
-                std::tie(currMax, maxStat) = new_max;
+            Disk local_max_disk;
+            double local_max_stat;
+            std::tie(local_max_disk, local_max_stat) = max_disk_scale_internal(point_net, red, blue, grid_r, f);
+
+#ifdef _DEBUG
+            Disk actual_max_disk;
+            double actual_max_stat;
+            std::tie(actual_max_disk, actual_max_stat) = MaxDiskRestrictedSimple(point_net, red, blue, 1.0 / grid_r, 2.0 / grid_r, f);
+            std::cout << grid_r << ", " <<  local_max_stat << "," << actual_max_stat << std::endl;
+#endif
+
+            if (max_stat < local_max_stat) {
+                cur_max = local_max_disk;
+                max_stat = local_max_stat;
             }
         }
-        return std::make_tuple(currMax, maxStat);
+
+        return std::make_tuple(cur_max, max_stat);
+
+    }
+
+    std::tuple<Disk, double> max_disk_cached(
+            const point_list_t &point_net,
+            const wpoint_list_t &red,
+            const wpoint_list_t &blue,
+            const discrepancy_func_t &f) {
+
+        return max_disk_cached_internal(point_net, red, blue, f);
+
+    }
+
+    std::tuple<Disk, double> max_disk_cached_labeled(
+            const point_list_t &point_net,
+            const lpoint_list_t &red,
+            const lpoint_list_t &blue,
+            const discrepancy_func_t &f) {
+
+        return max_disk_cached_internal(point_net, red, blue, f);
+
     }
 
 
-    template std::tuple<Disk, double> cached_disk_scan<wpoint_list_t>(
-            point_list_t const&,
-            wpoint_list_t const&,
-            wpoint_list_t const&,
-            discrepancy_func_t const& );
+    std::tuple<Disk, double> max_disk_lift(
+            const point_list_t &point_net,
+            const wpoint_list_t &red,
+            const wpoint_list_t &blue,
+            const discrepancy_func_t &f) {
 
-    template std::tuple<Disk, double> cached_disk_scan<lpoint_list_t>(
-            point_list_t const&,
-            lpoint_list_t const&,
-            lpoint_list_t const& ,
-            discrepancy_func_t const&);
+        point3_list_t lifted_net(point_net.size());
+        wpoint3_list_t lifted_red(red.size()), lifted_blue(blue.size());
+        std::transform(point_net.begin(), point_net.end(), lifted_net.begin(), lift_pt);
+        std::transform(red.begin(), red.end(), lifted_red.begin(), lift_wpt);
+        std::transform(blue.begin(), blue.end(), lifted_blue.begin(), lift_wpt);
+        auto mx_h = max_halfspace(lifted_net, lifted_red, lifted_blue, f);
+        auto h = std::get<0>(mx_h);
+        double a = h[0], b = h[1], c = h[2], d = h[3];
+        return std::make_tuple(Disk(-a / (2 * c), -b / (2 * c),
+                                    sqrt((a * a + b * b - 4 * c * d) / (4 * c * c))),
+                               std::get<1>(mx_h));
+
+    }
+
+    std::tuple<Disk, double> max_disk_lift_labeled(
+            const point_list_t &point_net,
+            const lpoint_list_t &red,
+            const lpoint_list_t &blue,
+            const discrepancy_func_t &f) {
+
+        point3_list_t lifted_net(point_net.size());
+        lpoint3_list_t lifted_red(red.size()), lifted_blue(blue.size());
+        std::transform(point_net.begin(), point_net.end(), lifted_net.begin(), lift_pt);
+        std::transform(red.begin(), red.end(), lifted_red.begin(), lift_lpt);
+        std::transform(blue.begin(), blue.end(), lifted_blue.begin(), lift_lpt);
+        auto mx_h = max_halfspace_labeled(lifted_net, lifted_red, lifted_blue, f);
+        auto h = std::get<0>(mx_h);
+        double a = h[0], b = h[1], c = h[2], d = h[3];
+        return std::make_tuple(Disk(-a / (2 * c), -b / (2 * c),
+                                    sqrt((a * a + b * b - 4 * c * d) / (4 * c * c))),
+                               std::get<1>(mx_h));
+
+    }
+
+
+    std::tuple<Disk, double> max_disk_simple(
+            const point_list_t &point_net,
+            const wpoint_list_t &red,
+            const wpoint_list_t &blue,
+            const discrepancy_func_t &f) {
+        return max_range3<Disk>(point_net, red, blue, f);
+    }
+
+    std::tuple<Disk, double> max_disk_simple_labeled(
+            const point_list_t &point_net,
+            const lpoint_list_t &red,
+            const lpoint_list_t &blue,
+            const discrepancy_func_t &f) {
+        return max_range3_labeled<Disk>(point_net, red, blue, f);
+    }
+
 }
