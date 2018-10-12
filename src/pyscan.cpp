@@ -393,7 +393,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_disk_labeled", &pyscan::max_disk_labeled);
 
 
-    py::def("evaluate_reg", &pyscan::evaluate_range<2, pyscan::wpt2_t>);
+    py::def("evaluate_range", &pyscan::evaluate_range<2, pyscan::wpt2_t>);
 
 
     //   py::def("max_disk_scale_labels", &pyscan::maxDiskScaleLabel);
