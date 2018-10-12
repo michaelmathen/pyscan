@@ -12,7 +12,7 @@
 namespace pyscan {
 
 
-    std::tuple<Disk, double> traj_grid_disk_scan(trajectory_set_t const& net,
+    std::tuple<Disk, double> max_disk_traj_grid(trajectory_set_t const& net,
                                                  wtrajectory_set_t const& sampleM,
                                                  wtrajectory_set_t const& sampleB,
                                                  double alpha,

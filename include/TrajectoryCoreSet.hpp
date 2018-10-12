@@ -17,6 +17,7 @@ namespace pyscan {
 
 
     point_list_t  approx_traj_grid(point_list_t const& trajectory, double grid_resolution);
+    point_list_t  grid_traj(point_list_t const& trajectory, double grid_resolution);
 
     point_list_t approx_traj_labels(point_list_t const& trajectory_pts, double weight, double chord_l, double eps);
 

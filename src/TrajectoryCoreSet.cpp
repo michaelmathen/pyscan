@@ -66,6 +66,13 @@ namespace pyscan {
         return i + g_size * j;
     }
 
+    bool inside_box(double x, double y, pt2_t const& lpt, pt2_t const& rpt) {
+        double ux = std::max(lpt(0), rpt(0));
+        double lx = std::min(lpt(0), rpt(0));
+        double uy = std::max(lpt(1), rpt(1));
+        double ly = std::min(lpt(1), rpt(1));
+        return ux > x && x > lx &&  uy > y && y > ly;
+    }
     /*
      * Takes a trajectory and grids it so that each grid contains points that cross it..
      */
@@ -103,9 +110,12 @@ namespace pyscan {
                 std::swap(g_n_y, g_y);
             }
 
-            for (int i = g_x + 1; i <= g_n_x; i++) {
+            for (int i = g_x; i <= g_n_x; i++) {
                 double x_val = i * chord_l + lx;
                 double y_val = x_to_y((*last_pt)(0), (*last_pt)(1), (*curr_pt)(0), (*curr_pt)(1), x_val);
+                if (!inside_box(x_val, y_val, *last_pt, *curr_pt)) {
+                    continue;
+                }
                 int j = static_cast<int>((y_val - ly) / chord_l);
                 auto element = traj_points.find(i + g_size * j);
                 if (element == traj_points.end()) {
@@ -115,9 +125,12 @@ namespace pyscan {
 
                 }
             }
-            for (int j = g_y + 1; j <= g_n_y; j++) {
+            for (int j = g_y; j <= g_n_y; j++) {
                 double y_val = j * chord_l + ly;
                 double x_val = y_to_x((*last_pt)(0), (*last_pt)(1), (*curr_pt)(0), (*curr_pt)(1), y_val);
+                if (!inside_box(x_val, y_val, *last_pt, *curr_pt)) {
+                    continue;
+                }
                 int i = static_cast<int>((x_val - lx) / chord_l);
                 auto element = traj_points.find(i + g_size * j);
                 if (element == traj_points.end()) {
@@ -141,6 +154,15 @@ namespace pyscan {
     }
 
 
+    point_list_t  grid_traj(point_list_t const& traj, double grid_resoluation) {
+        point_list_t pts;
+
+        for (auto& elements : grid_traj(traj.begin(), traj.end(), grid_resoluation)) {
+            pts.insert(pts.end(), elements.second.begin(), elements.second.end());
+        }
+        remove_duplicates(pts);
+        return pts;
+    }
 
     /*
     * Takes a trajectory and grids it so that each grid contains a single point of a trajectory that crosses it.
@@ -181,6 +203,9 @@ namespace pyscan {
             for (int i = g_x + 1; i <= g_n_x; i++) {
                 double x_val = i * grid_resolution + lx;
                 double y_val = x_to_y((*last_pt)(0), (*last_pt)(1), (*curr_pt)(0), (*curr_pt)(1), x_val);
+                if (!inside_box(x_val, y_val, *last_pt, *curr_pt)) {
+                    continue;
+                }
                 int j = static_cast<int>((y_val - ly) / grid_resolution);
                 auto element = traj_labels.find(i + g_size * j);
                 if (element == traj_labels.end()) {
@@ -190,6 +215,9 @@ namespace pyscan {
             for (int j = g_y + 1; j <= g_n_y; j++) {
                 double y_val = j * grid_resolution + ly;
                 double x_val = y_to_x((*last_pt)(0), (*last_pt)(1), (*curr_pt)(0), (*curr_pt)(1), y_val);
+                if (!inside_box(x_val, y_val, *last_pt, *curr_pt)) {
+                    continue;
+                }
                 int i = static_cast<int>((x_val - lx) / grid_resolution);
                 auto element = traj_labels.find(i + g_size * j);
                 if (element == traj_labels.end()) {
@@ -210,9 +238,12 @@ namespace pyscan {
         for (auto label : traj_labels) {
             long i = label % g_size;
             long j = label / g_size;
-            double x_val = (2 * i + 1) * grid_resolution / 2 + lx;
-            double y_val = (2 * j + 1) * grid_resolution / 2 + ly;
-            simplified_traj.emplace_back(x_val, y_val, 1.0);
+
+            double x_val_low = i * grid_resolution + lx;
+            double y_val_low = j * grid_resolution + ly;
+            double x_val_up = (i + 1) * grid_resolution + lx;
+            double y_val_up = (j + 1) * grid_resolution + ly;
+            simplified_traj.emplace_back(x_val_low, y_val_low, 1.0);
         }
         return simplified_traj;
     }
@@ -312,7 +343,10 @@ namespace pyscan {
         return {x, y, x * x + y * y, 1.0};
     }
 
-    point_list_t lifting_coreset(point_list_t const& pts, double eps) {
+    point_list_t lifting_coreset(point_list_t const& segments, double eps) {
+
+        point_list_t pts = grid_traj(segments, eps / 2.0);
+
         point3_list_t lifted_set(pts.size(), pt3_t());
         std::transform(pts.begin(), pts.end(), lifted_set.begin(), lift_pt);
         auto pt3_set = kernel3d(lifted_set, eps);

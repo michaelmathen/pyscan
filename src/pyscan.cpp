@@ -413,6 +413,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
     //This grids the trajectory and assigns a single point to each cell.
     py::def("grid_kernel", &pyscan::approx_traj_grid);
+    py::def("grid_trajectory", &pyscan::grid_traj);
 
     //This grids the trajectory and creates an alpha hull in each one.
     py::def("grid_direc_kernel", &pyscan::approx_traj_kernel_grid);
