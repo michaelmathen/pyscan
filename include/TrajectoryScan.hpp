@@ -62,6 +62,7 @@ namespace pyscan {
                                                 double alpha,
                                                 double min_r,
                                                 const discrepancy_func_t &scan);
+
 }
     
 
