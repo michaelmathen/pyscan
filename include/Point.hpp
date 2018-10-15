@@ -95,6 +95,52 @@ namespace pyscan {
             return res;
         }
 
+        Point<dim> operator*(double scalar) const {
+            Point<dim> res = *this;
+            for (size_t i = 0; i < dim; ++i) {
+                res.coords[i] *= scalar;
+            }
+            return res;
+        }
+
+        Point<dim> operator-(const Point<dim>& other) const {
+            Point<dim> res;
+            for (size_t i = 0; i < dim; ++i) {
+                res.coords[i] = coords[i] * other[dim] - other[i] * coords[dim];
+            }
+            res.coords[dim] = other[dim] * coords[dim];
+            return res;
+        }
+
+        Point<dim> operator+(const Point<dim>& other) const {
+            Point<dim> res;
+            for (size_t i = 0; i < dim; ++i) {
+                res.coords[i] = coords[i] * other[dim] + other[i] * coords[dim];
+            }
+            res.coords[dim] = other[dim] * coords[dim];
+            return res;
+        }
+
+        inline double square_dist(const Point<dim>& begin, const Point<dim>& end) {
+            auto v = end - begin;
+            auto w = *this - begin;
+            double c1 = w.pdot(v);
+            if (util::alte(c1, 0.0)) return square_dist(begin);
+            double c2 = v.pdot(v);
+            if (util::alte(c2, c1)) return square_dist(end);
+            double b = c1 / c2;
+            auto pb = begin + v * b;
+            return square_dist(pb);
+        }
+
+        inline double pdot(const Point<dim>& other) const {
+            double res = 0.0;
+            for (size_t i = 0; i < dim; ++i) {
+                res += coords[i] * other.coords[i] / coords[dim] / other.coords[dim];
+            }
+            return res;
+        }
+
         inline bool approx_eq(Point<dim> const& p) const {
             return util::aeq(this->square_dist(p), 0);
         }

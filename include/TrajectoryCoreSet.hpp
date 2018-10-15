@@ -24,5 +24,8 @@ namespace pyscan {
     point_list_t approx_traj_kernel_grid(point_list_t const& trajectory_pts, double chord_l, double eps);
     point3_list_t kernel3d(point3_list_t const& pts, double eps);
     point_list_t lifting_coreset(point_list_t const& pts, double eps);
+
+    void dp_compress(const point_it_t begin, const point_it_t end,
+                     point_list_t& compressed, double eps);
 }
 #endif //PYSCAN_TRAJECTORYCORESET_HPP

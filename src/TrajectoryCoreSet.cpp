@@ -357,4 +357,33 @@ namespace pyscan {
         return output_pts;
     }
 
+
+
+    // This function does a Ramer-Douglas-Peucker Compression over a Trajectory
+    // For more info, pls refer to:
+    // https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+    void dp_compress(const point_it_t begin, const point_it_t end,
+                     point_list_t& compressed, double eps) {
+        if (end - begin <= 1) {
+            return;
+        }
+        auto max_it = begin;
+        double max = 0.0;
+        for (auto it = begin + 1; it != end - 1; ++it) {
+            auto tmp_dis = it->square_dist(*begin, *(end - 1));
+            if (max < tmp_dis) {
+                max = tmp_dis;
+                max_it = it;
+            }
+        }
+        if (max > eps * eps) {
+            dp_compress(begin, max_it + 1, compressed, eps);
+            compressed.pop_back();
+            dp_compress(max_it, end, compressed, eps);
+        } else {
+            compressed.push_back(*begin);
+            compressed.push_back(*(end - 1));
+        }
+    }
+
 }

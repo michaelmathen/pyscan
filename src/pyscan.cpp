@@ -366,8 +366,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("intersection", &pyscan::intersection);
     py::def("correct_orientation", &pyscan::correct_orientation);
 
-
-    py::class_<pyscan::Disk>("Disk", py::init<double, double, double>())
+    py::class_<pyscan::Disk, py::bases<pyscan::Range<2> > >("Disk", py::init<double, double, double>())
             .def("get_origin", &pyscan::Disk::getOrigin)
             .def("get_radius", &pyscan::Disk::getRadius)
             .def("contains", &pyscan::Disk::contains);
@@ -412,6 +411,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
     py::def("max_disk_traj_grid", &pyscan::max_disk_traj_grid);
 
+
+    py::def("dp_compress", &pyscan::dp_compress);
 
     //This grids the trajectory and assigns a single point to each cell.
     py::def("grid_kernel", &pyscan::approx_traj_grid);

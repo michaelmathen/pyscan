@@ -52,9 +52,10 @@ namespace pyscan {
 
             if ((ia < 0) != (ib < 0)) return max_int64;
 
-            return abs(ia - ib);
+            return std::abs(ia - ib);
         }
 
+        
         inline bool aeq(double a, double b) {
             return ulpsDistance(a, b) < max_float_distance;
         }
