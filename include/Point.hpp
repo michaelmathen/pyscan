@@ -121,7 +121,7 @@ namespace pyscan {
             return res;
         }
 
-        inline double square_dist(const Point<dim>& begin, const Point<dim>& end) {
+        inline double square_dist(const Point<dim>& begin, const Point<dim>& end) const {
             auto v = end - begin;
             auto w = *this - begin;
             double c1 = w.pdot(v);

@@ -359,10 +359,12 @@ namespace pyscan {
 
 
 
+
+
     // This function does a Ramer-Douglas-Peucker Compression over a Trajectory
     // For more info, pls refer to:
     // https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
-    void dp_compress(const point_it_t begin, const point_it_t end,
+    void rdp_compress(point_list_t::const_iterator begin, point_list_t::const_iterator end,
                      point_list_t& compressed, double eps) {
         if (end - begin <= 1) {
             return;
@@ -377,13 +379,19 @@ namespace pyscan {
             }
         }
         if (max > eps * eps) {
-            dp_compress(begin, max_it + 1, compressed, eps);
+            rdp_compress(begin, max_it + 1, compressed, eps);
             compressed.pop_back();
-            dp_compress(max_it, end, compressed, eps);
+            rdp_compress(max_it, end, compressed, eps);
         } else {
             compressed.push_back(*begin);
             compressed.push_back(*(end - 1));
         }
+    }
+
+    point_list_t dp_compress(const point_list_t& trajectory, double eps) {
+        point_list_t simplified_traj;
+        rdp_compress(trajectory.begin(),  trajectory.end(), simplified_traj, eps);
+        return simplified_traj;
     }
 
 }
