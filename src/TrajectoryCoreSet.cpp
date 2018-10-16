@@ -36,17 +36,14 @@ namespace pyscan {
     std::tuple<double, double, double, double> bounding_box(point_list_t::const_iterator traj_b,
                                                             point_list_t::const_iterator traj_e) {
 
-
-        auto bounds_x = std::minmax_element(traj_b, traj_e,
-                                            [&](Point<> const& p1, Point<> const& p2){
-                                                return p1(0) < p2(0);
-                                            });
-        auto bounds_y = std::minmax_element(traj_b, traj_e, [&](Point<> const& p1, Point<> const& p2){
-            return p1(1) <p2(1);
-        });
-
-        return std::make_tuple((*bounds_x.first)(0), (*bounds_y.first)(0),
-                               (*bounds_x.second)(1), (*bounds_y.second)(1));
+        double lx = (*traj_b)(0), ux = (*traj_b)(0), ly = (*traj_b)(1), uy = (*traj_b)(1);
+        for ( ; traj_b != traj_e; traj_b++) {
+            lx = std::min(lx, (*traj_b)(0));
+            ux = std::max(ux, (*traj_b)(0));
+            ly = std::min(ly, (*traj_b)(1));
+            uy = std::max(uy, (*traj_b)(1));
+        }
+        return std::make_tuple(lx, ly, ux, uy);
     }
 
 
@@ -179,7 +176,6 @@ namespace pyscan {
 
         double lx, ly, ux, uy;
         std::tie(lx, ly, ux, uy) = bounding_box(traj_b, traj_e);
-
         long g_size = static_cast<long>((ux - lx) / grid_resolution) + 1;
         std::unordered_set<long> traj_labels;
 
@@ -238,12 +234,12 @@ namespace pyscan {
         for (auto label : traj_labels) {
             long i = label % g_size;
             long j = label / g_size;
-
+            //std::cout << i << " " << j << std::endl;
             double x_val_low = i * grid_resolution + lx;
             double y_val_low = j * grid_resolution + ly;
             double x_val_up = (i + 1) * grid_resolution + lx;
             double y_val_up = (j + 1) * grid_resolution + ly;
-            simplified_traj.emplace_back(x_val_low, y_val_low, 1.0);
+            simplified_traj.emplace_back((x_val_low + x_val_up) / 2.0, (y_val_up + y_val_low) / 2.0, 1.0);
         }
         return simplified_traj;
     }
@@ -344,9 +340,7 @@ namespace pyscan {
     }
 
     point_list_t lifting_coreset(point_list_t const& segments, double eps) {
-
         point_list_t pts = grid_traj(segments, eps / 2.0);
-
         point3_list_t lifted_set(pts.size(), pt3_t());
         std::transform(pts.begin(), pts.end(), lifted_set.begin(), lift_pt);
         auto pt3_set = kernel3d(lifted_set, eps);
@@ -356,9 +350,6 @@ namespace pyscan {
         }
         return output_pts;
     }
-
-
-
 
 
     // This function does a Ramer-Douglas-Peucker Compression over a Trajectory
