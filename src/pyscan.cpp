@@ -291,6 +291,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .from_python<std::vector<std::vector<pyscan::WPoint<> > > >();
 
     to_python_converter<std::tuple<pyscan::Disk, double>, tuple_to_python_tuple<pyscan::Disk, double>>();
+    to_python_converter<std::tuple<pyscan::Rectangle, double>, tuple_to_python_tuple<pyscan::Rectangle, double>>();
     to_python_converter<std::tuple<pyscan::pt2_t, double>, tuple_to_python_tuple<pyscan::pt2_t, double>>();
 
     to_python_converter<std::vector<double>, vector_to_python_list<double>>();
@@ -309,14 +310,13 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .def("toRectangle", &pyscan::Grid::toRectangle)
             .def("size", &pyscan::Grid::size);
 
-    py::class_<pyscan::Rectangle>("Rectangle", py::init<double, double, double, double, double>())
+    py::class_<pyscan::Rectangle>("Rectangle", py::init<double, double, double, double>())
             .def("lowX", &pyscan::Rectangle::lowX)
             .def("upX", &pyscan::Rectangle::upX)
             .def("lowY", &pyscan::Rectangle::lowY)
             .def("upY", &pyscan::Rectangle::upY)
             .def("__str__", &pyscan::Rectangle::toString)
-            .def("contains", &pyscan::Rectangle::contains)
-            .def("fValue", &pyscan::Rectangle::fValue);
+            .def("contains", &pyscan::Rectangle::contains);
 
     py::class_<pyscan::Subgrid>("Subgrid", py::init<size_t, size_t, size_t, size_t, double>())
             .def("lowCol", &pyscan::Subgrid::lowX)
@@ -412,7 +412,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_disk_traj_grid", &pyscan::max_disk_traj_grid);
 
 
-    //py::def("dp_compress", &pyscan::dp_compress);
+    //This simplifies the trajectory by using the dp algorithm.
+    py::def("dp_compress", &pyscan::dp_compress);
 
     //This grids the trajectory and assigns a single point to each cell.
     py::def("grid_kernel", &pyscan::approx_traj_grid);

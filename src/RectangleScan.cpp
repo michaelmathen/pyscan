@@ -171,8 +171,7 @@ namespace pyscan {
 
     Rectangle Grid::toRectangle(Subgrid const &sg) const {
         return Rectangle(xCoord(sg.upX()), yCoord(sg.upY()),
-                         xCoord(sg.lowX()), yCoord(sg.lowY()),
-                         sg.fValue());
+                         xCoord(sg.lowX()), yCoord(sg.lowY()));
     }
 
     /*
@@ -438,14 +437,14 @@ namespace pyscan {
     };
 
 
-     Rectangle max_rect_labeled(size_t r, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func) {
+     std::tuple<Rectangle, double> max_rect_labeled(size_t r, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func) {
 
 
          LabeledGrid grid(r, m_points, b_points);
          double m_Total = computeTotal(m_points);
          double b_Total = computeTotal(b_points);
 
-         Rectangle maxRect(0, 0, 0, 0, 0.0);
+         Rectangle maxRect(0.0, 0.0, 0.0, 0.0);
          double max_stat = 0;
 
          for (size_t lower_j = 0; lower_j < grid.y_size(); lower_j++) {
@@ -484,14 +483,15 @@ namespace pyscan {
 
                         if (func(m_weight / m_Total, b_weight / b_Total) > max_stat) {
                            max_stat = func(m_weight / m_Total, b_weight / b_Total);
-                           maxRect = Rectangle(grid.x_val(right_i), grid.y_val(lower_j), grid.x_val(left_i), grid.y_val(lower_j), max_stat);
+                           maxRect = Rectangle(grid.x_val(right_i), grid.y_val(lower_j), grid.x_val(left_i), grid.y_val(lower_j));
                         }
                      }
                  }
              }
          }
-         return maxRect;
+         return std::make_tuple(maxRect, max_stat);
      }
+
 
     //////////////////////////////////////////////////////////////////////////////////
     //END OF LABELED RECTANGLE CODE//////////////////////////////////////////////////

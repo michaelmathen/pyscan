@@ -17,7 +17,7 @@
 #include <iostream>
 #include "BloomFilter.hpp"
 
-
+#include "Range.hpp"
 #include "Statistics.hpp"
 #include "Point.hpp"
 #include "Utilities.hpp"
@@ -29,12 +29,11 @@ namespace pyscan {
     using subgrid = std::tuple<int, int, int, int, double>;
 
 
-    template<typename Bound_t>
-    class RectBase {
-        Bound_t u_x, u_y, l_x, l_y;
+    class Subgrid {
+        size_t u_x, u_y, l_x, l_y;
         double value;
     public:
-        RectBase(Bound_t ux, Bound_t uy, Bound_t lx, Bound_t ly, double val) :
+        Subgrid(size_t ux, size_t uy, size_t lx, size_t ly, double val) :
                 u_x(ux),
                 u_y(uy),
                 l_x(lx),
@@ -59,15 +58,40 @@ namespace pyscan {
         void setValue(double v) {
           value = v;
         }
-        Bound_t lowX() const { return l_x; }
-        Bound_t upX() const { return u_x; }
-        Bound_t lowY() const { return l_y; }
-        Bound_t upY() const { return u_y; }
+        size_t lowX() const { return l_x; }
+        size_t upX() const { return u_x; }
+        size_t lowY() const { return l_y; }
+        size_t upY() const { return u_y; }
         double fValue() const { return value; }
     };
 
-    using Rectangle = RectBase<double>;
-    using Subgrid = RectBase<size_t>;
+
+    class Rectangle : public Range<2> {
+        double u_x, u_y, l_x, l_y;
+    public:
+        Rectangle(const pt2_t& p1, const pt2_t& p2, const pt2_t& p3, const pt2_t& p4) {
+            u_x = std::max({p1(0), p2(0), p3(0), p4(0)});
+            l_x = std::min({p1(0), p2(0), p3(0), p4(0)});
+            u_y = std::max({p1(1), p2(1), p3(1), p4(1)});
+            l_y = std::min({p1(1), p2(1), p3(1), p4(1)});
+        }
+
+        Rectangle(double ux, double uy, double lx, double ly) : u_x(ux), u_y(uy), l_x(lx), l_y(ly) {}
+
+        bool contains(const pt2_t& p1) const override {
+            return (u_x >= p1(0) && p1(0) >= l_x && u_y >= p1(1) && p1(1) >= l_y);
+        }
+
+        std::string toString() const {
+            std::stringstream ss;
+            ss << "Rectangle(" << u_x << ", " << u_y << ", " << l_x << ", " << l_y << ")";
+            return ss.str();
+        }
+        double lowX() const { return l_x; }
+        double upX() const { return u_x; }
+        double lowY() const { return l_y; }
+        double upY() const { return u_y; }
+    };
 
     enum class I_Type {
         VALUE,
@@ -260,7 +284,8 @@ namespace pyscan {
         void setRight(size_t right);
     };
 
-    Rectangle max_rect_labeled(size_t r, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func);
+
+    std::tuple<Rectangle, double> max_rect_labeled(size_t r, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func);
 
     Subgrid maxSubgridLinearG(Grid const &grid, long r_prime, double a, double b);
 
