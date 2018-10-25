@@ -129,7 +129,7 @@ namespace pyscan {
         for (size_t i = 0; i < net_disks.size(); ++i) {
             red_weight += red_delta[i];
             blue_weight += blue_delta[i];
-            double new_stat = f(red_weight / red_tot, blue_weight / blue_tot);
+            double new_stat = f(red_weight, red_tot, blue_weight, blue_tot);
             if (max_stat <= new_stat) {
                 cur_max = net_disks[i];
                 max_stat = new_stat;
@@ -247,7 +247,7 @@ namespace pyscan {
         for (size_t i = 0; i < net_disks.size(); ++i) {
             red_weight += update_weight(red_set, red_deltaA[i], red_deltaR[i]);
             blue_weight += update_weight(blue_set, blue_deltaA[i], blue_deltaR[i]);
-            double new_stat = f(red_weight / red_tot, blue_weight / blue_tot);
+            double new_stat = f(red_weight, red_tot, blue_weight, blue_tot);
             if (max_stat <= new_stat) {
                 cur_max = net_disks[i];
                 max_stat = new_stat;

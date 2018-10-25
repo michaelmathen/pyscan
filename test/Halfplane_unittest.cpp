@@ -10,6 +10,11 @@
 #include "gtest/gtest.h"
 namespace {
 
+
+    pyscan::discrepancy_func_t stat = [](double m, double m_total, double b, double b_total) {
+        return fabs(m / m_total - b / b_total);
+    };
+
     TEST(HalfplaneScan, discrepancy) {
 
         const static int n_size = 25;
@@ -18,9 +23,6 @@ namespace {
         auto m_pts = pyscantest::randomWPoints(s_size);
         auto b_pts = pyscantest::randomWPoints(s_size);
 
-        auto stat = [] (double m, double b) {
-          return fabs(m - b);
-        };
         auto d1 = pyscan::max_halfplane(n_pts, m_pts, b_pts, stat);
         auto d2 = pyscan::max_halfplane_simple(n_pts, m_pts, b_pts, stat);
 
@@ -42,9 +44,6 @@ namespace {
         auto b_pts = pyscantest::randomLPoints(s_size, 10);
 
 
-        auto stat = [] (double m, double b) {
-          return fabs(m - b);
-        };
         pyscan::halfspace2_t d1, d2;
         double d1value, d2value;
         std::tie(d1, d1value) = pyscan::max_halfplane_labeled(n_pts, m_pts, b_pts, stat);

@@ -116,7 +116,7 @@ namespace pyscan{
             double red_curr = calc_delta(red, red_delta);
             double blue_curr = calc_delta(blue, blue_delta);
             for (size_t j = 0; j < left_size; ++j) {
-                double stat = f(red_curr / red_total, blue_curr / blue_total);
+                double stat = f(red_curr, red_total, blue_curr, blue_total);
                 if (max_discrepancy <= stat) {
                     max_line = correct_orientation(pivot, point_net[i + j + 1]);
                     max_discrepancy = stat;
@@ -225,7 +225,7 @@ namespace pyscan{
             double red_curr = calc_delta(red, red_delta);
             double blue_curr = calc_delta(blue, blue_delta);
             for (size_t j = 0; j < left_size; ++j) {
-                double stat = f(red_curr / red_total, blue_curr / blue_total);
+                double stat = f(red_curr, red_total, blue_curr, blue_total);
                 if (max_discrepancy <= stat) {
                     max_line = correct_orientation(pivot, point_net[i + j + 1]);
                     max_discrepancy = stat;

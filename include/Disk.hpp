@@ -53,8 +53,13 @@ namespace pyscan {
             return origin;
         }
 
-        virtual inline bool contains(const pt2_t &pt) const final {
+        inline bool contains(const pt2_t &pt) const final {
             return util::alte(pt.square_dist(origin), radius * radius);
+        }
+
+        inline bool intersects_segment(const pt2_t &p1, const pt2_t &p2) const final {
+            //Checks to see if this intersects the segment.
+            return util::alte(origin.square_dist(p1, p2) , radius * radius);
         }
 
     private:

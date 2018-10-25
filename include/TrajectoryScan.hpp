@@ -13,17 +13,30 @@
 namespace pyscan {
 
 
-    using trajectory_t = point_list_t;
 
-    class WTrajectory {
-        double weight;
-        trajectory_t trajectory_pts;
-
+    class Trajectory {
+        point_list_t trajectory_pts;
     public:
-        WTrajectory(double w, trajectory_t pts) : weight(w), trajectory_pts(std::move(pts)) {}
+        explicit Trajectory(point_list_t pts) : trajectory_pts(std::move(pts)) {}
 
-        double get_weight() const {
-            return weight;
+        double get_length() const {
+            if (trajectory_pts.empty()) return 0.0;
+
+            double total_distance = 0;
+            auto st_pt = trajectory_pts[0];
+            for (size_t i = 1; i < trajectory_pts.size(); i++) {
+                total_distance += st_pt.dist(trajectory_pts[i]);
+                st_pt = trajectory_pts[i];
+            }
+            return total_distance;
+        }
+
+        virtual double get_weight() const {
+            return 1;
+        }
+
+        virtual double get_partial_weight() const {
+            return get_length();
         }
 
         cpoint_it_t begin() const {
@@ -41,8 +54,49 @@ namespace pyscan {
         point_it_t end() {
             return trajectory_pts.end();
         }
+
+        bool empty() const {
+            return trajectory_pts.empty();
+        }
+
+        inline double point_dist(const pt2_t &p1) const {
+            /*
+             * Computes the distance to the trajectory.
+             */
+            if (trajectory_pts.empty()) {
+                return std::numeric_limits<double>::infinity();
+            } else if (trajectory_pts.size() == 1){
+                return p1.dist(trajectory_pts[0]);
+            } else {
+                double min_dist = std::numeric_limits<double>::infinity();
+                auto last_pt = trajectory_pts.begin();
+                for (auto curr_pt = last_pt + 1; curr_pt != trajectory_pts.end(); ++curr_pt) {
+                    double seg_dist = p1.square_dist(*last_pt, *curr_pt);
+                    if (seg_dist < min_dist) {
+                        min_dist = seg_dist;
+                    }
+                }
+                return min_dist;
+            }
+        }
     };
 
+    class WTrajectory : public Trajectory {
+        double weight;
+    public:
+        WTrajectory(double w, point_list_t pts) : Trajectory(std::move(pts)), weight(w) {}
+
+        double get_weight() const override {
+            return weight;
+        }
+
+        double get_partial_weight() const override {
+            return weight * get_length();
+        }
+
+    };
+
+    using trajectory_t = Trajectory;
     using wtrajectory_t = WTrajectory;
     using trajectory_set_t = std::vector<trajectory_t>;
     using wtrajectory_set_t = std::vector<wtrajectory_t>;

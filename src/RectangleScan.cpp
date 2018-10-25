@@ -178,7 +178,7 @@ namespace pyscan {
      * Simple 1/eps^4 algorithm described in the paper that just computes every subgrid.
      * This will work on a nonlinear function.
      */
-    Subgrid maxSubgridNonLinear(Grid const &grid, std::function<double(double, double)> const& func) {
+    Subgrid maxSubgridNonLinear(Grid const &grid, const discrepancy_func_t& func) {
         std::vector<double> red_count(grid.size(), 0);
         std::vector<double> blue_count(grid.size(), 0);
 
@@ -203,7 +203,7 @@ namespace pyscan {
                     for (size_t l = k; l < grid.size(); l++) {
                         red_l_count += red_count[l];
                         blue_l_count += blue_count[l];
-                        double maxf = func(red_l_count / t_red, blue_l_count / t_blue);
+                        double maxf = func(red_l_count,  t_red, blue_l_count, t_blue);
                         //std::cout << red_l_count / t_red << " " << blue_l_count / t_blue << " " << maxf << std::endl;
                         if (maxf > max.fValue()) {
                             max = Subgrid(l, j, k, i, maxf);
@@ -247,12 +247,11 @@ namespace pyscan {
         return max;
     }
 
-    Subgrid maxSubgridLinearSimple(Grid const& grid, double eps,
-        std::function<double(double, double)> const& f) {
+    Subgrid maxSubgridLinearSimple(Grid const& grid, double eps, discrepancy_func_t const& f) {
         /*
          * This uses the
          */
-        auto phi = [&] (Vec2 const& v) {return f(v[0], v[1]); };
+        auto phi = [&] (Vec2 const& v) {return f(v[0], 1.0,  v[1], 1.0); };
         Subgrid curr_subgrid(0, 0, 0, 0, -std::numeric_limits<double>::infinity());
         Subgrid max_subgrid(0, 0, 0, 0, -std::numeric_limits<double>::infinity());
         double maxV = 0;
@@ -287,11 +286,11 @@ namespace pyscan {
 
 
     Subgrid maxSubgridLinearTheory(Grid const& grid, double eps, 
-        std::function<double(double, double)> const& f) {
+        discrepancy_func_t const& f) {
         /*
          * This uses the
          */
-        auto phi = [&] (Vec2 const& v) {return f(v[0], v[1]); };
+        auto phi = [&] (Vec2 const& v) {return f(v[0], 1.0, v[1], 1.0); };
         Subgrid curr_subgrid(0, 0, 0, 0, -std::numeric_limits<double>::infinity());
         Subgrid max_subgrid(0, 0, 0, 0, -std::numeric_limits<double>::infinity());
         double maxV = 0;
@@ -481,8 +480,8 @@ namespace pyscan {
                             }
                         }
 
-                        if (func(m_weight / m_Total, b_weight / b_Total) > max_stat) {
-                           max_stat = func(m_weight / m_Total, b_weight / b_Total);
+                        if (func(m_weight, m_Total, b_weight, b_Total) > max_stat) {
+                           max_stat = func(m_weight, m_Total, b_weight, b_Total);
                            maxRect = Rectangle(grid.x_val(right_i), grid.y_val(lower_j), grid.x_val(left_i), grid.y_val(lower_j));
                         }
                      }

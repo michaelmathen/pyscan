@@ -28,4 +28,10 @@ namespace pyscan {
                 , util::det2(p1(0), p2(0), p1(1), p2(1)), 1.0);
     }
 
+    bool crosses_segment(const Point<2> &p1, const Point<2> &p2, const Point<2> &q1, const Point<2> &q2) {
+        /*
+         * Checks if these two segment cross.
+         */
+        return intersection(q1, q2).crosses(p1, p2) && intersection(p1, p2).crosses(q1, q2);
+    }
 }

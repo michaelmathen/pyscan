@@ -41,8 +41,8 @@ namespace {
 // </TechnicalDetails>
 
 
-    static auto scan = [](double m, double b) {
-        return fabs(m - b);
+    static auto scan = [](double m, double m_total, double b, double b_total) {
+        return fabs(m / m_total - b / b_total);
     };
 
     TEST(DiskTest, matching) {
@@ -141,9 +141,6 @@ namespace {
         const static int n_size = 25;
         const static int s_size = 100;
 
-        auto f = [&](double m, double b) {
-            return fabs(m - b);
-        };
         auto n_pts = pyscantest::randomPoints(n_size);
         auto m_lpts = pyscantest::randomLPointsUnique(s_size);
         auto b_lpts = pyscantest::randomLPointsUnique(s_size);
@@ -153,15 +150,15 @@ namespace {
 
         pyscan::Disk d1, d2, d3, d4;
         double d1value, d2value, d3value, d4value;
-        std::tie(d1, d1value) = pyscan::max_disk_labeled(n_pts, m_lpts, b_lpts, f);
-        std::tie(d2, d2value) = pyscan::max_disk(n_pts, m_pts, b_pts, f);
+        std::tie(d1, d1value) = pyscan::max_disk_labeled(n_pts, m_lpts, b_lpts, scan);
+        std::tie(d2, d2value) = pyscan::max_disk(n_pts, m_pts, b_pts, scan);
 
-        std::tie(d3, d3value) = pyscan::max_disk_simple_labeled(n_pts, m_lpts, b_lpts, f);
-        std::tie(d4, d4value) = pyscan::max_disk_simple(n_pts, m_pts, b_pts, f);
+        std::tie(d3, d3value) = pyscan::max_disk_simple_labeled(n_pts, m_lpts, b_lpts, scan);
+        std::tie(d4, d4value) = pyscan::max_disk_simple(n_pts, m_pts, b_pts, scan);
 
 
-        EXPECT_FLOAT_EQ(d1value, evaluate_range(d1, m_pts, b_pts, f));
-        EXPECT_FLOAT_EQ(d2value, evaluate_range(d2, m_pts, b_pts, f));
+        EXPECT_FLOAT_EQ(d1value, evaluate_range(d1, m_pts, b_pts, scan));
+        EXPECT_FLOAT_EQ(d2value, evaluate_range(d2, m_pts, b_pts, scan));
         EXPECT_FLOAT_EQ(d1value, d2value);
         EXPECT_FLOAT_EQ(d1value, d3value);
         EXPECT_FLOAT_EQ(d2value, d4value);
@@ -181,17 +178,13 @@ namespace {
         auto m_pts = pyscantest::removeLabels(m_lpts);
         auto b_pts = pyscantest::removeLabels(b_lpts);
 
-        auto f = [&](double m, double b) {
-            return fabs(m - b);
-        };
-
         pyscan::Disk d1, d2;
         double d1value, d2value;
-        std::tie(d1, d1value) = pyscan::max_disk_simple_labeled(n_pts, m_lpts, b_lpts, f);
-        std::tie(d2, d2value) = pyscan::max_disk_simple(n_pts, m_pts, b_pts, f);
+        std::tie(d1, d1value) = pyscan::max_disk_simple_labeled(n_pts, m_lpts, b_lpts, scan);
+        std::tie(d2, d2value) = pyscan::max_disk_simple(n_pts, m_pts, b_pts, scan);
 
-        EXPECT_FLOAT_EQ(d1value, evaluate_range(d1, m_pts, b_pts, f));
-        EXPECT_FLOAT_EQ(d2value, evaluate_range(d2, m_pts, b_pts, f));
+        EXPECT_FLOAT_EQ(d1value, evaluate_range(d1, m_pts, b_pts, scan));
+        EXPECT_FLOAT_EQ(d2value, evaluate_range(d2, m_pts, b_pts, scan));
         EXPECT_FLOAT_EQ(d1value, d2value);
 
     }

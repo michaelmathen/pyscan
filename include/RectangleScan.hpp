@@ -78,8 +78,23 @@ namespace pyscan {
 
         Rectangle(double ux, double uy, double lx, double ly) : u_x(ux), u_y(uy), l_x(lx), l_y(ly) {}
 
-        bool contains(const pt2_t& p1) const override {
+        inline bool contains(const pt2_t& p1) const final {
             return (u_x >= p1(0) && p1(0) >= l_x && u_y >= p1(1) && p1(1) >= l_y);
+        }
+
+        inline bool intersects_segment(const pt2_t &p1, const pt2_t &p2) const final {
+            //Check if any of points are inside of the rectangle.
+            if (contains(p1) || contains(p2)) {
+                return true;
+            } else {
+                //Check if any of the segments cross the line segment defined by p1<->p2.
+                auto ur_pt = pt2_t(u_x, u_y, 1.0);
+                auto ul_pt = pt2_t(l_x, u_y, 1.0);
+                auto lr_pt = pt2_t(u_x, l_y, 1.0);
+                auto ll_pt = pt2_t(l_x, l_y, 1.0);
+                return crosses_segment(ur_pt, ul_pt, p1, p2) || crosses_segment(ul_pt, ll_pt, p1, p2) ||
+                        crosses_segment(ur_pt, lr_pt, p1, p2) || crosses_segment(lr_pt, ll_pt, p1, p2);
+            }
         }
 
         std::string toString() const {
@@ -289,9 +304,9 @@ namespace pyscan {
 
     Subgrid maxSubgridLinearG(Grid const &grid, long r_prime, double a, double b);
 
-    Subgrid maxSubgridLinearSimple(Grid const& grid, double eps, std::function<double(double, double)> const& f);
+    Subgrid maxSubgridLinearSimple(Grid const& grid, double eps, discrepancy_func_t const& f);
     Subgrid maxSubgridLinearSimple(Grid const &grid, double a, double b);
-    Subgrid maxSubgridNonLinear(Grid const &grid, std::function<double(double, double)> const& func);
-    Subgrid maxSubgridLinearTheory(Grid const& grid, double eps, std::function<double(double, double)> const& f);
+    Subgrid maxSubgridNonLinear(Grid const &grid, discrepancy_func_t const& func);
+    Subgrid maxSubgridLinearTheory(Grid const& grid, double eps, discrepancy_func_t const& f);
 }
 #endif //PYSCAN_RECTANGLESCAN_HPP

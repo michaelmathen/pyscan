@@ -41,8 +41,12 @@ namespace pyscan {
         }
 
 
-        virtual bool contains(Point<dim> const& pt) const {
+        bool contains(Point<dim> const& pt) const final {
             return line.above_closed(pt);
+        }
+
+        bool intersects_segment(Point<dim> const& p1, Point<dim> const& p2) const final {
+            return contains(p1) || contains(p2);
         }
 
         auto get_coords() const -> decltype(line) {

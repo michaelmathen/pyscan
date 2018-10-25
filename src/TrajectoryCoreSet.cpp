@@ -385,4 +385,82 @@ namespace pyscan {
         return simplified_traj;
     }
 
+    point_list_t interval_sample(const trajectory_set_t& trajectories, std::vector<double>& indices, bool take_endpoints) {
+        std::sort(indices.begin(), indices.end());
+
+        double scaling_fact = std::accumulate(trajectories.begin(), trajectories.end(), 0.0,
+                [&](const double& cum_weight, const trajectory_t& traj) {
+            return cum_weight + traj.get_length() * traj.get_weight();
+        });
+
+
+        point_list_t sample_pts;
+        auto idx = indices.begin();
+        double curr_length = 0;
+        for (auto& traj : trajectories) {
+            if (traj.empty()) {
+                continue;
+            }
+            auto last_pt = *(traj.begin());
+            if (take_endpoints) {
+                sample_pts.push_back(last_pt);
+            }
+
+            for (auto traj_b = traj.begin() + 1; traj_b != traj.end(); traj_b++) {
+
+                double seg_length = (last_pt.dist(*traj_b) * traj.get_weight()) / scaling_fact;
+
+                while (idx != indices.end() && seg_length + curr_length > *idx) {
+                    double inside_length = (*idx - curr_length) / traj.get_weight();
+                    double alpha = inside_length * scaling_fact / last_pt.dist(*traj_b);
+                    // Create a new point on this line segment scaled between the two.
+                    sample_pts.emplace_back(last_pt.on_segment(*traj_b, alpha));
+                    idx++;
+                }
+                if (take_endpoints) {
+                    sample_pts.push_back(*traj_b);
+                }
+                //Increment last_pt to the current point and update the total length.
+                last_pt = *traj_b;
+                curr_length += seg_length;
+            }
+        }
+        return sample_pts;
+    }
+
+    point_list_t uniform_sample(const trajectory_set_t& trajectories, size_t s, bool take_endpoints) {
+        std::random_device rd;
+        std::mt19937   generator(rd());
+        std::uniform_real_distribution<double> distribution(0.0, 1.0);
+        std::vector<double> indices;
+        for (size_t i = 0; i < s; i++) {
+            indices.push_back(distribution(generator));
+        }
+        return interval_sample(trajectories, indices, take_endpoints);
+    }
+
+    point_list_t even_sample(const trajectory_set_t& trajectories, size_t s, bool take_endpoints) {
+        /*
+         * sample s points at 1/s distance appart.
+         */
+        std::vector<double> indices;
+        for (size_t i = 0; i < s; i++) {
+            indices.emplace_back( (i + .5) / s);
+        }
+        return interval_sample(trajectories, indices, take_endpoints);
+    }
+
+    point_list_t block_sample(const trajectory_set_t& trajectories, size_t s, bool take_endpoints) {
+        /*
+         * Chooses a single point uniformly at random in every alpha block of length L.
+         */
+        std::random_device rd;
+        std::mt19937  generator(rd());
+        std::uniform_real_distribution<double> distribution(0.0, 1.0 / s);
+        std::vector<double> indices;
+        for (size_t i = 0; i < s; i++) {
+            indices.push_back(i / static_cast<double>(s) + distribution(generator));
+        }
+        return interval_sample(trajectories, indices, take_endpoints);
+    }
 }

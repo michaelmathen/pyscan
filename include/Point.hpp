@@ -54,6 +54,19 @@ namespace pyscan {
             return os;
         }
 
+        friend Point<dim> operator*(Point<dim> pt, double val) {
+            Point<dim> res;
+            for (size_t i = 0; i < dim; ++i) {
+                res.coords[i] = pt.coords[i] * val;
+            }
+            res.coords[dim] = pt.coords[dim];
+            return res;
+        }
+
+        friend Point<dim> operator*(double val, Point<dim> pt) {
+            return operator*(pt, val);
+        }
+
         double operator[](size_t i) const {
             assert(i < dim + 1);
             return coords[i];
@@ -95,13 +108,17 @@ namespace pyscan {
             return res;
         }
 
-        Point<dim> operator*(double scalar) const {
-            Point<dim> res = *this;
-            for (size_t i = 0; i < dim; ++i) {
-                res.coords[i] *= scalar;
-            }
-            return res;
+        inline Point<dim> on_segment(Point<dim> const& p2, double alpha) {
+            /*
+             * Returns a point between this point and the second point that is alpha this + (1 - alpha) p2;
+             */
+            return alpha * (*this) + (1 - alpha) * p2;
         }
+
+        inline double dist(const Point<dim> &p) const {
+            return sqrt(square_dist(p));
+        }
+
 
         Point<dim> operator-(const Point<dim>& other) const {
             Point<dim> res;
@@ -120,6 +137,7 @@ namespace pyscan {
             res.coords[dim] = other[dim] * coords[dim];
             return res;
         }
+
 
         inline double square_dist(const Point<dim>& begin, const Point<dim>& end) const {
             auto v = end - begin;
@@ -157,6 +175,13 @@ namespace pyscan {
             return util::alt(dot(p), 0.0);
         }
 
+        inline bool crosses( const Point<dim>& p1, const Point<dim>& p2) const {
+            /*
+             * Checks if this line is crossed by this line segment between p1 and p2
+             */
+            return above(p1) != above(p2);
+        }
+
         inline bool below(const Point<dim> &p) const {
             return util::alt(0.0, dot(p));
         }
@@ -164,6 +189,7 @@ namespace pyscan {
     private:
         std::array<double, dim + 1> coords;
     };
+
 
     template<int dim = 2>
     class WPoint : public Point<dim> {
@@ -211,6 +237,8 @@ namespace pyscan {
 
     bool is_parallel(const Point<2> &l1, const Point<2> &l2);
 
+    bool crosses_segment(const Point<2> &p1, const Point<2> &p2, const Point<2> &q1, const Point<2> &q2);
+
     using pt2_t = Point<2>;
     using wpt2_t = WPoint<2>;
     using lpt2_t = LPoint<2>;
@@ -238,7 +266,7 @@ namespace pyscan {
     using lpoint3_list_t = std::vector<LPoint<3>>;
     using lpoint3_it_t = lpoint3_list_t::iterator;
 
-    using discrepancy_func_t = std::function<double(double, double)>;
+    using discrepancy_func_t = std::function<double(double, double, double, double)>;
 
 
 }

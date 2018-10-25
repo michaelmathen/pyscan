@@ -10,6 +10,7 @@ template <int dim>
 class Range {
 public:
     virtual bool contains(const Point<dim>& pt) const = 0;
+    virtual bool intersects_segment(const Point<dim> &p1, const Point<dim> &p2) const = 0;
 };
 
 template <int dim>
@@ -63,8 +64,8 @@ double evaluate_range(
         const std::vector<Pt>& blue,
         const discrepancy_func_t& f) {
 
-    return f(range_weight(range, red) / computeTotal(red),
-            range_weight(range, blue) / computeTotal(blue));
+    return f(range_weight(range, red), computeTotal(red),
+            range_weight(range, blue), computeTotal(blue));
 }
 
 template <typename R, int dim = 2>

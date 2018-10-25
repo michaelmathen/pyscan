@@ -5,6 +5,7 @@
 #ifndef PYSCAN_TRAJECTORYCORESET_HPP
 #define PYSCAN_TRAJECTORYCORESET_HPP
 
+#include "TrajectoryScan.hpp"
 #include "Point.hpp"
 
 namespace pyscan {
@@ -26,5 +27,11 @@ namespace pyscan {
     point_list_t lifting_coreset(point_list_t const& pts, double eps);
 
     point_list_t dp_compress(const point_list_t& trajectory, double eps);
+
+    point_list_t uniform_sample(const trajectory_set_t& trajectories, size_t s, bool take_endpoints);
+
+    point_list_t even_sample(const trajectory_set_t& trajectories, size_t s, bool take_endpoints);
+
+    point_list_t block_sample(const trajectory_set_t& trajectories, size_t s, bool take_endpoints);
 }
 #endif //PYSCAN_TRAJECTORYCORESET_HPP

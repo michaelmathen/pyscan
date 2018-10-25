@@ -62,13 +62,16 @@ py::list std_vector_to_py_list(const std::vector<T>& v) {
 
 namespace pyscan {
 
-    auto sized_region(double size) -> std::function<double(double, double)> {
+    auto sized_region(double size) -> std::function<double(double, double, double, double)> {
         /*
          * Useful for finding a region of a certain size.
          */
-        return [size] (double m, double b) {
+        return [size] (double m, double m_total, double b, double b_total) {
             (void)b;
-            return 1 - fabs(m - size);
+            (void)b_total;
+            assert(size <= 1 && size >= 0);
+            assert(m <= m_total && 0 <= m && m_total > 0);
+            return 1 - fabs(m / m_total - size);
         };
     }
 
@@ -78,25 +81,24 @@ namespace pyscan {
        };
     }
 
-    Subgrid maxSubgridLin(Grid const& grid, double eps, std::function<double(double, double)> const& f) {
+    Subgrid maxSubgridLin(Grid const& grid, double eps, discrepancy_func_t const& f) {
       return maxSubgridLinearSimple(grid, eps, f);
     }
 
-    Subgrid maxSubgridLinTheory(Grid const& grid, double eps, std::function<double(double, double)> const& f){
+    Subgrid maxSubgridLinTheory(Grid const& grid, double eps, discrepancy_func_t const& f){
         return maxSubgridLinearTheory(grid, eps, f);
     }
 
-    Subgrid maxSubgridSlow(Grid const &grid, std::function<double(double, double)> const& f) {
+    Subgrid maxSubgridSlow(Grid const &grid, discrepancy_func_t const& f) {
         return maxSubgridNonLinear(grid, f);
     }
 
 
-    double evaluate(std::function<double(double, double)> const& f, double m, double b) {
-        return f(m, b);
+    double evaluate(discrepancy_func_t const& f, double m, double m_tot, double b, double b_tot) {
+        return f(m, m_tot, b, b_tot);
     }
 
 };
-
 
 
 pyscan::Grid makeGrid(const py::object& sample_r, const py::object& weight_r, const py::object& sample_b,
@@ -201,12 +203,12 @@ struct pypoint_converter {
 };
 
 
-struct pytrajectory_converter {
+struct pywtrajectory_converter {
 
-    pytrajectory_converter& from_python() {
+    pywtrajectory_converter& from_python() {
         boost::python::converter::registry::push_back(
-                &pytrajectory_converter::convertible,
-                &pytrajectory_converter::construct,
+                &pywtrajectory_converter::convertible,
+                &pywtrajectory_converter::construct,
                 boost::python::type_id<pyscan::wtrajectory_t>());
         return *this;
     }
@@ -238,6 +240,36 @@ struct pytrajectory_converter {
     }
 };
 
+
+struct pytrajectory_converter {
+
+    pytrajectory_converter& from_python() {
+        boost::python::converter::registry::push_back(
+                &pytrajectory_converter::convertible,
+                &pytrajectory_converter::construct,
+                boost::python::type_id<pyscan::trajectory_t>());
+        return *this;
+    }
+
+    /// @brief Check if PyObject is a double tuple.
+    static void* convertible(PyObject* object) {
+        return PyObject_GetIter(object) ? object : NULL;
+    }
+
+    static void construct( PyObject* object, boost::python::converter::rvalue_from_python_stage1_data* data) {
+        namespace python = boost::python;
+        python::handle<> handle(python::borrowed(object));
+        typedef python::converter::rvalue_from_python_storage<pyscan::trajectory_t>
+                storage_type;
+        void* storage = reinterpret_cast<storage_type*>(data)->storage.bytes;
+
+        // Allocate the C++ type into the converter's memory block, and assign
+        // its handle to the converter's convertible variable.  The C++
+        // container is populated by passing the begin and end iterators of
+        // the python object to the container's constructor.
+        data->convertible = new (storage) pyscan::trajectory_t(py::extract<pyscan::point_list_t>(object));
+    }
+};
 
 
 /*
@@ -278,6 +310,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
     pypoint_converter<3>().from_python();
 
     pytrajectory_converter().from_python();
+    pywtrajectory_converter().from_python();
 
     // Register interable conversions.
     iterable_converter()
@@ -288,7 +321,10 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .from_python<std::vector<pyscan::WPoint<>>>()
             .from_python<std::vector<pyscan::LPoint<>>>()
             .from_python<std::vector<std::vector<pyscan::Point<> > > >()
-            .from_python<std::vector<std::vector<pyscan::WPoint<> > > >();
+            .from_python<std::vector<std::vector<pyscan::WPoint<> > > >()
+            .from_python<std::vector<pyscan::wtrajectory_t>>()
+            .from_python<std::vector<pyscan::trajectory_t>>();
+
 
     to_python_converter<std::tuple<pyscan::Disk, double>, tuple_to_python_tuple<pyscan::Disk, double>>();
     to_python_converter<std::tuple<pyscan::Rectangle, double>, tuple_to_python_tuple<pyscan::Rectangle, double>>();
@@ -316,7 +352,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .def("lowY", &pyscan::Rectangle::lowY)
             .def("upY", &pyscan::Rectangle::upY)
             .def("__str__", &pyscan::Rectangle::toString)
-            .def("contains", &pyscan::Rectangle::contains);
+            .def("contains", &pyscan::Rectangle::contains)
+            .def("intersects_segment", &pyscan::Rectangle::intersects_segment);
 
     py::class_<pyscan::Subgrid>("Subgrid", py::init<size_t, size_t, size_t, size_t, double>())
             .def("lowCol", &pyscan::Subgrid::lowX)
@@ -336,40 +373,51 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .def("__repr__", &pyscan::Point<>::str)
             .def("__eq__", &pyscan::Point<>::operator==);
 
+    py::class_<pyscan::Disk>("Disk", py::init<double, double, double>())
+            .def("get_origin", &pyscan::Disk::getOrigin)
+            .def("get_radius", &pyscan::Disk::getRadius)
+            .def("contains", &pyscan::Disk::contains)
+            .def("intersects_segment", &pyscan::Disk::intersects_segment);
+
+    py::class_<pyscan::HalfSpace<2>>("Halfplane", py::init<pyscan::Point<2>>())
+            .def("get_coords", &pyscan::HalfSpace<2>::get_coords)
+            .def("contains", &pyscan::HalfSpace<2>::contains)
+            .def("intersects_segment", &pyscan::HalfSpace<2>::intersects_segment);
+
+    py::class_<pyscan::HalfSpace<3>>("Halfspace", py::init<pyscan::Point<3>>())
+            .def("get_coords", &pyscan::HalfSpace<3>::get_coords)
+            .def("contains", &pyscan::HalfSpace<3>::contains)
+            .def("intersects_segment", &pyscan::HalfSpace<3>::intersects_segment);
+
     py::class_<pyscan::WPoint<2>, py::bases<pyscan::pt2_t>>("WPoint", py::init<double, double, double, double>())
             .def("get_weight", &pyscan::WPoint<2>::get_weight);
 
-    py::class_<pyscan::LPoint<2>, py::bases<pyscan::WPoint<2>>>("LPoint", py::init<size_t, double, double, double, double>())
+    py::class_<pyscan::LPoint<2>, py::bases<pyscan::wpt2_t> >("LPoint", py::init<size_t, double, double, double, double>())
             .def("get_label", &pyscan::LPoint<2>::get_label);
 
-    py::class_<std::function<double(double, double)> >("CFunction", py::no_init);
+    py::class_<pyscan::discrepancy_func_t >("CFunction", py::no_init);
 
-    py::scope().attr("KULLDORF") = std::function<double(double, double)>(
-        [&](double m, double b) {
-            return pyscan::kulldorff(m, b, .0001);
+    py::scope().attr("KULLDORF") = pyscan::discrepancy_func_t(
+        [&](double m, double m_tot, double b, double b_tot) {
+            return pyscan::kulldorff(m / m_tot, b / b_tot, .0001);
     });
 
-    py::scope().attr("DISC") = std::function<double(double, double)>(
-        [&](double m, double b) {
-            return fabs(m - b);
+    py::scope().attr("DISC") = pyscan::discrepancy_func_t (
+        [&](double m, double m_tot, double b, double b_tot) {
+            return fabs(m / m_tot - b / b_tot);
     });
 
-    py::scope().attr("RKULLDORF") = std::function<double(double, double)>(
-        [&](double m, double b) {
-            return pyscan::regularized_kulldorff(m, b, .0001);
+    py::scope().attr("RKULLDORF") = pyscan::discrepancy_func_t(
+        [&](double m, double m_tot, double b, double b_tot) {
+            return pyscan::regularized_kulldorff(m / m_tot, b / b_tot, .0001);
     });
 
-    //py::def("evaluate", &pyscan::evaluate);
+    py::def("evaluate", &pyscan::evaluate);
     py::def("size_region", &pyscan::sized_region);
 
     //py::def("dot", &pyscan::dot<2ul>);
     py::def("intersection", &pyscan::intersection);
     py::def("correct_orientation", &pyscan::correct_orientation);
-
-    py::class_<pyscan::Disk>("Disk", py::init<double, double, double>())
-            .def("get_origin", &pyscan::Disk::getOrigin)
-            .def("get_radius", &pyscan::Disk::getRadius)
-            .def("contains", &pyscan::Disk::contains);
 
 
     py::def("make_grid", makeGrid);
@@ -393,7 +441,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
 
     py::def("evaluate_range", &pyscan::evaluate_range<2, pyscan::wpt2_t>);
-
+    py::def("evaluate_range_labeled", &pyscan::evaluate_range<2, pyscan::lpt2_t>);
 
     //   py::def("max_disk_scale_labels", &pyscan::maxDiskScaleLabel);
 
@@ -406,7 +454,12 @@ BOOST_PYTHON_MODULE(libpyscan) {
     //TrajectoryScan.hpp wrappers///////////////////////////////////////
     ////////////////////////////////////////////////////////////////////
 
+    py::class_<pyscan::trajectory_t>("Trajectory", py::init<pyscan::point_list_t>())
+            .def("point_dist", &pyscan::wtrajectory_t::point_dist)
+            .def("get_weight", &pyscan::trajectory_t::get_weight);
+
     py::class_<pyscan::wtrajectory_t>("WTrajectory", py::init<double, pyscan::point_list_t>())
+            .def("point_dist", &pyscan::wtrajectory_t::point_dist)
             .def("get_weight", &pyscan::wtrajectory_t::get_weight);
 
     py::def("max_disk_traj_grid", &pyscan::max_disk_traj_grid);
@@ -414,17 +467,19 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
     //This simplifies the trajectory by using the dp algorithm.
     py::def("dp_compress", &pyscan::dp_compress);
-
     //This grids the trajectory and assigns a single point to each cell.
     py::def("grid_kernel", &pyscan::approx_traj_grid);
     py::def("grid_trajectory", &pyscan::grid_traj);
-
     //This grids the trajectory and creates an alpha hull in each one.
     py::def("grid_direc_kernel", &pyscan::approx_traj_kernel_grid);
-
     //This is for 2d eps-kernel useful for halfspaces.
     py::def("approximate_hull", pyscan::approx_hull);
-
     //This is a 3d eps-kernel for disks.
     py::def("lifting_kernel", &pyscan::lifting_coreset);
+
+
+    //This is for partial scanning, but could be used for full scannings.
+    py::def("block_sample", &pyscan::block_sample);
+    py::def("uniform_sample", &pyscan::uniform_sample);
+    py::def("even_sample", &pyscan::even_sample);
 }
