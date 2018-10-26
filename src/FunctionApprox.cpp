@@ -338,7 +338,7 @@ namespace pyscan {
     }
 
 
-    point_list_t approx_hull(double eps, point_list_t const& pts) {
+    point_list_t approx_hull(point_list_t const &pts, double eps) {
         auto max_f = [&] (Vec2 direction) {
             double max_dir = -std::numeric_limits<double>::infinity();
             pt2_t curr_pt {0.0, 0.0, 0.0};

@@ -1,11 +1,16 @@
 from libpyscan import *
 import random
 import itertools
-import numpy as np
+
+def to_weighted(points):
+    return [WPoint(1.0, pt[0], pt[1], 1.0) for pt in points]
 
 def trajectories_to_flux(trajectories):
     return [t[0] for t in trajectories], [t[1] for t in trajectories]
 
+def trajectories_to_labels(trajectories):
+    return itertools.chain.from_iterable([[LPoint(label, 1.0, pt[0], pt[1], 1.0) for pt in traj]
+            for label, traj in zip(range(len(trajectories)), trajectories)])
 
 def my_sample(samp, count):
     return random.sample(samp, min(len(samp), int(count + .5)))
@@ -97,8 +102,8 @@ def plant_region(points, r, p, q, eps, scan_f):
 
     while True:
 
-        net_size = int(1 / (eps * r) + 1)
-        s_size = int(1 / (eps * r) ** 2 + 1)
+        net_size = int(1 / min(r, eps) + 1)
+        s_size = int(1 / min(r, eps)** 2 + 1)
 
         net = my_sample(points, net_size)
         sample = my_sample(points, s_size)
@@ -136,7 +141,9 @@ def plant_trajectory_rectangles(trajectories, r, p, q):
     pass
 
 
-def plant_trajectory_halfplane(trajectories, r, p, q, eps):
+
+
+def plant_trajectory_halfplane(trajectories, r, p, q, disc):
     """
     Choose a point at random from a trajectory and then expand outward from there.
     :param trajectories this consists of lists of lists of points where the points are type Pyscan.Point
@@ -145,43 +152,22 @@ def plant_trajectory_halfplane(trajectories, r, p, q, eps):
     :param q:
     :return:
     """
-    labels = list(range(len(trajectories)))
-    points = list(itertools.chain.from_iterable([LPoint(i, 1.0, pt[0], pt[1], 1.0) for pt in traj]
-                                  for i, traj in zip(range(len(trajectories)), trajectories)))
-    while True:
+    def min_distance(pts, direc):
+        return min([direc[0] * pt[0] + direc[0] * pt[1] for pt in pts])
+    rand_direc = (random.gauss(0,1), random.gauss(0, 1))
+    trajectories = sorted(trajectories, key=lambda x: min_distance(x, rand_direc))
 
-        net_size = int(1 / (eps * r) + 1)
-        s_size = int(1 / (eps * r) ** 2 + 1)
+    inside_plane = trajectories[:int(r * len(trajectories))]
+    outside_plane = trajectories[int(r * len(trajectories)):]
+    red_in, blue_in = split_set([tuple(traj) for traj in inside_plane], q)
+    red_out, blue_out = split_set([tuple(traj) for traj in outside_plane], p)
 
-        net_labels = set(my_sample(labels, net_size))
-        sample_labels = set(my_sample(labels, s_size))
-        disc = size_region(r)
 
-        net = [pt for pt in points if pt.get_label() in net_labels]
-        sample = [pt for pt in points if pt.get_label in sample_labels]
-        reg, _ = max_halfplane_labeled(net, sample, [], disc)
-
-        val = evaluate_range_labeled(reg, points, [], disc)
-        if 1 - val < eps:
-            break
-
-    in_region = set()
-    out_region = set()
-    for pt in pts:
-        if reg.contains(pt):
-            in_region.add(pt.get_label())
-        else:
-            out_region.add(pt.get_label())
-
-    out_region -= in_region
-
-    red_in, blue_in = split_set(in_region, q)
-    red_out, blue_out = split_set(out_region, p)
-    return [trajectories[ix] for ix in (red_in + red_out)], [trajectories[ix] for ix in (blue_in + blue_out)],
+    return red_in + red_out, blue_in + blue_out, evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
 
 
 
-def plant_trajectory_disk(trajectories, r, p, q):
+def plant_trajectory_disk(trajectories, r, p, q, disc):
     """
     Choose a point at random from a trajectory and then expand outward from there.
     :param trajectories this consists of lists of lists of points where the points are type Pyscan.Point
@@ -191,16 +177,16 @@ def plant_trajectory_disk(trajectories, r, p, q):
     :return:
     """
     origin = random.choice(list(itertools.chain.from_iterable(trajectories)))
-    trajectory_obj = [Trajectory(pts) for pts in trajectories],
+    trajectory_obj = [Trajectory(pts) for pts in trajectories]
     traj_dist = [traj.point_dist(origin) for traj in trajectory_obj]
 
     sorted_pairs = sorted(zip(trajectories, range(len(traj_dist))), key=lambda el: traj_dist[el[1]])
     trajectories = [x for x, _ in sorted_pairs]
     inside_disk = trajectories[:int(r * len(trajectories))]
     outside_disk = trajectories[int(r * len(trajectories)):]
-    red_in, blue_in = split_set(inside_disk, q)
-    red_out, blue_out = split_set(outside_disk, p)
-    return red_in + red_out, blue_in + blue_out
+    red_in, blue_in = split_set([tuple(traj) for traj in inside_disk], q)
+    red_out, blue_out = split_set([tuple(traj) for traj in outside_disk], p)
+    return red_in + red_out, blue_in + blue_out, evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
 
 
 """

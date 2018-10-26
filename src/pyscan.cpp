@@ -322,11 +322,14 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .from_python<std::vector<pyscan::LPoint<>>>()
             .from_python<std::vector<std::vector<pyscan::Point<> > > >()
             .from_python<std::vector<std::vector<pyscan::WPoint<> > > >()
+            .from_python<std::vector<std::vector<pyscan::LPoint<> > > >()
             .from_python<std::vector<pyscan::wtrajectory_t>>()
             .from_python<std::vector<pyscan::trajectory_t>>();
 
 
     to_python_converter<std::tuple<pyscan::Disk, double>, tuple_to_python_tuple<pyscan::Disk, double>>();
+    to_python_converter<std::tuple<pyscan::HalfSpace<2>, double>, tuple_to_python_tuple<pyscan::HalfSpace<2>, double>>();
+    to_python_converter<std::tuple<pyscan::HalfSpace<3>, double>, tuple_to_python_tuple<pyscan::HalfSpace<3>, double>>();
     to_python_converter<std::tuple<pyscan::Rectangle, double>, tuple_to_python_tuple<pyscan::Rectangle, double>>();
     to_python_converter<std::tuple<pyscan::pt2_t, double>, tuple_to_python_tuple<pyscan::pt2_t, double>>();
 
@@ -448,6 +451,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_disk_cached", &pyscan::max_disk_cached);
     py::def("max_disk_cached_labeled", &pyscan::max_disk_cached_labeled);
 
+    py::def("max_disk_scale", &pyscan::max_disk_scale);
+    py::def("max_disk_scale_labeled", &pyscan::max_disk_scale_labeled);
     py::def("max_rect_labeled", &pyscan::max_rect_labeled);
 
     ////////////////////////////////////////////////////////////////////
@@ -473,7 +478,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
     //This grids the trajectory and creates an alpha hull in each one.
     py::def("grid_direc_kernel", &pyscan::approx_traj_kernel_grid);
     //This is for 2d eps-kernel useful for halfspaces.
-    py::def("approximate_hull", pyscan::approx_hull);
+    py::def("halfplane_kernel", pyscan::approx_hull);
     //This is a 3d eps-kernel for disks.
     py::def("lifting_kernel", &pyscan::lifting_coreset);
 

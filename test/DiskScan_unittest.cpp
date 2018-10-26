@@ -75,7 +75,7 @@ namespace {
 
         double d1value;
         pyscan::Disk d1;
-        std::tie(d1, d1value) = max_disk_scale(n_pts, m_pts, b_pts, 32, scan);
+        std::tie(d1, d1value) = max_disk_scale(n_pts, m_pts, b_pts, 1 / 32.0, 32, scan);
         EXPECT_FLOAT_EQ(d1value, evaluate_range(d1, m_pts, b_pts, scan));
 
 

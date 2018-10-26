@@ -343,6 +343,7 @@ namespace pyscan {
             const point_list_t &point_net,
             const std::vector<T> &red,
             const std::vector<T> &blue,
+            double min_res,
             uint32_t grid_r,
             const discrepancy_func_t &f) {
 
@@ -396,7 +397,7 @@ namespace pyscan {
                         double local_max_stat;
                         std::tie(local_max_disk, local_max_stat) =
                                 max_disk_restricted(pt1->second, pt2, net_chunk, red_chunk, blue_chunk,
-                                                    grid_net.get_resolution(), 2 * grid_net.get_resolution(),
+                                                    min_res, 2 * grid_net.get_resolution(),
                                                     red_tot, blue_tot, f);
                         if (local_max_stat > max_stat) {
                             cur_max = local_max_disk;
@@ -421,18 +422,20 @@ namespace pyscan {
             const point_list_t &point_net,
             const wpoint_list_t &red,
             const wpoint_list_t &blue,
+            double min_res,
             uint32_t grid_r,
             const discrepancy_func_t &f) {
-        return max_disk_scale_internal(point_net, red, blue, grid_r, f);
+        return max_disk_scale_internal(point_net, red, blue, min_res, grid_r, f);
     }
 
     std::tuple<Disk, double> max_disk_scale_labeled(
             const point_list_t &point_net,
             const lpoint_list_t &red,
             const lpoint_list_t &blue,
+            double min_res,
             uint32_t grid_r,
             const discrepancy_func_t &f) {
-        return max_disk_scale_internal(point_net, red, blue, grid_r, f);
+        return max_disk_scale_internal(point_net, red, blue, min_res, grid_r, f);
     }
 
     template<typename Pt>
@@ -448,7 +451,7 @@ namespace pyscan {
             uint32_t grid_r = 1u << resolution;
             Disk local_max_disk;
             double local_max_stat;
-            std::tie(local_max_disk, local_max_stat) = max_disk_scale_internal(point_net, red, blue, grid_r, f);
+            std::tie(local_max_disk, local_max_stat) = max_disk_scale_internal(point_net, red, blue, 1 / static_cast<double>(grid_r), grid_r, f);
 
 #ifdef _DEBUG
             Disk actual_max_disk;

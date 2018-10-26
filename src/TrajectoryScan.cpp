@@ -44,7 +44,7 @@ namespace pyscan {
 
         // return the max disk.
         auto grid_r = static_cast<uint32_t>(1.0 / min_r);
-        return max_disk_scale_labeled(net_points, sampleM_points, sampleB_points, grid_r, scan);
+        return max_disk_scale_labeled(net_points, sampleM_points, sampleB_points, 1 / static_cast<double>(grid_r), grid_r, scan);
     }
 
 }

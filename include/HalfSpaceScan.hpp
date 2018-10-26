@@ -70,7 +70,7 @@ namespace pyscan {
     using halfspace3_t = HalfSpace<3>;
 
     std::tuple<halfspace2_t, double> max_halfplane(
-            point_list_t &point_net,
+            point_list_t point_net,
             const wpoint_list_t &red,
             const wpoint_list_t &blue,
             const discrepancy_func_t &f);
@@ -88,9 +88,9 @@ namespace pyscan {
             const discrepancy_func_t &f);
 
     std::tuple<halfspace2_t, double> max_halfplane_labeled(
-            point_list_t &point_net,
-            lpoint_list_t &red,
-            lpoint_list_t &blue,
+            point_list_t point_net,
+            lpoint_list_t red,
+            lpoint_list_t blue,
             const discrepancy_func_t &f);
 
     std::tuple<halfspace2_t, double> max_halfplane_labeled_simple(

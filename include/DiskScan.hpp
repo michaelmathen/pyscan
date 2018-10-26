@@ -59,6 +59,7 @@ namespace pyscan {
             const point_list_t &point_net,
             const wpoint_list_t &red,
             const wpoint_list_t &blue,
+            double min_res,
             uint32_t grid_r,
             const discrepancy_func_t &f);
 
@@ -66,6 +67,7 @@ namespace pyscan {
             const point_list_t &point_net,
             const lpoint_list_t &red,
             const lpoint_list_t &blue,
+            double min_res,
             uint32_t grid_r,
             const discrepancy_func_t &f);
 }
