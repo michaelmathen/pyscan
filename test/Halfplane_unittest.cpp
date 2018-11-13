@@ -15,7 +15,7 @@ namespace {
         return fabs(m / m_total - b / b_total);
     };
 
-    TEST(HalfplaneScan, discrepancy) {
+    TEST(max_halfplane, discrepancy) {
 
         const static int n_size = 25;
         const static int s_size = 100;
@@ -35,7 +35,7 @@ namespace {
     }
 
 
-      TEST(HalfplaneScanLabels, discrepancy) {
+      TEST(max_halfplane_labeled, discrepancy) {
 
         const static int n_size = 25;
         const static int s_size = 100;
@@ -54,4 +54,5 @@ namespace {
         EXPECT_FLOAT_EQ(d1value, d2value);
 
     }
+
 }

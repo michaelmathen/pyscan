@@ -68,17 +68,17 @@ double evaluate_range(
             range_weight(range, blue), computeTotal(blue));
 }
 
-template <typename R, int dim = 2>
+template <typename R, template <int> typename P=WPoint, int dim=2>
 std::tuple<R, double> max_range2(
-        const point_list_t &point_net,
-        const std::vector<WPoint < dim>>& red,
-        const std::vector<WPoint<dim>>& blue,
+        const std::vector<Point<dim>> &point_net,
+        const std::vector<P<dim>>& red,
+        const std::vector<P<dim>>& blue,
         const discrepancy_func_t& f) {
 
     double max_stat = 0.0;
     R cur_max;
-    for (size_t i = 0; i < point_net.size() - 2; ++i) {
-        for (size_t j = i + 1; j < point_net.size() - 1; ++j) {
+    for (size_t i = 0; i < point_net.size() - 1; ++i) {
+        for (size_t j = i + 1; j < point_net.size(); ++j) {
             R now(point_net[i], point_net[j]);
             double cur_stat = evaluate_range(now, red, blue, f);
             if (cur_stat > max_stat) {
@@ -91,59 +91,11 @@ std::tuple<R, double> max_range2(
     return std::make_tuple(cur_max, max_stat);
 }
 
-template <typename R, int dim = 2>
-std::tuple<R, double> max_range2_labeled(
-        const point_list_t &point_net,
-        const std::vector<LPoint < dim>>& red,
-        const std::vector<LPoint<dim>>& blue,
-
-        const discrepancy_func_t& f) {
-
-    double max_stat = 0.0;
-    R cur_max;
-    for (size_t i = 0; i < point_net.size() - 2; ++i) {
-        for (size_t j = i + 1; j < point_net.size() - 1; ++j) {
-            R now(point_net[i], point_net[j]);
-            double cur_stat = evaluate_range(now, red, blue, f);
-            if (cur_stat > max_stat) {
-                cur_max = now;
-                max_stat = cur_stat;
-            }
-        }
-    }
-    return std::make_tuple(cur_max, max_stat);
-}
-
-template <typename R, int dim = 2>
+template <typename R, template <int> typename P=WPoint, int dim=2>
 std::tuple<R, double> max_range3(
-        const std::vector<Point<dim>> &point_net,
-        const std::vector<WPoint < dim>>& red,
-        const std::vector<WPoint<dim>>& blue,
-        const discrepancy_func_t& f) {
-
-    double max_stat = 0.0;
-    R cur_max;
-    for (size_t i = 0; i < point_net.size() - 2; ++i) {
-        for (size_t j = i + 1; j < point_net.size() - 1; ++j) {
-            for (size_t k = j + 1; k < point_net.size(); ++k) {
-                R now(point_net[i], point_net[j], point_net[k]);
-                double cur_stat = evaluate_range(now, red, blue, f);
-                if (cur_stat > max_stat) {
-                    cur_max = now;
-                    max_stat = cur_stat;
-                }
-            }
-        }
-    }
-
-    return std::make_tuple(cur_max, max_stat);
-}
-
-template <typename R, int dim = 2>
-std::tuple<R, double> max_range3_labeled(
-        const std::vector<Point<dim>> &point_net,
-        const std::vector<LPoint < dim>>& red,
-        const std::vector<LPoint<dim>>& blue,
+        const std::vector<Point<dim>>& point_net,
+        const std::vector<P<dim>>& red,
+        const std::vector<P<dim>>& blue,
         const discrepancy_func_t& f) {
 
     double max_stat = 0.0;

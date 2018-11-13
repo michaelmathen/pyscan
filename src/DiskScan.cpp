@@ -99,7 +99,7 @@ namespace pyscan {
         // Sort a set of ordered objects first and then reorder afterwards.
         get_net_disks(p1, p2, net, get_order, min_dist, max_dist, net_disks, orderV);
 
-        if (net_disks.size() == 0) {
+        if (net_disks.empty()) {
             return std::make_tuple(cur_max, 0.0);
         }
 
@@ -144,7 +144,7 @@ namespace pyscan {
 
     inline static double update_weight(
             std::unordered_map<size_t, size_t> &cur_set,
-            const crescent_t &adding, const crescent_t removing) {
+            const crescent_t &adding, const crescent_t& removing) {
 
         double update_diff = 0.0;
         for (auto &x: adding) {
@@ -200,7 +200,7 @@ namespace pyscan {
         std::vector<double> orderV;
         get_net_disks(p1, p2, net, get_order, min_dist, max_dist, net_disks, orderV);
 
-        if (net_disks.size() == 0) {
+        if (net_disks.empty()) {
             return std::make_tuple(cur_max, 0.0);
         }
 
@@ -506,12 +506,11 @@ namespace pyscan {
         std::transform(point_net.begin(), point_net.end(), lifted_net.begin(), lift_pt);
         std::transform(red.begin(), red.end(), lifted_red.begin(), lift_wpt);
         std::transform(blue.begin(), blue.end(), lifted_blue.begin(), lift_wpt);
-        auto mx_h = max_halfspace(lifted_net, lifted_red, lifted_blue, f);
-        auto h = std::get<0>(mx_h);
+        auto [h, max_val] = max_halfspace(lifted_net, lifted_red, lifted_blue, f);
         double a = h[0], b = h[1], c = h[2], d = h[3];
         return std::make_tuple(Disk(-a / (2 * c), -b / (2 * c),
                                     sqrt((a * a + b * b - 4 * c * d) / (4 * c * c))),
-                               std::get<1>(mx_h));
+                               max_val);
 
     }
 
@@ -526,12 +525,11 @@ namespace pyscan {
         std::transform(point_net.begin(), point_net.end(), lifted_net.begin(), lift_pt);
         std::transform(red.begin(), red.end(), lifted_red.begin(), lift_lpt);
         std::transform(blue.begin(), blue.end(), lifted_blue.begin(), lift_lpt);
-        auto mx_h = max_halfspace_labeled(lifted_net, lifted_red, lifted_blue, f);
-        auto h = std::get<0>(mx_h);
+        auto [h, max_val] = max_halfspace_labeled(lifted_net, lifted_red, lifted_blue, f);
         double a = h[0], b = h[1], c = h[2], d = h[3];
         return std::make_tuple(Disk(-a / (2 * c), -b / (2 * c),
                                     sqrt((a * a + b * b - 4 * c * d) / (4 * c * c))),
-                               std::get<1>(mx_h));
+                               max_val);
 
     }
 
@@ -541,7 +539,7 @@ namespace pyscan {
             const wpoint_list_t &red,
             const wpoint_list_t &blue,
             const discrepancy_func_t &f) {
-        return max_range3<Disk>(point_net, red, blue, f);
+        return max_range3<Disk, WPoint>(point_net, red, blue, f);
     }
 
     std::tuple<Disk, double> max_disk_simple_labeled(
@@ -549,7 +547,7 @@ namespace pyscan {
             const lpoint_list_t &red,
             const lpoint_list_t &blue,
             const discrepancy_func_t &f) {
-        return max_range3_labeled<Disk>(point_net, red, blue, f);
+        return max_range3<Disk, LPoint>(point_net, red, blue, f);
     }
 
 }

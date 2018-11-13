@@ -11,14 +11,6 @@ namespace pyscan{
 
 
 
-    inline static double calc_angle(const pt2_t& p1, const pt2_t& p2) {
-        double y = p1[2] * p2[0] - p2[2] * p1[0];
-        double x = p1[2] * p2[1] - p2[2] * p1[1];
-        if (util::alte(0.0, y)) return atan2(y, x);
-        else return M_PI + atan2(y, x);
-    }
-
-
 
     inline static pt2_t drop_point(const pt3_t& fixed_point, const pt3_t& p) {
         return {p[0] * fixed_point[2] - fixed_point[0] * p[2],
@@ -48,24 +40,6 @@ namespace pyscan{
                 h[2] * p[2]};
     }
 
-    inline static double sum_weight(const wpoint_list_t& pts) {
-        double res = 0.0;
-        for (auto& x: pts) res += x.get_weight();
-        return res;
-    }
-
-    inline static double sum_weight_unique(const lpoint_list_t& pts) {
-        std::vector<bool> vis(pts.size(), false);
-        double res = 0.0;
-        for (auto& x: pts) {
-            if (!vis[x.get_label()]) {
-                res += x.get_weight();
-                vis[x.get_label()] = true;
-            }
-        }
-        return res;
-    }
-
 
     std::tuple<halfspace2_t, double> max_halfplane(
             const point_list_t& point_net,
@@ -73,8 +47,8 @@ namespace pyscan{
             const wpoint_list_t& blue,
             const discrepancy_func_t& f) {
 
-        double red_total = sum_weight(red);
-        double blue_total = sum_weight(blue);
+        double red_total = computeTotal(red);
+        double blue_total = computeTotal(blue);
 
         double max_discrepancy = -std::numeric_limits<double>::infinity();
         halfspace2_t max_plane;
@@ -143,7 +117,7 @@ namespace pyscan{
 
 
     std::tuple<halfspace3_t, double> max_halfspace(
-            point3_list_t& point_net,
+            const point3_list_t& point_net,
             const wpoint3_list_t& red,
             const wpoint3_list_t& blue,
             const discrepancy_func_t& f) {
@@ -175,83 +149,134 @@ namespace pyscan{
         return std::make_tuple(halfspace3_t(max_halfspace), max_discrepancy);
     }
 
+    struct LabeledValue {
+        size_t label;
+        double value;
+    };
+
+    using wedge_t = std::vector<LabeledValue>;
+    using label_set_t = std::unordered_map<size_t , size_t >;
+
+    inline static double update_weight(
+            std::unordered_map<size_t, size_t> &cur_set,
+            const wedge_t &adding, const wedge_t& removing) {
+
+        double update_diff = 0.0;
+        for (auto &x: adding) {
+            auto it = cur_set.find(x.label);
+            if (it != cur_set.end()) {
+                cur_set[x.label]++;
+            } else {
+                update_diff += x.value;
+                cur_set[x.label] = 1;
+            }
+        }
+
+        for (auto &x: removing) {
+            auto it = cur_set.find(x.label);
+            assert(it != cur_set.end());
+            assert(it->second > 0);
+
+            if (it->second == 1) {
+                update_diff -= x.value;
+                cur_set.erase(it);
+            } else {
+                cur_set[x.label]--;
+            }
+        }
+
+        return update_diff;
+    }
     std::tuple<halfspace2_t, double> max_halfplane_labeled(
-            point_list_t point_net,
-            lpoint_list_t red,
-            lpoint_list_t blue,
+            const point_list_t& point_net,
+            const lpoint_list_t& red,
+            const lpoint_list_t& blue,
             const discrepancy_func_t& f) {
 
-        pt2_t max_line;
+        double red_total = computeTotal(red);
+        double blue_total = computeTotal(blue);
+
         double max_discrepancy = -std::numeric_limits<double>::infinity();
+        halfspace2_t max_plane;
 
-        double red_total = sum_weight_unique(red);
-        double blue_total = sum_weight_unique(blue);
-
+        assert(point_net.size() >= 2);
         for (size_t i = 0; i < point_net.size() - 1; ++i) {
             auto pivot = point_net[i];
-            std::sort(point_net.begin() + i + 1, point_net.end(),
-                      [&](const pt2_t& p1, const pt2_t& p2) { return calc_angle(pivot, p1) < calc_angle(pivot, p2); });
-            auto l1 = correct_orientation(pivot, point_net[i + 1]);
-            auto left_size = point_net.size() - i - 1;
-            std::vector<double> red_delta(left_size, 0.0);
-            std::vector<double> blue_delta(left_size, 0.0);
 
-            auto calc_delta = [&](lpoint_list_t& pts, std::vector<double>& deltas) {
-                std::vector<size_t> label_counts(pts.size(), 0);
+            std::vector<halfspace2_t> halfplanes;
+            for (size_t j = i + 1; j < point_net.size(); ++j) {
+                halfplanes.emplace_back(pivot, point_net[j]);
+            }
+            std::sort(halfplanes.begin(), halfplanes.end(), [](const halfspace2_t& p1, const halfspace2_t& p2) {
+                return -p1[0] < -p2[0];
+            });
+
+            auto& l1 = halfplanes[0];
+
+            std::vector<double> angles;
+            angles.reserve(halfplanes.size());
+            for (auto& plane : halfplanes) {
+                angles.emplace_back(-plane[0]);
+            }
+
+            std::vector<wedge_t> red_deltaR(halfplanes.size() - 1), blue_deltaR(halfplanes.size() - 1);
+            std::vector<wedge_t> red_deltaA(halfplanes.size() - 1), blue_deltaA(halfplanes.size() - 1);
+
+            auto calc_delta = [&](const lpoint_list_t& pts,
+                    std::vector<wedge_t>& deltaR,
+                    std::vector<wedge_t>& deltaA,
+                    label_set_t& labels) {
                 double res = 0.0;
-                for (auto& x: pts) {
-                    if (l1.above_closed(x)) {
-                        if (label_counts[x.get_label()] == 0)
-                            res += x.get_weight();
-                        ++label_counts[x.get_label()];
-                    }
-                }
-
-                std::sort(pts.begin(), pts.end(),
-                        [&](const lpt2_t& x, const lpt2_t& y) { return calc_angle(pivot, x) < calc_angle(pivot, y); });
-
-                size_t k = 0;
-                size_t j = i + 1;
-                while (k < pts.size() && calc_angle(pivot, pts[k]) < calc_angle(pivot, point_net[j])) ++k;
-                for (++j; j < point_net.size(); ++j) {
-                    double delta = 0.0;
-                    for (; k < pts.size() && calc_angle(pivot, pts[k]) < calc_angle(pivot, point_net[j]); ++k) {
-                        if (l1.above_closed(pts[k])) {
-                            --label_counts[pts[k].get_label()];
-                            if (label_counts[pts[k].get_label()] <= 0) {
-                                delta -= pts[k].get_weight();
-                            }
+                for (auto const& pt : pts) {
+                    halfspace2_t plane(pivot, pt);
+                    auto angle_it = std::lower_bound(angles.begin(), angles.end(), -plane[0]);
+                    //If the angle is begin or end then it is in the last wedge and we don't count it.
+                    if (l1.contains(pt)) {
+                        auto it = labels.find(pt.get_label());
+                        if (it == labels.end()) {
+                            res += pt.get_weight();
+                            labels[pt.get_label()] = 1;
                         } else {
-                            if (label_counts[pts[k].get_label()] == 0) {
-                                delta += pts[k].get_weight();
-                            }
-                            ++label_counts[pts[k].get_label()];
+                            labels[pt.get_label()]++;
                         }
                     }
-                    deltas[j - i - 2] = delta;
+                    if (angle_it == angles.end() || angle_it == angles.begin()){
+                        continue;
+                    } else {
+                        auto ix = std::distance(angles.begin(), angle_it) - 1;
+                        if (l1.contains(pt)) {
+                            deltaR[ix].emplace_back(LabeledValue{pt.get_label(), pt.get_weight()});
+                        } else {
+                            deltaA[ix].emplace_back(LabeledValue{pt.get_label(), pt.get_weight()});
+                        }
+                    }
                 }
-
                 return res;
             };
 
-            double red_curr = calc_delta(red, red_delta);
-            double blue_curr = calc_delta(blue, blue_delta);
-            for (size_t j = 0; j < left_size; ++j) {
-                double stat = f(red_curr, red_total, blue_curr, blue_total);
-                if (max_discrepancy <= stat) {
-                    max_line = correct_orientation(pivot, point_net[i + j + 1]);
-                    max_discrepancy = stat;
+            label_set_t red_set;
+            label_set_t blue_set;
+            double red_curr = calc_delta(red, red_deltaR, red_deltaA, red_set);
+            double blue_curr = calc_delta(blue, blue_deltaR, blue_deltaA, blue_set);
+            for (size_t j = 0; true ;++j) {
+                double new_stat = f(red_curr, red_total, blue_curr, blue_total);
+                if (max_discrepancy <= new_stat) {
+                    max_plane = halfplanes[j];
+                    max_discrepancy = new_stat;
                 }
-                red_curr += red_delta[j];
-                blue_curr += blue_delta[j];
+                if (j == halfplanes.size() - 1) {
+                    break;
+                }
+                red_curr += update_weight(red_set, red_deltaA[j], red_deltaR[j]);
+                blue_curr += update_weight(blue_set, blue_deltaA[j], blue_deltaR[j]);
             }
         }
-        return std::make_tuple(halfspace2_t(max_line), max_discrepancy);
+
+        return std::make_tuple(max_plane, max_discrepancy);
     }
 
-
     std::tuple<halfspace3_t, double> max_halfspace_labeled(
-            point3_list_t& point_net,
+            const point3_list_t& point_net,
             const lpoint3_list_t& red,
             const lpoint3_list_t& blue,
             const discrepancy_func_t& f) {
@@ -282,28 +307,28 @@ namespace pyscan{
 
 
     std::tuple<halfspace2_t, double> max_halfplane_simple(
-            point_list_t &point_net,
+            const point_list_t &point_net,
             const wpoint_list_t &red,
             const wpoint_list_t &blue,
             const discrepancy_func_t &f) {
-        return max_range2<halfspace2_t, 2>(point_net, red, blue, f);
+        return max_range2<halfspace2_t, WPoint>(point_net, red, blue, f);
     }
 
 
     std::tuple<halfspace2_t, double> max_halfplane_labeled_simple(
-            point_list_t &point_net,
+            const point_list_t &point_net,
             const lpoint_list_t &red,
             const lpoint_list_t &blue,
             const discrepancy_func_t &f) {
-        return max_range2_labeled<halfspace2_t, 2>(point_net, red, blue, f);
+        return max_range2<halfspace2_t, LPoint>(point_net, red, blue, f);
     }
 
     std::tuple<halfspace3_t, double> max_halfspace_labeled_simple(
-            point3_list_t &point_net,
+            const point3_list_t &point_net,
             const lpoint3_list_t &red,
             const lpoint3_list_t &blue,
             const discrepancy_func_t &f) {
-        return max_range3_labeled<halfspace3_t, 3>(point_net, red, blue, f);
+        return max_range3<halfspace3_t, LPoint, 3>(point_net, red, blue, f);
     }
 
 
