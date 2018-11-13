@@ -95,6 +95,8 @@ namespace pyscan {
 
         std::vector<Disk> net_disks;
         std::vector<double> orderV;
+        // Check to see how slow this is. We might be losing a lot of time, by sorting these big objects.
+        // Sort a set of ordered objects first and then reorder afterwards.
         get_net_disks(p1, p2, net, get_order, min_dist, max_dist, net_disks, orderV);
 
         if (net_disks.size() == 0) {
@@ -113,6 +115,8 @@ namespace pyscan {
                 if (start_disk.contains(p)) weight += p.get_weight();
 
                 if (valid_pt(p1, p2, p)) {
+                    // This line probably takes a lot of time. Maybe we can optimize this, by building some structure
+                    // before and pass it into the restricted disk scanning.
                     auto lb = std::lower_bound(orderV.begin(), orderV.end(), get_order(Disk(p1, p2, p)));
                     if (lb == orderV.end()) continue;
                     if (start_disk.contains(p)) {
@@ -344,12 +348,12 @@ namespace pyscan {
             const std::vector<T> &red,
             const std::vector<T> &blue,
             double min_res,
-            uint32_t grid_r,
+            double max_res,
             const discrepancy_func_t &f) {
 
         double red_tot = computeTotal(red);
         double blue_tot = computeTotal(blue);
-
+        size_t grid_r = lround(1 / min_res);
         SparseGrid<pt2_t> grid_net(point_net, grid_r);
         SparseGrid<T> grid_red(red, grid_r), grid_blue(blue, grid_r);
 
@@ -362,16 +366,16 @@ namespace pyscan {
             net_chunk.clear();
             red_chunk.clear();
             blue_chunk.clear();
-            uint32_t i, j;
+            size_t i, j;
             std::tie(i, j) = grid_net.get_cell(center_cell->second);
-            uint32_t start_k = i < 4 ? 0 : i - 4;
-            uint32_t start_l = j < 4 ? 0 : j - 4;
-            uint32_t end_k = i + 4 < grid_r ? i + 4 : grid_r;
-            uint32_t end_l = j + 4 < grid_r ? j + 4 : grid_r;
+            size_t start_k = i < 4 ? 0 : i - 4;
+            size_t start_l = j < 4 ? 0 : j - 4;
+            size_t end_k = i + 4 < grid_r ? i + 4 : grid_r;
+            size_t end_l = j + 4 < grid_r ? j + 4 : grid_r;
             auto range = grid_net(i, j);
 
-            for (uint32_t k = start_k; k <= end_k; ++k) {
-                for (uint32_t l = start_l; l <= end_l; ++l) {
+            for (size_t k = start_k; k <= end_k; ++k) {
+                for (size_t l = start_l; l <= end_l; ++l) {
                     auto net_range = grid_net(k, l);
                     for (auto it = net_range.first; it != net_range.second; ++it) {
                         net_chunk.emplace_back(it->second);
@@ -397,7 +401,7 @@ namespace pyscan {
                         double local_max_stat;
                         std::tie(local_max_disk, local_max_stat) =
                                 max_disk_restricted(pt1->second, pt2, net_chunk, red_chunk, blue_chunk,
-                                                    min_res, 2 * grid_net.get_resolution(),
+                                                    min_res, max_res,
                                                     red_tot, blue_tot, f);
                         if (local_max_stat > max_stat) {
                             cur_max = local_max_disk;
@@ -423,9 +427,9 @@ namespace pyscan {
             const wpoint_list_t &red,
             const wpoint_list_t &blue,
             double min_res,
-            uint32_t grid_r,
+            double max_res,
             const discrepancy_func_t &f) {
-        return max_disk_scale_internal(point_net, red, blue, min_res, grid_r, f);
+        return max_disk_scale_internal(point_net, red, blue, min_res, max_res, f);
     }
 
     std::tuple<Disk, double> max_disk_scale_labeled(
@@ -433,9 +437,9 @@ namespace pyscan {
             const lpoint_list_t &red,
             const lpoint_list_t &blue,
             double min_res,
-            uint32_t grid_r,
+            double max_res,
             const discrepancy_func_t &f) {
-        return max_disk_scale_internal(point_net, red, blue, min_res, grid_r, f);
+        return max_disk_scale_internal(point_net, red, blue, min_res, max_res, f);
     }
 
     template<typename Pt>

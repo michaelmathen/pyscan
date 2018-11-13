@@ -12,14 +12,32 @@
 namespace pyscan {
 
 
+    template<typename F>
+    void quantiles(wpoint_list_t const& pts, std::vector<double>& indices, F f) {
+        auto order = util::sort_permutation(pts.begin(), pts.end(), [&](pt2_t const& p1, pt2_t const& p2){
+            return f(p1) < f(p2);
+        });
+        size_t r = indices.size();
+        double total_weight = std::accumulate(pts.begin(), pts.end(), 0, [](double w, wpt2_t const& p){
+            return w + p.get_weight();
+        });
+
+        double eps_s = total_weight / r;
+        double curr_weight = 0;
+        std::for_each(order.begin(), order.end(), [&](size_t ix) {
+            curr_weight += pts[ix].get_weight();
+            if (curr_weight > eps_s) {
+                indices.push_back(f(pts[ix]));
+                curr_weight = 0;
+            }
+        });
+    }
     /*
      * Takes a grid resolution,r, and a red set of points and a blue set of points. Computes a grid from this.z
      */
     Grid::Grid(size_t r_arg,
-        point_list_t& red_points,
-        weight_list_t& red_weight,
-        point_list_t& blue_points,
-        weight_list_t& blue_weight) :
+        wpoint_list_t const& red_points,
+        wpoint_list_t const& blue_points) :
         r(r_arg),
         red_counts(r_arg * r_arg, 0),
         blue_counts(r_arg * r_arg, 0),
@@ -28,88 +46,70 @@ namespace pyscan {
     {
 
         //Compute the grid from the n_begin and n_end and then fill in the values with the two sampled things.
-        auto compX = [](Point<> const &p1, Point<> const &p2) {
-            return p1(0) < p2(0);
+        auto getX = [](Point<> const &p1) {
+            return p1(0);
         };
-        auto compY = [](Point<> const &p1, Point<> const &p2) {
-            return p1(1) < p2(1);
+        auto getY = [](Point<> const &p1) {
+            return p1(1);
         };
 
 
-        auto r_begin = red_points.begin();
-        auto r_end = red_points.end();
+        quantiles(red_points, x_coords, getX);
+        quantiles(blue_points, x_coords, getX);
+        quantiles(red_points, y_coords, getY);
+        quantiles(blue_points, x_coords, getY);
 
-        auto b_begin = blue_points.begin();
-        auto b_end = blue_points.end();
-
-        std::vector<pt2_t> x_pts(r, pt2_t());
-        std::vector<pt2_t> y_pts(r, pt2_t());
-        util::quantiles(r_begin, r_end, x_pts.begin(), x_pts.begin() + r / 2, red_weight.begin(), compX);
-        util::quantiles(b_begin, b_end, x_pts.begin() + r / 2, x_pts.end() , blue_weight.begin(), compX);
-        util::quantiles(r_begin, r_end, y_pts.begin(), y_pts.begin() + r / 2, red_weight.begin(), compY);
-        util::quantiles(b_begin, b_end, x_pts.begin() + r / 2, x_pts.end() , blue_weight.begin(), compY);
-
-        for (auto &el : x_pts) {
-            x_coords.push_back(el(0));
-        }
-        for (auto &el : y_pts) {
-            y_coords.push_back(el(1));
-        }
         std::sort(x_coords.begin(), x_coords.end());
         std::sort(y_coords.begin(), y_coords.end());
-        auto rw_it = red_weight.begin();
-        for (auto point_it = r_begin; point_it != r_end; point_it++, rw_it++) {
-            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), (*point_it)(0)) - x_coords.begin() - 1;
-            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), (*point_it)(1)) - y_coords.begin() - 1;
+
+        for (auto& point : red_points)  {
+            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), point(0)) - x_coords.begin() - 1;
+            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), point(1)) - y_coords.begin() - 1;
             if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
-                red_counts[iy * r + ix] += *rw_it;
+                red_counts[iy * r + ix] += point.get_weight();
             }
-            total_red_weight += *rw_it;
+            total_red_weight += point.get_weight();
         }
-        auto bw_it = blue_weight.begin();
-        for (auto point_it = b_begin; point_it != b_end; point_it++) {
-            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), (*point_it)(0)) - x_coords.begin() - 1;
-            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), (*point_it)(1)) - y_coords.begin() - 1;
+        for (auto& point : blue_points) {
+            long ix = std::upper_bound(x_coords.begin(), x_coords.end(), point(0)) - x_coords.begin() - 1;
+            long iy = std::upper_bound(y_coords.begin(), y_coords.end(), point(1)) - y_coords.begin() - 1;
             if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
-                blue_counts[iy * r + ix] += *bw_it;
+                blue_counts[iy * r + ix] += point.get_weight();
             }
-            total_blue_weight += *bw_it;
+            total_blue_weight += point.get_weight();
         }
     }
 
-    Grid::Grid(point_list_t& net, point_list_t& red, weight_list_t& red_w, point_list_t& blue, weight_list_t& blue_w) :
+    Grid::Grid(point_list_t const& net, wpoint_list_t const& red, wpoint_list_t const& blue) :
             r(net.size()),
             red_counts(r * r, 0),
             blue_counts(r * r, 0),
             x_coords(),
             y_coords() {
 
-        for_each(net.begin(), net.end(), [&](Point<> const& pt) {
+        for_each(net.begin(), net.end(), [&](pt2_t const& pt) {
             x_coords.push_back((pt)(0));
         });
-        for_each(net.begin(), net.end(), [&] (Point<> const& pt) {
+        for_each(net.begin(), net.end(), [&] (pt2_t const& pt) {
             y_coords.push_back((pt)(1));
         });
         std::sort(x_coords.begin(), x_coords.end());
         std::sort(y_coords.begin(), y_coords.end());
-        auto r_w_it = red_w.begin();
-        for (auto& pt : red) {
+        for (auto const& pt : red) {
             long ix = std::upper_bound(x_coords.begin(), x_coords.end(), pt(0)) - x_coords.begin() - 1;
             long iy = std::upper_bound(y_coords.begin(), y_coords.end(), pt(1)) - y_coords.begin() - 1;
             if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
-                red_counts[iy * r + ix] += *r_w_it;
+                red_counts[iy * r + ix] += pt.get_weight();
             }
-            total_red_weight += *r_w_it;
-            r_w_it++;
+            total_red_weight += pt.get_weight();
         }
-        auto b_w_it = blue_w.begin();
-        for (auto& pt : blue) {
+        for (auto const& pt : blue) {
             long ix = std::upper_bound(x_coords.begin(), x_coords.end(), pt(0)) - x_coords.begin() - 1;
             long iy = std::upper_bound(y_coords.begin(), y_coords.end(), pt(1)) - y_coords.begin() - 1;
             if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
-                blue_counts[iy * r + ix] += *b_w_it;
+                blue_counts[iy * r + ix] += pt.get_weight();
             }
-            total_blue_weight += *b_w_it;
+            total_blue_weight += pt.get_weight();
         }
     }
 
@@ -393,18 +393,18 @@ namespace pyscan {
                     }
                 }
 
-                //Remove duplicates in each cell.
-                // this isn't necessary, but will hopefully speed things up.
-                for (auto& cell : cells) {
-                    std::sort(cell.begin(), cell.end(), [](LabelW const& l1, LabelW const& l2) {
-                        return l1.label < l2.label;
-                    });
-                    auto it = std::unique(cell.begin(), cell.end(), []( LabelW const& l1, LabelW const& l2) {
-                        return l1.label == l2.label;
-                    });
-                    cell.resize(static_cast<unsigned long>(std::distance(cell.begin(), it)));
-
-                }
+//                //Remove duplicates in each cell.
+//                // this isn't necessary, but will hopefully speed things up.
+//                for (auto& cell : cells) {
+//                    std::sort(cell.begin(), cell.end(), [](LabelW const& l1, LabelW const& l2) {
+//                        return l1.label < l2.label;
+//                    });
+//                    auto it = std::unique(cell.begin(), cell.end(), []( LabelW const& l1, LabelW const& l2) {
+//                        return l1.label == l2.label;
+//                    });
+//                    cell.resize(static_cast<unsigned long>(std::distance(cell.begin(), it)));
+//
+//                }
             };
             grid_insert(m_labels, m_points);
             grid_insert(b_labels, b_points);
@@ -436,8 +436,10 @@ namespace pyscan {
     };
 
 
-     std::tuple<Rectangle, double> max_rect_labeled(size_t r, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func) {
-
+     std::tuple<Rectangle, double> max_rect_labeled(size_t r, double max_w,
+                                                    lpoint_list_t const& m_points,
+                                                    lpoint_list_t const& b_points,
+                                                    const discrepancy_func_t& func) {
 
          LabeledGrid grid(r, m_points, b_points);
          double m_Total = computeTotal(m_points);
@@ -447,9 +449,10 @@ namespace pyscan {
          double max_stat = 0;
 
          for (size_t lower_j = 0; lower_j < grid.y_size(); lower_j++) {
-             std::vector<std::unordered_map<size_t, double>> m_columns;
-             std::vector<std::unordered_map<size_t, double>> b_columns;
-             for (size_t upper_j = lower_j; upper_j < grid.y_size(); upper_j++) {
+             std::vector<std::unordered_map<size_t, double>> m_columns(grid.x_size(), std::unordered_map<size_t, double>());
+             std::vector<std::unordered_map<size_t, double>> b_columns(grid.x_size(), std::unordered_map<size_t, double>());
+             for (size_t upper_j = lower_j; upper_j < grid.y_size() &&
+                     std::abs(grid.y_val(lower_j) - grid.y_val(upper_j)) < max_w; upper_j++) {
                  for (size_t left_i = 0; left_i < grid.x_size(); left_i++) {
 
                      for (auto& lw : grid.get_m(left_i, upper_j)) {
@@ -466,17 +469,18 @@ namespace pyscan {
                      std::unordered_set<size_t> curr_b_labels;
                      double m_weight = 0;
                      double b_weight = 0;
-                     for (size_t right_i = left_i; right_i < grid.x_size(); right_i++) {
-                        for (auto label = m_columns[right_i].begin(); label != m_columns[right_i].end(); label++) {
-                            if (curr_m_labels.find(label->first) == curr_m_labels.end()) {
-                                m_weight += label->second;
-                                curr_m_labels.emplace(label->first);
+                     for (size_t right_i = left_i; right_i < grid.x_size() &&
+                        std::abs(grid.x_val(left_i) - grid.x_val(right_i)) < max_w; right_i++) {
+                        for (auto& label : m_columns[right_i]) {
+                            if (curr_m_labels.find(label.first) == curr_m_labels.end()) {
+                                m_weight += label.second;
+                                curr_m_labels.emplace(label.first);
                             }
                         }
-                        for (auto label = b_columns[right_i].begin(); label != b_columns[right_i].end(); label++) {
-                            if (curr_b_labels.find(label->first) == curr_b_labels.end()) {
-                                b_weight += label->second;
-                                curr_b_labels.emplace(label->first);
+                        for (auto& label : b_columns[right_i]) {
+                            if (curr_b_labels.find(label.first) == curr_b_labels.end()) {
+                                b_weight += label.second;
+                                curr_b_labels.emplace(label.first);
                             }
                         }
 
@@ -601,16 +605,6 @@ namespace pyscan {
     }
 
 
-    /*
-    auto operator<<(std::ostream& os, const I_Type & t) -> std::ostream& {
-        if (t == I_Type::VALUE) {
-            os << "VALUE";
-        } else {
-            os << "MAX";
-        }
-        return os;
-    }
-     */
     MaximumIntervals::MaximumIntervals(size_t l, size_t r) : left_col(l), right_col(r) {}
 
     void MaximumIntervals::print(std::ostream& os) const {
@@ -827,8 +821,8 @@ namespace pyscan {
             size_t upper = r - 1, lower = 0;
             std::deque<std::tuple<int, int, slab_ptr>> stack_nodes;
             root = std::make_shared<SlabNode>(grid, lower, upper, r_prime);
-            stack_nodes.push_back(std::make_tuple(lower, upper, root));
-            while (stack_nodes.size() > 0) {
+            stack_nodes.emplace_back(lower, upper, root);
+            while (!stack_nodes.empty()) {
                 auto node = stack_nodes.back();
                 if (std::get<1>(node) <= std::get<0>(node)) {
                     stack_nodes.pop_back();
@@ -843,8 +837,8 @@ namespace pyscan {
                 parent->left = left_child;
                 parent->right = right_child;
                 stack_nodes.pop_back();
-                stack_nodes.push_back(std::make_tuple(std::get<0>(node), mid, left_child));
-                stack_nodes.push_back(std::make_tuple(mid + 1, std::get<1>(node), right_child));
+                stack_nodes.emplace_back(std::get<0>(node), mid, left_child);
+                stack_nodes.emplace_back(mid + 1, std::get<1>(node), right_child);
             }
 
             computeBlooms(root);
@@ -912,7 +906,7 @@ namespace pyscan {
         }
     };
 
-     void mergeWeights(MaximumIntervals &interval, slab_ptr left, slab_ptr right) {
+     void mergeWeights(MaximumIntervals &interval, slab_ptr const& left, slab_ptr const& right) {
          interval = interval.mergeZeros(left->non_zeros, right->non_zeros);
      }
 
@@ -960,7 +954,7 @@ namespace pyscan {
 
         using SubProblem = std::tuple<slab_ptr, slab_ptr, MaximumIntervals>;
         std::deque<SubProblem> sub_problem_stack;
-        sub_problem_stack.push_back(make_tuple(left_side, right_side, maxInt));
+        sub_problem_stack.emplace_back(left_side, right_side, maxInt);
         Subgrid max_subgrid = Subgrid(-1, -1, -1, -1, -std::numeric_limits<double>::infinity());
 
         while (!sub_problem_stack.empty()) {
@@ -1084,7 +1078,7 @@ namespace pyscan {
         } else {
             Subgrid max = Subgrid(0, 0, 0, 0, -std::numeric_limits<double>::infinity());
             std::deque<std::tuple<slab_ptr, MaximumIntervals>> slabs;
-            slabs.push_back(std::make_tuple(slab, maxInt));
+            slabs.emplace_back(slab, maxInt);
             while (!slabs.empty()) {
                 auto slab_mx = slabs.back();
                 auto new_slab = std::get<0>(slab_mx);
@@ -1104,8 +1098,8 @@ namespace pyscan {
                     if (new_max.fValue() > max.fValue()) {
                         max = new_max;
                     }
-                    slabs.push_back(make_tuple(new_slab->left, new_maxInt));
-                    slabs.push_back(make_tuple(new_slab->right, new_maxInt));
+                    slabs.emplace_back(new_slab->left, new_maxInt);
+                    slabs.emplace_back(new_slab->right, new_maxInt);
                 }
             }
             return max;

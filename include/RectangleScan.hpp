@@ -126,8 +126,8 @@ namespace pyscan {
         double total_red_weight = 0;
         double total_blue_weight = 0;
     public:
-        Grid(size_t r_arg, point_list_t& red, weight_list_t& red_w, point_list_t& blue, weight_list_t& blue_w);
-        Grid(point_list_t& net, point_list_t& red, weight_list_t& red_w, point_list_t& blue, weight_list_t& blue_w);
+        Grid(size_t r_arg, wpoint_list_t const& red, wpoint_list_t const& blue);
+        Grid(point_list_t const& net, wpoint_list_t const& red, wpoint_list_t const& blue);
         double totalRedWeight() const;
         double totalBlueWeight() const;
         double redCount(size_t row, size_t col) const;
@@ -300,7 +300,7 @@ namespace pyscan {
     };
 
 
-    std::tuple<Rectangle, double> max_rect_labeled(size_t r, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func);
+    std::tuple<Rectangle, double> max_rect_labeled(size_t r, double max_w, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func);
 
     Subgrid maxSubgridLinearG(Grid const &grid, long r_prime, double a, double b);
 

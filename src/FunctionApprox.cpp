@@ -358,6 +358,7 @@ namespace pyscan {
                 core_set_pts.emplace_back(v[0], v[1], 1.0);
             }
         }
+         remove_duplicates(core_set_pts);
         return core_set_pts;
     }
 

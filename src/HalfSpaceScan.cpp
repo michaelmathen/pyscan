@@ -1,7 +1,9 @@
 #include <algorithm>
+#include <queue>
+#include <random>
 
 #include "Range.hpp"
-
+#include "Segment.hpp"
 #include "HalfSpaceScan.hpp"
 
 namespace pyscan{
@@ -65,9 +67,8 @@ namespace pyscan{
     }
 
 
-
     std::tuple<halfspace2_t, double> max_halfplane(
-            point_list_t point_net,
+            const point_list_t& point_net,
             const wpoint_list_t& red,
             const wpoint_list_t& blue,
             const discrepancy_func_t& f) {
@@ -76,37 +77,45 @@ namespace pyscan{
         double blue_total = sum_weight(blue);
 
         double max_discrepancy = -std::numeric_limits<double>::infinity();
-        pt2_t max_line;
+        halfspace2_t max_plane;
 
         assert(point_net.size() >= 2);
         for (size_t i = 0; i < point_net.size() - 1; ++i) {
             auto pivot = point_net[i];
-            std::sort(point_net.begin() + i + 1, point_net.end(),
-                      [&](const pt2_t& p1, const pt2_t& p2) { return calc_angle(pivot, p1) < calc_angle(pivot, p2); });
 
-            auto l1 = correct_orientation(pivot, point_net[i + 1]);
-            auto left_size = point_net.size() - i - 1;
-            std::vector<double> red_delta(left_size, 0.0);
-            std::vector<double> blue_delta(left_size, 0.0);
-            std::vector<double> angles(left_size, 0.0);
-            for (size_t j = 0; j < left_size; ++j)
-                angles[j] = calc_angle(pivot, point_net[i + j + 1]);
+            std::vector<halfspace2_t> halfplanes;
+            for (size_t j = i + 1; j < point_net.size(); ++j) {
+                halfplanes.emplace_back(pivot, point_net[j]);
+            }
+            std::sort(halfplanes.begin(), halfplanes.end(), [](const halfspace2_t& p1, const halfspace2_t& p2) {
+                return -p1[0] < -p2[0];
+            });
 
+            auto& l1 = halfplanes[0];
+            std::vector<double> red_delta(halfplanes.size() - 1, 0.0);
+            std::vector<double> blue_delta(halfplanes.size() - 1, 0.0);
+            std::vector<double> angles;
+            angles.reserve(halfplanes.size());
+            for (auto& plane : halfplanes) {
+                angles.emplace_back(-plane[0]);
+            }
             auto calc_delta = [&](const wpoint_list_t& pts, std::vector<double>& deltas) {
                 double res = 0.0;
-                for (size_t i = 0; i < pts.size(); ++i) {
-                    auto angle_it = std::upper_bound(angles.begin(), angles.end(), calc_angle(pivot, pts[i]));
-                    if (angle_it == angles.begin()) {
-                        if (l1.above_closed(pts[i])) {
-                            res += pts[i].get_weight();
+                for (auto const& pt : pts) {
+                    halfspace2_t plane(pivot, pt);
+                    auto angle_it = std::lower_bound(angles.begin(), angles.end(), -plane[0]);
+                    //If the angle is begin or end then it is in the last wedge and we don't count it.
+                    if (angle_it == angles.end() || angle_it == angles.begin()){
+                        if (l1.contains(pt)) {
+                            res += pt.get_weight();
                         }
                     } else {
-                        size_t ix = angle_it - angles.begin() - 1;
-                        if (l1.above_closed(pts[i])) {
-                            deltas[ix] -= pts[i].get_weight();
-                            res += pts[i].get_weight();
+                        auto ix = std::distance(angles.begin(), angle_it) - 1;
+                        if (l1.contains(pt)) {
+                            deltas[ix] -= pt.get_weight();
+                            res += pt.get_weight();
                         } else {
-                            deltas[ix] += pts[i].get_weight();
+                            deltas[ix] += pt.get_weight();
                         }
                     }
                 }
@@ -115,18 +124,21 @@ namespace pyscan{
 
             double red_curr = calc_delta(red, red_delta);
             double blue_curr = calc_delta(blue, blue_delta);
-            for (size_t j = 0; j < left_size; ++j) {
+            for (size_t j = 0; true ;++j) {
                 double stat = f(red_curr, red_total, blue_curr, blue_total);
                 if (max_discrepancy <= stat) {
-                    max_line = correct_orientation(pivot, point_net[i + j + 1]);
+                    max_plane = halfplanes[j];
                     max_discrepancy = stat;
+                }
+                if (j == halfplanes.size() - 1) {
+                    break;
                 }
                 red_curr += red_delta[j];
                 blue_curr += blue_delta[j];
             }
         }
 
-        return std::make_tuple(halfspace2_t(max_line), max_discrepancy);
+        return std::make_tuple(max_plane, max_discrepancy);
     }
 
 
@@ -294,4 +306,211 @@ namespace pyscan{
         return max_range3_labeled<halfspace3_t, 3>(point_net, red, blue, f);
     }
 
+
+    using seg_t = Segment;
+    using seg_list_t = std::vector<Segment>;
+
+    class CutCell {
+        double red_w = 0;
+        double blue_w = 0;
+        double cell_sc = 1.0;
+        seg_list_t red_segments;
+        seg_list_t blue_segments;
+    public:
+
+        CutCell() {}
+
+        CutCell(const point_list_t& red, const point_list_t& blue) {
+            for (auto const& pt : red) {
+                red_segments.emplace_back(pt);
+            }
+            for (auto const& pt : blue) {
+                blue_segments.emplace_back(pt);
+            }
+        }
+
+        CutCell(seg_list_t red, double rw, seg_list_t blue, double bw, double csc) :
+            red_w(rw), blue_w(bw), cell_sc(csc),
+            red_segments(std::move(red)), blue_segments(std::move(blue)) {}
+
+        double red_weight() const { return red_w; }
+        double blue_weight() const { return red_w; }
+        double cell_scale() const { return cell_sc; }
+
+        template <typename RNG>
+        std::tuple<CutCell, CutCell> split(RNG& rng) const {
+            // Uniformly
+
+            Segment seg;
+            std::uniform_real_distribution<double> dist(0, 1);
+            if ((blue_segments.empty() || dist(rng) < .5) && !red_segments.empty()) {
+                std::uniform_int_distribution<size_t> distribution(0, red_segments.size() - 1);
+                seg = red_segments[distribution(rng)];
+            } else if (!blue_segments.empty()){
+                std::uniform_int_distribution<size_t> distribution(0, blue_segments.size() - 1);
+                seg = blue_segments[distribution(rng)];
+            } else {
+                //Return two empty cells.
+                return {CutCell(), CutCell()};
+            }
+            auto split_segments = [&](seg_list_t const& crossing_segments) {
+
+                double below = 0;
+                seg_list_t upper_crossing_seg;
+                seg_list_t lower_crossing_seg;
+
+                for (auto& tseg : crossing_segments) {
+                    if (tseg.approx_eq(seg)) {
+                        below += cell_sc;
+                        continue;
+                    } else if (tseg.crossed(seg)) {
+                        auto [upper, lower] = tseg.split(seg);
+                        lower_crossing_seg.emplace_back(lower);
+                        upper_crossing_seg.emplace_back(upper);
+                    } else if (tseg.gte(seg)) {
+                        upper_crossing_seg.push_back(tseg);
+                    } else {
+                        lower_crossing_seg.push_back(tseg);
+                        below += cell_sc;
+                    }
+                }
+                return make_tuple(upper_crossing_seg, lower_crossing_seg, below);
+            };
+
+            auto [u_red_crossing, l_red_crossing, red_below_w] = split_segments(red_segments);
+            auto [u_blue_crossing, l_blue_crossing, blue_below_w] = split_segments(blue_segments);
+
+            //Subsample the lower and upper lines.
+//            std::shuffle(u_red_crossing.begin(), u_red_crossing.end(), rng);
+//            std::shuffle(l_red_crossing.begin(), l_red_crossing.end(), rng);
+//            std::shuffle(u_blue_crossing.begin(), u_blue_crossing.end(), rng);
+//            std::shuffle(l_blue_crossing.begin(), l_blue_crossing.end(), rng);
+//            size_t new_cell_size = u_red_crossing.size() + l_red_crossing.size() +
+//                    u_blue_crossing.size() + l_blue_crossing.size();
+//
+//            //double u_prop = (u_red_crossing.size() + u_blue_crossing.size()) / static_cast<double>(new_cell_size);
+//            //double l_prop = 1 - u_prop;
+//
+//            double rescale = static_cast<double>(red_segments.size() + blue_segments.size()) / new_cell_size;
+//
+//            auto resize = [rescale](seg_list_t& pts) {
+//                size_t new_size = lround(rescale * pts.size());
+//                if (new_size >= pts.size()) {
+//                    return ;
+//                } else {
+//                    pts.resize(new_size);
+//                }
+//            };
+//
+//            size_t ursz = u_red_crossing.size(), ubsz = u_blue_crossing.size(),
+//                lrsz = l_red_crossing.size(), lbsz = l_blue_crossing.size();
+//
+//            resize(u_red_crossing);
+//            resize(l_red_crossing);
+//            resize(u_blue_crossing);
+//            resize(l_blue_crossing);
+//
+//            double upper_scale = (ursz + ubsz) / static_cast<double>(u_red_crossing.size() + u_blue_crossing.size());
+//            double lower_scale = (lrsz + lbsz) / static_cast<double>(l_red_crossing.size() + l_blue_crossing.size());
+            //Need the red lines and the blue lines to represent the original sets.
+//            CutCell c1(u_red_crossing, red_below_w + red_w,
+//                        u_blue_crossing, blue_below_w + blue_w,
+//                        cell_sc * upper_scale);
+//            CutCell c2(l_red_crossing, red_w, l_blue_crossing, blue_w, cell_sc * lower_scale);
+            CutCell c1(u_red_crossing, red_w + red_below_w,
+                       u_blue_crossing, blue_w + blue_below_w,
+                       1.0);
+            CutCell c2(l_red_crossing, red_w, l_blue_crossing, blue_w, 1.0);
+            return {c1, c2};
+        }
+
+        template<typename RNG>
+        std::tuple<Point<2>, double, double> choose_line(RNG& rng) const {
+            Segment seg;
+            std::uniform_real_distribution<double> dist(0, 1);
+            if ((blue_segments.empty() || dist(rng) < .5) && !red_segments.empty()) {
+                std::uniform_int_distribution<size_t> distribution(0, red_segments.size() - 1);
+                seg = red_segments[distribution(rng)];
+            } else if (!blue_segments.empty()){
+                std::uniform_int_distribution<size_t> distribution(0, blue_segments.size() - 1);
+                seg = blue_segments[distribution(rng)];
+            } else {
+                //Return the line at infinity
+                return {Point<2>(0.0, 0.0, 1.0), 0.0, 0.0};
+            }
+            //Choose an endpoint
+            auto line = seg.get_e1().orient_down();
+
+            double red_l_weight = red_w;
+            for (auto& pt : red_segments) {
+                if (line.above_closed(pt)) red_l_weight += cell_sc;
+            }
+
+            double blue_l_weight = blue_w;
+            for (auto& pt : blue_segments) {
+                if (line.above_closed(pt)) blue_l_weight += cell_sc;
+            }
+            return {line, red_l_weight, blue_l_weight};
+        }
+
+        double get_total_weight() const {
+            return cell_sc * (red_segments.size() + blue_segments.size());
+        }
+
+        bool operator<(const CutCell& s2) const {
+            return get_total_weight() < s2.get_total_weight();
+        }
+
+        seg_list_t get_red_set() const {
+            return red_segments;
+        }
+
+        seg_list_t get_blue_set() const {
+            return blue_segments;
+        }
+    };
+
+    std::tuple<halfspace2_t, double> max_halfplane_fast(size_t plane_count,
+                                                        const point_list_t &red,
+                                                        const point_list_t &blue,
+                                                        const discrepancy_func_t &f) {
+
+
+        auto red_total = static_cast<double>(red.size());
+        auto blue_total = static_cast<double>(blue.size());
+        std::random_device rd;
+        std::minstd_rand gen(rd());
+        std::priority_queue<CutCell> cells;
+
+        cells.emplace(red, blue);
+
+        while (cells.size() < plane_count) {
+
+            auto& curr_node = cells.top();
+
+            if (curr_node.get_total_weight() < 2) {
+                break;
+            }
+            auto [upper_cell, lower_cell] = curr_node.split(gen);
+            cells.pop();
+            cells.push(upper_cell);
+            cells.push(lower_cell);
+        }
+
+
+        //Now just choose a single vertex from each cell and compute its discrepancy.
+        double max_disc = 0;
+        HalfSpace<2> max_halfspace;
+        while (!cells.empty()) {
+            auto& curr_node = cells.top();
+            auto [line, red_w, blue_w] = curr_node.choose_line(gen);
+            double scan_val = f(red_w, red_total, blue_w, blue_total);
+            if (scan_val > max_disc) {
+                max_halfspace = HalfSpace<2>(line);
+                max_disc = scan_val;
+            }
+            cells.pop();
+        }
+        return {max_halfspace, max_disc};
+    }
 }

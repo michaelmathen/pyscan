@@ -17,18 +17,6 @@ namespace pyscan {
 
 
 
-    template <typename T>
-    void remove_duplicates(T& pts) {
-        std::sort(pts.begin(), pts.end(), [](pt2_t const& p1, pt2_t const& p2){
-            return p1(0) < p2(0);
-        });
-
-        auto end_it = std::unique(pts.begin(), pts.end(), [] (pt2_t const& p1, pt2_t const& p2) {
-            return p1.approx_eq(p2);
-        });
-        pts.erase(end_it, pts.end());
-    }
-
 
     /*
   * Compute the lower leftmost corner of a box containing these points.

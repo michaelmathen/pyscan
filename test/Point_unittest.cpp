@@ -3,6 +3,7 @@
 //
 
 #include "Point.hpp"
+#include "Segment.hpp"
 
 #include <limits.h>
 #include <random>
@@ -35,10 +36,10 @@ namespace {
     TEST(Point, dot) {
         pyscan::Point<> p1(1.0, -1.0, 3.0);
         pyscan::Point<> p2(2.0, 0.0, 1.0);
-        EXPECT_FLOAT_EQ(p1.dot(p2), 5.0);
+        EXPECT_FLOAT_EQ(p1.evaluate(p2), 5.0);
         pyscan::Point<> p3(1.0, -1.0, 3.0);
         pyscan::Point<> p4(0.0, 2.0, 0.0);
-        EXPECT_FLOAT_EQ(p3.dot(p4), -2.0);
+        EXPECT_FLOAT_EQ(p3.evaluate(p4), -2.0);
     }
 
     TEST(Point, parallel) {
@@ -65,6 +66,95 @@ namespace {
         EXPECT_TRUE(!h1.above(p4));
     }
 
+    TEST(Point, above_flipped) {
+        pyscan::Point<> h1(1.0, 1.0, 0.0);
+        pyscan::Point<> p1(0.0, 1.0, -2.0);
+        pyscan::Point<> p2(0.0, 0.0, -1.0);
+        pyscan::Point<> p3(1.0, -1.0, -1.0);
+        pyscan::Point<> p4(1.0, -2.0, -1.0);
+        EXPECT_TRUE(h1.above(p1));
+        EXPECT_TRUE(!h1.above(p2));
+        EXPECT_TRUE(!h1.above(p3));
+        EXPECT_TRUE(!h1.above(p4));
+    }
+
+    TEST(Point, above_closed) {
+        pyscan::Point<> h1(1.0, 1.0, 0.0);
+        pyscan::Point<> p1(0.0, -1.0, 2.0);
+        pyscan::Point<> p2(0.0, 0.0, 1.0);
+        pyscan::Point<> p3(-1.0, 1.0, 1.0);
+        pyscan::Point<> p4(-1.0, 2.0, 1.0);
+        EXPECT_TRUE(h1.above_closed(p1));
+        EXPECT_TRUE(h1.above_closed(p2));
+        EXPECT_TRUE(h1.above_closed(p3));
+        EXPECT_TRUE(!h1.above_closed(p4));
+
+        //Infinite point on line
+        pyscan::Point<> p5(-1.0, 1.0, 0.0);
+        //Infinite point on line.
+        pyscan::Point<> p6(1.0, -1.0, 0.0);
+        //Infinite point below line
+        pyscan::Point<> p7(1.0, -2.0, 0.0);
+        pyscan::Point<> p8(-2.0, 1.0, 0.0);
+
+        //Points above the line
+        pyscan::Point<> p9(-1.0, 2.0, 0.0);
+        pyscan::Point<> p10(1.0, 1.0, 0.0);
+
+        EXPECT_TRUE(h1.above_closed(p5));
+        EXPECT_TRUE(h1.above_closed(p6));
+
+        EXPECT_TRUE(h1.above_closed(p7));
+        EXPECT_TRUE(h1.above_closed(p8));
+        EXPECT_TRUE(!h1.above_closed(p9));
+        EXPECT_TRUE(!h1.above_closed(p10));
+    }
+
+
+    TEST(Point, below_closed) {
+        pyscan::Point<> h1(1.0, 1.0, 0.0);
+        pyscan::Point<> p1(0.0, -1.0, 2.0);
+        pyscan::Point<> p2(0.0, 0.0, 1.0);
+        pyscan::Point<> p3(-1.0, 1.0, 1.0);
+        pyscan::Point<> p4(-1.0, 2.0, 1.0);
+        EXPECT_TRUE(!h1.below_closed(p1));
+        EXPECT_TRUE(h1.below_closed(p2));
+        EXPECT_TRUE(h1.below_closed(p3));
+        EXPECT_TRUE(h1.below_closed(p4));
+    }
+
+    TEST(Point, parallel_lte) {
+        //All of these lines are parallel to each other, but have different normals.
+        pyscan::Point<> h1(1.0, 1.0, 1.0);
+        pyscan::Point<> h2(1.0, 1.0, 0.0);
+        pyscan::Point<> h3(2.0, 2.0, 0.0);
+        pyscan::Point<> h4(-2.0, -2.0, -2.0);
+
+        pyscan::Point<> h5(2.0, 2.0, 2.0);
+
+        //Same line
+        EXPECT_TRUE(!h2.parallel_lt(h3));
+
+        // h1 passes below h2
+        EXPECT_TRUE(h1.parallel_lt(h2));
+        EXPECT_TRUE(!h2.parallel_lt(h1));
+
+        //h3 is the same line as h2, but just a different scale
+        EXPECT_TRUE(h1.parallel_lt(h3));
+        EXPECT_TRUE(!h3.parallel_lt(h1));
+
+        //h5 is the same line as h1
+        EXPECT_TRUE(h5.parallel_lt(h2));
+        EXPECT_TRUE(!h2.parallel_lt(h5));
+        EXPECT_TRUE(h5.parallel_lt(h3));
+        EXPECT_TRUE(!h3.parallel_lt(h5));
+
+        //h4 has an opposite direction as h1, but is the same line
+        EXPECT_TRUE(!h4.parallel_lt(h2));
+        EXPECT_TRUE(!h2.parallel_lt(h4));
+    }
+
+    //TEST()
 //    TEST(Point, above_closed_interval) {
 //        pyscan::Point<> h1(1.0, 1.0, 0.0);
 //        pyscan::Point<> h2(1.0, 1.0, -1.0);

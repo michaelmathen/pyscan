@@ -117,23 +117,6 @@ namespace pyscan {
         }
 
 
-        template<typename P_it, typename I_it, typename W_it, typename Comp>
-        void quantiles(P_it begin, P_it end, I_it i_begin, I_it i_end, W_it w_begin, Comp comp) {
-            auto order = sort_permutation(begin, end, comp);
-            int r = i_end - i_begin;
-            double total_weight = std::accumulate(w_begin, w_begin + (end - begin), 0, std::plus<>());
-
-            double eps_s = total_weight / r;
-            double curr_weight = 0;
-            std::for_each(order.begin(), order.end(), [&](size_t ix) {
-                curr_weight += *(w_begin + ix);
-                if (curr_weight > eps_s) {
-                    *i_begin = *(ix + begin);
-                    i_begin++;
-                    curr_weight = 0;
-                }
-            });
-        }
 
 
         inline uint64_t morton(uint32_t a, uint32_t b);

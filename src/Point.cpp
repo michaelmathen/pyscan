@@ -21,7 +21,6 @@ namespace pyscan {
         return util::aeq(intersection(l1, l2)[2], 0.0);
     }
 
-
     Point<3> cross_product(const Point<3> &p1, const Point<3> &p2) {
         return Point<3>( util::det2(p1(1), p2(1), p1(2), p2(2))
                 , util::det2(p1(0), p2(0), p1(2), p2(2))
@@ -34,4 +33,39 @@ namespace pyscan {
          */
         return intersection(q1, q2).crosses(p1, p2) && intersection(p1, p2).crosses(q1, q2);
     }
+
+//     double projected_distance(const Point<2>& p1, const Point<2> &p2, const Point<2> &origin, double dist) {
+//        //X * line(0) + Y * line(1) + 1 = 0
+//        //Y = (-1 - X * line(0)) / line(1)
+//        // (-b +- sqrt(b^2 -4ac))/2a
+//
+//        // X^2 - 2 * origin(0) * X + origin(0) * origin(0) + Y^2 - 2*Y*origin(1) + origin(1) * origin(1) - dist*dist=0
+//        //X^2 - 2 * origin(O) * X + origin(0)^2 + ((-1 - X * line(0)) / line(1))^2 - 2*(-1-X*line(0))/line(1) * origin(1) + origin(1)^2 - dist^2 = 0;
+//
+//        //X^2 - 2 * origin(O) * X + origin(0)^2 + (1 + X * line(0) + X^2 * line(0)^2) / line(1)^2 + 2*(1 + X*line(0))/line(1) * origin(1) + origin(1)^2 - dist^2 = 0;
+//
+//        //1 + X *line(0) + line(0)^2 / line(1)^2 * X^2
+//
+//
+//        // ||p_1 - p_2||
+//
+//        pt2_t line = intersection(p1, p1);
+//        double a = (1 + line(0) * line(0)) / (line(1) * line(1));
+//        double b = (-2 * origin(0) + line(0)/(line(1) * line(1)) + 2 * origin(1) * line(0) / line(1));
+//        double c = origin(0) * origin(0) + 1 / (line(0) * line(0)) + 2 * origin(1) / line(1) + origin(1) * origin(1) - dist * dist;
+//
+//        if (b * b - 4 * a * c <= 0) {
+//            return 0;
+//        }
+//
+//        double p1_x = (-b + sqrt(b * b - 4 * a * c)) / (2 * a);
+//        double p2_x_= (-b - sqrt(b * b - 4 * a * c)) / (2 * a);
+//        // -line(0) / line(1) * px -1 = py
+//        double p1_y = -line(0) / line(1) * p1_x - 1 / line(1);
+//        double p2_y = -line(0) / line(1) * p2_x - 1 / line(1);
+//        ret
+//
+//        // p1 <-> p2
+//
+//    }
 }

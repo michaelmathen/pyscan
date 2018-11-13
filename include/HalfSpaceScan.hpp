@@ -15,13 +15,15 @@
 namespace pyscan {
 
     inline Point<2> _initializer(Point<2> const& p1, Point<2> const& p2) {
-        return correct_orientation(p1, p2);
+        auto pt = intersection(p1, p2).orient_down();
+        double norm = sqrt(pt[0] * pt[0] + pt[1] * pt[1]);
+        return Point<2>(pt[0] / norm, pt[1] / norm, pt[2] / norm);
     }
 
 
     inline Point<3> _initializer(Point<3> const& p1, Point<3> const& p2, Point<3> const& p3) {
         auto normal = cross_product(p1, p2); //this is normalized in the last coordinate
-        auto c = normal.dot(p3);
+        auto c = normal.evaluate(p3);
         return pt3_t{ normal(0), normal(1), normal(2), c};
     }
 
@@ -39,7 +41,6 @@ namespace pyscan {
         HalfSpace(Coords... pts) {
             line = _initializer(pts...);
         }
-
 
         bool contains(Point<dim> const& pt) const final {
             return line.above_closed(pt);
@@ -70,7 +71,7 @@ namespace pyscan {
     using halfspace3_t = HalfSpace<3>;
 
     std::tuple<halfspace2_t, double> max_halfplane(
-            point_list_t point_net,
+            const point_list_t& point_net,
             const wpoint_list_t &red,
             const wpoint_list_t &blue,
             const discrepancy_func_t &f);
@@ -79,6 +80,12 @@ namespace pyscan {
             point_list_t &point_net,
             const wpoint_list_t &red,
             const wpoint_list_t &blue,
+            const discrepancy_func_t &f);
+
+
+    std::tuple<halfspace2_t, double> max_halfplane_fast(size_t plane_count,
+            const point_list_t &red,
+            const point_list_t &blue,
             const discrepancy_func_t &f);
 
     std::tuple<halfspace3_t, double> max_halfspace(

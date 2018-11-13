@@ -60,7 +60,7 @@ namespace pyscan {
             const wpoint_list_t &red,
             const wpoint_list_t &blue,
             double min_res,
-            uint32_t grid_r,
+            double max_res,
             const discrepancy_func_t &f);
 
     std::tuple<Disk, double> max_disk_scale_labeled(
@@ -68,7 +68,7 @@ namespace pyscan {
             const lpoint_list_t &red,
             const lpoint_list_t &blue,
             double min_res,
-            uint32_t grid_r,
+            double max_res,
             const discrepancy_func_t &f);
 }
 

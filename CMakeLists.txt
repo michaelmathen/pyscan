@@ -6,7 +6,7 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -g")
 
@@ -75,6 +75,7 @@ set(SOURCE_FILES
         src/Test_Utilities.cpp
         src/TrajectoryScan.cpp
         src/TrajectoryCoreSet.cpp
+        src/Segment.cpp
         #src/kernel.cpp
         )
 
@@ -84,6 +85,7 @@ set(HEADER include/BloomFilter.hpp
         include/HalfSpaceScan.hpp
         include/Point.hpp
         include/RectangleScan.hpp
+        include/Segment.hpp
         include/SparseGrid.hpp
         include/Statistics.hpp
         include/Test_Utilities.hpp

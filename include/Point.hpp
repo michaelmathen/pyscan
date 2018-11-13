@@ -67,6 +67,18 @@ namespace pyscan {
             return operator*(pt, val);
         }
 
+        Point<dim> orient_down() const {
+            // Always orient these down by the second to last coordinate.
+            // In 2d this ensures that y is oriented down.
+            // In 3d this ensures that z is oriented down.
+            Point<dim> p_out;
+            double orientation = std::copysign(1.0, coords[dim - 1]);
+            for (size_t i = 0; i < dim + 1; i++) {
+                p_out.coords[i] = -orientation * coords[i];
+            }
+            return p_out;
+        }
+
         double operator[](size_t i) const {
             assert(i < dim + 1);
             return coords[i];
@@ -77,7 +89,7 @@ namespace pyscan {
             return coords[i] / coords[dim];
         }
 
-        std::string str() const {
+        virtual std::string str() const {
             std::stringstream ss;
             ss << *this;
             return ss.str();
@@ -91,12 +103,24 @@ namespace pyscan {
             return true;
         }
 
-        inline double dot(const Point<dim> &other) const {
+        inline double evaluate(const Point<dim> &other) const {
             double res = 0.0;
             for (size_t i = 0; i < dim + 1; ++i) {
                 res += coords[i] * other.coords[i];
             }
             return res;
+        }
+
+        inline double norm_evaluate(const Point<dim> &other) const {
+            /*
+             * Insure that other is always a positive scaled value
+             */
+            double res = 0.0;
+            for (size_t i = 0; i < dim + 1; ++i) {
+                res += coords[i] * other.coords[i];
+            }
+            double scale = std::copysign(1.0, other.coords[dim]);
+            return res * scale;
         }
 
         inline double square_dist(const Point<dim> &p) const {
@@ -152,38 +176,80 @@ namespace pyscan {
         }
 
         inline double pdot(const Point<dim>& other) const {
+            /*
+             * Takes the dot product between these points as if they are vectors
+             */
             double res = 0.0;
             for (size_t i = 0; i < dim; ++i) {
-                res += coords[i] * other.coords[i] / coords[dim] / other.coords[dim];
+                res += coords[i] * other.coords[i];
             }
-            return res;
+            //If this is approximately 0 then the points exist at infinity and this operation doesn't make sense.
+            assert(!util::aeq(coords[dim] * other[dim], 0.0));
+            return res / (coords[dim] * other[dim]);
         }
 
         inline bool approx_eq(Point<dim> const& p) const {
-            return util::aeq(this->square_dist(p), 0);
+
+            double res = 0.0;
+            for (size_t i = 0; i < dim; ++i) {
+                double tmp = (p[i] * coords[dim] - coords[i] * p[dim]);
+                res += std::abs(tmp);
+            }
+            return util::aeq(res, 0.0);
         }
 
         inline bool above_closed(const Point<dim> &p) const {
-            return util::alte(dot(p), 0.0);
+            return util::alte(norm_evaluate(p), 0.0);
         }
 
         inline bool below_closed(const Point<dim> &p) const {
-            return util::alte(0.0, dot(p));
+            return util::alte(0.0, norm_evaluate(p));
         }
 
         inline bool above(const Point<dim> &p) const {
-            return util::alt(dot(p), 0.0);
+            return util::alt(norm_evaluate(p), 0.0);
         }
+
+        inline bool below(const Point<dim> &p) const {
+            return util::alt(0.0, norm_evaluate(p));
+        }
+
 
         inline bool crosses( const Point<dim>& p1, const Point<dim>& p2) const {
             /*
-             * Checks if this line is crossed by this line segment between p1 and p2
+             * Checks if this line is crossed by this line segment between p1
              */
             return above(p1) != above(p2);
         }
 
-        inline bool below(const Point<dim> &p) const {
-            return util::alt(0.0, dot(p));
+        inline bool parallel_lte( const Point<dim>& l1) const {
+            /*
+             * Checks to see if this line is less than or equal to the line l1 assuming that l1 is parallel to
+             * this.
+             */
+            double norm = 1.0;
+            for (size_t i = 0; i < dim; ++i) {
+                if (!util::aeq(l1[i], 0)) {
+                    norm = coords[i] / l1[i];
+                    break;
+                }
+            }
+            return util::alte(l1[dim] * norm, coords[dim]);
+        }
+
+        inline bool parallel_lt( const Point<dim>& l1) const {
+            /*
+             * Checks to see if this line is less than or equal to the line l1 assuming that l1 is parallel to
+             * this.
+             */
+            double norm = 1.0;
+            for (size_t i = 0; i < dim; ++i) {
+                if (!util::aeq(l1[i], 0)) {
+                    norm = coords[i] / l1[i];
+                    break;
+                }
+            }
+            return util::alt(l1[dim] * norm, coords[dim]);
         }
 
     private:
@@ -239,6 +305,9 @@ namespace pyscan {
 
     bool crosses_segment(const Point<2> &p1, const Point<2> &p2, const Point<2> &q1, const Point<2> &q2);
 
+    //Return the two points on the line that are equidistance to some other point.
+//    std::tuple<Point<2>, Point<2>> chord_pts(const Point<2> &line, const Point<2> &origin, double dist);
+
     using pt2_t = Point<2>;
     using wpt2_t = WPoint<2>;
     using lpt2_t = LPoint<2>;
@@ -267,6 +336,21 @@ namespace pyscan {
     using lpoint3_it_t = lpoint3_list_t::iterator;
 
     using discrepancy_func_t = std::function<double(double, double, double, double)>;
+
+
+
+
+    template <typename T>
+    void remove_duplicates(T& pts) {
+        std::sort(pts.begin(), pts.end(), [](pt2_t const& p1, pt2_t const& p2){
+            return p1(0) < p2(0);
+        });
+
+        auto end_it = std::unique(pts.begin(), pts.end(), [] (pt2_t const& p1, pt2_t const& p2) {
+            return p1.approx_eq(p2);
+        });
+        pts.erase(end_it, pts.end());
+    }
 
 
 }

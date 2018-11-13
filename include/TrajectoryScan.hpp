@@ -8,6 +8,7 @@
 
 #include "RectangleScan.hpp"
 #include "Disk.hpp"
+#include "HalfSpaceScan.hpp"
 #include "Point.hpp"
 
 namespace pyscan {
@@ -35,6 +36,10 @@ namespace pyscan {
             return 1;
         }
 
+        point_list_t get_pts () const {
+            return trajectory_pts;
+        }
+        
         virtual double get_partial_weight() const {
             return get_length();
         }
@@ -79,6 +84,29 @@ namespace pyscan {
                 return min_dist;
             }
         }
+
+
+        inline bool intersects_region(const Range<2>& range) {
+            if (trajectory_pts.empty()) {
+                return false;
+            } else if (trajectory_pts.size() == 1){
+                return range.contains(trajectory_pts[0]);
+            } else {
+                auto last_pt = trajectory_pts.begin();
+                for (auto curr_pt = last_pt + 1; curr_pt != trajectory_pts.end(); ++curr_pt) {
+                    if (range.intersects_segment(*last_pt, *curr_pt)) return true;
+                }
+                return false;
+            }
+        }
+
+        inline bool intersects_disk(const Disk& range) {
+            return intersects_region(range);
+        }
+
+        inline bool intersects_halfplane(const HalfSpace<2>& range) {
+            return intersects_region(range);
+        }
     };
 
     class WTrajectory : public Trajectory {
@@ -114,7 +142,7 @@ namespace pyscan {
                                                 wtrajectory_set_t const& sampleM,
                                                 wtrajectory_set_t const& sampleB,
                                                 double alpha,
-                                                double min_r,
+                                                double max_r,
                                                 const discrepancy_func_t &scan);
 
 }

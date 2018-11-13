@@ -11,7 +11,7 @@
 #include <boost/python/stl_iterator.hpp>
 
 
-
+#include "Segment.hpp"
 #include "RectangleScan.hpp"
 #include "HalfSpaceScan.hpp"
 #include "DiskScan.hpp"
@@ -62,6 +62,10 @@ py::list std_vector_to_py_list(const std::vector<T>& v) {
 
 namespace pyscan {
 
+    pyscan::Segment to_Segment(Point<2> const& pt) {
+        return Segment(pt);
+    }
+
     auto sized_region(double size) -> std::function<double(double, double, double, double)> {
         /*
          * Useful for finding a region of a certain size.
@@ -100,15 +104,6 @@ namespace pyscan {
 
 };
 
-
-pyscan::Grid makeGrid(const py::object& sample_r, const py::object& weight_r, const py::object& sample_b,
-                      const py::object& weight_b, size_t r) {
-    auto points_r = to_std_vector<pyscan::Point<>>(sample_r);
-    auto points_b = to_std_vector<pyscan::Point<>>(sample_b);
-    auto v_weight_r = to_std_vector<double>(weight_r);
-    auto v_weight_b = to_std_vector<double>(weight_b);
-    return pyscan::Grid(r, points_r, v_weight_r, points_b, v_weight_b);
-}
 
 struct iterable_converter {
     template <typename Container>
@@ -305,6 +300,16 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .def("mergeZeros")
     */
 
+    to_python_converter<std::tuple<pyscan::Segment, pyscan::Segment>, tuple_to_python_tuple<pyscan::Segment, pyscan::Segment>>();
+    to_python_converter<std::tuple<pyscan::Disk, double>, tuple_to_python_tuple<pyscan::Disk, double>>();
+    to_python_converter<std::tuple<pyscan::HalfSpace<2>, double>, tuple_to_python_tuple<pyscan::HalfSpace<2>, double>>();
+    to_python_converter<std::tuple<pyscan::HalfSpace<3>, double>, tuple_to_python_tuple<pyscan::HalfSpace<3>, double>>();
+    to_python_converter<std::tuple<pyscan::Rectangle, double>, tuple_to_python_tuple<pyscan::Rectangle, double>>();
+    to_python_converter<std::tuple<pyscan::pt2_t, double>, tuple_to_python_tuple<pyscan::pt2_t, double>>();
+
+    to_python_converter<std::vector<double>, vector_to_python_list<double>>();
+    to_python_converter<std::vector<pyscan::Point<2>>, vector_to_python_list<pyscan::Point<2>>>();
+    to_python_converter<std::vector<pyscan::Point<3>>, vector_to_python_list<pyscan::Point<3>>>();
     //Should convert tuples directly pyscan points.
     pypoint_converter<2>().from_python();
     pypoint_converter<3>().from_python();
@@ -327,17 +332,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .from_python<std::vector<pyscan::trajectory_t>>();
 
 
-    to_python_converter<std::tuple<pyscan::Disk, double>, tuple_to_python_tuple<pyscan::Disk, double>>();
-    to_python_converter<std::tuple<pyscan::HalfSpace<2>, double>, tuple_to_python_tuple<pyscan::HalfSpace<2>, double>>();
-    to_python_converter<std::tuple<pyscan::HalfSpace<3>, double>, tuple_to_python_tuple<pyscan::HalfSpace<3>, double>>();
-    to_python_converter<std::tuple<pyscan::Rectangle, double>, tuple_to_python_tuple<pyscan::Rectangle, double>>();
-    to_python_converter<std::tuple<pyscan::pt2_t, double>, tuple_to_python_tuple<pyscan::pt2_t, double>>();
 
-    to_python_converter<std::vector<double>, vector_to_python_list<double>>();
-    to_python_converter<std::vector<pyscan::Point<2>>, vector_to_python_list<pyscan::Point<2>>>();
-    to_python_converter<std::vector<pyscan::Point<3>>, vector_to_python_list<pyscan::Point<3>>>();
-
-    py::class_<pyscan::Grid>("Grid", py::no_init)
+    py::class_<pyscan::Grid>("Grid", py::init<size_t, pyscan::wpoint_list_t const&, pyscan::wpoint_list_t const&>())
             .def("totalRedWeight", &pyscan::Grid::totalRedWeight)
             .def("totalBlueWeight", &pyscan::Grid::totalBlueWeight)
             .def("redWeight", &pyscan::Grid::redWeight)
@@ -367,15 +363,6 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .def("__repr__", &pyscan::Subgrid::toString)
             .def("fValue", &pyscan::Subgrid::fValue);
 
-    py::class_<pyscan::pt2_t>("Point", py::init<double, double, double>())
-            .def("approx_eq", &pyscan::Point<>::approx_eq)
-            .def("__getitem__", &pyscan::Point<>::operator())
-            .def("above", &pyscan::Point<>::above)
-            .def("above_closed", &pyscan::Point<>::above_closed)
-            .def("__str__", &pyscan::Point<>::str)
-            .def("__repr__", &pyscan::Point<>::str)
-            .def("__eq__", &pyscan::Point<>::operator==);
-
     py::class_<pyscan::Disk>("Disk", py::init<double, double, double>())
             .def("get_origin", &pyscan::Disk::getOrigin)
             .def("get_radius", &pyscan::Disk::getRadius)
@@ -391,6 +378,39 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .def("get_coords", &pyscan::HalfSpace<3>::get_coords)
             .def("contains", &pyscan::HalfSpace<3>::contains)
             .def("intersects_segment", &pyscan::HalfSpace<3>::intersects_segment);
+
+    py::class_<pyscan::pt2_t>("Point", py::init<double, double, double>())
+            .def("approx_eq", &pyscan::Point<2>::approx_eq)
+            .def("__getitem__", &pyscan::Point<2>::operator())
+            .def("get_coord", &pyscan::Point<2>::operator[])
+            .def("above", &pyscan::Point<2>::above)
+            .def("above_closed", &pyscan::Point<2>::above_closed)
+            .def("below_closed", &pyscan::Point<2>::below_closed)
+            .def("below", &pyscan::Point<2>::below)
+            .def("crosses", &pyscan::Point<2>::crosses)
+            .def("evaluate", &pyscan::Point<2>::evaluate)
+            .def("dist", &pyscan::Point<2>::dist)
+            .def("pdot", &pyscan::Point<2>::pdot)
+            .def("parallel_lt", &pyscan::Point<2>::parallel_lt)
+            .def("parallel_lte", &pyscan::Point<2>::parallel_lte)
+            .def("__str__", &pyscan::Point<>::str)
+            .def("__repr__", &pyscan::Point<>::str)
+            .def("__eq__", &pyscan::Point<>::operator==);
+
+    py::def("to_segment", &pyscan::to_Segment);
+
+    py::def("aeq", &pyscan::util::aeq);
+    py::class_<pyscan::Segment, py::bases<pyscan::pt2_t> >("Segment", py::init<pyscan::Point<>, pyscan::Point<>, pyscan::Point<> >())
+            .def("lte", &pyscan::Segment::lte)
+            .def("lt", &pyscan::Segment::lt)
+            .def("gt", &pyscan::Segment::gt)
+            .def("gte", &pyscan::Segment::gte)
+            .def("crossed", &pyscan::Segment::crossed)
+            .def("split", &pyscan::Segment::split)
+            .def("__str__", &pyscan::Segment::str)
+            .def("__repr__", &pyscan::Segment::str)
+            .def("get_e1", &pyscan::Segment::get_e1)
+            .def("get_e2", &pyscan::Segment::get_e2);
 
     py::class_<pyscan::WPoint<2>, py::bases<pyscan::pt2_t>>("WPoint", py::init<double, double, double, double>())
             .def("get_weight", &pyscan::WPoint<2>::get_weight);
@@ -418,14 +438,9 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("evaluate", &pyscan::evaluate);
     py::def("size_region", &pyscan::sized_region);
 
-    //py::def("dot", &pyscan::dot<2ul>);
     py::def("intersection", &pyscan::intersection);
     py::def("correct_orientation", &pyscan::correct_orientation);
 
-
-    py::def("make_grid", makeGrid);
-    //py::def("makeNetGrid", makeNetGrid);
-    //py::def("makeSampleGrid", makeSampleGrid);
 
     py::def("max_subgrid_slow", &pyscan::maxSubgridSlow);
     py::def("max_subgrid_linear_simple", &pyscan::maxSubgridLin);
@@ -437,7 +452,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_halfplane_labeled", &pyscan::max_halfplane_labeled);
     py::def("max_halfspace", &pyscan::max_halfspace);
     py::def("max_halfspace_labeled", &pyscan::max_halfspace_labeled);
-
+    py::def("max_halfplane_fast", &pyscan::max_halfplane_fast);
 
     py::def("max_disk", &pyscan::max_disk);
     py::def("max_disk_labeled", &pyscan::max_disk_labeled);
@@ -445,8 +460,6 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
     py::def("evaluate_range", &pyscan::evaluate_range<2, pyscan::wpt2_t>);
     py::def("evaluate_range_labeled", &pyscan::evaluate_range<2, pyscan::lpt2_t>);
-
-    //   py::def("max_disk_scale_labels", &pyscan::maxDiskScaleLabel);
 
     py::def("max_disk_cached", &pyscan::max_disk_cached);
     py::def("max_disk_cached_labeled", &pyscan::max_disk_cached_labeled);
@@ -460,15 +473,23 @@ BOOST_PYTHON_MODULE(libpyscan) {
     ////////////////////////////////////////////////////////////////////
 
     py::class_<pyscan::trajectory_t>("Trajectory", py::init<pyscan::point_list_t>())
-            .def("point_dist", &pyscan::wtrajectory_t::point_dist)
-            .def("get_weight", &pyscan::trajectory_t::get_weight);
+            .def("point_dist", &pyscan::trajectory_t::point_dist)
+            .def("get_weight", &pyscan::trajectory_t::get_weight)
+            .def("point_dist", &pyscan::trajectory_t::point_dist)
+            .def("get_pts", &pyscan::trajectory_t::get_pts)
+            .def("intersects_disk", &pyscan::trajectory_t::intersects_disk)
+            .def("intersects_halfplane", &pyscan::trajectory_t::intersects_halfplane);
 
     py::class_<pyscan::wtrajectory_t>("WTrajectory", py::init<double, pyscan::point_list_t>())
             .def("point_dist", &pyscan::wtrajectory_t::point_dist)
-            .def("get_weight", &pyscan::wtrajectory_t::get_weight);
+            .def("get_weight", &pyscan::wtrajectory_t::get_weight)
+            .def("point_dist", &pyscan::wtrajectory_t::point_dist)
+            .def("intersects_disk", &pyscan::wtrajectory_t::intersects_disk)
+            .def("get_pts", &pyscan::wtrajectory_t::get_pts)
+            .def("intersects_halfplane", &pyscan::wtrajectory_t::intersects_halfplane);
 
     py::def("max_disk_traj_grid", &pyscan::max_disk_traj_grid);
-
+//
 
     //This simplifies the trajectory by using the dp algorithm.
     py::def("dp_compress", &pyscan::dp_compress);
