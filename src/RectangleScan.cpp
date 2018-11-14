@@ -374,7 +374,7 @@ namespace pyscan {
                 auto part_m_dim = accum_and_partition(m_points, m_total / r, dim);
                 auto part_b_dim = accum_and_partition(b_points, b_total / r, dim);
                 output.resize(part_m_dim.size() + part_b_dim.size());
-                std::merge(part_m_dim.begin(), part_m_dim.end(), part_b_dim.begin(), part_b_dim.end(), x_values.begin());
+                std::merge(part_m_dim.begin(), part_m_dim.end(), part_b_dim.begin(), part_b_dim.end(), output.begin());
             };
 
             update_parts(x_values, 0);
