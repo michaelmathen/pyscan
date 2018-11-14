@@ -79,13 +79,13 @@ namespace pyscan {
             return p_out;
         }
 
-        double operator[](size_t i) const {
-            assert(i < dim + 1);
+        inline double operator[](size_t i) const {
+            //assert(i < dim + 1);
             return coords[i];
         }
 
-        double operator()(size_t i) const {
-            assert(i < dim);
+        inline double operator()(size_t i) const {
+            //assert(i < dim);
             return coords[i] / coords[dim];
         }
 

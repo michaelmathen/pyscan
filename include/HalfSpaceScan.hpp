@@ -11,13 +11,12 @@
 #include "Range.hpp"
 #include "Point.hpp"
 
-
 namespace pyscan {
 
     inline Point<2> _initializer(Point<2> const& p1, Point<2> const& p2) {
         auto pt = intersection(p1, p2).orient_down();
-        double norm = sqrt(pt[0] * pt[0] + pt[1] * pt[1]);
-        return Point<2>(pt[0] / norm, pt[1] / norm, pt[2] / norm);
+        double inv_norm = 1 / sqrt(pt[0] * pt[0] + pt[1] * pt[1]);
+        return Point<2>(pt[0] * inv_norm, pt[1] * inv_norm, pt[2] * inv_norm);
     }
 
 

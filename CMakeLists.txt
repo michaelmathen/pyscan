@@ -7,8 +7,8 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -g")
-set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -g")
+set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -g -O2")
+set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O2")
 
 
 

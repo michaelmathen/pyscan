@@ -73,10 +73,6 @@ namespace pyscan {
         }
 
 
-        double invsqrt(double number);
-
-
-
 
         template<typename T, typename Compare>
         std::vector<std::size_t> sort_permutation(const std::vector<T> &vec, Compare compare) {
@@ -117,9 +113,6 @@ namespace pyscan {
         }
 
 
-
-
-        inline uint64_t morton(uint32_t a, uint32_t b);
 
     }
 }

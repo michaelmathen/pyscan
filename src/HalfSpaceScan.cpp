@@ -10,8 +10,6 @@ namespace pyscan{
 
 
 
-
-
     inline static pt2_t drop_point(const pt3_t& fixed_point, const pt3_t& p) {
         return {p[0] * fixed_point[2] - fixed_point[0] * p[2],
                 p[1] * fixed_point[2] - fixed_point[1] * p[2],
@@ -40,6 +38,13 @@ namespace pyscan{
                 h[2] * p[2]};
     }
 
+    inline double plane_order(Point<2> const& p1, Point<2> const& p2) {
+        double a = util::det2(p1[1], p1[2], p2[1], p2[2]);
+        double b = -util::det2(p1[0], p1[2], p2[0], p2[2]);
+        double orientation = -std::copysign(1.0, b);
+        double inv_norm = 1 / sqrt(a * a + b * b);
+        return -a * inv_norm * orientation;
+    }
 
     std::tuple<halfspace2_t, double> max_halfplane(
             const point_list_t& point_net,
@@ -76,8 +81,8 @@ namespace pyscan{
             auto calc_delta = [&](const wpoint_list_t& pts, std::vector<double>& deltas) {
                 double res = 0.0;
                 for (auto const& pt : pts) {
-                    halfspace2_t plane(pivot, pt);
-                    auto angle_it = std::lower_bound(angles.begin(), angles.end(), -plane[0]);
+                    double val = plane_order(pivot, pt);
+                    auto angle_it = std::lower_bound(angles.begin(), angles.end(), val);
                     //If the angle is begin or end then it is in the last wedge and we don't count it.
                     if (angle_it == angles.end() || angle_it == angles.begin()){
                         if (l1.contains(pt)) {
@@ -228,8 +233,8 @@ namespace pyscan{
                     label_set_t& labels) {
                 double res = 0.0;
                 for (auto const& pt : pts) {
-                    halfspace2_t plane(pivot, pt);
-                    auto angle_it = std::lower_bound(angles.begin(), angles.end(), -plane[0]);
+
+                    auto angle_it = std::lower_bound(angles.begin(), angles.end(), plane_order(pivot, pt));
                     //If the angle is begin or end then it is in the last wedge and we don't count it.
                     if (l1.contains(pt)) {
                         auto it = labels.find(pt.get_label());
