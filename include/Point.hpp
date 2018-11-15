@@ -79,6 +79,15 @@ namespace pyscan {
             return p_out;
         }
 
+        inline double& operator[](size_t i) {
+            //assert(i < dim + 1);
+            return coords[i];
+        }
+
+        inline double get_coord(size_t i) const {
+            return coords[i];
+        }
+
         inline double operator[](size_t i) const {
             //assert(i < dim + 1);
             return coords[i];
@@ -271,6 +280,10 @@ namespace pyscan {
             return weight;
         }
 
+        virtual void set_weight(double w) {
+            weight = w;
+        }
+
     private:
         double weight;
     };
@@ -288,6 +301,10 @@ namespace pyscan {
 
         inline size_t get_label() const {
             return label;
+        }
+
+        virtual void set_label(size_t l) {
+            label = l;
         }
 
     private:
@@ -338,12 +355,10 @@ namespace pyscan {
     using discrepancy_func_t = std::function<double(double, double, double, double)>;
 
 
-
-
     template <typename T>
     void remove_duplicates(T& pts) {
         std::sort(pts.begin(), pts.end(), [](pt2_t const& p1, pt2_t const& p2){
-            return p1(0) < p2(0);
+            return p1(0) < p2(1);
         });
 
         auto end_it = std::unique(pts.begin(), pts.end(), [] (pt2_t const& p1, pt2_t const& p2) {

@@ -379,10 +379,11 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .def("contains", &pyscan::HalfSpace<3>::contains)
             .def("intersects_segment", &pyscan::HalfSpace<3>::intersects_segment);
 
+
     py::class_<pyscan::pt2_t>("Point", py::init<double, double, double>())
             .def("approx_eq", &pyscan::Point<2>::approx_eq)
             .def("__getitem__", &pyscan::Point<2>::operator())
-            .def("get_coord", &pyscan::Point<2>::operator[])
+            .def("get_coord", &pyscan::Point<2>::get_coord)
             .def("above", &pyscan::Point<2>::above)
             .def("above_closed", &pyscan::Point<2>::above_closed)
             .def("below_closed", &pyscan::Point<2>::below_closed)
@@ -456,6 +457,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
     py::def("max_disk", &pyscan::max_disk);
     py::def("max_disk_labeled", &pyscan::max_disk_labeled);
+    py::def("max_rdisk_lift_labeled", &pyscan::max_disk_labeled);
 
 
     py::def("evaluate_range", &pyscan::evaluate_range<2, pyscan::wpt2_t>);

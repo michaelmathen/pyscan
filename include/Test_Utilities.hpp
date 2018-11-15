@@ -14,24 +14,31 @@ namespace pyscantest {
 
 	using Vec2 = std::array<double, 2>;
 
-    auto randomPoints(int test_size) -> std::vector<pyscan::Point<>>;
 
     auto randomVec(int test_size) -> std::vector<Vec2>;
 
     Vec2 maxVec2(std::vector<Vec2> const& vec, 
     	std::function<double(Vec2)> const& f);
 
-	auto randomWPoints(int test_size) -> std::vector<pyscan::WPoint<>>;
-    auto randomLabels(int test_size, size_t num_labels) -> pyscan::label_list_t;
+	auto randomPoints2(size_t test_size) -> std::vector<pyscan::Point<>>;
 
-	auto randomLPoints(int test_size, int label_count) -> std::vector<pyscan::LPoint<>>;
+	auto randomWPoints2(size_t test_size) -> std::vector<pyscan::WPoint<>>;
 
-	auto randomLPointsUnique(int test_size) -> std::vector<pyscan::LPoint<>>;
+	auto randomLPoints2(size_t test_size, size_t label_count) -> std::vector<pyscan::LPoint<>>;
+
+	auto randomLPointsUnique2(size_t test_size) -> std::vector<pyscan::LPoint<>>;
+
+    auto randomPoints3(size_t test_size) -> std::vector<pyscan::Point<3>>;
+
+    auto randomWPoints3(size_t test_size) -> std::vector<pyscan::WPoint<3>>;
+
+    auto randomLPoints3(size_t test_size, size_t label_count) -> std::vector<pyscan::LPoint<3>>;
+
+    //auto randomLPointsUnique3(size_t test_size) -> std::vector<pyscan::LPoint<>>;
+
+    auto removeLW(pyscan::lpoint_list_t const& pts) -> pyscan::point_list_t;
 
 	auto removeLabels(pyscan::lpoint_list_t const& pts) -> pyscan::wpoint_list_t;
 
-    auto addWeights(pyscan::point_list_t const& pts) -> pyscan::wpoint_list_t;
-
-    auto addLabels(pyscan::wpoint_list_t const& pts, pyscan::label_list_t const& labels) -> pyscan::lpoint_list_t;
 }
 #endif //PYSCAN_UTILITIES_HPP

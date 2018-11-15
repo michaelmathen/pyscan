@@ -534,6 +534,122 @@ namespace pyscan {
     }
 
 
+//    std::tuple<Disk, double> max_rdisk_lift_labeled(
+//            const lpoint_list_t &net,
+//            const lpoint_list_t &red,
+//            const lpoint_list_t &blue,
+//            double alpha,
+//            double min_radius,
+//            double max_radius,
+//            const discrepancy_func_t &f){
+//
+//        lpoint3_list_t lifted_net(net.size());
+//        lpoint3_list_t lifted_red(red.size()), lifted_blue(blue.size());
+//        std::transform(net.begin(), net.end(), lifted_net.begin(), lift_lpt);
+//        std::transform(red.begin(), red.end(), lifted_red.begin(), lift_lpt);
+//        std::transform(blue.begin(), blue.end(), lifted_blue.begin(), lift_lpt);
+//
+//        auto f_func = [min_radius, max_radius] (halfspace3_t const& h) {
+//            double a = h[0], b = h[1], c = h[2], d = h[3];
+//            double r = sqrt((a * a + b * b - 4 * c * d) / (4 * c * c));
+//            return min_radius < r && r < max_radius;
+//        };
+//        auto [h, max_val] = max_halfspace_labeled_restricted(lifted_net, lifted_red, lifted_blue, alpha, f_func, f);
+//        double a = h[0], b = h[1], c = h[2], d = h[3];
+//        return std::make_tuple(Disk(-a / (2 * c), -b / (2 * c),
+//                                    sqrt((a * a + b * b - 4 * c * d) / (4 * c * c))),
+//                               max_val);
+//
+//    }
+
+
+
+    std::tuple<Disk, double> max_disk_scale_labeled_alt(
+            const lpoint_list_t &point_net,
+            const lpoint_list_t &red,
+            const lpoint_list_t &blue,
+            double alpha,
+            double min_res,
+            double max_res,
+            const discrepancy_func_t &f) {
+
+        double red_tot = computeTotal(red);
+        double blue_tot = computeTotal(blue);
+        size_t grid_r = lround(1 / min_res);
+        SparseGrid<lpt2_t> grid_net(point_net, grid_r);
+        SparseGrid<lpt2_t> grid_red(red, grid_r), grid_blue(blue, grid_r);
+
+        Disk cur_max;
+        double max_stat = 0.0;
+        for (auto center_cell = grid_net.begin(); center_cell != grid_net.end();) {
+            std::vector<lpt2_t> net_chunk;
+            std::vector<lpt2_t> red_chunk;
+            std::vector<lpt2_t> blue_chunk;
+            net_chunk.clear();
+            red_chunk.clear();
+            blue_chunk.clear();
+            size_t i, j;
+            std::tie(i, j) = grid_net.get_cell(center_cell->second);
+            size_t start_k = i < 4 ? 0 : i - 4;
+            size_t start_l = j < 4 ? 0 : j - 4;
+            size_t end_k = i + 4 < grid_r ? i + 4 : grid_r;
+            size_t end_l = j + 4 < grid_r ? j + 4 : grid_r;
+            auto range = grid_net(i, j);
+
+            for (size_t k = start_k; k <= end_k; ++k) {
+                for (size_t l = start_l; l <= end_l; ++l) {
+                    auto net_range = grid_net(k, l);
+                    for (auto it = net_range.first; it != net_range.second; ++it) {
+                        net_chunk.emplace_back(it->second);
+                    }
+
+                    auto red_range = grid_red(k, l);
+                    for (auto it = red_range.first; it != red_range.second; ++it)
+                        red_chunk.emplace_back(it->second);
+
+
+                    auto blue_range = grid_blue(k, l);
+                    for (auto it = blue_range.first; it != blue_range.second; ++it)
+                        blue_chunk.emplace_back(it->second);
+                }
+            }
+
+            if (net_chunk.size() >= 3) {
+
+                lpoint3_list_t lifted_net(net_chunk.size());
+                lpoint3_list_t lifted_red(red_chunk.size()), lifted_blue(blue_chunk.size());
+                std::transform(net_chunk.begin(), net_chunk.end(), lifted_net.begin(), lift_lpt);
+                std::transform(red_chunk.begin(), red_chunk.end(), lifted_red.begin(), lift_lpt);
+                std::transform(blue_chunk.begin(), blue_chunk.end(), lifted_blue.begin(), lift_lpt);
+
+                for (auto pt1 = range.first; pt1 != range.second; ++pt1) {
+                    auto lifted_pt = lift_lpt(pt1->second);
+
+
+                    filter_func3_t f_func = [min_res, max_res] (halfspace3_t const& h) {
+                        double a = h[0], b = h[1], c = h[2], d = h[3];
+                        double r = sqrt((a * a + b * b - 4 * c * d) / (4 * c * c));
+                        return min_res < r && r < max_res;
+                    };
+                    auto [h, local_max_stat] = max_halfspace_labeled_restricted(lifted_pt, lifted_net,
+                            lifted_red, lifted_blue, red_tot, blue_tot, alpha, f_func, f);
+                    if (local_max_stat > max_stat) {
+                        double a = h[0], b = h[1], c = h[2], d = h[3];
+                        cur_max = Disk(-a / (2 * c), -b / (2 * c), sqrt((a * a + b * b - 4 * c * d) / (4 * c * c)));
+                        max_stat = local_max_stat;
+                    }
+                }
+            }
+
+            auto last = center_cell->first;
+            do {
+                ++center_cell;
+            } while (center_cell != grid_net.end() && center_cell->first == last);
+        }
+
+        return std::make_tuple(cur_max, max_stat);
+    }
+
     std::tuple<Disk, double> max_disk_simple(
             const point_list_t &point_net,
             const wpoint_list_t &red,

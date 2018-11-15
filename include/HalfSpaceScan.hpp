@@ -65,6 +65,8 @@ namespace pyscan {
     };
 
 
+    using filter_func2_t = std::function<bool(HalfSpace<2> const& pt)>;
+    using filter_func3_t = std::function<bool(HalfSpace<3> const& pt)>;
 
     using halfspace2_t = HalfSpace<2>;
     using halfspace3_t = HalfSpace<3>;
@@ -93,6 +95,12 @@ namespace pyscan {
             const wpoint3_list_t &blue,
             const discrepancy_func_t &f);
 
+    std::tuple<halfspace3_t, double> max_halfspace_simple(
+        const point3_list_t &point_net,
+        const wpoint3_list_t &red,
+        const wpoint3_list_t &blue,
+        const discrepancy_func_t &f);
+
     std::tuple<halfspace2_t, double> max_halfplane_labeled(
             const point_list_t& point_net,
             const lpoint_list_t& red,
@@ -110,6 +118,31 @@ namespace pyscan {
             const lpoint3_list_t &red,
             const lpoint3_list_t &blue,
             const discrepancy_func_t &f);
+
+    std::tuple<halfspace3_t, double> max_halfspace_labeled_simple(
+        const point3_list_t &point_net,
+        const lpoint3_list_t &red,
+        const lpoint3_list_t &blue,
+        const discrepancy_func_t &f);
+
+    std::tuple<halfspace3_t, double> max_halfspace_labeled_restricted(
+        const pt3_t& pt,
+        const lpoint3_list_t& point_net,
+        const lpoint3_list_t& red,
+        const lpoint3_list_t& blue,
+        double red_total, double blue_total,
+        double alpha,
+        const filter_func3_t& filter,
+        const discrepancy_func_t& f);
+
+    std::tuple<halfspace2_t, double> max_halfplane_labeled_restricted(
+            const point_list_t& net,
+            const lpoint_list_t& red_input,
+            const lpoint_list_t& blue_input,
+            double red_total,
+            double blue_total,
+            const filter_func2_t& filter,
+            const discrepancy_func_t& f);
 
 }
 

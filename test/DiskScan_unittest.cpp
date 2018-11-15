@@ -49,15 +49,16 @@ namespace {
 
         const static int n_size = 50;
         const static int s_size = 1000;
-        auto n_pts = pyscantest::randomPoints(n_size);
-        auto m_pts = pyscantest::randomWPoints(s_size);
-        auto b_pts = pyscantest::randomWPoints(s_size);
+        auto n_pts = pyscantest::randomPoints2(n_size);
+        auto m_pts = pyscantest::randomWPoints2(s_size);
+        auto b_pts = pyscantest::randomWPoints2(s_size);
 
         double d1value, d2value;
         pyscan::Disk d1;
         pyscan::Disk d2;
 
         std::tie(d2, d2value) = pyscan::max_disk(n_pts, m_pts, b_pts, scan);
+        std::cout << d2value << std::endl;
         EXPECT_FLOAT_EQ(d2value, evaluate_range(d2, m_pts, b_pts, scan));
         std::tie(d1, d1value) = pyscan::max_disk_simple(n_pts, m_pts, b_pts, scan);
         EXPECT_FLOAT_EQ(d1value, evaluate_range(d1, m_pts, b_pts, scan));
@@ -67,11 +68,11 @@ namespace {
 
     TEST(max_disk_scale, matching) {
 
-        const static int n_size = 50;
-        const static int s_size = 1000;
-        auto n_pts = pyscantest::randomPoints(n_size);
-        auto m_pts = pyscantest::randomWPoints(s_size);
-        auto b_pts = pyscantest::randomWPoints(s_size);
+        const static int n_size = 25;
+        const static int s_size = 100;
+        auto n_pts = pyscantest::randomPoints2(n_size);
+        auto m_pts = pyscantest::randomWPoints2(s_size);
+        auto b_pts = pyscantest::randomWPoints2(s_size);
 
         double d1value;
         pyscan::Disk d1;
@@ -85,17 +86,15 @@ namespace {
 
     TEST(DiskScan2, matching) {
 
-        const static int n_size = 50;
-        const static int s_size = 1000;
-        auto n_pts = pyscantest::randomPoints(n_size);
-        auto m_pts = pyscantest::randomWPoints(s_size);
-        auto b_pts = pyscantest::randomWPoints(s_size);
+        const static int n_size = 25;
+        const static int s_size = 100;
+        auto n_pts = pyscantest::randomPoints2(n_size);
+        auto m_pts = pyscantest::randomWPoints2(s_size);
+        auto b_pts = pyscantest::randomWPoints2(s_size);
 
         pyscan::Disk d1, d2;
         double d1value, d2value;
         std::tie(d1, d1value) = max_disk_lift(n_pts, m_pts, b_pts, scan);
-
-
         std::tie(d2, d2value) = max_disk_simple(n_pts, m_pts, b_pts, scan);
 
         EXPECT_FLOAT_EQ(d2value, evaluate_range(d2, m_pts, b_pts, scan));
@@ -104,10 +103,22 @@ namespace {
 
     }
 
+    void label_test_restrictedt(size_t n_size, size_t s_size, size_t labels) {
+        auto n_lpts = pyscantest::randomLPoints2(n_size, labels);
+        auto n_pts = pyscantest::removeLW(n_lpts);
+        auto m_pts = pyscantest::randomLPoints2(s_size, labels);
+        auto b_pts = pyscantest::randomLPoints2(s_size, labels);
+
+        pyscan::Disk d1, d2;
+        double d1value, d2value;
+        std::tie(d1, d1value) = pyscan::max_disk_scale_labeled_alt(n_lpts, m_pts, b_pts, 0.0, 0.0, 0.4, scan);
+        EXPECT_FLOAT_EQ(d1value, evaluate_range(d1, m_pts, b_pts, scan));
+    }
+
     void label_test(size_t n_size, size_t s_size, size_t labels) {
-      auto n_pts = pyscantest::randomPoints(n_size);
-      auto m_pts = pyscantest::randomLPoints(s_size, labels);
-      auto b_pts = pyscantest::randomLPoints(s_size, labels);
+      auto n_pts = pyscantest::randomPoints2(n_size);
+      auto m_pts = pyscantest::randomLPoints2(s_size, labels);
+      auto b_pts = pyscantest::randomLPoints2(s_size, labels);
 
       pyscan::Disk d1, d2;
       double d1value, d2value;
@@ -128,6 +139,11 @@ namespace {
       label_test(25, 100, 5);
     }
 
+//    TEST(max_rdisk_lifted, mixedlabels) {
+//        label_test_restrictedt(25, 100, 10);
+//    }
+
+
 //    TEST(DiskScan2, allsamelabel) {
 //        label_test2(25, 100, 1);
 //    }
@@ -141,9 +157,9 @@ namespace {
         const static int n_size = 25;
         const static int s_size = 100;
 
-        auto n_pts = pyscantest::randomPoints(n_size);
-        auto m_lpts = pyscantest::randomLPointsUnique(s_size);
-        auto b_lpts = pyscantest::randomLPointsUnique(s_size);
+        auto n_pts = pyscantest::randomPoints2(n_size);
+        auto m_lpts = pyscantest::randomLPointsUnique2(s_size);
+        auto b_lpts = pyscantest::randomLPointsUnique2(s_size);
 
         auto m_pts = pyscantest::removeLabels(m_lpts);
         auto b_pts = pyscantest::removeLabels(b_lpts);
@@ -171,9 +187,9 @@ namespace {
 
         const static int n_size = 25;
         const static int s_size = 100;
-        auto n_pts = pyscantest::randomPoints(n_size);
-        auto m_lpts = pyscantest::randomLPointsUnique(s_size);
-        auto b_lpts = pyscantest::randomLPointsUnique(s_size);
+        auto n_pts = pyscantest::randomPoints2(n_size);
+        auto m_lpts = pyscantest::randomLPointsUnique2(s_size);
+        auto b_lpts = pyscantest::randomLPointsUnique2(s_size);
 
         auto m_pts = pyscantest::removeLabels(m_lpts);
         auto b_pts = pyscantest::removeLabels(b_lpts);
