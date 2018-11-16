@@ -128,8 +128,8 @@ namespace pyscan {
             for (size_t i = 0; i < dim + 1; ++i) {
                 res += coords[i] * other.coords[i];
             }
-            double scale = std::copysign(1.0, other.coords[dim]);
-            return res * scale;
+            //double scale = std::copysign(1.0, other.coords[dim]);
+            return res * 1.0;
         }
 
         inline double square_dist(const Point<dim> &p) const {
@@ -316,7 +316,7 @@ namespace pyscan {
 
     Point<2> intersection(const Point<2> &p1, const Point<2> &p2);
 
-    Point<3> cross_product(const Point<3> &p1, const Point<3> &p2);
+    std::tuple<double, double, double> normal(const Point<3> &p1, const Point<3> &p2, const Point<3> &p3);
 
     bool is_parallel(const Point<2> &l1, const Point<2> &l2);
 

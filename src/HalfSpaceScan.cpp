@@ -9,27 +9,25 @@
 
 namespace pyscan{
 
-
-
     inline static pt2_t drop_point(const pt3_t& fixed_point, const pt3_t& p) {
-        return {p(0) - fixed_point(0) * p(2) / fixed_point(2),
-                p(1) - fixed_point(1) * p(2) / fixed_point(2),
-                1.0};
+        return {p[0] * fixed_point[2] - fixed_point[0] * p[2],
+                p[1] * fixed_point[2] - fixed_point[1] * p[2],
+                p[3] * fixed_point[2] - fixed_point[3] * p[2]};
     }
 
-    inline static wpt2_t drop_wpoint(const pt3_t& fixed_point, const wpt3_t& p) {
+    inline static wpt2_t drop_point(const pt3_t& fixed_point, const wpt3_t& p) {
         return {p.get_weight(),
-                p(0) - fixed_point(0) * p(2) / fixed_point(2),
-                p(1) - fixed_point(1) * p(2) / fixed_point(2),
-                1.0};
+                p[0] * fixed_point[2] - fixed_point[0] * p[2],
+                p[1] * fixed_point[2] - fixed_point[1] * p[2],
+                p[3] * fixed_point[2] - fixed_point[3] * p[2]};
     }
 
-    inline static lpt2_t drop_lpoint(const pt3_t& fixed_point, const lpt3_t& p) {
+    inline static lpt2_t drop_point(const pt3_t& fixed_point, const lpt3_t& p) {
         return {p.get_label(),
                 p.get_weight(),
-                p(0) - fixed_point(0) * p(2) / fixed_point(2),
-                p(1) - fixed_point(1) * p(2) / fixed_point(2),
-                1.0};
+                p[0] * fixed_point[2] - fixed_point[0] * p[2],
+                p[1] * fixed_point[2] - fixed_point[1] * p[2],
+                p[3] * fixed_point[2] - fixed_point[3] * p[2]};
     }
 
     inline static pt3_t lift_half_space(const pt2_t& h, const pt3_t& p) {
@@ -38,6 +36,7 @@ namespace pyscan{
                 -p[0] * h[0] - p[1] * h[1] - p[3] * h[2],
                 h[2] * p[2]};
     }
+
 
     inline double plane_order(Point<2> const& p1, Point<2> const& p2) {
         double a = util::det2(p1[1], p1[2], p2[1], p2[2]);
@@ -138,7 +137,7 @@ namespace pyscan{
                 return drop_point(pivot, pt);
             };
             auto wdrop = [&pivot](const wpt3_t& pt) {
-                return drop_wpoint(pivot, pt);
+                return drop_point(pivot, pt);
             };
             point_list_t drop_net(point_net.size() - i - 1, pt2_t());
             wpoint_list_t drop_red(red.size(), wpt2_t());
@@ -146,7 +145,38 @@ namespace pyscan{
             std::transform(point_net.begin() + i + 1, point_net.end(), drop_net.begin(), drop);
             std::transform(red.begin(), red.end(), drop_red.begin(), wdrop);
             std::transform(blue.begin(), blue.end(), drop_blue.begin(), wdrop);
+            //std::cout << blue[0] << drop_blue[0] << std::endl;
             auto pair_mx = max_halfplane(drop_net, drop_red, drop_blue, f);
+            if (std::get<1>(pair_mx) >= max_discrepancy) {
+                max_discrepancy = std::get<1>(pair_mx);
+                max_halfspace = lift_half_space(std::get<0>(pair_mx).get_coords(), pivot);
+            }
+        }
+        return std::make_tuple(halfspace3_t(max_halfspace), max_discrepancy);
+    }
+
+    std::tuple<halfspace3_t, double> max_halfspace_labeled(
+            const point3_list_t& point_net,
+            const lpoint3_list_t& red,
+            const lpoint3_list_t& blue,
+            const discrepancy_func_t& f) {
+        pt3_t max_halfspace;
+        double max_discrepancy = -std::numeric_limits<double>::infinity();
+        for (size_t i = 0; i < point_net.size() - 2; ++i) {
+            auto pivot = point_net[i];
+            auto drop = [&pivot](const pt3_t& pt) {
+                return drop_point(pivot, pt);
+            };
+            auto ldrop = [&pivot](const lpt3_t& pt) {
+                return drop_point(pivot, pt);
+            };
+            point_list_t drop_net(point_net.size() - i - 1, pt2_t());
+            lpoint_list_t drop_red(red.size(), lpt2_t());
+            lpoint_list_t drop_blue(blue.size(), lpt2_t());
+            std::transform(point_net.begin() + i + 1, point_net.end(), drop_net.begin(), drop);
+            std::transform(red.begin(), red.end(), drop_red.begin(), ldrop);
+            std::transform(blue.begin(), blue.end(), drop_blue.begin(), ldrop);
+            auto pair_mx = max_halfplane_labeled(drop_net, drop_red, drop_blue, f);
             if (std::get<1>(pair_mx) >= max_discrepancy) {
                 max_discrepancy = std::get<1>(pair_mx);
                 max_halfspace = lift_half_space(std::get<0>(pair_mx).get_coords(), pivot);
@@ -441,35 +471,6 @@ namespace pyscan{
         return std::make_tuple(max_plane, max_discrepancy);
     }
 
-    std::tuple<halfspace3_t, double> max_halfspace_labeled(
-            const point3_list_t& point_net,
-            const lpoint3_list_t& red,
-            const lpoint3_list_t& blue,
-            const discrepancy_func_t& f) {
-        pt3_t max_halfspace;
-        double max_discrepancy = -std::numeric_limits<double>::infinity();
-        for (size_t i = 0; i < point_net.size() - 2; ++i) {
-            auto pivot = point_net[i];
-            auto drop = [&pivot](const pt3_t& pt) {
-                return drop_point(pivot, pt);
-            };
-            auto ldrop = [&pivot](const lpt3_t& pt) {
-                return drop_lpoint(pivot, pt);
-            };
-            point_list_t drop_net(point_net.size() - i - 1, pt2_t());
-            lpoint_list_t drop_red(red.size(), lpt2_t());
-            lpoint_list_t drop_blue(blue.size(), lpt2_t());
-            std::transform(point_net.begin() + i + 1, point_net.end(), drop_net.begin(), drop);
-            std::transform(red.begin(), red.end(), drop_red.begin(), ldrop);
-            std::transform(blue.begin(), blue.end(), drop_blue.begin(), ldrop);
-            auto pair_mx = max_halfplane_labeled(drop_net, drop_red, drop_blue, f);
-            if (std::get<1>(pair_mx) >= max_discrepancy) {
-                max_discrepancy = std::get<1>(pair_mx);
-                max_halfspace = lift_half_space(std::get<0>(pair_mx).get_coords(), pivot);
-            }
-        }
-        return std::make_tuple(halfspace3_t(max_halfspace), max_discrepancy);
-    }
 
     std::tuple<halfspace3_t, double> max_halfspace_labeled_restricted(
             const pt3_t& pt,
@@ -486,7 +487,7 @@ namespace pyscan{
             return drop_point(pivot, pt);
         };
         auto ldrop = [&pivot](const lpt3_t& pt) {
-            return drop_lpoint(pivot, pt);
+            return drop_point(pivot, pt);
         };
         point_list_t drop_net(point_net.size(), pt2_t());
         lpoint_list_t drop_red(red.size(), lpt2_t());

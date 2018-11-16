@@ -21,9 +21,11 @@ namespace pyscan {
 
 
     inline Point<3> _initializer(Point<3> const& p1, Point<3> const& p2, Point<3> const& p3) {
-        auto normal = cross_product(p1, p2); //this is normalized in the last coordinate
-        auto c = normal.evaluate(p3);
-        return pt3_t{ normal(0), normal(1), normal(2), c};
+        auto [a, b, c] = normal(p1, p2, p3);
+        double inv_norm = 1 / sqrt(a * a + b * b + c * c);
+        double val = a * p3(0) + b * p3(1) + c * p3(2);
+        auto plane = pt3_t{a * inv_norm, b * inv_norm, c * inv_norm, -val * inv_norm}.orient_down();
+        return plane;
     }
 
 
@@ -34,7 +36,7 @@ namespace pyscan {
     public:
         HalfSpace() : line() {}
 
-        explicit HalfSpace(Point<dim> const& line) : line(line) {}
+        explicit HalfSpace(Point<dim> const& line) : line(line.orient_down()) {}
 
         template <class ...Coords, std::enable_if_t<(sizeof...(Coords) == dim)>* = nullptr>
         HalfSpace(Coords... pts) {

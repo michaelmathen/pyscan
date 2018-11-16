@@ -21,10 +21,15 @@ namespace pyscan {
         return util::aeq(intersection(l1, l2)[2], 0.0);
     }
 
-    Point<3> cross_product(const Point<3> &p1, const Point<3> &p2) {
-        return Point<3>( util::det2(p1(1), p2(1), p1(2), p2(2))
-                , util::det2(p1(0), p2(0), p1(2), p2(2))
-                , util::det2(p1(0), p2(0), p1(1), p2(1)), 1.0);
+    std::tuple<double, double, double> normal(const Point<3> &p1, const Point<3> &p2, const Point<3> &p3) {
+        auto v1 = p1 - p2;
+        auto v2 = p1 - p3;
+
+        double ax = v1(0), ay = v1(1), az = v1(2);
+        double bx = v2(0), by = v2(1), bz = v2(2);
+        return {util::det2(ay, az, by, bz),
+                -util::det2(ax, az, bx, bz),
+                util::det2(ax, ay, bx, by)};
     }
 
     bool crosses_segment(const Point<2> &p1, const Point<2> &p2, const Point<2> &q1, const Point<2> &q2) {

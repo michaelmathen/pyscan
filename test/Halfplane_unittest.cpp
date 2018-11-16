@@ -59,31 +59,37 @@ namespace {
 
         const static int n_size = 25;
         const static int s_size = 100;
-        auto n_pts = pyscantest::randomPoints2(n_size);
-        auto m_pts = pyscantest::randomLPoints2(s_size, 10);
-        auto b_pts = pyscantest::randomLPoints2(s_size, 10);
+        for (int i = 0; i < 40; i++) {
+            auto n_pts = pyscantest::randomPoints2(n_size);
+            auto m_pts = pyscantest::randomLPoints2(s_size, 10);
+            auto b_pts = pyscantest::randomLPoints2(s_size, 10);
 
 
-        auto [d1, d1value] = pyscan::max_halfplane_labeled(n_pts, m_pts, b_pts, stat);
-        auto [d2, d2value] = pyscan::max_halfplane_labeled_simple(n_pts, m_pts, b_pts, stat);
 
-        EXPECT_FLOAT_EQ(d2value, pyscan::evaluate_range(d2, m_pts, b_pts, stat));
-        EXPECT_FLOAT_EQ(d1value, pyscan::evaluate_range(d1, m_pts, b_pts, stat));
-        EXPECT_FLOAT_EQ(d1value, d2value);
+            auto [d1, d1value] = pyscan::max_halfplane_labeled(n_pts, m_pts, b_pts, stat);
+            auto [d2, d2value] = pyscan::max_halfplane_labeled_simple(n_pts, m_pts, b_pts, stat);
+
+            EXPECT_FLOAT_EQ(d2value, pyscan::evaluate_range(d2, m_pts, b_pts, stat));
+            EXPECT_FLOAT_EQ(d1value, pyscan::evaluate_range(d1, m_pts, b_pts, stat));
+            EXPECT_FLOAT_EQ(d1value, d2value);
+        }
 
     }
 
     TEST(max_halfspace_labeled, discrepancy) {
 
         const static int n_size = 25;
-        const static int s_size = 100;
+        const static int s_size = 1000;
         auto n_pts = pyscantest::randomPoints3(n_size);
-        auto m_pts = pyscantest::randomLPoints3(s_size, 10);
-        auto b_pts = pyscantest::randomLPoints3(s_size, 10);
+        auto m_pts = pyscantest::randomLPoints3(s_size, 100);
+        auto b_pts = pyscantest::randomLPoints3(s_size, 100);
 
 
         auto [d1, d1value] = pyscan::max_halfspace_labeled(n_pts, m_pts, b_pts, stat);
         auto [d2, d2value] = pyscan::max_halfspace_labeled_simple(n_pts, m_pts, b_pts, stat);
+
+        std::cout << d1.get_coords() << " " << d1value << std::endl;
+        std::cout << d2.get_coords() << " " << d2value << std::endl;
 
         EXPECT_FLOAT_EQ(d2value, pyscan::evaluate_range(d2, m_pts, b_pts, stat));
         EXPECT_FLOAT_EQ(d1value, pyscan::evaluate_range(d1, m_pts, b_pts, stat));
