@@ -4,6 +4,7 @@
 
 #include "Point.hpp"
 #include "Segment.hpp"
+#include "Test_Utilities.hpp"
 
 #include <limits.h>
 #include <random>
@@ -55,7 +56,8 @@ namespace {
     }
 
     TEST(Point, above) {
-        pyscan::Point<> h1(1.0, 1.0, 0.0);
+        // Point is oriented down
+        pyscan::Point<> h1(-1.0, -1.0, 0.0);
         pyscan::Point<> p1(0.0, -1.0, 2.0);
         pyscan::Point<> p2(0.0, 0.0, 1.0);
         pyscan::Point<> p3(-1.0, 1.0, 1.0);
@@ -67,19 +69,19 @@ namespace {
     }
 
     TEST(Point, above_flipped) {
-        pyscan::Point<> h1(1.0, 1.0, 0.0);
+        pyscan::Point<> h1(-1.0, -1.0, 0.0);
         pyscan::Point<> p1(0.0, 1.0, -2.0);
         pyscan::Point<> p2(0.0, 0.0, -1.0);
         pyscan::Point<> p3(1.0, -1.0, -1.0);
         pyscan::Point<> p4(1.0, -2.0, -1.0);
-        EXPECT_TRUE(h1.above(p1));
+        EXPECT_TRUE(!h1.above(p1));
         EXPECT_TRUE(!h1.above(p2));
         EXPECT_TRUE(!h1.above(p3));
-        EXPECT_TRUE(!h1.above(p4));
+        EXPECT_TRUE(h1.above(p4));
     }
 
     TEST(Point, above_closed) {
-        pyscan::Point<> h1(1.0, 1.0, 0.0);
+        pyscan::Point<> h1(-1.0, -1.0, 0.0);
         pyscan::Point<> p1(0.0, -1.0, 2.0);
         pyscan::Point<> p2(0.0, 0.0, 1.0);
         pyscan::Point<> p3(-1.0, 1.0, 1.0);
@@ -112,7 +114,7 @@ namespace {
 
 
     TEST(Point, below_closed) {
-        pyscan::Point<> h1(1.0, 1.0, 0.0);
+        pyscan::Point<> h1(-1.0, -1.0, 0.0);
         pyscan::Point<> p1(0.0, -1.0, 2.0);
         pyscan::Point<> p2(0.0, 0.0, 1.0);
         pyscan::Point<> p3(-1.0, 1.0, 1.0);
@@ -154,7 +156,13 @@ namespace {
         EXPECT_TRUE(!h2.parallel_lt(h4));
     }
 
-    //TEST()
+    TEST(POINT, orientation) {
+        auto net = pyscantest::randomPoints3(100);
+        auto pivot = pyscantest::randomPoints3(1);
+        for (auto p : net) {
+            EXPECT_FLOAT_EQ(pivot[0].evaluate(p), -pivot[0].evaluate(p.flip_orientation()));
+        }
+    }
 //    TEST(Point, above_closed_interval) {
 //        pyscan::Point<> h1(1.0, 1.0, 0.0);
 //        pyscan::Point<> h2(1.0, 1.0, -1.0);

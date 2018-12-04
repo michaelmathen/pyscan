@@ -27,13 +27,15 @@ namespace pyscan {
             // Go through each trajectory and approximate it with a coreset of points
 
             // Go through the set of net points.
-            point_list_t net_points;
+            size_t label = 0;
+            lpoint_list_t net_points;
             for (auto const &traj_set : net) {
-                approx_traj(traj_set.begin(), traj_set.end(), chord_l, alpha, net_points);
+                approx_traj_labels(traj_set.begin(), traj_set.end(), chord_l, alpha, label, 0.0, net_points);
+                label++;
             }
             // go through the set of measured points
             lpoint_list_t sampleM_points;
-            size_t label = 0;
+            label = 0;
             for (auto const &b : sampleM) {
                 approx_traj_labels(b.begin(), b.end(), chord_l, alpha, label, b.get_weight(), sampleM_points);
                 label++;//increment label
@@ -47,7 +49,7 @@ namespace pyscan {
             // Scan the resulting set of points using standard labeled disk scanning function.
 
             // return the max disk.
-            auto [disk, disk_val] = max_disk_scale_labeled(net_points, sampleM_points, sampleB_points, curr_r, 2 * curr_r, scan);
+            auto [disk, disk_val] = max_disk_scale_labeled(net_points, sampleM_points, sampleB_points, alpha, curr_r, scan);
             if (curr_disk_val < disk_val) {
                curr_disk = disk;
                curr_disk_val = disk_val;

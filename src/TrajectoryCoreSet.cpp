@@ -59,7 +59,7 @@ namespace pyscan {
         return ux > x && x > lx &&  uy > y && y > ly;
     }
     /*
-     * Takes a trajectory and grids it so that each grid contains points that cross it..
+     * Takes a trajectory and grids it so that each grid contains points that cross the boundaries of the trajectory.
      */
     std::unordered_map<long, std::vector<Point<>>> grid_traj(point_list_t::const_iterator traj_b,
                                                             point_list_t::const_iterator traj_e,
@@ -139,6 +139,9 @@ namespace pyscan {
     }
 
 
+    /*
+     * This is a wrapper for grid_traj that ensures all points are in their own cells.
+     */
     point_list_t  grid_traj(point_list_t const& traj, double grid_resoluation) {
         point_list_t pts;
 
@@ -151,6 +154,7 @@ namespace pyscan {
 
     /*
     * Takes a trajectory and grids it so that each grid contains a single point of a trajectory that crosses it.
+     * Chooses the cell to be in the center of each grid cell.
     */
     point_list_t  approx_traj_grid(point_list_t const& trajectory, double grid_resolution) {
 
@@ -324,7 +328,7 @@ namespace pyscan {
     inline pt3_t lift_pt(pt2_t const&  pt) {
         double x = pt(0);
         double y = pt(1);
-        return {x, y, x * x + y * y, 1.0};
+        return pt3_t(x, y, x * x + y * y, 1.0);
     }
 
     point_list_t lifting_coreset(point_list_t const& segments, double eps) {
@@ -450,5 +454,66 @@ namespace pyscan {
             indices.push_back(i / static_cast<double>(s) + distribution(generator));
         }
         return interval_sample(trajectories, indices, take_endpoints);
+    }
+
+
+
+    std::tuple<halfspace2_t, double> error_halfplane_coreset(const trajectory_t& trajectory, const point_list_t& pts) {
+        halfspace2_t max_plane;
+        double eps = 0;
+        for (size_t i = 0; i < pts.size() - 1; i++) {
+            for (size_t j = i + 1; j < pts.size(); j++) {
+                halfspace2_t curr_plane(trajectory[i], trajectory[j]);
+
+                auto norm_f = [&curr_plane](pt2_t const& p1, pt2_t const& p2) {
+                    return p1.pdot(curr_plane.get_coords()) < p2.pdot(curr_plane.get_coords());
+                };
+                auto [min_el, max_el] = std::minmax_element(trajectory.begin(), trajectory.end(), norm_f);
+                auto [min_aprx, max_aprx] = std::minmax_element(pts.begin(), pts.end(), norm_f);
+
+                double eps_1 = std::abs(curr_plane.get_coords().pdot(*min_el) - curr_plane.get_coords().pdot(*min_aprx));
+                double eps_2 = std::abs(curr_plane.get_coords().pdot(*max_el) - curr_plane.get_coords().pdot(*max_aprx));
+                if (eps < eps_1 || eps < eps_2) {
+                    eps = std::max(eps_1, eps_2);
+                    max_plane = curr_plane;
+                }
+            }
+        }
+        return std::make_tuple(max_plane, eps);
+    }
+
+    std::tuple<Disk, double> error_disk_coreset(const trajectory_t& trajectory,
+                double grid_resolution,
+                double min_rad,
+                double max_rad,
+                const point_list_t& pts) {
+        Disk max_disk;
+        double eps = 0;
+        auto error_net = grid_traj(trajectory.get_pts(), grid_resolution);
+        for (size_t i = 0; i < error_net.size() - 2; i++) {
+            for (size_t j = i + 1; j < error_net.size() - 1; j++) {
+                for (size_t k = j + 1; k < error_net.size(); k++) {
+                    Disk curr_disk(error_net[i], error_net[j], error_net[k]);
+                    if(curr_disk.getRadius() > max_rad) {
+                        continue;
+                    }
+                    auto min_dist = trajectory.point_dist(curr_disk.getOrigin());
+
+                    auto min_aprx = std::min_element(pts.begin(), pts.end(),
+                            [&curr_disk](pt2_t const& p1, pt2_t const& p2) {
+                                return curr_disk.getOrigin().square_dist(p1) < curr_disk.getOrigin().square_dist(p2);
+                    });
+
+                    if (min_aprx->dist(curr_disk.getOrigin()) < min_rad) {
+                        continue;
+                    }
+                    if (eps < std::abs(min_dist - min_aprx->dist(curr_disk.getOrigin()))) {
+                        eps = std::abs(min_dist - min_aprx->dist(curr_disk.getOrigin()));
+                        max_disk = curr_disk;
+                    }
+                }
+            }
+        }
+        return std::make_tuple(max_disk, eps);
     }
 }

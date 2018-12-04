@@ -7,8 +7,8 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -g")
-set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O2")
+set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -Wall -Wextra -g -fsanitize=address -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O2 -march=native -DNDEBUG")
 
 
 
@@ -75,6 +75,7 @@ set(SOURCE_FILES
         src/Test_Utilities.cpp
         src/TrajectoryScan.cpp
         src/TrajectoryCoreSet.cpp
+        src/ConvexHull.cpp
         src/Segment.cpp
         #src/kernel.cpp
         )
@@ -89,13 +90,13 @@ set(HEADER include/BloomFilter.hpp
         include/SparseGrid.hpp
         include/Statistics.hpp
         include/Test_Utilities.hpp
+        include/ConvexHull.hpp
         include/TrajectoryScan.hpp
         include/Utilities.hpp)
 
 set(PY_SOURCE_FILES
-        src/pyscan.cpp src/Point.cpp)
+        src/pyscan.cpp)
 
-set(TEST_FILES test/Test_Utilities.cpp ${SOURCE_FILES})
 
 #################################################################
 # Setup google test files.#######################################
@@ -133,6 +134,8 @@ endif()
 
 SET(TEST_LINK_LIBRARIES gtest_main ${THIRDPARTY_LIBRARIES})
 
+
+add_library(src_obj OBJECT ${SOURCE_FILES})
 ########################################
 #Compile various tests##################
 ########################################
@@ -148,7 +151,7 @@ set(TEST_NAMES
 
 foreach(TEST ${TEST_NAMES})
 
-    add_executable(${TEST} ${CMAKE_SOURCE_DIR}/test/${TEST}.cpp ${SOURCE_FILES})
+    add_executable(${TEST} ${CMAKE_SOURCE_DIR}/test/${TEST}.cpp $<TARGET_OBJECTS:src_obj>)
     target_link_libraries(${TEST} ${TEST_LINK_LIBRARIES})
     add_test(NAME ${TEST} COMMAND ${TEST})
 

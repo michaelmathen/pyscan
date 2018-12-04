@@ -39,6 +39,15 @@ namespace pyscan {
         return intersection(q1, q2).crosses(p1, p2) && intersection(p1, p2).crosses(q1, q2);
     }
 
+    Point<3> cross_product(const Point<3>& p1, const Point<3>& p2) {
+        assert(util::aeq(p1[3], 1.0));
+        assert(util::aeq(p2[3], 1.0));
+        return Point <3> {util::det2(p1[1], p1[2], p2[1], p2[2]),
+                            -util::det2(p1[0], p1[2], p2[0], p2[2]),
+                            util::det2(p1[0], p1[1], p2[0], p2[1]),
+                            1.0
+        };
+    }
 //     double projected_distance(const Point<2>& p1, const Point<2> &p2, const Point<2> &origin, double dist) {
 //        //X * line(0) + Y * line(1) + 1 = 0
 //        //Y = (-1 - X * line(0)) / line(1)

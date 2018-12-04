@@ -52,11 +52,11 @@ namespace pyscantest {
     auto randomPoints(size_t test_size) -> std::vector<pyscan::Point<dim>> {
         std::random_device rd;
         std::default_random_engine generator(rd());
-        std::uniform_real_distribution<double> distribution (0.0,1.0);
+        std::uniform_real_distribution<double> distribution (0.0, 1.0);
 
         std::vector<pyscan::Point<dim>> points(test_size, pyscan::Point<dim>());
         for (size_t i = 0; i < test_size; i ++) {
-            for (size_t j = 0; j < dim; j++) {
+            for (size_t j = 0; j < dim + 1; j++) {
                 points[i][j] = distribution(generator);
             }
             points[i][dim] = 1.0;
@@ -138,19 +138,33 @@ namespace pyscantest {
     }
 
 
+    template < int dim>
+    auto randomLPointsUnique(size_t test_size) -> std::vector<pyscan::LPoint<dim>> {
+        std::random_device rd;
+        std::default_random_engine generator(rd());
+        std::uniform_real_distribution<double> distribution (0.0,1.0);
+
+        std::vector<pyscan::LPoint<dim>> points(test_size, pyscan::LPoint<dim>());
+
+        for (size_t i = 0; i < test_size; i ++) {
+            for (size_t j = 0; j < dim; j++) {
+                points[i][j] = distribution(generator);
+            }
+            points[i][dim] = 1.0;
+            points[i].set_weight(1.0);
+            points[i].set_label(i);
+        }
+        return points;
+    }
 
     auto randomLPointsUnique2(size_t test_size) -> std::vector<pyscan::LPoint<>> {
-        auto pts = randomVec(test_size);
-        std::vector<pyscan::LPoint<>> lpoints(test_size, pyscan::LPoint<>());
-        auto wp = lpoints.begin();
-        size_t curr_label = 0;
-        std::for_each(pts.begin(), pts.end(), [&](auto const& pt) {
-            *wp = pyscan::LPoint<>(curr_label, 1.0, pt[0], pt[1], 1.0);
-            curr_label++;
-            wp++;
-        });
-        return lpoints;
+        return randomLPointsUnique<2>(test_size);
     }
+
+    auto randomLPointsUnique3(size_t test_size) -> std::vector<pyscan::LPoint<3>> {
+        return randomLPointsUnique<3>(test_size);
+    }
+
 
     auto removeLabels(pyscan::lpoint_list_t const& pts) -> pyscan::wpoint_list_t {
 

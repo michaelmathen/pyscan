@@ -17,6 +17,7 @@
 #include "DiskScan.hpp"
 #include "FunctionApprox.hpp"
 #include "TrajectoryScan.hpp"
+#include "ConvexHull.hpp"
 #include "TrajectoryCoreSet.hpp"
 
 
@@ -63,7 +64,7 @@ py::list std_vector_to_py_list(const std::vector<T>& v) {
 namespace pyscan {
 
     pyscan::Segment to_Segment(Point<2> const& pt) {
-        return Segment(pt);
+        return Segment(HalfSpace<2>(pt));
     }
 
     auto sized_region(double size) -> std::function<double(double, double, double, double)> {
@@ -293,6 +294,16 @@ struct vector_to_python_list {
     }
 };
 
+
+
+double evaluate_disk_labeled(pyscan::Disk const& d1, pyscan::lpoint_list_t const&  mpts, pyscan::lpoint_list_t const& bpts, pyscan::discrepancy_func_t const& disc) {
+    return pyscan::evaluate_range(d1, mpts, bpts, disc);
+}
+
+double evaluate_halfplane_labeled(pyscan::halfspace2_t const& d1, pyscan::lpoint_list_t const&  mpts, pyscan::lpoint_list_t const& bpts, pyscan::discrepancy_func_t const& disc) {
+    return pyscan::evaluate_range(d1, mpts, bpts, disc);
+}
+
 BOOST_PYTHON_MODULE(libpyscan) {
     using namespace py;
     /*
@@ -332,6 +343,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .from_python<std::vector<pyscan::trajectory_t>>();
 
 
+    py::def("hull", pyscan::graham_march);
 
     py::class_<pyscan::Grid>("Grid", py::init<size_t, pyscan::wpoint_list_t const&, pyscan::wpoint_list_t const&>())
             .def("totalRedWeight", &pyscan::Grid::totalRedWeight)
@@ -390,6 +402,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .def("below", &pyscan::Point<2>::below)
             .def("crosses", &pyscan::Point<2>::crosses)
             .def("evaluate", &pyscan::Point<2>::evaluate)
+            .def("orient_down", &pyscan::Point<2>::orient_down)
+            .def("orient_up", &pyscan::Point<2>::orient_up)
             .def("dist", &pyscan::Point<2>::dist)
             .def("pdot", &pyscan::Point<2>::pdot)
             .def("parallel_lt", &pyscan::Point<2>::parallel_lt)
@@ -401,15 +415,15 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("to_segment", &pyscan::to_Segment);
 
     py::def("aeq", &pyscan::util::aeq);
-    py::class_<pyscan::Segment, py::bases<pyscan::pt2_t> >("Segment", py::init<pyscan::Point<>, pyscan::Point<>, pyscan::Point<> >())
+    py::class_<pyscan::Segment, py::bases<pyscan::pt2_t> >("Segment", py::init<pyscan::HalfSpace<2>, pyscan::Point<>, pyscan::Point<> >())
             .def("lte", &pyscan::Segment::lte)
             .def("lt", &pyscan::Segment::lt)
             .def("gt", &pyscan::Segment::gt)
             .def("gte", &pyscan::Segment::gte)
             .def("crossed", &pyscan::Segment::crossed)
             .def("split", &pyscan::Segment::split)
-            .def("__str__", &pyscan::Segment::str)
-            .def("__repr__", &pyscan::Segment::str)
+//            .def("__str__", &pyscan::Segment::str)
+//            .def("__repr__", &pyscan::Segment::str)
             .def("get_e1", &pyscan::Segment::get_e1)
             .def("get_e2", &pyscan::Segment::get_e2);
 
@@ -428,7 +442,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
     py::scope().attr("DISC") = pyscan::discrepancy_func_t (
         [&](double m, double m_tot, double b, double b_tot) {
-            return fabs(m / m_tot - b / b_tot);
+            return std::abs(m / m_tot - b / b_tot);
     });
 
     py::scope().attr("RKULLDORF") = pyscan::discrepancy_func_t(
@@ -453,21 +467,22 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_halfplane_labeled", &pyscan::max_halfplane_labeled);
     py::def("max_halfspace", &pyscan::max_halfspace);
     py::def("max_halfspace_labeled", &pyscan::max_halfspace_labeled);
-    py::def("max_halfplane_fast", &pyscan::max_halfplane_fast);
+    //py::def("max_halfplane_fast", &pyscan::max_halfplane_fast);
 
     py::def("max_disk", &pyscan::max_disk);
     py::def("max_disk_labeled", &pyscan::max_disk_labeled);
-    py::def("max_rdisk_lift_labeled", &pyscan::max_disk_labeled);
+    //py::def("max_disk_lift_labeled", &pyscan::max_disk_labeled);
 
 
-    py::def("evaluate_range", &pyscan::evaluate_range<2, pyscan::wpt2_t>);
-    py::def("evaluate_range_labeled", &pyscan::evaluate_range<2, pyscan::lpt2_t>);
+    py::def("evaluate_range", &pyscan::evaluate_range<2, pyscan::WPoint>);
+    py::def("evaluate_disk_labeled", &evaluate_disk_labeled);
 
-    py::def("max_disk_cached", &pyscan::max_disk_cached);
-    py::def("max_disk_cached_labeled", &pyscan::max_disk_cached_labeled);
+//    py::def("max_disk_cached", &pyscan::max_disk_cached);
+//    py::def("max_disk_cached_labeled", &pyscan::max_disk_cached_labeled);
 
     py::def("max_disk_scale", &pyscan::max_disk_scale);
     py::def("max_disk_scale_labeled", &pyscan::max_disk_scale_labeled);
+    py::def("max_disk_scale_labeled_alt", &pyscan::max_disk_scale_labeled_alt);
     py::def("max_rect_labeled", &pyscan::max_rect_labeled);
 
     ////////////////////////////////////////////////////////////////////
@@ -505,6 +520,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
     //This is a 3d eps-kernel for disks.
     py::def("lifting_kernel", &pyscan::lifting_coreset);
 
+    py::def("coreset_error_halfplane", &pyscan::error_halfplane_coreset);
+    py::def("coreset_error_disk", &pyscan::error_disk_coreset);
 
     //This is for partial scanning, but could be used for full scannings.
     py::def("block_sample", &pyscan::block_sample);

@@ -7,6 +7,8 @@
 
 #include "TrajectoryScan.hpp"
 #include "Point.hpp"
+#include "HalfSpaceScan.hpp"
+#include "RectangleScan.hpp"
 
 namespace pyscan {
 
@@ -33,5 +35,15 @@ namespace pyscan {
     point_list_t even_sample(const trajectory_set_t& trajectories, size_t s, bool take_endpoints);
 
     point_list_t block_sample(const trajectory_set_t& trajectories, size_t s, bool take_endpoints);
+
+
+    std::tuple<halfspace2_t, double> error_halfplane_coreset(const trajectory_t& trajectory, const point_list_t& pts);
+
+    std::tuple<Disk, double> error_disk_coreset(const trajectory_t& trajectory, double grid_resolution,
+            double min_res,
+            double max_radius,
+            const point_list_t& pts);
+
+    //std::tuple<Rectangle, double> error_rectangle_coreset()
 }
 #endif //PYSCAN_TRAJECTORYCORESET_HPP

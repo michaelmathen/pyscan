@@ -39,7 +39,16 @@ namespace pyscan {
         point_list_t get_pts () const {
             return trajectory_pts;
         }
-        
+
+        size_t size() const {
+            return trajectory_pts.size();
+        }
+
+        const pt2_t& operator[](size_t i) const {
+            return trajectory_pts[i];
+        }
+
+
         virtual double get_partial_weight() const {
             return get_length();
         }
@@ -80,8 +89,9 @@ namespace pyscan {
                     if (seg_dist < min_dist) {
                         min_dist = seg_dist;
                     }
+                    last_pt = curr_pt;
                 }
-                return min_dist;
+                return sqrt(min_dist);
             }
         }
 
@@ -94,7 +104,10 @@ namespace pyscan {
             } else {
                 auto last_pt = trajectory_pts.begin();
                 for (auto curr_pt = last_pt + 1; curr_pt != trajectory_pts.end(); ++curr_pt) {
-                    if (range.intersects_segment(*last_pt, *curr_pt)) return true;
+                    if (range.intersects_segment(*last_pt, *curr_pt)) {
+                        return true;
+                    }
+                    last_pt = curr_pt;
                 }
                 return false;
             }

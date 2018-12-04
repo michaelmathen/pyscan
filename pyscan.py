@@ -158,7 +158,7 @@ def plant_full_halfplane(trajectories, r, p, q, disc):
     trajectories = sorted(trajectories, key=lambda x: min_distance(x, rand_direc))
 
     pt = min(trajectories[int(r * len(trajectories))], key=lambda pt: rand_direc[0] * pt[0] + rand_direc[1] * pt[1])
-    lc = pt.pdot(rand_direc)
+    lc = pt[0] * rand_direc[0] + pt[1] * rand_direc[1]
     plant_region = Halfplane(Point(rand_direc[0], rand_direc[1], -lc))
 
     inside_plane = trajectories[:int(r * len(trajectories))]
@@ -169,6 +169,29 @@ def plant_full_halfplane(trajectories, r, p, q, disc):
     diff = evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
     return red_in + red_out, blue_in + blue_out, plant_region, diff
 
+
+def measure_halfplane_full(region, traj_red, traj_blue, disc):
+    red_w = 0
+    blue_w = 0
+    for traj in traj_red:
+        if Trajectory(traj).intersects_halfplane(region):
+            red_w += 1
+    for traj in traj_blue:
+        if Trajectory(traj).intersects_halfplane(region):
+            blue_w += 1
+    return evaluate(disc, red_w, len(traj_red), blue_w, len(traj_blue))
+
+
+def measure_disk_full(region, traj_red, traj_blue, disc):
+    red_w = 0
+    blue_w = 0
+    for traj in traj_red:
+        if Trajectory(traj).intersects_disk(region):
+            red_w += 1
+    for traj in traj_blue:
+        if Trajectory(traj).intersects_disk(region):
+            blue_w += 1
+    return evaluate(disc, red_w, len(traj_red), blue_w, len(traj_blue))
 
 def plant_partial_halfplane(trajectories, r, p, q, eps, disc):
     """
@@ -217,9 +240,7 @@ def plant_full_disk(trajectories, r, p, q, disc):
     inside_disk = trajectories[:int(r * len(trajectories))]
     outside_disk = trajectories[int(r * len(trajectories)):]
 
-    max_disk = [Disk(origin[0], origin[1], traj.point_dist(origin)) for traj in inside_disk]
-    print([dsk.get_radius() for dsk in max_disk])
-    max_disk = max_disk[-1]
+    max_disk = Disk(origin[0], origin[1], inside_disk[-1].point_dist(origin))
 
     red_in, blue_in = split_set([tuple(traj.get_pts()) for traj in inside_disk], q)
     red_out, blue_out = split_set([tuple(traj.get_pts()) for traj in outside_disk], p)

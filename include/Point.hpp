@@ -29,7 +29,7 @@ namespace pyscan {
 
 
         template <class ...Coords, std::enable_if_t<(sizeof...(Coords) == dim + 1)>* = nullptr>
-        Point(Coords... rest) {
+        explicit Point(Coords... rest) {
 
             static_assert(sizeof...(rest) == dim + 1, "Wrong number of arguments for the point type.");
             std::initializer_list<double> il({rest...});
@@ -67,20 +67,43 @@ namespace pyscan {
             return operator*(pt, val);
         }
 
-        Point<dim> orient_down() const {
+        Point<dim> flip_orientation() const {
+            //Flips the orientation
+            Point<dim> p_out;
+            for (size_t j = 0; j < dim + 1; j++) {
+                p_out.coords[j] = -coords[j];
+            }
+            return p_out;
+        }
+
+        Point<dim> orient_up(int i) const {
             // Always orient these down by the second to last coordinate.
             // In 2d this ensures that y is oriented down.
             // In 3d this ensures that z is oriented down.
             Point<dim> p_out;
-            double orientation = std::copysign(1.0, coords[dim - 1]);
-            for (size_t i = 0; i < dim + 1; i++) {
-                p_out.coords[i] = -orientation * coords[i];
+            assert(i < dim + 1);
+            double orientation = std::copysign(1.0, coords[i]);
+            for (size_t j = 0; j < dim + 1; j++) {
+                p_out.coords[j] = orientation * coords[j];
+            }
+            return p_out;
+        }
+
+        Point<dim> orient_down(int i) const {
+            // Always orient these down by the second to last coordinate.
+            // In 2d this ensures that y is oriented down.
+            // In 3d this ensures that z is oriented down.
+            Point<dim> p_out;
+            assert(i < dim + 1);
+            double orientation = std::copysign(1.0, coords[i]);
+            for (size_t j = 0; j < dim + 1; j++) {
+                p_out.coords[j] = -orientation * coords[j];
             }
             return p_out;
         }
 
         inline double& operator[](size_t i) {
-            //assert(i < dim + 1);
+            assert(i < dim + 1);
             return coords[i];
         }
 
@@ -89,12 +112,12 @@ namespace pyscan {
         }
 
         inline double operator[](size_t i) const {
-            //assert(i < dim + 1);
+            assert(i < dim + 1);
             return coords[i];
         }
 
         inline double operator()(size_t i) const {
-            //assert(i < dim);
+            assert(i < dim);
             return coords[i] / coords[dim];
         }
 
@@ -117,19 +140,7 @@ namespace pyscan {
             for (size_t i = 0; i < dim + 1; ++i) {
                 res += coords[i] * other.coords[i];
             }
-            return res;
-        }
-
-        inline double norm_evaluate(const Point<dim> &other) const {
-            /*
-             * Insure that other is always a positive scaled value
-             */
-            double res = 0.0;
-            for (size_t i = 0; i < dim + 1; ++i) {
-                res += coords[i] * other.coords[i];
-            }
-            //double scale = std::copysign(1.0, other.coords[dim]);
-            return res * 1.0;
+            return res; //* std::copysign(1.0, other[dim]);
         }
 
         inline double square_dist(const Point<dim> &p) const {
@@ -152,6 +163,16 @@ namespace pyscan {
             return sqrt(square_dist(p));
         }
 
+
+        Point<dim> normalize() const {
+            Point<dim> res;
+            double magnitude = sqrt(pdot(*this)) / coords[dim];
+            for (size_t i = 0; i < dim; ++i) {
+                res.coords[i] = coords[i] / magnitude;
+            }
+            res.coords[dim] = 1.0;
+            return res;
+        }
 
         Point<dim> operator-(const Point<dim>& other) const {
             Point<dim> res;
@@ -208,19 +229,19 @@ namespace pyscan {
         }
 
         inline bool above_closed(const Point<dim> &p) const {
-            return util::alte(norm_evaluate(p), 0.0);
+            return util::alte(0.0, evaluate(p));
         }
 
         inline bool below_closed(const Point<dim> &p) const {
-            return util::alte(0.0, norm_evaluate(p));
+            return util::alte(evaluate(p), 0.0);
         }
 
         inline bool above(const Point<dim> &p) const {
-            return util::alt(norm_evaluate(p), 0.0);
+            return util::alt(0.0, evaluate(p));
         }
 
         inline bool below(const Point<dim> &p) const {
-            return util::alt(0.0, norm_evaluate(p));
+            return util::alt(evaluate(p), 0.0);
         }
 
 
@@ -228,7 +249,9 @@ namespace pyscan {
             /*
              * Checks if this line is crossed by this line segment between p1
              */
-            return above(p1) != above(p2);
+            auto or1 = p1.orient_up(dim);
+            auto or2 = p2.orient_up(dim);
+            return (above(or1) && below(or2)) || (below(or1) && above(or2));
         }
 
         inline bool parallel_lte( const Point<dim>& l1) const {
@@ -261,7 +284,7 @@ namespace pyscan {
             return util::alt(l1[dim] * norm, coords[dim]);
         }
 
-    private:
+    protected:
         std::array<double, dim + 1> coords;
     };
 
@@ -270,11 +293,20 @@ namespace pyscan {
     class WPoint : public Point<dim> {
     public:
         template<typename ...Coords>
-        WPoint(double weight, Coords... rest)
+        explicit WPoint(double weight, Coords... rest)
                 : Point<dim>(rest...), weight(weight) {}
 
         WPoint()
                 : Point<dim>(), weight(0.0) {}
+
+        friend std::ostream &operator<<(std::ostream &os, WPoint const &pt) {
+            os << "WPoint(" << pt.get_weight() << ", ";
+            for (auto &el: pt.coords) {
+                os << el << ", ";
+            }
+            os << ")";
+            return os;
+        }
 
         inline double get_weight() const {
             return weight;
@@ -284,7 +316,7 @@ namespace pyscan {
             weight = w;
         }
 
-    private:
+    protected:
         double weight;
     };
 
@@ -303,11 +335,20 @@ namespace pyscan {
             return label;
         }
 
+        friend std::ostream &operator<<(std::ostream &os, LPoint const &pt) {
+            os << "LPoint(" << pt.label << ", " << pt.get_weight() << ", ";
+            for (auto &el: pt.coords) {
+                os << el << ", ";
+            }
+            os << ")";
+            return os;
+        }
+
         virtual void set_label(size_t l) {
             label = l;
         }
 
-    private:
+    protected:
         size_t label;
     };
 
@@ -319,6 +360,8 @@ namespace pyscan {
     std::tuple<double, double, double> normal(const Point<3> &p1, const Point<3> &p2, const Point<3> &p3);
 
     bool is_parallel(const Point<2> &l1, const Point<2> &l2);
+
+    Point<3> cross_product(const Point<3>& p1, const Point<3>& p2);
 
     bool crosses_segment(const Point<2> &p1, const Point<2> &p2, const Point<2> &q1, const Point<2> &q2);
 
@@ -356,12 +399,16 @@ namespace pyscan {
 
 
     template <typename T>
-    void remove_duplicates(T& pts) {
-        std::sort(pts.begin(), pts.end(), [](pt2_t const& p1, pt2_t const& p2){
-            return p1(0) < p2(1);
+    void remove_duplicates(std::vector<T>& pts) {
+
+        auto pts_end = std::remove_if(pts.begin(), pts.end(), [] (T const& pt){
+            return util::aeq(pt[2], 0.0) || std::isnan(pt(0)) || std::isnan(pt(1)) || std::isinf(pt(0)) || std::isinf(pt(1));
+        });
+        std::sort(pts.begin(), pts_end, [](T const& p1, T const& p2){
+            return p1(0) < p2(0);
         });
 
-        auto end_it = std::unique(pts.begin(), pts.end(), [] (pt2_t const& p1, pt2_t const& p2) {
+        auto end_it = std::unique(pts.begin(), pts_end, [] (T const& p1, T const& p2) {
             return p1.approx_eq(p2);
         });
         pts.erase(end_it, pts.end());

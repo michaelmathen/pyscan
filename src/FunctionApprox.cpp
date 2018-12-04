@@ -341,7 +341,7 @@ namespace pyscan {
     point_list_t approx_hull(point_list_t const &pts, double eps) {
         auto max_f = [&] (Vec2 direction) {
             double max_dir = -std::numeric_limits<double>::infinity();
-            pt2_t curr_pt {0.0, 0.0, 0.0};
+            pt2_t curr_pt(0.0, 0.0, 0.0);
             for (auto& pt : pts) {
                 double curr_dir = direction[0] * pt(0) + direction[1] * pt(1);
                 if (max_dir < curr_dir) {
@@ -358,7 +358,7 @@ namespace pyscan {
                 core_set_pts.emplace_back(v[0], v[1], 1.0);
             }
         }
-         remove_duplicates(core_set_pts);
+        remove_duplicates(core_set_pts);
         return core_set_pts;
     }
 

@@ -57,11 +57,11 @@ double range_weight(const Range<dim>& range, const std::vector<LPoint<dim>>& pts
     return weight;
 }
 
-template <int dim, typename Pt>
+template <int dim, template<int> typename Pt=WPoint>
 double evaluate_range(
         const Range<dim>& range,
-        const std::vector<Pt>& red,
-        const std::vector<Pt>& blue,
+        const std::vector<Pt<dim> >& red,
+        const std::vector<Pt<dim> >& blue,
         const discrepancy_func_t& f) {
 
     return f(range_weight(range, red), computeTotal(red),

@@ -9,25 +9,25 @@
 #include <memory>
 
 #include "Point.hpp"
-
+#include "HalfSpaceScan.hpp"
 namespace pyscan {
 
 
 
-    class Segment : public Point<2> {
+    class Segment : public HalfSpace<2> {
         Point<> l_end_pt;
         Point<> r_end_pt;
     public:
 
-        explicit Segment(Point<2> const& line) : Point<2>(line.orient_down()),
+        explicit Segment(HalfSpace<2> const& line) : HalfSpace<2>(line),
                     l_end_pt(-line[1], line[0], 0.0),
                     r_end_pt(line[1], -line[0], 0.0) {}
 
-        Segment(Point<2> const& line, Point<2> const& el, Point<2> const& er) : Point<2>(line.orient_down()),
-            l_end_pt(el), 
-            r_end_pt(er) {
+        Segment(HalfSpace<2> const& line, Point<2> el, Point<2> er) : HalfSpace<2>(line),
+            l_end_pt(std::move(el)),
+            r_end_pt(std::move(er)) {
         }
-        Segment() {}
+        Segment() = default;
 
         Point<> get_e1() const;
         Point<> get_e2() const;
@@ -38,14 +38,14 @@ namespace pyscan {
         bool crossed(Point<> const& line) const;
         std::tuple<Segment, Segment> split(Point<> const& seg) const;
 
-        std::string str() const override {
-            std::stringstream ss;
-            ss << "Segment(" << *this;
-            ss << ", " << this->get_e1();
-            ss << ", " << this->get_e2();
-            ss << ")";
-            return ss.str();
-        }
+//        std::string str() const override {
+//            std::stringstream ss;
+//            ss << "Segment(" << *this;
+//            ss << ", " << this->get_e1();
+//            ss << ", " << this->get_e2();
+//            ss << ")";
+//            return ss.str();
+//        }
     };
 
 }

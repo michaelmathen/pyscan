@@ -46,6 +46,7 @@ namespace pyscan {
             if (std::isnan(a) || std::isnan(b)) return max_int64;
             if (std::isinf(a) || std::isinf(b)) return max_int64;
 
+            static_assert(sizeof(double) == sizeof(int64_t));
             int64_t ia, ib;
             memcpy(&ia, &a, sizeof(double));
             memcpy(&ib, &b, sizeof(double));
@@ -57,6 +58,7 @@ namespace pyscan {
 
         
         inline bool aeq(double a, double b) {
+            //return std::abs(a - b) / std::max(std::abs(a), std::abs(b)) <= .0000000001;
             return ulpsDistance(a, b) < max_float_distance;
         }
 

@@ -1,6 +1,7 @@
 #include "DiskScan.hpp"
 #include "HalfSpaceScan.hpp"
 #include "SparseGrid.hpp"
+#include "Range.hpp"
 
 #include <unordered_map>
 #include <iostream>
@@ -14,19 +15,20 @@ namespace pyscan {
 
     using crescent_t = std::vector<LabeledValue>;
 
-    inline static lpt3_t lift_lpt(const lpt2_t &pt) {
+
+    inline static lpt3_t lift_pt_alt(const lpt2_t &pt) {
         double x = pt(0), y = pt(1);
-        return {pt.get_label(), pt.get_weight(), x, y, x * x + y * y, 1.0};
+        return lpt3_t(pt.get_label(), pt.get_weight(), x, y, x * x + y * y, 1.0);
     }
 
-    inline static wpt3_t lift_wpt(const wpt2_t &pt) {
+    inline static wpt3_t lift_pt_alt(const wpt2_t &pt) {
         double x = pt(0), y = pt(1);
-        return {pt.get_weight(), x, y, x * x + y * y, 1.0};
+        return wpt3_t(pt.get_weight(), x, y, x * x + y * y, 1.0);
     }
 
     inline static pt3_t lift_pt(const pt2_t &pt) {
         double x = pt(0), y = pt(1);
-        return {x, y, x * x + y * y, 1.0};
+        return pt3_t(x, y, x * x + y * y, 1.0);
     }
 
 
@@ -260,11 +262,13 @@ namespace pyscan {
         return std::make_tuple(cur_max, max_stat);
     }
 
-    template<typename Pt>
-    inline static std::tuple<Disk, double> max_disk_internal(
+    template<typename pt>
+    inline static std::tuple<Disk, double> max_disk_scale_slow_internal(
             const point_list_t &point_net,
-            const std::vector<Pt> &red,
-            const std::vector<Pt> &blue,
+            const std::vector<pt> &red,
+            const std::vector<pt> &blue,
+            double min_res,
+            double max_res,
             const discrepancy_func_t &f) {
 
         double red_tot = computeTotal(red);
@@ -278,7 +282,7 @@ namespace pyscan {
                 double local_max_stat;
                 std::tie(local_max_disk, local_max_stat) =
                         max_disk_restricted(*p1, *p2, point_net, red, blue,
-                                            0.0, std::numeric_limits<double>::infinity(),
+                                            min_res, max_res,
                                             red_tot, blue_tot, f);
 
                 if (local_max_stat > max_stat) {
@@ -292,24 +296,27 @@ namespace pyscan {
     }
 
 
-    std::tuple<Disk, double> max_disk(
+    std::tuple<Disk, double> max_disk_scale_slow(
             const point_list_t &point_net,
             const wpoint_list_t &red,
             const wpoint_list_t &blue,
+            double min_res,
+            double max_res,
             const discrepancy_func_t &f) {
 
-        return max_disk_internal(point_net, red, blue, f);
+        return max_disk_scale_slow_internal(point_net, red, blue, min_res, max_res, f);
 
     }
 
-    std::tuple<Disk, double> max_disk_labeled(
+    std::tuple<Disk, double> max_disk_scale_slow_labeled(
             const point_list_t &point_net,
             const lpoint_list_t &red,
             const lpoint_list_t &blue,
+            double min_res,
+            double max_res,
             const discrepancy_func_t &f) {
 
-        return max_disk_internal(point_net, red, blue, f);
-
+        return max_disk_scale_slow_internal(point_net, red, blue, min_res, max_res, f);
     }
 
 #ifdef _DEBUG
@@ -348,7 +355,6 @@ namespace pyscan {
             const std::vector<T> &red,
             const std::vector<T> &blue,
             double min_res,
-            double max_res,
             const discrepancy_func_t &f) {
 
         double red_tot = computeTotal(red);
@@ -397,11 +403,9 @@ namespace pyscan {
                     for (auto &pt2: net_chunk) {
                         if (pt1->second.approx_eq(pt2)) continue;
 
-                        Disk local_max_disk;
-                        double local_max_stat;
-                        std::tie(local_max_disk, local_max_stat) =
+                        auto [local_max_disk, local_max_stat] =
                                 max_disk_restricted(pt1->second, pt2, net_chunk, red_chunk, blue_chunk,
-                                                    min_res, max_res,
+                                                    min_res, 2 * min_res,
                                                     red_tot, blue_tot, f);
                         if (local_max_stat > max_stat) {
                             cur_max = local_max_disk;
@@ -427,86 +431,52 @@ namespace pyscan {
             const wpoint_list_t &red,
             const wpoint_list_t &blue,
             double min_res,
-            double max_res,
             const discrepancy_func_t &f) {
-        return max_disk_scale_internal(point_net, red, blue, min_res, max_res, f);
+        return max_disk_scale_internal(point_net, red, blue, min_res, f);
     }
 
-    std::tuple<Disk, double> max_disk_scale_labeled(
+    std::tuple<Disk, double> max_disk_scale_labeled_alt(
             const point_list_t &point_net,
             const lpoint_list_t &red,
             const lpoint_list_t &blue,
             double min_res,
-            double max_res,
             const discrepancy_func_t &f) {
-        return max_disk_scale_internal(point_net, red, blue, min_res, max_res, f);
-    }
-
-    template<typename Pt>
-    inline static std::tuple<Disk, double> max_disk_cached_internal(
-            const point_list_t &point_net,
-            const std::vector<Pt> &red,
-            const std::vector<Pt> &blue,
-            const discrepancy_func_t &f) {
-
-        Disk cur_max;
-        double max_stat = 0.0;
-        for (uint32_t resolution = 2; resolution < 31; resolution++) {
-            uint32_t grid_r = 1u << resolution;
-            Disk local_max_disk;
-            double local_max_stat;
-            std::tie(local_max_disk, local_max_stat) = max_disk_scale_internal(point_net, red, blue, 1 / static_cast<double>(grid_r), grid_r, f);
-
-#ifdef _DEBUG
-            Disk actual_max_disk;
-            double actual_max_stat;
-            std::tie(actual_max_disk, actual_max_stat) = MaxDiskRestrictedSimple(point_net, red, blue, 1.0 / grid_r, 2.0 / grid_r, f);
-            std::cout << grid_r << ", " <<  local_max_stat << "," << actual_max_stat << std::endl;
-#endif
-
-            if (max_stat < local_max_stat) {
-                cur_max = local_max_disk;
-                max_stat = local_max_stat;
-            }
-        }
-
-        return std::make_tuple(cur_max, max_stat);
-
-    }
-
-    std::tuple<Disk, double> max_disk_cached(
-            const point_list_t &point_net,
-            const wpoint_list_t &red,
-            const wpoint_list_t &blue,
-            const discrepancy_func_t &f) {
-
-        return max_disk_cached_internal(point_net, red, blue, f);
-
-    }
-
-    std::tuple<Disk, double> max_disk_cached_labeled(
-            const point_list_t &point_net,
-            const lpoint_list_t &red,
-            const lpoint_list_t &blue,
-            const discrepancy_func_t &f) {
-
-        return max_disk_cached_internal(point_net, red, blue, f);
-
+        return max_disk_scale_internal(point_net, red, blue, min_res, f);
     }
 
 
-    std::tuple<Disk, double> max_disk_lift(
+    inline std::tuple<halfspace3_t, double> max_halfspace_overload(
+            const point3_list_t &point_net,
+            const wpoint3_list_t &red,
+            const wpoint3_list_t &blue,
+            const discrepancy_func_t &f) {
+        return max_halfspace(point_net, red, blue, f);
+    }
+
+    inline std::tuple<halfspace3_t, double> max_halfspace_overload(
+            const point3_list_t &point_net,
+            const lpoint3_list_t &red,
+            const lpoint3_list_t &blue,
+            const discrepancy_func_t &f) {
+        return max_halfspace_labeled(point_net, red, blue, f);
+    }
+
+    template<template <int> typename P=WPoint>
+    inline std::tuple<Disk, double> max_disk_internal(
             const point_list_t &point_net,
-            const wpoint_list_t &red,
-            const wpoint_list_t &blue,
+            const std::vector<P<2>>& red,
+            const std::vector<P<2>>& blue,
             const discrepancy_func_t &f) {
 
         point3_list_t lifted_net(point_net.size());
-        wpoint3_list_t lifted_red(red.size()), lifted_blue(blue.size());
+        std::vector<P<3>> lifted_red(red.size()), lifted_blue(blue.size());
+        auto lpt = [](const P<2>& pt) {
+            return lift_pt_alt(pt);
+        };
         std::transform(point_net.begin(), point_net.end(), lifted_net.begin(), lift_pt);
-        std::transform(red.begin(), red.end(), lifted_red.begin(), lift_wpt);
-        std::transform(blue.begin(), blue.end(), lifted_blue.begin(), lift_wpt);
-        auto [h, max_val] = max_halfspace(lifted_net, lifted_red, lifted_blue, f);
+        std::transform(red.begin(), red.end(), lifted_red.begin(), lpt);
+        std::transform(blue.begin(), blue.end(), lifted_blue.begin(), lpt);
+        auto [h, max_val] = max_halfspace_overload(lifted_net, lifted_red, lifted_blue, f);
         double a = h[0], b = h[1], c = h[2], d = h[3];
         return std::make_tuple(Disk(-a / (2 * c), -b / (2 * c),
                                     sqrt((a * a + b * b - 4 * c * d) / (4 * c * c))),
@@ -514,64 +484,31 @@ namespace pyscan {
 
     }
 
-    std::tuple<Disk, double> max_disk_lift_labeled(
+    std::tuple<Disk, double> max_disk(
             const point_list_t &point_net,
-            const lpoint_list_t &red,
-            const lpoint_list_t &blue,
+            const wpoint_list_t& red,
+            const wpoint_list_t& blue,
             const discrepancy_func_t &f) {
+        return max_disk_internal(point_net, red, blue, f);
+    }
 
-        point3_list_t lifted_net(point_net.size());
-        lpoint3_list_t lifted_red(red.size()), lifted_blue(blue.size());
-        std::transform(point_net.begin(), point_net.end(), lifted_net.begin(), lift_pt);
-        std::transform(red.begin(), red.end(), lifted_red.begin(), lift_lpt);
-        std::transform(blue.begin(), blue.end(), lifted_blue.begin(), lift_lpt);
-        auto [h, max_val] = max_halfspace_labeled(lifted_net, lifted_red, lifted_blue, f);
-        double a = h[0], b = h[1], c = h[2], d = h[3];
-        return std::make_tuple(Disk(-a / (2 * c), -b / (2 * c),
-                                    sqrt((a * a + b * b - 4 * c * d) / (4 * c * c))),
-                               max_val);
-
+    std::tuple<Disk, double> max_disk_labeled(
+            const point_list_t &point_net,
+            const lpoint_list_t& red,
+            const lpoint_list_t& blue,
+            const discrepancy_func_t &f) {
+        return max_disk_internal(point_net, red, blue, f);
     }
 
 
-//    std::tuple<Disk, double> max_rdisk_lift_labeled(
-//            const lpoint_list_t &net,
-//            const lpoint_list_t &red,
-//            const lpoint_list_t &blue,
-//            double alpha,
-//            double min_radius,
-//            double max_radius,
-//            const discrepancy_func_t &f){
-//
-//        lpoint3_list_t lifted_net(net.size());
-//        lpoint3_list_t lifted_red(red.size()), lifted_blue(blue.size());
-//        std::transform(net.begin(), net.end(), lifted_net.begin(), lift_lpt);
-//        std::transform(red.begin(), red.end(), lifted_red.begin(), lift_lpt);
-//        std::transform(blue.begin(), blue.end(), lifted_blue.begin(), lift_lpt);
-//
-//        auto f_func = [min_radius, max_radius] (halfspace3_t const& h) {
-//            double a = h[0], b = h[1], c = h[2], d = h[3];
-//            double r = sqrt((a * a + b * b - 4 * c * d) / (4 * c * c));
-//            return min_radius < r && r < max_radius;
-//        };
-//        auto [h, max_val] = max_halfspace_labeled_restricted(lifted_net, lifted_red, lifted_blue, alpha, f_func, f);
-//        double a = h[0], b = h[1], c = h[2], d = h[3];
-//        return std::make_tuple(Disk(-a / (2 * c), -b / (2 * c),
-//                                    sqrt((a * a + b * b - 4 * c * d) / (4 * c * c))),
-//                               max_val);
-//
-//    }
-
-
-
-    std::tuple<Disk, double> max_disk_scale_labeled_alt(
+    std::tuple<Disk, double> max_disk_scale_labeled(
             const lpoint_list_t &point_net,
             const lpoint_list_t &red,
             const lpoint_list_t &blue,
-            double alpha,
+            bool compress,
             double min_res,
-            double max_res,
             const discrepancy_func_t &f) {
+
 
         double red_tot = computeTotal(red);
         double blue_tot = computeTotal(blue);
@@ -616,26 +553,62 @@ namespace pyscan {
 
             if (net_chunk.size() >= 3) {
 
-                lpoint3_list_t lifted_net(net_chunk.size());
-                lpoint3_list_t lifted_red(red_chunk.size()), lifted_blue(blue_chunk.size());
-                std::transform(net_chunk.begin(), net_chunk.end(), lifted_net.begin(), lift_lpt);
-                std::transform(red_chunk.begin(), red_chunk.end(), lifted_red.begin(), lift_lpt);
-                std::transform(blue_chunk.begin(), blue_chunk.end(), lifted_blue.begin(), lift_lpt);
 
                 for (auto pt1 = range.first; pt1 != range.second; ++pt1) {
-                    auto lifted_pt = lift_lpt(pt1->second);
+                    auto lifted_pt = lift_pt_alt(pt1->second);
 
+                    // Compute a new set of axis so that this point has the smallest x-axis.
+                    auto new_x = pt3_t (-2 * lifted_pt(0), -2 * lifted_pt(1), 1.0, 1.0).normalize();
+                    if (new_x.pdot(lifted_pt) < 0) {
+                        new_x = pt3_t (2 * lifted_pt(0), 2 * lifted_pt(1), -1.0, 1.0).normalize();
+                    } else {
+                        new_x = new_x.normalize();
+                    }
+                    auto new_z = cross_product(new_x, pt3_t(0.0, 1.0, 0.0, 1.0)).normalize();
+                    auto new_y = cross_product(new_x, new_z).normalize();
 
-                    filter_func3_t f_func = [min_res, max_res] (halfspace3_t const& h) {
-                        double a = h[0], b = h[1], c = h[2], d = h[3];
-                        double r = sqrt((a * a + b * b - 4 * c * d) / (4 * c * c));
-                        return min_res < r && r < max_res;
+                    //auto lifted_pt_rotated = pt3_t(new_x.pdot(lifted_pt), new_y.pdot(lifted_pt), new_z.pdot(lifted_pt), 1.0);
+                    auto lifted_pt_rotated = lifted_pt;
+                    auto lift_project = [&] (lpt2_t const& pt) {
+                        //Project onto the new axis.
+                        auto lifted = lift_pt_alt(pt);
+                        //std::cout << lifted.pdot(new_x) - lifted_pt.pdot(new_x) << std::endl;
+                        //assert(lifted.pdot(new_x) >= lifted_pt.pdot(new_x));
+//                        return lpt3_t(pt.get_label(), pt.get_weight(), lifted.pdot(new_x),
+//                                lifted.pdot(new_y), lifted.pdot(new_z), 1.0);
+                        return lifted;
                     };
-                    auto [h, local_max_stat] = max_halfspace_labeled_restricted(lifted_pt, lifted_net,
-                            lifted_red, lifted_blue, red_tot, blue_tot, alpha, f_func, f);
-                    if (local_max_stat > max_stat) {
+
+                    lpoint3_list_t lifted_net(net_chunk.size());
+                    lpoint3_list_t lifted_red(red_chunk.size()), lifted_blue(blue_chunk.size());
+                    std::transform(net_chunk.begin(), net_chunk.end(), lifted_net.begin(), lift_project);
+                    std::transform(red_chunk.begin(), red_chunk.end(), lifted_red.begin(), lift_project);
+                    std::transform(blue_chunk.begin(), blue_chunk.end(), lifted_blue.begin(), lift_project);
+
+                    auto to_disk = [&](const halfspace3_t& h) {
+//                        halfspace3_t h(Point<3>(proj_h[0] * new_x[0] + proj_h[1] * new_y[0] + proj_h[2] * new_z[0],
+//                                proj_h[0] * new_x[1] + proj_h[1] * new_y[1] + proj_h[2] * new_z[1],
+//                                proj_h[0] * new_x[2] + proj_h[1] * new_y[2] + proj_h[2] * new_z[2],
+//                                proj_h[3]));
                         double a = h[0], b = h[1], c = h[2], d = h[3];
-                        cur_max = Disk(-a / (2 * c), -b / (2 * c), sqrt((a * a + b * b - 4 * c * d) / (4 * c * c)));
+                        return Disk(-a / (2 * c), -b / (2 * c), sqrt((a * a + b * b - 4 * c * d) / (4 * c * c)));
+                    };
+
+                    filter_func3_t f_func = [&] (halfspace3_t const& proj_h) {
+                        auto d = to_disk(proj_h);
+                        double r = d.getRadius();
+                        return min_res < r && r < 2 * min_res;
+                    };
+                    auto [proj_h, local_max_stat] = max_halfspace_restricted(lifted_pt_rotated, lifted_net,
+                            lifted_red, lifted_blue, compress, f_func, [&](double m, double b) {
+                        return f(m, red_tot, b, blue_tot);
+                    });
+
+                    assert(util::aeq(evaluate_range(to_disk(proj_h), red_chunk, blue_chunk, f), local_max_stat));
+                    assert(util::aeq(evaluate_range(to_disk(proj_h), red, blue, f), local_max_stat));
+
+                    if (local_max_stat > max_stat) {
+                        cur_max = to_disk(proj_h);
                         max_stat = local_max_stat;
                     }
                 }
@@ -647,23 +620,11 @@ namespace pyscan {
             } while (center_cell != grid_net.end() && center_cell->first == last);
         }
 
+        //assert(util::aeq(evaluate_range(cur_max, red, blue, f), max_stat));
+        //assert(false);
+        std::cout <<  evaluate_range(cur_max, red, blue, f) << " " <<  max_stat<< std::endl;
         return std::make_tuple(cur_max, max_stat);
     }
 
-    std::tuple<Disk, double> max_disk_simple(
-            const point_list_t &point_net,
-            const wpoint_list_t &red,
-            const wpoint_list_t &blue,
-            const discrepancy_func_t &f) {
-        return max_range3<Disk, WPoint>(point_net, red, blue, f);
-    }
-
-    std::tuple<Disk, double> max_disk_simple_labeled(
-            const point_list_t &point_net,
-            const lpoint_list_t &red,
-            const lpoint_list_t &blue,
-            const discrepancy_func_t &f) {
-        return max_range3<Disk, LPoint>(point_net, red, blue, f);
-    }
 
 }
