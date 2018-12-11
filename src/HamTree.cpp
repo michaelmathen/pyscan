@@ -95,8 +95,8 @@ namespace pyscan {
             sample.emplace_back(u_w, pt[0], pt[1], pt[2]);
         };
 
-        for (size_t i = 0; i < split_queue.size(); i++) {
-            auto& [u, l] = split_queue[i];
+        for (auto& node : split_queue) {
+            auto& [u, l] = node;
             sample_cell(u);
             sample_cell(l);
         }
