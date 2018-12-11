@@ -19,6 +19,7 @@
 #include "TrajectoryScan.hpp"
 #include "ConvexHull.hpp"
 #include "TrajectoryCoreSet.hpp"
+#include "HamTree.hpp"
 
 
 
@@ -231,7 +232,7 @@ struct pywtrajectory_converter {
         // container is populated by passing the begin and end iterators of
         // the python object to the container's constructor.
 
-        data->convertible = new (storage) pyscan::WTrajectory(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
+        data->convertible = new (storage) pyscan::wtrajectory_t(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
                 py::extract<pyscan::point_list_t>(PyTuple_GetItem(object, 1)));
     }
 };
@@ -295,8 +296,23 @@ struct vector_to_python_list {
 };
 
 
+double evaluate_halfplane(pyscan::halfspace2_t const& d1, pyscan::wpoint_list_t const&  mpts, pyscan::wpoint_list_t const& bpts, pyscan::discrepancy_func_t const& disc) {
+    return pyscan::evaluate_range(d1, mpts, bpts, disc);
+}
+
+double evaluate_disk(pyscan::Disk const& d1, pyscan::wpoint_list_t const&  mpts, pyscan::wpoint_list_t const& bpts, pyscan::discrepancy_func_t const& disc) {
+    return pyscan::evaluate_range(d1, mpts, bpts, disc);
+}
 
 double evaluate_disk_labeled(pyscan::Disk const& d1, pyscan::lpoint_list_t const&  mpts, pyscan::lpoint_list_t const& bpts, pyscan::discrepancy_func_t const& disc) {
+    return pyscan::evaluate_range(d1, mpts, bpts, disc);
+}
+
+double evaluate_disk_traj(pyscan::Disk const& d1, pyscan::trajectory_set_t const&  mpts, pyscan::trajectory_set_t const& bpts, pyscan::discrepancy_func_t const& disc) {
+    return pyscan::evaluate_range(d1, mpts, bpts, disc);
+}
+
+double evaluate_halfplane_traj(pyscan::halfspace2_t const& d1, pyscan::trajectory_set_t const&  mpts, pyscan::trajectory_set_t const& bpts, pyscan::discrepancy_func_t const& disc) {
     return pyscan::evaluate_range(d1, mpts, bpts, disc);
 }
 
@@ -364,7 +380,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .def("upY", &pyscan::Rectangle::upY)
             .def("__str__", &pyscan::Rectangle::toString)
             .def("contains", &pyscan::Rectangle::contains)
-            .def("intersects_segment", &pyscan::Rectangle::intersects_segment);
+            .def("intersects_segment", &pyscan::Rectangle::intersects_segment)
+            .def("intersects_trajectory", &pyscan::Rectangle::intersects_trajectory);
 
     py::class_<pyscan::Subgrid>("Subgrid", py::init<size_t, size_t, size_t, size_t, double>())
             .def("lowCol", &pyscan::Subgrid::lowX)
@@ -379,16 +396,24 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .def("get_origin", &pyscan::Disk::getOrigin)
             .def("get_radius", &pyscan::Disk::getRadius)
             .def("contains", &pyscan::Disk::contains)
-            .def("intersects_segment", &pyscan::Disk::intersects_segment);
+            .def("intersects_segment", &pyscan::Disk::intersects_segment)
+            .def("__str__", &pyscan::Disk::str)
+            .def("__repr__", &pyscan::Disk::str)
+            .def("intersects_trajectory", &pyscan::Disk::intersects_trajectory);
 
     py::class_<pyscan::HalfSpace<2>>("Halfplane", py::init<pyscan::Point<2>>())
             .def("get_coords", &pyscan::HalfSpace<2>::get_coords)
             .def("contains", &pyscan::HalfSpace<2>::contains)
-            .def("intersects_segment", &pyscan::HalfSpace<2>::intersects_segment);
+            .def("intersects_segment", &pyscan::HalfSpace<2>::intersects_segment)
+            .def("__str__", &pyscan::HalfSpace<2>::str)
+            .def("__repr__", &pyscan::HalfSpace<2>::str)
+            .def("intersects_trajectory", &pyscan::HalfSpace<2>::intersects_trajectory);
 
     py::class_<pyscan::HalfSpace<3>>("Halfspace", py::init<pyscan::Point<3>>())
             .def("get_coords", &pyscan::HalfSpace<3>::get_coords)
             .def("contains", &pyscan::HalfSpace<3>::contains)
+            .def("__str__", &pyscan::HalfSpace<3>::str)
+            .def("__repr__", &pyscan::HalfSpace<3>::str)
             .def("intersects_segment", &pyscan::HalfSpace<3>::intersects_segment);
 
 
@@ -468,14 +493,20 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_halfspace", &pyscan::max_halfspace);
     py::def("max_halfspace_labeled", &pyscan::max_halfspace_labeled);
     //py::def("max_halfplane_fast", &pyscan::max_halfplane_fast);
+    py::def("ham_tree_sample", pyscan::ham_tree_sample);
 
     py::def("max_disk", &pyscan::max_disk);
     py::def("max_disk_labeled", &pyscan::max_disk_labeled);
     //py::def("max_disk_lift_labeled", &pyscan::max_disk_labeled);
 
 
-    py::def("evaluate_range", &pyscan::evaluate_range<2, pyscan::WPoint>);
+    py::def("evaluate_disk", &evaluate_disk);
     py::def("evaluate_disk_labeled", &evaluate_disk_labeled);
+    py::def("evaluate_disk_trajectory", &evaluate_disk_traj);
+
+    py::def("evaluate_halfplane", &evaluate_halfplane);
+    py::def("evaluate_halfplane_labeled", &evaluate_halfplane_labeled);
+    py::def("evaluate_halfplane_trajectory", &evaluate_halfplane_traj);
 
 //    py::def("max_disk_cached", &pyscan::max_disk_cached);
 //    py::def("max_disk_cached_labeled", &pyscan::max_disk_cached_labeled);
@@ -493,17 +524,13 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .def("point_dist", &pyscan::trajectory_t::point_dist)
             .def("get_weight", &pyscan::trajectory_t::get_weight)
             .def("point_dist", &pyscan::trajectory_t::point_dist)
-            .def("get_pts", &pyscan::trajectory_t::get_pts)
-            .def("intersects_disk", &pyscan::trajectory_t::intersects_disk)
-            .def("intersects_halfplane", &pyscan::trajectory_t::intersects_halfplane);
+            .def("get_pts", &pyscan::trajectory_t::get_pts);
 
     py::class_<pyscan::wtrajectory_t>("WTrajectory", py::init<double, pyscan::point_list_t>())
             .def("point_dist", &pyscan::wtrajectory_t::point_dist)
             .def("get_weight", &pyscan::wtrajectory_t::get_weight)
             .def("point_dist", &pyscan::wtrajectory_t::point_dist)
-            .def("intersects_disk", &pyscan::wtrajectory_t::intersects_disk)
-            .def("get_pts", &pyscan::wtrajectory_t::get_pts)
-            .def("intersects_halfplane", &pyscan::wtrajectory_t::intersects_halfplane);
+            .def("get_pts", &pyscan::wtrajectory_t::get_pts);
 
     py::def("max_disk_traj_grid", &pyscan::max_disk_traj_grid);
 //

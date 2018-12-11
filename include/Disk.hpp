@@ -53,6 +53,16 @@ namespace pyscan {
             return origin;
         }
 
+        virtual std::string str() const {
+            std::stringstream ss;
+            ss << "Disk(";
+            ss << this->getOrigin();
+            ss << ", ";
+            ss << this->getRadius();
+            ss << ")";
+            return ss.str();
+        }
+
         inline bool contains(const pt2_t &pt) const final {
             return util::alte(pt.square_dist(origin), radius * radius);
         }

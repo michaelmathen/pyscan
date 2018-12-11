@@ -16,6 +16,8 @@ namespace pyscan {
 
 
     point_list_t graham_march(point_list_t points) {
+        if (points.empty())
+            return points;
         point_list_t convex_hull;
         auto p0_iter = std::min_element(points.begin(), points.end(), [](const pt2_t &p1, const pt2_t &p2) {
 
@@ -54,7 +56,8 @@ namespace pyscan {
         convex_hull.push_back(*(points.begin() + 1));
 
         for (auto it = points.begin() + 2; it != new_last; ++it) {
-            while (orientation(convex_hull[convex_hull.size() - 2],
+            while (convex_hull.size() > 1 &&
+                    orientation(convex_hull[convex_hull.size() - 2],
                                convex_hull[convex_hull.size() - 1],
                                *it) <= 0) {
                 convex_hull.pop_back();

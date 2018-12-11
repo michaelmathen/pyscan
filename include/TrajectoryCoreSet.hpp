@@ -5,7 +5,8 @@
 #ifndef PYSCAN_TRAJECTORYCORESET_HPP
 #define PYSCAN_TRAJECTORYCORESET_HPP
 
-#include "TrajectoryScan.hpp"
+#include "Trajectory.hpp"
+
 #include "Point.hpp"
 #include "HalfSpaceScan.hpp"
 #include "RectangleScan.hpp"
@@ -39,7 +40,7 @@ namespace pyscan {
 
     std::tuple<halfspace2_t, double> error_halfplane_coreset(const trajectory_t& trajectory, const point_list_t& pts);
 
-    std::tuple<Disk, double> error_disk_coreset(const trajectory_t& trajectory, double grid_resolution,
+    std::tuple<Disk, double> error_disk_coreset(const trajectory_t& trajectory,
             double min_res,
             double max_radius,
             const point_list_t& pts);

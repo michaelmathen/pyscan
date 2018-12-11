@@ -14,6 +14,7 @@
 #include <sstream>
 #include <functional>
 #include <unordered_map>
+#include <queue>
 
 #include "Utilities.hpp"
 
@@ -46,10 +47,11 @@ namespace pyscan {
         }
 
         friend std::ostream &operator<<(std::ostream &os, Point const &pt) {
-            os << "Point(";
-            for (auto &el: pt.coords) {
-                os << el << ", ";
+            os << "pyscan::Point<" << dim << ">(";
+            for (size_t d = 0; d < dim; d++ ) {
+                os << pt.coords[d] << ", ";
             }
+            os << pt.coords[dim];
             os << ")";
             return os;
         }
@@ -414,6 +416,18 @@ namespace pyscan {
         pts.erase(end_it, pts.end());
     }
 
+
+//    template <int dim, class URNG>
+//    wpoint_list_t weighted_random_sample_wor(wpoint_list_t& arr, URNG&& g, size_t sample_size) {
+//        std::priority_queue<double, WPoint<dim>> queue_els;
+//
+//        sample_size = std::min(arr.size(), sample_size);
+//        for (size_t i = 0; i < sample_size; ++i) {
+//            std::uniform_int_distribution<decltype(i)> d(i, arr.size() - 1);
+//            std::swap (arr[i], arr[d(g)]);
+//        }
+//        return Vec(arr.begin(), arr.begin() + sample_size);
+//    }
 
 }
 

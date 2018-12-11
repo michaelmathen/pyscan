@@ -1,6 +1,7 @@
 from libpyscan import *
 import random
 import itertools
+import collections
 
 def to_weighted(points):
     return [WPoint(1.0, pt[0], pt[1], 1.0) for pt in points]
@@ -16,6 +17,27 @@ def my_sample(samp, count):
     return random.sample(samp, min(len(samp), int(count + .5)))
 
 def evaluate_range(range, mp, bp, disc_f):
+
+    if not mp and not bp:
+        return evaluate(disc_f, 0, 0, 0, 0)
+    elif not mp:
+        pt_obj = bp[0]
+    else:
+        pt_obj = mp[0]
+
+    if isinstance(range, Disk):
+        if isinstance(pt_obj, LPoint):
+            return evaluate_disk_labeled(range, mp, bp, disc_f)
+        elif isinstance(pt_obj, WPoint) or isinstance(pt_obj, tuple):
+            return evaluate_disk(range, mp, bp, disc_f)
+    elif isinstance(range, Halfplane):
+        if isinstance(pt_obj, LPoint):
+            return evaluate_halfplane_labeled(range, mp, bp, disc_f)
+        elif isinstance(pt_obj, WPoint) or isinstance(pt_obj, tuple):
+            return evaluate_halfplane(range, mp, bp, disc_f)
+    raise ValueError()
+
+def evaluate_range_trajectory(range, mp, bp, disc_f):
     """
     Evaluates this range to compute the total discrepancy.
     :param range:
@@ -24,12 +46,13 @@ def evaluate_range(range, mp, bp, disc_f):
     :param disc_f:
     :return:
     """
-    total_mw = sum(p.get_weight() for p in mp)
-    range_mw = sum(p.get_weight() for p in mp if range.contains(p))
-    total_bw = sum(p.get_weight() for p in bp)
-    range_bw = sum(p.get_weight() for p in bp if range.contains(p))
-    return evaluate(disc_f, range_mw, total_mw, range_bw, total_bw)
-
+    if not mp and not bp:
+        return evaluate(disc_f, 0, 0, 0, 0)
+    if isinstance(range, Disk):
+        return evaluate_disk_trajectory(range, mp, bp, disc_f)
+    elif isinstance(range, Halfplane):
+        return evaluate_halfplane_trajectory(range, mp, bp, disc_f)
+    raise ValueError()
 
 
 def split_set(pts, rate):
@@ -170,28 +193,6 @@ def plant_full_halfplane(trajectories, r, p, q, disc):
     return red_in + red_out, blue_in + blue_out, plant_region, diff
 
 
-def measure_halfplane_full(region, traj_red, traj_blue, disc):
-    red_w = 0
-    blue_w = 0
-    for traj in traj_red:
-        if Trajectory(traj).intersects_halfplane(region):
-            red_w += 1
-    for traj in traj_blue:
-        if Trajectory(traj).intersects_halfplane(region):
-            blue_w += 1
-    return evaluate(disc, red_w, len(traj_red), blue_w, len(traj_blue))
-
-
-def measure_disk_full(region, traj_red, traj_blue, disc):
-    red_w = 0
-    blue_w = 0
-    for traj in traj_red:
-        if Trajectory(traj).intersects_disk(region):
-            red_w += 1
-    for traj in traj_blue:
-        if Trajectory(traj).intersects_disk(region):
-            blue_w += 1
-    return evaluate(disc, red_w, len(traj_red), blue_w, len(traj_blue))
 
 def plant_partial_halfplane(trajectories, r, p, q, eps, disc):
     """
@@ -214,8 +215,8 @@ def plant_partial_halfplane(trajectories, r, p, q, eps, disc):
     lc = pt.pdot(rand_direc)
     plant_region = Halfplane(Point(rand_direc[0], rand_direc[1], -lc))
 
-    inside_disk = [traj for traj in trajectory_obj if traj.intersects_halfplane(plant_region)]
-    outside_disk = [traj for traj in trajectory_obj if not traj.intersects_halfplane(plant_region)]
+    inside_disk = [traj for traj in trajectory_obj if plant_region.intersects_trajectory(traj)]
+    outside_disk = [traj for traj in trajectory_obj if not plant_region.intersects_trajectory(traj)]
 
     red_in, blue_in = split_set(inside_disk, q)
     red_out, blue_out = split_set(outside_disk, p)
@@ -270,8 +271,8 @@ def plant_partial_disk(trajectories, r, p, q, eps, disc):
 
     disk_boundary = trajectories[int(r * len(trajectories))]
     max_disk = Disk(origin[0], origin[1], origin.dist(disk_boundary))
-    inside_disk = [traj for traj in trajectory_obj if traj.intersects_disk(max_disk)]
-    outside_disk = [traj for traj in trajectory_obj if not traj.intersects_disk(max_disk)]
+    inside_disk = [traj for traj in trajectory_obj if max_disk.intersects_trajectory(traj)]
+    outside_disk = [traj for traj in trajectory_obj if not max_disk.intersects_trajectory(traj)]
 
     red_in, blue_in = split_set(inside_disk, q)
     red_out, blue_out = split_set(outside_disk, p)

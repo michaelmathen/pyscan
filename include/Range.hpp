@@ -2,6 +2,8 @@
 #define __RANGE_H__
 
 #include "Common.hpp"
+#include "Trajectory.hpp"
+
 #include <unordered_set>
 
 namespace pyscan {
@@ -11,7 +13,44 @@ class Range {
 public:
     virtual bool contains(const Point<dim>& pt) const = 0;
     virtual bool intersects_segment(const Point<dim> &p1, const Point<dim> &p2) const = 0;
+    virtual bool intersects_trajectory(Trajectory<dim> const& trajectory) const {
+        if (trajectory.empty()) {
+            return false;
+        } else if (trajectory.size() == 1) {
+            return contains(trajectory[0]);
+        } else {
+            auto last_pt = trajectory.begin();
+            for (auto curr_pt = last_pt + 1; curr_pt != trajectory.end(); ++curr_pt) {
+                if (intersects_segment(*last_pt, *curr_pt)) {
+                    return true;
+                }
+                last_pt = curr_pt;
+            }
+            return false;
+        }
+    }
 };
+
+template<int dim, template<int> typename Traj=WTrajectory>
+double computeTotal(const std::vector<Traj<dim>> &traj_set) {
+    double weight = 0;
+    for (auto& traj : traj_set) {
+        weight += traj.get_weight();
+    }
+    return weight;
+}
+
+template <int dim, template<int> typename Traj=WTrajectory>
+double range_weight(const Range<dim>& range,
+                    const std::vector<Traj<dim>>& traj_set){
+    double weight = 0;
+    for (auto& traj : traj_set) {
+        if (range.intersects_trajectory(traj)) {
+            weight += traj.get_weight();
+        }
+    }
+    return weight;
+}
 
 template <int dim>
 inline double computeTotal(const std::vector<WPoint < dim>>& pts) {

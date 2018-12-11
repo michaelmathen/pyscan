@@ -161,7 +161,7 @@ namespace pyscan {
 
         for (auto &x: removing) {
             auto it = cur_set.find(x.label);
-            assert(it != cur_set.end() && it->second > 0);
+            //assert(it != cur_set.end() && it->second > 0);
             if (it->second == 1) {
                 update_diff -= x.value;
                 cur_set.erase(it);
@@ -359,7 +359,7 @@ namespace pyscan {
 
         double red_tot = computeTotal(red);
         double blue_tot = computeTotal(blue);
-        size_t grid_r = lround(1 / min_res);
+        size_t grid_r = lround(floor(1 / min_res));
         SparseGrid<pt2_t> grid_net(point_net, grid_r);
         SparseGrid<T> grid_red(red, grid_r), grid_blue(blue, grid_r);
 
@@ -477,6 +477,8 @@ namespace pyscan {
         std::transform(red.begin(), red.end(), lifted_red.begin(), lpt);
         std::transform(blue.begin(), blue.end(), lifted_blue.begin(), lpt);
         auto [h, max_val] = max_halfspace_overload(lifted_net, lifted_red, lifted_blue, f);
+        //assert(util::aeq(evaluate_range(h, lifted_red, lifted_blue, f), max_val));
+        std::cout << "Internal value" << evaluate_range(h, lifted_red, lifted_blue, f) << " " << max_val << std::endl;
         double a = h[0], b = h[1], c = h[2], d = h[3];
         return std::make_tuple(Disk(-a / (2 * c), -b / (2 * c),
                                     sqrt((a * a + b * b - 4 * c * d) / (4 * c * c))),
@@ -512,7 +514,7 @@ namespace pyscan {
 
         double red_tot = computeTotal(red);
         double blue_tot = computeTotal(blue);
-        size_t grid_r = lround(1 / min_res);
+        size_t grid_r = lround(floor(1 / min_res));
         SparseGrid<lpt2_t> grid_net(point_net, grid_r);
         SparseGrid<lpt2_t> grid_red(red, grid_r), grid_blue(blue, grid_r);
 
@@ -558,24 +560,9 @@ namespace pyscan {
                     auto lifted_pt = lift_pt_alt(pt1->second);
 
                     // Compute a new set of axis so that this point has the smallest x-axis.
-                    auto new_x = pt3_t (-2 * lifted_pt(0), -2 * lifted_pt(1), 1.0, 1.0).normalize();
-                    if (new_x.pdot(lifted_pt) < 0) {
-                        new_x = pt3_t (2 * lifted_pt(0), 2 * lifted_pt(1), -1.0, 1.0).normalize();
-                    } else {
-                        new_x = new_x.normalize();
-                    }
-                    auto new_z = cross_product(new_x, pt3_t(0.0, 1.0, 0.0, 1.0)).normalize();
-                    auto new_y = cross_product(new_x, new_z).normalize();
-
-                    //auto lifted_pt_rotated = pt3_t(new_x.pdot(lifted_pt), new_y.pdot(lifted_pt), new_z.pdot(lifted_pt), 1.0);
-                    auto lifted_pt_rotated = lifted_pt;
                     auto lift_project = [&] (lpt2_t const& pt) {
                         //Project onto the new axis.
                         auto lifted = lift_pt_alt(pt);
-                        //std::cout << lifted.pdot(new_x) - lifted_pt.pdot(new_x) << std::endl;
-                        //assert(lifted.pdot(new_x) >= lifted_pt.pdot(new_x));
-//                        return lpt3_t(pt.get_label(), pt.get_weight(), lifted.pdot(new_x),
-//                                lifted.pdot(new_y), lifted.pdot(new_z), 1.0);
                         return lifted;
                     };
 
@@ -586,10 +573,6 @@ namespace pyscan {
                     std::transform(blue_chunk.begin(), blue_chunk.end(), lifted_blue.begin(), lift_project);
 
                     auto to_disk = [&](const halfspace3_t& h) {
-//                        halfspace3_t h(Point<3>(proj_h[0] * new_x[0] + proj_h[1] * new_y[0] + proj_h[2] * new_z[0],
-//                                proj_h[0] * new_x[1] + proj_h[1] * new_y[1] + proj_h[2] * new_z[1],
-//                                proj_h[0] * new_x[2] + proj_h[1] * new_y[2] + proj_h[2] * new_z[2],
-//                                proj_h[3]));
                         double a = h[0], b = h[1], c = h[2], d = h[3];
                         return Disk(-a / (2 * c), -b / (2 * c), sqrt((a * a + b * b - 4 * c * d) / (4 * c * c)));
                     };
@@ -599,13 +582,13 @@ namespace pyscan {
                         double r = d.getRadius();
                         return min_res < r && r < 2 * min_res;
                     };
-                    auto [proj_h, local_max_stat] = max_halfspace_restricted(lifted_pt_rotated, lifted_net,
+                    auto [proj_h, local_max_stat] = max_halfspace_restricted(lifted_pt, lifted_net,
                             lifted_red, lifted_blue, compress, f_func, [&](double m, double b) {
                         return f(m, red_tot, b, blue_tot);
                     });
 
-                    assert(util::aeq(evaluate_range(to_disk(proj_h), red_chunk, blue_chunk, f), local_max_stat));
-                    assert(util::aeq(evaluate_range(to_disk(proj_h), red, blue, f), local_max_stat));
+                    //assert(util::aeq(evaluate_range(to_disk(proj_h), red_chunk, blue_chunk, f), local_max_stat));
+                    //assert(util::aeq(evaluate_range(to_disk(proj_h), red, blue, f), local_max_stat));
 
                     if (local_max_stat > max_stat) {
                         cur_max = to_disk(proj_h);
@@ -619,10 +602,6 @@ namespace pyscan {
                 ++center_cell;
             } while (center_cell != grid_net.end() && center_cell->first == last);
         }
-
-        //assert(util::aeq(evaluate_range(cur_max, red, blue, f), max_stat));
-        //assert(false);
-        std::cout <<  evaluate_range(cur_max, red, blue, f) << " " <<  max_stat<< std::endl;
         return std::make_tuple(cur_max, max_stat);
     }
 

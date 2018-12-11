@@ -63,6 +63,7 @@ namespace pyscan {
             return line;
         }
 
+
         double operator[](size_t i) const {
             assert(i < dim + 1);
             return line[i];
@@ -71,6 +72,14 @@ namespace pyscan {
         double operator()(size_t i) const {
             assert(i < dim);
             return line(i);
+        }
+
+        virtual std::string str() const {
+            std::stringstream ss;
+            ss << "HalfSpace(";
+            ss << this->line;
+            ss << ")";
+            return ss.str();
         }
     };
 

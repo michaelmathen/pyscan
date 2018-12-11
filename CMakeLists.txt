@@ -7,8 +7,9 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -Wall -Wextra -g -fsanitize=address -fno-omit-frame-pointer")
-set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O2 -march=native -DNDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -Wall -Wextra -g -O2")
+
+set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O3 -march=native -DNDEBUG")
 
 
 
@@ -77,6 +78,7 @@ set(SOURCE_FILES
         src/TrajectoryCoreSet.cpp
         src/ConvexHull.cpp
         src/Segment.cpp
+        src/HamTree.cpp
         #src/kernel.cpp
         )
 
@@ -92,6 +94,8 @@ set(HEADER include/BloomFilter.hpp
         include/Test_Utilities.hpp
         include/ConvexHull.hpp
         include/TrajectoryScan.hpp
+        include/Sampling.hpp
+        include/HamTree.hpp
         include/Utilities.hpp)
 
 set(PY_SOURCE_FILES

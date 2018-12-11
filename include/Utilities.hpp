@@ -13,6 +13,7 @@
 #include <cstring>
 #include <cmath>
 #include <cstdlib>
+#include <random>
 #include <numeric>
 
 namespace pyscan {
@@ -113,9 +114,7 @@ namespace pyscan {
                 }
             }
         }
-
-
-
     }
+
 }
 #endif //PYSCAN_UTILITIES_HPP

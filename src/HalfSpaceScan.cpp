@@ -12,6 +12,7 @@ namespace pyscan{
 
     const int MIN_TRAJ_SIZE = 4;
 
+
     inline static pt2_t internal_drop_point(const pt3_t& fixed_point, const pt3_t& p) {
         return pt2_t(fixed_point[0] * p[1] - fixed_point[1] * p[0],
                      fixed_point[0] * p[2] - fixed_point[2] * p[0],
@@ -34,6 +35,18 @@ namespace pyscan{
         return lpt2_t(p.get_label(), p.get_weight(), new_coords[0], new_coords[1], new_coords[2]);
     }
 
+//    template <typename Pt>
+//    point_list_t drop_points_lpoints(const pt3_t& fixed_pt, const std::vector<Pt>& pts, double& x_offset, ) {
+//        x_offset = 1.0 - fixed_pt[0];
+//        for (auto& pt : pts) {
+//            if ()
+//            Pt p_tmp = pt;
+//            p_tmp[0] += x_offset;
+//
+//        }
+//
+//
+//    }
 
     pt3_t lift_half_space(const halfspace2_t& h, const pt3_t& p) {
         return pt3_t(-(h[0] * p[1] + h[1] * p[2] + h[2] * p[3]) ,
@@ -131,6 +144,11 @@ namespace pyscan{
         double value;
     };
 
+    std::ostream &operator<<(std::ostream& os, LabeledValue& val) {
+        os << "L(" << val.label << ", "  << val.value << ")";
+        return os;
+    }
+
     using wedge_t = std::vector<LabeledValue>;
     using label_set_t = std::unordered_map<size_t , size_t >;
 
@@ -184,20 +202,27 @@ namespace pyscan{
 
             std::vector<halfspace2_t> halfplanes;
             for (size_t j = i + 1; j < point_net.size(); ++j) {
-                halfspace2_t possible(pivot, point_net[j]);
-                if (filter(possible)) {
-                    halfplanes.emplace_back(possible);
+                if (!pivot.approx_eq(point_net[j])) {
+                    halfspace2_t possible(pivot, point_net[j]);
+                    if (filter(possible) && !std::isnan(possible[0]) && !std::isnan(possible[1]) &&
+                        !std::isnan(possible[2])) {
+                        halfplanes.push_back(possible);
+                    }
                 }
-            }
-            if (halfplanes.empty()) {
-                continue;
             }
             std::sort(halfplanes.begin(), halfplanes.end(), [](const halfspace2_t& p1, const halfspace2_t& p2) {
                 return -p1[0] < -p2[0];
             });
+            auto new_end = std::unique(halfplanes.begin(), halfplanes.end(), [](const halfspace2_t& p1, const halfspace2_t& p2){
+                return util::aeq(p1[0], p2[0]);
+            });
+            halfplanes.resize( std::distance(halfplanes.begin(), new_end));
+
+            if (halfplanes.empty()) {
+                continue;
+            }
 
             auto& l1 = halfplanes[0];
-
             std::vector<double> angles;
             angles.reserve(halfplanes.size());
             for (auto& plane : halfplanes) {
@@ -213,8 +238,6 @@ namespace pyscan{
                                   label_set_t& labels) {
                 double res = 0.0;
                 for (auto const& pt : pts) {
-
-                    auto angle_it = std::lower_bound(angles.begin(), angles.end(), plane_order(pivot, pt));
                     //If the angle is begin or end then it is in the last wedge and we don't count it.
                     if (l1.contains(pt)) {
                         auto it = labels.find(pt.get_label());
@@ -225,14 +248,20 @@ namespace pyscan{
                             labels[pt.get_label()]++;
                         }
                     }
-                    if (angle_it == angles.end() || angle_it == angles.begin()){
-                        continue;
-                    } else {
-                        auto ix = std::distance(angles.begin(), angle_it) - 1;
-                        if (l1.contains(pt)) {
-                            deltaR[ix].push_back(LabeledValue{pt.get_label(), pt.get_weight()});
+
+                    halfspace2_t h_tmp(pivot, pt);
+                    if (!std::isnan(h_tmp[0])) {
+                        auto angle_it = std::lower_bound(angles.begin(), angles.end(), -h_tmp[0]);
+
+                        if (angle_it == angles.end() || angle_it == angles.begin()) {
+                            continue;
                         } else {
-                            deltaA[ix].push_back(LabeledValue{pt.get_label(), pt.get_weight()});
+                            auto ix = std::distance(angles.begin(), angle_it) - 1;
+                            if (l1.contains(pt)) {
+                                deltaR[ix].push_back(LabeledValue{pt.get_label(), pt.get_weight()});
+                            } else {
+                                deltaA[ix].push_back(LabeledValue{pt.get_label(), pt.get_weight()});
+                            }
                         }
                     }
                 }
@@ -245,6 +274,26 @@ namespace pyscan{
             double blue_curr = calc_delta(blue, blue_deltaR, blue_deltaA, blue_set);
             for (size_t j = 0; true ;++j) {
                 double new_stat = f(red_curr, blue_curr);
+//                if (!util::aeq(range_weight(halfplanes[j], red), red_curr)) {
+//                    std::cout << halfplanes[j].str() << std::endl;
+//                    std::cout << range_weight(halfplanes[j], red) << " " <<   red_curr << std::endl;
+//                    std::cout << update_weight(red_set, red_deltaA[j], red_deltaR[j]) << std::endl;
+//                    std::cout << red_deltaA[j - 1] << std::endl;
+//                    std::cout << red_deltaR[j - 1] << std::endl;
+//                    std::cout << angles << std::endl;
+//                    for (auto& pt : red) {
+//                        if (halfplanes[j].contains(pt) != halfplanes[j - 1].contains(pt) ) {
+//                            std::cout << pt << std::endl;
+//                            auto h_tmp = halfspace2_t(pivot, pt);
+//                            std::cout << h_tmp.str() << std::endl;
+//                            std::cout << *(std::lower_bound(angles.begin(), angles.end(), -h_tmp[0])) << std::endl;
+//                        }
+//                    }
+//                    assert(util::aeq(range_weight(halfplanes[j], red), red_curr));
+//                    assert(util::aeq(range_weight(halfplanes[j], blue), blue_curr));
+//                }
+
+
                 if (max_discrepancy <= new_stat) {
                     max_plane = halfplanes[j];
                     max_discrepancy = new_stat;
@@ -312,6 +361,7 @@ namespace pyscan{
                 return drop_point(pivot, pt);
             };
             auto wdrop = [&pivot](const P<3>& pt) {
+                assert(!pivot.approx_eq(pt));
                 return drop_point(pivot, pt);
             };
             point_list_t drop_net(point_net.size() - i - 1, pt2_t());
@@ -326,11 +376,11 @@ namespace pyscan{
                                                      [&](double m, double b) { return f(m, m_Total, b, b_Total);}
             );
 
-            assert(util::aeq(evaluate_range(h, drop_red, drop_blue, f), max_h));
+            //assert(util::aeq(evaluate_range(h, drop_red, drop_blue, f), max_h));
             if (max_h >= max_discrepancy) {
                 max_discrepancy = max_h;
                 max_halfspace = HalfSpace<3>(lift_half_space(h, pivot));
-                assert(util::aeq(evaluate_range(max_halfspace, red, blue, f), max_h));
+                //assert(util::aeq(evaluate_range(max_halfspace, red, blue, f), max_h));
             }
 
         }
@@ -414,9 +464,26 @@ namespace pyscan{
         lpoint_list_t output_pts;
         for (auto pt_it = lpoints.begin(); pt_it != lpoints.end(); ) {
             auto end_of_group = std::upper_bound(pt_it, lpoints.end(), *pt_it, comp);
-            auto hull = graham_march(point_list_t(pt_it, end_of_group));
-            for (auto &p: hull) {
+
+            //Split by c
+            auto first_part = std::partition(pt_it, end_of_group, [](pt2_t const& pt) {
+                return 0 < pt[2];
+            });
+            auto hull_1 = graham_march(point_list_t(pt_it, first_part));
+
+            //Have to flip these signs
+            point_list_t flipped_pts;
+            for (auto it = first_part; it != end_of_group; it++) {
+                flipped_pts.emplace_back(it->flip_orientation());
+            }
+            auto hull_2 = graham_march(flipped_pts);
+
+            for (auto &p: hull_1) {
                 output_pts.emplace_back(LPoint(pt_it->get_label(), pt_it->get_weight(), p[0], p[1], p[2]));
+            }
+            for (auto &p: hull_2) {
+                //Flip these points back.
+                output_pts.emplace_back(LPoint(pt_it->get_label(), pt_it->get_weight(), -p[0], -p[1], -p[2]));
             }
             pt_it = end_of_group;
         }
@@ -437,18 +504,48 @@ namespace pyscan{
         auto drop = [&pivot](const auto& pt) {
             return drop_point(pivot, pt);
         };
-        lpoint_list_t drop_net_labeled(point_net.size(), lpt2_t());
-        lpoint_list_t drop_red(red.size(), lpt2_t());
-        lpoint_list_t drop_blue(blue.size(), lpt2_t());
-        std::transform(point_net.begin(), point_net.end(), drop_net_labeled.begin(), drop);
-        std::transform(red.begin(), red.end(), drop_red.begin(), drop);
-        std::transform(blue.begin(), blue.end(), drop_blue.begin(), drop);
+        auto transform_drop_net = [&pivot, &drop](const lpoint3_list_t& pts, lpoint_list_t& out) {
+            //If the point is a duplicate of the pivot then we remove it
+            for (auto &pt : pts) {
+                if (!pt.approx_eq(pivot)) {
+                    out.push_back(drop(pt));
+                }
+            }
+        };
 
-//        if (compress) {
-//            drop_net_labeled = compress_pts(drop_net_labeled);
-//            drop_red = compress_pts(drop_red);
-//            drop_blue = compress_pts(drop_blue);
-//        }
+        auto transform_drop_lpoints = [&pivot, &drop](const lpoint3_list_t& pts, lpoint_list_t& out) {
+            //If the point is a duplicate of the pivot then we remove all the lpoints corresponding to this value
+            //and add this to the discrepancy_func2
+            double removed_weight = 0;
+            std::unordered_set<size_t> duplicate_labels;
+            for (auto &pt : pts) {
+                if (pt.approx_eq(pivot) && duplicate_labels.find(pt.get_label()) != duplicate_labels.end()) {
+                    duplicate_labels.insert(pt.get_label());
+                    removed_weight += pt.get_weight();
+                }
+            }
+            for (auto &pt : pts) {
+                if (duplicate_labels.find(pt.get_label()) == duplicate_labels.end()) {
+                    out.push_back(drop(pt));
+                }
+            }
+            return removed_weight;
+        };
+
+
+
+        lpoint_list_t drop_net_labeled;
+        lpoint_list_t drop_red;
+        lpoint_list_t drop_blue;
+        transform_drop_net(point_net, drop_net_labeled);
+        double add_red = transform_drop_lpoints(red, drop_red);
+        double add_blue = transform_drop_lpoints(blue, drop_blue);
+
+        if (compress) {
+            drop_net_labeled = compress_pts(drop_net_labeled);
+            drop_red = compress_pts(drop_red);
+            drop_blue = compress_pts(drop_blue);
+        }
 
         point_list_t drop_net;
         for (auto& pt : drop_net_labeled) {
@@ -459,7 +556,9 @@ namespace pyscan{
             return filter(halfspace_tmp);
         };
 
-        auto [h, hmx] = max_halfplane_internal(drop_net, drop_red, drop_blue, func, f);
+        auto [h, hmx] = max_halfplane_internal(drop_net, drop_red, drop_blue, func, [&](double m, double b){
+            return f(m + add_red, b + add_blue);
+        });
         return std::make_tuple(halfspace3_t(lift_half_space(h, pivot)), hmx);
     }
 

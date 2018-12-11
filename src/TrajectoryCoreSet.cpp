@@ -9,6 +9,7 @@
 
 #include "appext.h"
 #include "Point.hpp"
+#include "Disk.hpp"
 #include "FunctionApprox.hpp"
 
 #include "TrajectoryCoreSet.hpp"
@@ -483,32 +484,25 @@ namespace pyscan {
     }
 
     std::tuple<Disk, double> error_disk_coreset(const trajectory_t& trajectory,
-                double grid_resolution,
-                double min_rad,
-                double max_rad,
+                double min_radius,
+                double max_radius,
                 const point_list_t& pts) {
         Disk max_disk;
+        if (3 > pts.size()){
+            return std::make_tuple(max_disk, std::numeric_limits<double>::infinity());
+        }
         double eps = 0;
-        auto error_net = grid_traj(trajectory.get_pts(), grid_resolution);
-        for (size_t i = 0; i < error_net.size() - 2; i++) {
-            for (size_t j = i + 1; j < error_net.size() - 1; j++) {
-                for (size_t k = j + 1; k < error_net.size(); k++) {
-                    Disk curr_disk(error_net[i], error_net[j], error_net[k]);
-                    if(curr_disk.getRadius() > max_rad) {
+        for (size_t i = 0; i < pts.size() - 2; i++) {
+            for (size_t j = i + 1; j < pts.size() - 1; j++) {
+                for (size_t k = j + 1; k < pts.size(); k++) {
+                    Disk curr_disk(pts[i], pts[j], pts[k]);
+                    if (curr_disk.getRadius() > max_radius || min_radius > curr_disk.getRadius()) {
                         continue;
                     }
                     auto min_dist = trajectory.point_dist(curr_disk.getOrigin());
-
-                    auto min_aprx = std::min_element(pts.begin(), pts.end(),
-                            [&curr_disk](pt2_t const& p1, pt2_t const& p2) {
-                                return curr_disk.getOrigin().square_dist(p1) < curr_disk.getOrigin().square_dist(p2);
-                    });
-
-                    if (min_aprx->dist(curr_disk.getOrigin()) < min_rad) {
-                        continue;
-                    }
-                    if (eps < std::abs(min_dist - min_aprx->dist(curr_disk.getOrigin()))) {
-                        eps = std::abs(min_dist - min_aprx->dist(curr_disk.getOrigin()));
+                    double error = std::abs(curr_disk.getRadius() - min_dist);
+                    if (eps < error) {
+                        eps = error;
                         max_disk = curr_disk;
                     }
                 }
