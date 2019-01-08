@@ -88,15 +88,15 @@ namespace pyscan {
     }
 
     Subgrid maxSubgridLin(Grid const& grid, double eps, discrepancy_func_t const& f) {
-      return maxSubgridLinearSimple(grid, eps, f);
+      return max_subgrid_convex(grid, eps, f);
     }
 
     Subgrid maxSubgridLinTheory(Grid const& grid, double eps, discrepancy_func_t const& f){
-        return maxSubgridLinearTheory(grid, eps, f);
+        return max_subgrid_convex_theory(grid, eps, f);
     }
 
     Subgrid maxSubgridSlow(Grid const &grid, discrepancy_func_t const& f) {
-        return maxSubgridNonLinear(grid, f);
+        return max_subgrid(grid, f);
     }
 
 
@@ -337,6 +337,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
     to_python_converter<std::vector<double>, vector_to_python_list<double>>();
     to_python_converter<std::vector<pyscan::Point<2>>, vector_to_python_list<pyscan::Point<2>>>();
     to_python_converter<std::vector<pyscan::Point<3>>, vector_to_python_list<pyscan::Point<3>>>();
+    to_python_converter<std::vector<pyscan::WPoint<2>>, vector_to_python_list<pyscan::WPoint<2>>>();
+    to_python_converter<std::vector<pyscan::WPoint<3>>, vector_to_python_list<pyscan::WPoint<3>>>();
     //Should convert tuples directly pyscan points.
     pypoint_converter<2>().from_python();
     pypoint_converter<3>().from_python();
@@ -482,10 +484,15 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("correct_orientation", &pyscan::correct_orientation);
 
 
-    py::def("max_subgrid_slow", &pyscan::maxSubgridSlow);
-    py::def("max_subgrid_linear_simple", &pyscan::maxSubgridLin);
-    py::def("max_subgrid_linear", &pyscan::maxSubgridLinTheory);
+    py::def("max_subgrid", &pyscan::max_subgrid);
+    py::def("max_subgrid_convex", &pyscan::max_subgrid_convex);
+    py::def("max_subgrid_convex_theory", &pyscan::max_subgrid_convex_theory);
+    py::def("max_subgrid_linear", &pyscan::max_subgrid_linear);
+    py::def("max_subgrid_linear_theory", &pyscan::max_subgrid_linear_theory);
+    py::def("max_rectangle", &pyscan::max_rectangle);
 
+    py::def("make_net_grid", &pyscan::make_net_grid);
+    py::def("make_exact_grid", &pyscan::make_exact_grid);
 
     //Max Halfspace codes
     py::def("max_halfplane", &pyscan::max_halfplane);
@@ -493,7 +500,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_halfspace", &pyscan::max_halfspace);
     py::def("max_halfspace_labeled", &pyscan::max_halfspace_labeled);
     //py::def("max_halfplane_fast", &pyscan::max_halfplane_fast);
-    py::def("ham_tree_sample", pyscan::ham_tree_sample);
+    py::def("ham_tree_sample", &pyscan::ham_tree_sample);
 
     py::def("max_disk", &pyscan::max_disk);
     py::def("max_disk_labeled", &pyscan::max_disk_labeled);

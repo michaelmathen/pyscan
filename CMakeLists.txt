@@ -148,6 +148,7 @@ set(TEST_NAMES
         DiskScan_unittest
         FunctionApprox_unittest
         Halfplane_unittest
+        Testing
         Point_unittest
         RectangleScan_unittest
         trajectory_unittest)
@@ -170,5 +171,5 @@ endforeach()
 #Compile the python wrapper############################
 #######################################################
 configure_file(pyscan.py ${CMAKE_CURRENT_BINARY_DIR}/pyscan.py COPYONLY)
-add_library(pyscan SHARED ${SOURCE_FILES} ${PY_SOURCE_FILES})
+add_library(pyscan SHARED $<TARGET_OBJECTS:src_obj> ${PY_SOURCE_FILES})
 target_link_libraries(pyscan ${Boost_LIBRARIES} ${THIRDPARTY_LIBRARIES})

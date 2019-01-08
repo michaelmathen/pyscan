@@ -55,6 +55,13 @@ namespace pyscan {
             return line.above_closed(pt);
         }
 
+//        bool exact_contains(Point<dim> const& pt) const final {
+//            // ax + by + cz <= 0
+//            // a x / z + b * y / z + c >= 0/c
+//            //Want to ensure that points have positive c.
+//            return line.above_closed(pt);
+//        }
+
         bool intersects_segment(Point<dim> const& p1, Point<dim> const& p2) const final {
             return contains(p1) || contains(p2);
         }

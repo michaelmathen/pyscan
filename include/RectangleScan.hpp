@@ -76,6 +76,8 @@ namespace pyscan {
             l_y = std::min({p1(1), p2(1), p3(1), p4(1)});
         }
 
+        Rectangle() : u_x(0.0), u_y(0.0), l_x(0.0), l_y(0.0) {}
+
         Rectangle(double ux, double uy, double lx, double ly) : u_x(ux), u_y(uy), l_x(lx), l_y(ly) {}
 
         inline bool contains(const pt2_t& p1) const final {
@@ -127,6 +129,7 @@ namespace pyscan {
         double total_blue_weight = 0;
     public:
         Grid(size_t r_arg, wpoint_list_t const& red, wpoint_list_t const& blue);
+        Grid(wpoint_list_t const& red_points, wpoint_list_t const& blue_points);
         Grid(point_list_t const& net, wpoint_list_t const& red, wpoint_list_t const& blue);
         double totalRedWeight() const;
         double totalBlueWeight() const;
@@ -299,14 +302,37 @@ namespace pyscan {
         void setRight(size_t right);
     };
 
+    inline Grid make_exact_grid(const wpoint_list_t& m_pts, const wpoint_list_t& b_pts) {
+        return Grid(m_pts, b_pts);
+    }
+
+    inline Grid make_net_grid(const point_list_t& pts, const wpoint_list_t& m_pts, const wpoint_list_t& b_pts) {
+        return Grid(pts, m_pts, b_pts);
+    }
+
 
     std::tuple<Rectangle, double> max_rect_labeled(size_t r, double max_w, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func);
 
-    Subgrid maxSubgridLinearG(Grid const &grid, long r_prime, double a, double b);
+    Subgrid max_subgrid_linear_theory(Grid const &grid, long r_prime, double a, double b);
+    Subgrid max_subgrid_convex(Grid const &grid, double eps, discrepancy_func_t const &f);
+    Subgrid max_subgrid_linear(Grid const &grid, double a, double b);
+    Subgrid max_subgrid(Grid const &grid, discrepancy_func_t const &func);
+    Subgrid max_subgrid_convex_theory(Grid const &grid, double eps, discrepancy_func_t const &f);
 
-    Subgrid maxSubgridLinearSimple(Grid const& grid, double eps, discrepancy_func_t const& f);
-    Subgrid maxSubgridLinearSimple(Grid const &grid, double a, double b);
-    Subgrid maxSubgridNonLinear(Grid const &grid, discrepancy_func_t const& func);
-    Subgrid maxSubgridLinearTheory(Grid const& grid, double eps, discrepancy_func_t const& f);
+    std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& m_points, const wpoint_list_t& b_points, double eps, double a, double b);
+
+//    //Weighted and unweighted vertical splits
+//    class VerticalSplit {
+//
+//    };
+//
+////    class Resolution {
+////        Res
+////    };
+//    std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& m_pts, const wpoint_list_t& b_pts, double a, double b){
+//        double m_weight = computeTotal(m_pts);
+//        double b_weight = computeTotal(b_pts);
+//
+//    }
 }
 #endif //PYSCAN_RECTANGLESCAN_HPP

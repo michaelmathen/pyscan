@@ -1,45 +1,50 @@
-//
-// Created by mmath on 10/2/17.
-//
 
-#include "Range.hpp"
-#include "HalfSpaceScan.hpp"
+
+#include "RectangleScan.hpp"
 #include "Test_Utilities.hpp"
-#include "DiskScan.hpp"
 
-#include <ctime>
-#include <limits.h>
-#include <random>
-#include <iostream>
 
-pyscan::discrepancy_func_t stat = [](double m, double m_total, double b, double b_total) {
-    return fabs(m / m_total - b / b_total);
-};
+#include "gtest/gtest.h"
 
-int main() {
+namespace {
 
-    const static int n_size = 500;
-    const static int s_size = 15000;
-    double min_res = .1;
-    auto n_pts = pyscantest::randomLPoints2(n_size, 80);
-    auto m_pts = pyscantest::randomLPoints2(s_size, 100);
-    auto b_pts = pyscantest::randomLPoints2(s_size, 100);
+//    TEST(grid, rectangle) {
+//
+//        const static int s_size = 1000;
+//        auto m_pts = pyscantest::randomWPoints2(s_size);
+//        auto b_pts = pyscantest::randomWPoints2(s_size);
+//        pyscan::Grid grid(50, m_pts, b_pts);
+//
+//        for (size_t i = 0; i < grid.size() - 1; i++ {
+//            for (size_t j = i + 1; i < grid.size(); i++ {
+//                for (size_t k = 0; k < grid.size() - 1; k++ {
+//                    for (size_t l = k + 1; k < grid.size(); k++ {
+//                        grid.xCoord(i)
+//                    }
+//                }
+//            }
+//        }
+//    };
 
-    auto begin = std::clock();
-    auto [d1, d1value] = pyscan::max_disk_scale_labeled(n_pts, m_pts, b_pts, true, min_res, stat);
+    TEST(max_rectangle, matching) {
 
-    auto end = std::clock();
+        const static int n_size = 50;
+        const static int s_size = 1000;
+        auto n_pts = pyscantest::randomPoints2(n_size);
+        auto m_pts = pyscantest::randomWPoints2(s_size);
+        auto b_pts = pyscantest::randomWPoints2(s_size);
 
-    std::cout << d1value << " " << std::endl;
-    std::cout << static_cast<double>(end - begin) / CLOCKS_PER_SEC << std::endl;
+        auto scan = [](double m, double m_total, double b, double b_total) {
+            return m / m_total - b / b_total;
+        };
+        pyscan::Grid grid(50, m_pts, b_pts);
 
-    auto nn_pts = pyscantest::removeLW(n_pts);
-    begin = std::clock();
-    std::tie(d1, d1value) = pyscan::max_disk_scale_labeled_alt(nn_pts, m_pts, b_pts, min_res, stat);
+        auto subgrid_lin = pyscan::max_subgrid_linear(grid, 1.0, -1.0);
+        auto subgrid = pyscan::max_subgrid(grid, scan);
 
-    end = std::clock();
+        EXPECT_FLOAT_EQ(subgrid.fValue(), subgrid_lin.fValue());
+        std::cout << subgrid.fValue() << std::endl;
 
-    std::cout << d1value << " " << std::endl;
-    std::cout << static_cast<double>(end - begin) / CLOCKS_PER_SEC << std::endl;
-    return 0;
+    }
+
 }

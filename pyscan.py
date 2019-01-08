@@ -305,4 +305,120 @@ def null_cdf(observations):
     return values, prob
 
 
+def random_rect(points, r):
+    def bBox(*bb):
+        return (min(*map(lambda pt: pt[0], bb)),
+                max(*map(lambda pt: pt[0], bb)),
+                min(*map(lambda pt: pt[1], bb)),
+                max(*map(lambda pt: pt[1], bb)))
 
+    while True:
+        [pt1, pt2] = random.sample(points, 2)
+
+        if random.randint(0, 1) == 0:
+            (minX, maxX, minY, maxY) = bBox(pt1, pt2)
+            fx = lambda pt: pt[0]
+            fy = lambda pt: pt[0]
+        else:
+            fx = lambda pt: pt[0]
+            fy = lambda pt: pt[0]
+            (minY, maxY, minX, maxX) = bBox(pt1, pt2)
+
+        if random.randint(0, 1) == 0:
+            sf = lambda pt: fx(pt)
+        else:
+            sf = lambda pt: -fx(pt)
+            minX, maxX = maxX, minX
+
+        subPoints = [pt for pt in points if minY <= fy(pt) and fy(pt) <= maxY]
+        # Make a pass through the data and find the lower and upper bound.
+        inB = [pt for pt in subPoints if minX <= fx(pt) and fx(pt) <= maxX]
+        if random.randint(0, 1):  # random.randint(0, 1) == 0:
+            ab = [pt for pt in subPoints if maxX < fx(pt)]
+            ab.sort(key=lambda p: -sf(p))
+        else:
+            ab = [pt for pt in subPoints if fx(pt) < minX]
+            ab.sort(key=lambda p: sf(p))
+        while len(ab) > 0:
+            if len(inB) > int(r * len(points) + .5):
+                break
+            if len(inB) == int(r * len(points) + .5):
+                (lx, ux, ly, uy) = bBox(*inB)
+                return Rectangle(ux, uy, lx, ly, 0.0)
+            el = ab.pop()
+            inB.append(el)
+            while len(ab) > 0 and sf(el) == sf(ab[-1]):
+                el = ab.pop()
+                inB.append(el)
+
+
+def plant_rectangle(pts, r, p, q):
+    """
+    Create a set of red and blue points with a random rectangle planted containing r fraction of the points.
+    :param p:
+    :param q:
+    :return:
+    """
+    rect = random_rect(pts, r)
+
+    inside_rect = []
+    outside_rect = []
+    for pt in pts:
+        if rect.contains(pt):
+            inside_rect.append(pt)
+        else:
+            outside_rect.append(pt)
+
+    red_in = split_set(inside_rect, q)
+    blue_in = split_set(inside_rect, q)
+    red_out = split_set(outside_rect, p)
+    blue_out = split_set(outside_rect, p)
+    return red_in + red_out, blue_in + blue_out
+
+
+def plant_disk(pts, r, p, q):
+    """
+    Create a set of red and blue points with a random disk planted containing r fraction of the points.
+    :param p:
+    :param q:
+    :return:
+    """
+
+    selected = my_sample(pts, 1)
+    if not selected:
+        return None
+    origin = selected[0]
+
+    ordered = sorted(pts, key=lambda x: x.dist(origin))
+
+    inside_disk = ordered[:int(r * len(ordered))]
+    outside_disk = ordered[int(r * len(ordered)):]
+
+    red_in = split_set(inside_disk, q)
+    blue_in = split_set(inside_disk, q)
+    red_out = split_set(outside_disk, p)
+    blue_out = split_set(outside_disk, p)
+    return red_in + red_out, blue_in + blue_out
+
+
+def plant_halfplane(pts, r, p, q):
+    """
+    Create a set of red and blue points with a random halfplane planted containing r fraction of the points.
+    :param p:
+    :param q:
+    :return:
+    """
+
+    def min_distance(pt, direc):
+        return direc[0] * pt[0] + direc[1] * pt[1]
+    rand_direc = (random.gauss(0, 1), random.gauss(0, 1))
+
+    ordered = sorted(pts, key=lambda x: min_distance(x, rand_direc))
+    inside_halfplane = ordered[:int(r * len(ordered))]
+    outside_halfplane = ordered[int(r * len(ordered)):]
+
+    red_in = split_set(inside_halfplane, q)
+    blue_in = split_set(inside_halfplane, q)
+    red_out = split_set(outside_halfplane, p)
+    blue_out = split_set(outside_halfplane, p)
+    return red_in + red_out, blue_in + blue_out
