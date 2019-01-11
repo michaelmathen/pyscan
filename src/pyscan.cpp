@@ -304,11 +304,23 @@ double evaluate_disk(pyscan::Disk const& d1, pyscan::wpoint_list_t const&  mpts,
     return pyscan::evaluate_range(d1, mpts, bpts, disc);
 }
 
+double evaluate_rectangle(pyscan::Rectangle const& d1, pyscan::wpoint_list_t const&  mpts, pyscan::wpoint_list_t const& bpts, pyscan::discrepancy_func_t const& disc) {
+    return pyscan::evaluate_range(d1, mpts, bpts, disc);
+}
+
 double evaluate_disk_labeled(pyscan::Disk const& d1, pyscan::lpoint_list_t const&  mpts, pyscan::lpoint_list_t const& bpts, pyscan::discrepancy_func_t const& disc) {
     return pyscan::evaluate_range(d1, mpts, bpts, disc);
 }
 
+double evaluate_rectangle_labeled(pyscan::Rectangle const& d1, pyscan::lpoint_list_t const&  mpts, pyscan::lpoint_list_t const& bpts, pyscan::discrepancy_func_t const& disc) {
+    return pyscan::evaluate_range(d1, mpts, bpts, disc);
+}
+
 double evaluate_disk_traj(pyscan::Disk const& d1, pyscan::trajectory_set_t const&  mpts, pyscan::trajectory_set_t const& bpts, pyscan::discrepancy_func_t const& disc) {
+    return pyscan::evaluate_range(d1, mpts, bpts, disc);
+}
+
+double evaluate_rectangle_traj(pyscan::Rectangle const& d1, pyscan::trajectory_set_t const&  mpts, pyscan::trajectory_set_t const& bpts, pyscan::discrepancy_func_t const& disc) {
     return pyscan::evaluate_range(d1, mpts, bpts, disc);
 }
 
@@ -514,6 +526,11 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("evaluate_halfplane", &evaluate_halfplane);
     py::def("evaluate_halfplane_labeled", &evaluate_halfplane_labeled);
     py::def("evaluate_halfplane_trajectory", &evaluate_halfplane_traj);
+
+    py::def("evaluate_rectangle", &evaluate_rectangle);
+    py::def("evaluate_rectangle_labeled", &evaluate_rectangle_labeled);
+    py::def("evaluate_rectangle_trajectory", &evaluate_rectangle_traj);
+
 
 //    py::def("max_disk_cached", &pyscan::max_disk_cached);
 //    py::def("max_disk_cached_labeled", &pyscan::max_disk_cached_labeled);

@@ -35,6 +35,11 @@ def evaluate_range(range, mp, bp, disc_f):
             return evaluate_halfplane_labeled(range, mp, bp, disc_f)
         elif isinstance(pt_obj, WPoint) or isinstance(pt_obj, tuple):
             return evaluate_halfplane(range, mp, bp, disc_f)
+    elif isinstance(range, Rectangle):
+        if isinstance(pt_obj, LPoint):
+            return evaluate_rectangle_labeled(range, mp, bp, disc_f)
+        elif isinstance(pt_obj, WPoint) or isinstance(pt_obj, tuple):
+            return evaluate_rectangle(range, mp, bp, disc_f)
     raise ValueError()
 
 def evaluate_range_trajectory(range, mp, bp, disc_f):
@@ -193,7 +198,6 @@ def plant_full_halfplane(trajectories, r, p, q, disc):
     return red_in + red_out, blue_in + blue_out, plant_region, diff
 
 
-
 def plant_partial_halfplane(trajectories, r, p, q, eps, disc):
     """
     Choose a point at random from a trajectory and then expand outward from there.
@@ -205,14 +209,15 @@ def plant_partial_halfplane(trajectories, r, p, q, eps, disc):
     """
     def min_distance(pt, direc):
         return direc[0] * pt[0] + direc[1] * pt[1]
-    rand_direc = (random.gauss(0,1), random.gauss(0, 1))
+    #so it always points down
+    rand_direc = (random.gauss(0,1), -abs(random.gauss(0, 1)))
 
     trajectory_obj = [Trajectory(pts) for pts in trajectories]
     all_pts = uniform_sample(trajectory_obj, int(1 / eps ** 2 + 1), False)
     all_pts = sorted(all_pts, key=lambda x: min_distance(x, rand_direc))
 
-    pt = all_pts[int(r * len(trajectories))]
-    lc = pt.pdot(rand_direc)
+    pt = all_pts[int((1 - r) * len(all_pts))]
+    lc = pt[0] * rand_direc[0] + pt[1] * rand_direc[1]
     plant_region = Halfplane(Point(rand_direc[0], rand_direc[1], -lc))
 
     inside_disk = [traj for traj in trajectory_obj if plant_region.intersects_trajectory(traj)]
@@ -222,6 +227,9 @@ def plant_partial_halfplane(trajectories, r, p, q, eps, disc):
     red_out, blue_out = split_set(outside_disk, p)
     diff = evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
     return red_in + red_out, blue_in + blue_out, plant_region, diff
+
+
+
 
 
 def plant_full_disk(trajectories, r, p, q, disc):
@@ -269,7 +277,7 @@ def plant_partial_disk(trajectories, r, p, q, eps, disc):
     all_pts = uniform_sample(trajectory_obj, int(1 / eps ** 2 + 1), False)
     trajectories = sorted(all_pts, key=lambda x: x.dist(origin))
 
-    disk_boundary = trajectories[int(r * len(trajectories))]
+    disk_boundary = trajectories[int(r * len(all_pts))]
     max_disk = Disk(origin[0], origin[1], origin.dist(disk_boundary))
     inside_disk = [traj for traj in trajectory_obj if max_disk.intersects_trajectory(traj)]
     outside_disk = [traj for traj in trajectory_obj if not max_disk.intersects_trajectory(traj)]
@@ -373,7 +381,7 @@ def plant_rectangle(pts, r, p, q):
     blue_in = split_set(inside_rect, q)
     red_out = split_set(outside_rect, p)
     blue_out = split_set(outside_rect, p)
-    return red_in + red_out, blue_in + blue_out
+    return red_in + red_out, blue_in + blue_out, rect
 
 
 def plant_disk(pts, r, p, q):
@@ -390,6 +398,8 @@ def plant_disk(pts, r, p, q):
     origin = selected[0]
 
     ordered = sorted(pts, key=lambda x: x.dist(origin))
+    disk_boundary = ordered[int(r * len(ordered))]
+    max_disk = Disk(origin[0], origin[1], origin.dist(disk_boundary))
 
     inside_disk = ordered[:int(r * len(ordered))]
     outside_disk = ordered[int(r * len(ordered)):]
@@ -398,7 +408,7 @@ def plant_disk(pts, r, p, q):
     blue_in = split_set(inside_disk, q)
     red_out = split_set(outside_disk, p)
     blue_out = split_set(outside_disk, p)
-    return red_in + red_out, blue_in + blue_out
+    return red_in + red_out, blue_in + blue_out, max_disk
 
 
 def plant_halfplane(pts, r, p, q):
@@ -411,14 +421,33 @@ def plant_halfplane(pts, r, p, q):
 
     def min_distance(pt, direc):
         return direc[0] * pt[0] + direc[1] * pt[1]
-    rand_direc = (random.gauss(0, 1), random.gauss(0, 1))
+    rand_direc = (random.gauss(0, 1), abs(random.gauss(0, 1)))
 
     ordered = sorted(pts, key=lambda x: min_distance(x, rand_direc))
     inside_halfplane = ordered[:int(r * len(ordered))]
     outside_halfplane = ordered[int(r * len(ordered)):]
 
+    pt = ordered[int((1 - r) * len(ordered))]
+    lc = pt[0] * rand_direc[0] + pt[1] * rand_direc[1]
+    plant_region = Halfplane(Point(rand_direc[0], rand_direc[1], -lc))
+
     red_in = split_set(inside_halfplane, q)
     blue_in = split_set(inside_halfplane, q)
     red_out = split_set(outside_halfplane, p)
     blue_out = split_set(outside_halfplane, p)
-    return red_in + red_out, blue_in + blue_out
+    return red_in + red_out, blue_in + blue_out, plant_region
+
+
+def plant_partial_rectangle(trajectories, r, p, q, eps, disc):
+
+    trajectory_obj = [Trajectory(pts) for pts in trajectories]
+    all_pts = uniform_sample(trajectory_obj, int(1 / eps ** 2 + 1), False)
+
+    _, _, rect = plant_rectangle(all_pts, r, p, q)
+    inside_rect = [traj for traj in trajectory_obj if rect.intersects_trajectory(traj)]
+    outside_rect = [traj for traj in trajectory_obj if not rect.intersects_trajectory(traj)]
+    red_in, blue_in = split_set(inside_rect, q)
+    red_out, blue_out = split_set(outside_rect, p)
+
+    diff = evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
+    return red_in + red_out, blue_in + blue_out, rect, diff

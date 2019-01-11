@@ -79,14 +79,26 @@ namespace pyscan{
 
             std::vector<halfspace2_t> halfplanes;
             for (size_t j = i + 1; j < point_net.size(); ++j) {
-                halfspace2_t possible(pivot, point_net[j]);
-                if (filter(possible)) {
-                    halfplanes.emplace_back(possible);
+                if (!pivot.approx_eq(point_net[j])) {
+                    halfspace2_t possible(pivot, point_net[j]);
+                    if (filter(possible) && !std::isnan(possible[0]) && !std::isnan(possible[1]) &&
+                        !std::isnan(possible[2])) {
+                        halfplanes.push_back(possible);
+                    }
                 }
             }
             std::sort(halfplanes.begin(), halfplanes.end(), [](const halfspace2_t& p1, const halfspace2_t& p2) {
                 return -p1[0] < -p2[0];
             });
+
+            auto new_end = std::unique(halfplanes.begin(), halfplanes.end(), [](const halfspace2_t& p1, const halfspace2_t& p2){
+                return util::aeq(p1[0], p2[0]);
+            });
+            halfplanes.resize( std::distance(halfplanes.begin(), new_end));
+
+            if (halfplanes.empty()) {
+                continue;
+            }
 
             auto& l1 = halfplanes[0];
             std::vector<double> red_delta(halfplanes.size() - 1, 0.0);
@@ -99,20 +111,21 @@ namespace pyscan{
             auto calc_delta = [&](const wpoint_list_t& pts, std::vector<double>& deltas) {
                 double res = 0.0;
                 for (auto const& pt : pts) {
-                    double val = plane_order(pivot, pt);
-                    auto angle_it = std::lower_bound(angles.begin(), angles.end(), val);
-                    //If the angle is begin or end then it is in the last wedge and we don't count it.
-                    if (angle_it == angles.end() || angle_it == angles.begin()){
-                        if (l1.contains(pt)) {
-                            res += pt.get_weight();
-                        }
-                    } else {
-                        auto ix = std::distance(angles.begin(), angle_it) - 1;
-                        if (l1.contains(pt)) {
-                            deltas[ix] -= pt.get_weight();
-                            res += pt.get_weight();
-                        } else {
-                            deltas[ix] += pt.get_weight();
+                    if (l1.contains(pt)) {
+                        res += pt.get_weight();
+                    }
+
+                    halfspace2_t h_tmp(pivot, pt);
+                    if (!std::isnan(h_tmp[0])) {
+                        auto angle_it = std::lower_bound(angles.begin(), angles.end(), -h_tmp[0]);
+                        //If the angle is begin or end then it is in the last wedge and we don't count it.
+                        if (!(angle_it == angles.end() || angle_it == angles.begin())) {
+                            auto ix = std::distance(angles.begin(), angle_it) - 1;
+                            if (l1.contains(pt)) {
+                                deltas[ix] -= pt.get_weight();
+                            } else {
+                                deltas[ix] += pt.get_weight();
+                            }
                         }
                     }
                 }
