@@ -578,4 +578,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("block_sample", &pyscan::block_sample);
     py::def("uniform_sample", &pyscan::uniform_sample);
     py::def("even_sample", &pyscan::even_sample);
+
+    py::def("block_sample_error", &pyscan::block_sample_error);
+    py::def("uniform_sample_error", &pyscan::uniform_sample_error);
+    py::def("even_sample_error", &pyscan::even_sample_error);
 }

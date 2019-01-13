@@ -378,7 +378,15 @@ namespace pyscan {
         return simplified_traj;
     }
 
-    point_list_t interval_sample(const trajectory_set_t& trajectories, std::vector<double>& indices, bool take_endpoints) {
+    double total_weighted_length(const trajectory_set_t& trajectories) {
+
+        return std::accumulate(trajectories.begin(), trajectories.end(), 0.0,
+                                              [&](const double& cum_weight, const trajectory_t& traj) {
+                                                  return cum_weight + traj.get_length() * traj.get_weight();
+                                              });
+    }
+
+    point_list_t interval_sample(const trajectory_set_t& trajectories, std::vector<double>& indices, bool take_endpoints, bool take_single) {
         std::sort(indices.begin(), indices.end());
 
         double scaling_fact = std::accumulate(trajectories.begin(), trajectories.end(), 0.0,
@@ -395,6 +403,7 @@ namespace pyscan {
                 continue;
             }
             auto last_pt = *(traj.begin());
+            bool one_taken = take_endpoints;
             if (take_endpoints) {
                 sample_pts.push_back(last_pt);
             }
@@ -407,6 +416,7 @@ namespace pyscan {
                     double inside_length = (*idx - curr_length) / traj.get_weight();
                     double alpha = inside_length * scaling_fact / last_pt.dist(*traj_b);
                     // Create a new point on this line segment scaled between the two.
+                    one_taken = true;
                     sample_pts.emplace_back(last_pt.on_segment(*traj_b, alpha));
                     idx++;
                 }
@@ -416,6 +426,9 @@ namespace pyscan {
                 //Increment last_pt to the current point and update the total length.
                 last_pt = *traj_b;
                 curr_length += seg_length;
+            }
+            if (!one_taken && take_single) {
+                sample_pts.push_back(last_pt);
             }
         }
         return sample_pts;
@@ -429,7 +442,7 @@ namespace pyscan {
         for (size_t i = 0; i < s; i++) {
             indices.push_back(distribution(generator));
         }
-        return interval_sample(trajectories, indices, take_endpoints);
+        return interval_sample(trajectories, indices, take_endpoints, false);
     }
 
     point_list_t even_sample(const trajectory_set_t& trajectories, size_t s, bool take_endpoints) {
@@ -440,7 +453,7 @@ namespace pyscan {
         for (size_t i = 0; i < s; i++) {
             indices.emplace_back( (i + .5) / s);
         }
-        return interval_sample(trajectories, indices, take_endpoints);
+        return interval_sample(trajectories, indices, take_endpoints, false);
     }
 
     point_list_t block_sample(const trajectory_set_t& trajectories, size_t s, bool take_endpoints) {
@@ -454,9 +467,48 @@ namespace pyscan {
         for (size_t i = 0; i < s; i++) {
             indices.push_back(i / static_cast<double>(s) + distribution(generator));
         }
-        return interval_sample(trajectories, indices, take_endpoints);
+        return interval_sample(trajectories, indices, take_endpoints, false);
     }
 
+
+    point_list_t uniform_sample_error(const trajectory_set_t& trajectories, double eps, bool take_endpoints) {
+        double wl = total_weighted_length(trajectories);
+        assert(wl >= 0);
+        auto s = static_cast<size_t>(std::lround(wl / eps));
+        std::random_device rd;
+        std::mt19937   generator(rd());
+        std::uniform_real_distribution<double> distribution(0.0, 1.0);
+        std::vector<double> indices;
+        for (size_t i = 0; i < s; i++) {
+            indices.push_back(distribution(generator));
+        }
+        return interval_sample(trajectories, indices, take_endpoints, true);
+    }
+
+    point_list_t even_sample_error(const trajectory_set_t& trajectories, double eps, bool take_endpoints){
+        double wl = total_weighted_length(trajectories);
+        assert(wl >= 0);
+        auto s = static_cast<size_t>(std::lround(wl / eps));
+        std::vector<double> indices;
+        for (size_t i = 0; i < s; i++) {
+            indices.emplace_back( (i + .5) / s);
+        }
+        return interval_sample(trajectories, indices, take_endpoints, true);
+    }
+
+    point_list_t block_sample_error(const trajectory_set_t& trajectories, double eps, bool take_endpoints) {
+        double wl = total_weighted_length(trajectories);
+        assert(wl >= 0);
+        auto s = static_cast<size_t>(std::lround(wl / eps));
+        std::random_device rd;
+        std::mt19937  generator(rd());
+        std::uniform_real_distribution<double> distribution(0.0, 1.0 / s);
+        std::vector<double> indices;
+        for (size_t i = 0; i < s; i++) {
+            indices.push_back(i / static_cast<double>(s) + distribution(generator));
+        }
+        return interval_sample(trajectories, indices, take_endpoints, true);
+    }
 
 
     std::tuple<halfspace2_t, double> error_halfplane_coreset(const trajectory_t& trajectory, const point_list_t& pts) {

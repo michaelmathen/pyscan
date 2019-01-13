@@ -37,6 +37,12 @@ namespace pyscan {
 
     point_list_t block_sample(const trajectory_set_t& trajectories, size_t s, bool take_endpoints);
 
+    point_list_t uniform_sample_error(const trajectory_set_t& trajectories, double eps, bool take_endpoints);
+
+    point_list_t even_sample_error(const trajectory_set_t& trajectories, double eps, bool take_endpoints);
+
+    point_list_t block_sample_error(const trajectory_set_t& trajectories, double eps, bool take_endpoints);
+
 
     std::tuple<halfspace2_t, double> error_halfplane_coreset(const trajectory_t& trajectory, const point_list_t& pts);
 
