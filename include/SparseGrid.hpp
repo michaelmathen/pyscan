@@ -1,6 +1,7 @@
 #ifndef __SPARSE_GRID_H__
 #define __SPARSE_GRID_H__
 
+#include <assert.h>
 #include <map>
 #include <algorithm>
 #include <vector>

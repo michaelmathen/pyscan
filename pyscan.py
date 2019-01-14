@@ -57,7 +57,10 @@ def evaluate_range_trajectory(range, mp, bp, disc_f):
         return evaluate_disk_trajectory(range, mp, bp, disc_f)
     elif isinstance(range, Halfplane):
         return evaluate_halfplane_trajectory(range, mp, bp, disc_f)
-    raise ValueError()
+    elif isinstance(range, Rectangle):
+        return evaluate_rectangle_trajectory(range, mp, bp, disc_f)
+    else:
+        raise ValueError()
 
 
 def split_set(pts, rate):

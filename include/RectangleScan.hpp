@@ -81,7 +81,7 @@ namespace pyscan {
         Rectangle(double ux, double uy, double lx, double ly) : u_x(ux), u_y(uy), l_x(lx), l_y(ly) {}
 
         inline bool contains(const pt2_t& p1) const final {
-            return (u_x >= p1(0) && p1(0) >= l_x && u_y >= p1(1) && p1(1) >= l_y);
+            return (u_x > p1(0) && p1(0) >= l_x && u_y > p1(1) && p1(1) >= l_y);
         }
 
         inline bool intersects_segment(const pt2_t &p1, const pt2_t &p2) const final {
@@ -312,6 +312,15 @@ namespace pyscan {
 
 
     std::tuple<Rectangle, double> max_rect_labeled(size_t r, double max_w, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func);
+
+    std::tuple<Rectangle, double> max_rect_labeled_scale(
+            size_t r,
+            double max_r,
+            double alpha,
+            const point_list_t &net,
+            const lpoint_list_t &red,
+            const lpoint_list_t &blue,
+            const discrepancy_func_t &f);
 
     Subgrid max_subgrid_linear_theory(Grid const &grid, long r_prime, double a, double b);
     Subgrid max_subgrid_convex(Grid const &grid, double eps, discrepancy_func_t const &f);
