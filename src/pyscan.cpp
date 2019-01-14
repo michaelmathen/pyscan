@@ -10,7 +10,7 @@
 #include <boost/python.hpp>
 #include <boost/python/stl_iterator.hpp>
 
-
+#include "ConvexHull.hpp"
 #include "Segment.hpp"
 #include "RectangleScan.hpp"
 #include "HalfSpaceScan.hpp"
@@ -540,6 +540,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_disk_scale_labeled_alt", &pyscan::max_disk_scale_labeled_alt);
     py::def("max_rect_labeled", &pyscan::max_rect_labeled);
 
+    py::def("max_rect_labeled_scale", pyscan::max_rect_labeled_scale);
+
     ////////////////////////////////////////////////////////////////////
     //TrajectoryScan.hpp wrappers///////////////////////////////////////
     ////////////////////////////////////////////////////////////////////
@@ -568,6 +570,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("grid_direc_kernel", &pyscan::approx_traj_kernel_grid);
     //This is for 2d eps-kernel useful for halfspaces.
     py::def("halfplane_kernel", pyscan::approx_hull);
+    py::def("convex_hull", pyscan::graham_march);
     //This is a 3d eps-kernel for disks.
     py::def("lifting_kernel", &pyscan::lifting_coreset);
 
