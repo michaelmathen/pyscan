@@ -21,10 +21,7 @@ set(version ${PYTHONLIBS_VERSION_STRING})
 STRING( REGEX REPLACE "([0-9.]+).[0-9]+(rc[0-9]+)?" "\\1" version ${version} )
 STRING( REGEX REPLACE "[^0-9]" "" version ${version} )
 
-find_package(Boost COMPONENTS "python${version}")
-if (NOT FOUND_Boost)
-    find_package(Boost COMPONENTS "python-py${version}" REQUIRED)
-endif()
+find_package(Boost COMPONENTS "python${version}" REQUIRED)
 
 execute_process(COMMAND ${CMAKE_COMMAND} .
         RESULT_VARIABLE result
