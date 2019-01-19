@@ -478,7 +478,7 @@ namespace pyscan {
         std::transform(blue.begin(), blue.end(), lifted_blue.begin(), lpt);
         auto [h, max_val] = max_halfspace_overload(lifted_net, lifted_red, lifted_blue, f);
         //assert(util::aeq(evaluate_range(h, lifted_red, lifted_blue, f), max_val));
-        std::cout << "Internal value" << evaluate_range(h, lifted_red, lifted_blue, f) << " " << max_val << std::endl;
+        //std::cout << "Internal value" << evaluate_range(h, lifted_red, lifted_blue, f) << " " << max_val << std::endl;
         double a = h[0], b = h[1], c = h[2], d = h[3];
         return std::make_tuple(Disk(-a / (2 * c), -b / (2 * c),
                                     sqrt((a * a + b * b - 4 * c * d) / (4 * c * c))),
