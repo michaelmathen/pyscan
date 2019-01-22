@@ -416,6 +416,7 @@ namespace pyscan {
                 while (idx != indices.end() && seg_length + curr_length > *idx) {
                     double inside_length = (*idx - curr_length) / traj.get_weight();
                     double alpha = inside_length * scaling_fact / last_pt.dist(*traj_b);
+                    alpha = std::min(1.0, std::max(alpha, 0.0));
                     // Create a new point on this line segment scaled between the two.
                     one_taken = true;
                     sample_pts.emplace_back(last_pt.on_segment(*traj_b, alpha));
