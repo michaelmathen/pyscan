@@ -57,7 +57,7 @@ namespace pyscan {
         double lx = std::min(lpt(0), rpt(0));
         double uy = std::max(lpt(1), rpt(1));
         double ly = std::min(lpt(1), rpt(1));
-        return ux > x && x > lx &&  uy > y && y > ly;
+        return util::alte(x, ux) && util::alte(lx, x) &&  util::alte(y, uy) && util::alte(ly, y);
     }
     /*
      * Takes a trajectory and grids it so that each grid contains points that cross the boundaries of the trajectory.
@@ -78,6 +78,11 @@ namespace pyscan {
 
         long g_size = static_cast<long>((ux - lx) / chord_l) + 1;
         std::unordered_map<long, std::vector<Point<>>> traj_points;
+        if (traj_e - traj_b == 1) {
+            //If this is a single point then we just return the point.
+            traj_points.emplace(0, std::vector<Point<>>(traj_b, traj_e));
+            return traj_points;
+        }
 
         long location = index((*last_pt)(0), (*last_pt)(1), lx, ly, chord_l, g_size);
         traj_points.emplace(location, std::initializer_list<Point<>>{*last_pt});
@@ -555,7 +560,7 @@ namespace pyscan {
         double eps = 0;
         for (size_t i = 0; i < pts.size() - 1; i++) {
             for (size_t j = i + 1; j < pts.size(); j++) {
-                halfspace2_t curr_plane(trajectory[i], trajectory[j]);
+                halfspace2_t curr_plane(pts[i], pts[j]);
 
                 auto norm_f = [&curr_plane](pt2_t const& p1, pt2_t const& p2) {
                     return p1.pdot(curr_plane.get_coords()) < p2.pdot(curr_plane.get_coords());
