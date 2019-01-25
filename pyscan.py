@@ -1,5 +1,6 @@
 from libpyscan import *
 import random
+import bisect
 import itertools
 import collections
 
@@ -116,9 +117,8 @@ def plant_region(points, r, p, q, eps, scan_f):
     return red_in + red_out, blue_in + blue_out, reg
 
 
-def plant_trajectory_rectangles(trajectories, r, p, q):
+def plant_full_square(trajectories, r, p, q, disc, max_count=32):
     """
-    TODO
     Choose a point at random from a trajectory and then expand outward from there.
     :param trajectories this consists of lists of lists of points where the points are type Pyscan.Point
     :param r:
@@ -126,7 +126,40 @@ def plant_trajectory_rectangles(trajectories, r, p, q):
     :param q:
     :return:
     """
-    pass
+    if not trajectories:
+        return None
+    count = 0
+    traj = []
+    while not traj:
+        count+= 1
+        traj = random.choice(trajectories)
+        if count > 10 :
+            return None
+
+    seed_pt = random.choice(traj)
+    upper_bound = 1.0
+    lower_bound = 0.0
+    num = 0
+    while num < max_count:
+        size = (upper_bound + lower_bound) / 2
+        reg = Rectangle(seed_pt[0] + size / 2, seed_pt[1] + size / 2, seed_pt[0] - size / 2, seed_pt[1] - size / 2)
+        count = sum(1 for traj in trajectories if reg.intersects_trajectory(traj))
+        if abs(count - r * len(trajectories)) <= 2:
+            break
+        if count - r * len(trajectories) > 0:
+            upper_bound = size
+        else:
+            lower_bound = size
+        num += 1
+
+
+    inside_rect = [traj for traj in trajectories if reg.intersects_trajectory(traj)]
+    red_in, blue_in = split_set([tuple(traj) for traj in inside_rect], q)
+    outside_rect = [traj for traj in trajectories if not reg.intersects_trajectory(traj)]
+    red_out, blue_out = split_set([tuple(traj) for traj in outside_rect], p)
+
+    diff = evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
+    return red_in + red_out, blue_in + blue_out, reg, diff
 
 
 
