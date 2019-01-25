@@ -9,7 +9,7 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -Wall -Wextra -g -O2")
 
-set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O3 -march=native -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O3 -march=native -DNDEBUG  -fno-omit-frame-pointer -fstack-protector-all")
 
 
 

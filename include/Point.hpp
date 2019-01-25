@@ -400,6 +400,7 @@ namespace pyscan {
     using discrepancy_func_t = std::function<double(double, double, double, double)>;
 
 
+
     template <typename T>
     void remove_duplicates(std::vector<T>& pts) {
 
@@ -410,10 +411,22 @@ namespace pyscan {
             return p1(0) < p2(0);
         });
 
-        auto end_it = std::unique(pts.begin(), pts_end, [] (T const& p1, T const& p2) {
-            return p1.approx_eq(p2);
-        });
-        pts.erase(end_it, pts.end());
+        //This is a version of unique that should be defined for non transitive relationships.
+        auto new_end = pts.end() - 1;
+        if (pts.size() <= 1) {
+            return;
+        }
+        for (auto pt_b = pts.end() - 2; ;pt_b--) {
+            if ((pt_b + 1)->approx_eq(*pt_b)) {
+                std::swap(*(pt_b + 1), *pt_b);
+                std::swap(*(pt_b + 1), *new_end);
+                new_end--;
+            }
+            if (pt_b == pts.begin()) {
+                break;
+            }
+        }
+        pts.erase(new_end + 1, pts.end());
     }
 
 

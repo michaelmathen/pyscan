@@ -76,49 +76,6 @@ def split_set(pts, rate):
     return red_set, [item for item in pts if item not in red_set_set]
 
 
-"""
-This plants a region where every trajectory:
-Completely outside or inside of the region has an endpoint chosen at random.
-Every trajectory with one endpoint inside the region has an endpoint chosen inside
-with probability q (exactly q fraction have one endpoint in the region)
-
-r controls how many points the region contains.
-
-"""
-def paired_plant_region(traj_start, traj_end, r, q, eps, scan_f):
-
-    while True:
-        net_size = int( 1 / min(r, eps) + 1)
-        s_size = int(1 / min(eps, r) ** 2 + 1)
-
-        net = my_sample(traj_start + traj_end, net_size)
-        sample = my_sample(traj_start + traj_end, s_size)
-        sample = [WPoint(1.0, p[0], p[1], 1.0) for p in sample]
-        disc = size_region(r)
-        reg, _ = scan_f(net, sample, [], disc)
-
-        val = evaluate_range(reg, traj_start + traj_end, [], disc)
-        if 1 - val < eps:
-            break
-
-    flux_region = []
-    out_region = []
-    for st_pt, end_pt in zip(traj_start, traj_end):
-        if reg.contains(st_pt) and not reg.contains(end_pt):
-            flux_region.append((st_pt, end_pt))
-        elif reg.contains(end_pt) and not reg.contains(st_pt):
-            flux_region.append((end_pt, st_pt))
-        else:
-            out_region.append((st_pt, end_pt))
-
-    q_fraction, remainder = split_set(flux_region, q)
-    remainder = [(ep, sp) for (sp, ep) in remainder]
-
-    q_fraction_o, remainder_o = split_set(out_region, .5)
-    remainder = [(ep, sp) for (sp, ep) in remainder]
-    red, blue = zip(*(q_fraction + q_fraction_o + remainder + remainder_o))
-    return red, blue, reg
-
 
 
 """
@@ -230,9 +187,6 @@ def plant_partial_halfplane(trajectories, r, p, q, eps, disc):
     red_out, blue_out = split_set(outside_disk, p)
     diff = evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
     return red_in + red_out, blue_in + blue_out, plant_region, diff
-
-
-
 
 
 def plant_full_disk(trajectories, r, p, q, disc):
@@ -454,3 +408,37 @@ def plant_partial_rectangle(trajectories, r, p, q, eps, disc):
 
     diff = evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
     return red_in + red_out, blue_in + blue_out, rect, diff
+
+
+
+"""
+This plants a region where every trajectory:
+Completely outside or inside of the region has an endpoint chosen at random.
+Every trajectory with one endpoint inside the region has an endpoint chosen inside
+with probability q (exactly q fraction have one endpoint in the region)
+
+r controls how many points the region contains.
+
+"""
+def paired_plant_region(traj_start, traj_end, r, q, region_plant_f):
+
+    _, _, reg = region_plant_f(traj_start + traj_end, r, .5, q)
+
+    flux_region = []
+    out_region = []
+    for st_pt, end_pt in zip(traj_start, traj_end):
+        if reg.contains(st_pt) and not reg.contains(end_pt):
+            flux_region.append((st_pt, end_pt))
+        elif reg.contains(end_pt) and not reg.contains(st_pt):
+            flux_region.append((end_pt, st_pt))
+        else:
+            out_region.append((st_pt, end_pt))
+
+    q_fraction, remainder = split_set(flux_region, q)
+    remainder = [(ep, sp) for (sp, ep) in remainder]
+
+    q_fraction_o, remainder_o = split_set(out_region, .5)
+    remainder = [(ep, sp) for (sp, ep) in remainder]
+    red, blue = zip(*(q_fraction + q_fraction_o + remainder + remainder_o))
+    return red, blue, reg
+
