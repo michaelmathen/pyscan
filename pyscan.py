@@ -342,7 +342,7 @@ def random_rect(points, r):
                 break
             if len(inB) == int(r * len(points) + .5):
                 (lx, ux, ly, uy) = bBox(*inB)
-                return Rectangle(ux, uy, lx, ly, 0.0)
+                return Rectangle(ux, uy, lx, ly)
             el = ab.pop()
             inB.append(el)
             while len(ab) > 0 and sf(el) == sf(ab[-1]):
