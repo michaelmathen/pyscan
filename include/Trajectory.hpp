@@ -75,6 +75,18 @@ namespace pyscan {
             return trajectory_pts.empty();
         }
 
+        virtual bool operator==(const Trajectory& other) {
+            if (other.size() == this->size() || other.get_weight() != this->get_weight()) {
+                for (size_t i = 0; i < other.size(); i++) {
+                    if (!(other.trajectory_pts[i] == trajectory_pts[i])) {
+                        return false;
+                    }
+                }
+                return true;
+            } else {
+                return false;
+            }
+        }
         inline double point_dist(const Point<dim> &p1) const {
             /*
              * Computes the distance to the trajectory.
