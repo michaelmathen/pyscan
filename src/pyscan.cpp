@@ -549,12 +549,14 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::class_<pyscan::trajectory_t>("Trajectory", py::init<pyscan::point_list_t>())
             .def("point_dist", &pyscan::trajectory_t::point_dist)
             .def("get_weight", &pyscan::trajectory_t::get_weight)
+            .def("get_length", &pyscan::trajectory_t::get_length)
             .def("point_dist", &pyscan::trajectory_t::point_dist)
             .def("get_pts", &pyscan::trajectory_t::get_pts);
 
     py::class_<pyscan::wtrajectory_t>("WTrajectory", py::init<double, pyscan::point_list_t>())
             .def("point_dist", &pyscan::wtrajectory_t::point_dist)
             .def("get_weight", &pyscan::wtrajectory_t::get_weight)
+            .def("get_length", &pyscan::wtrajectory_t::get_length)
             .def("point_dist", &pyscan::wtrajectory_t::point_dist)
             .def("get_pts", &pyscan::wtrajectory_t::get_pts);
 
