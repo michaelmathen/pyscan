@@ -33,22 +33,22 @@ def max_disk_labeled(net, ms, bs, f):
     return lp.__max_disk_labeled(toPt(net), toLPt(ms), toLPt(bs), f)
 
 def ham_tree_sample(ms, s):
-    return lp.__ham_tree_sample(toWPt(ms), s)
+    return list(lp.__ham_tree_sample(toWPt(ms), s))
 
 def block_sample(traj_set, size, take_endpoints):
     traj_internal = VecTraj()
     traj_internal.extend(traj_set)
-    return lp.__block_sample(traj_internal, size, take_endpoints)
+    return list(lp.__block_sample(traj_internal, size, take_endpoints))
 
 def even_sample(traj_set, size, take_endpoints):
     traj_internal = VecTraj()
     traj_internal.extend(traj_set)
-    return lp.__even_sample(traj_internal, size, take_endpoints)
+    return list(lp.__even_sample(traj_internal, size, take_endpoints))
 
 def uniform_sample(traj_set, size, take_endpoints):
     traj_internal = VecTraj()
     traj_internal.extend(traj_set)
-    return lp.__uniform_sample(traj_internal, size, take_endpoints)
+    return list(lp.__uniform_sample(traj_internal, size, take_endpoints))
 
 
 def to_weighted(points):
@@ -227,7 +227,6 @@ def plant_full_square(trajectories, r, p, q, disc, max_count=32):
 
     diff = evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
     return red_in + red_out, blue_in + blue_out, reg, diff
-
 
 
 
@@ -499,7 +498,6 @@ def plant_partial_rectangle(trajectories, r, p, q, eps, disc):
 
     trajectory_obj = [Trajectory(pts) for pts in trajectories]
     all_pts = uniform_sample(trajectory_obj, int(1 / eps ** 2 + 1), False)
-
     _, _, rect = plant_rectangle(all_pts, r, p, q)
     inside_rect = [traj for traj in trajectory_obj if rect.intersects_trajectory(traj)]
     outside_rect = [traj for traj in trajectory_obj if not rect.intersects_trajectory(traj)]

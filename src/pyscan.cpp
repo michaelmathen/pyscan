@@ -380,10 +380,10 @@ BOOST_PYTHON_MODULE(libpyscan) {
     to_python_converter<std::tuple<pyscan::pt2_t, double>, tuple_to_python_tuple<pyscan::pt2_t, double>>();
 
     to_python_converter<std::vector<double>, vector_to_python_list<double>>();
-//    to_python_converter<std::vector<pyscan::Point<2>>, vector_to_python_list<pyscan::Point<2>>>();
-//    to_python_converter<std::vector<pyscan::Point<3>>, vector_to_python_list<pyscan::Point<3>>>();
-//    to_python_converter<std::vector<pyscan::WPoint<2>>, vector_to_python_list<pyscan::WPoint<2>>>();
-//    to_python_converter<std::vector<pyscan::WPoint<3>>, vector_to_python_list<pyscan::WPoint<3>>>();
+    to_python_converter<std::vector<pyscan::Point<2>>, vector_to_python_list<pyscan::Point<2>>>();
+    to_python_converter<std::vector<pyscan::Point<3>>, vector_to_python_list<pyscan::Point<3>>>();
+    to_python_converter<std::vector<pyscan::WPoint<2>>, vector_to_python_list<pyscan::WPoint<2>>>();
+    to_python_converter<std::vector<pyscan::WPoint<3>>, vector_to_python_list<pyscan::WPoint<3>>>();
     //Should convert tuples directly pyscan points.
     pypoint_converter<2>().from_python();
     pypoint_converter<3>().from_python();
@@ -486,8 +486,6 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .def("__str__", &pyscan::HalfSpace<3>::str)
             .def("__repr__", &pyscan::HalfSpace<3>::str)
             .def("intersects_segment", &pyscan::HalfSpace<3>::intersects_segment);
-
-
     py::class_<pyscan::pt2_t>("Point", py::init<double, double, double>())
             .def("approx_eq", &pyscan::Point<2>::approx_eq)
             .def("__getitem__", &pyscan::Point<2>::operator())
