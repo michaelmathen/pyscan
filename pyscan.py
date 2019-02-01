@@ -48,7 +48,7 @@ def even_sample(traj_set, size, take_endpoints):
 def uniform_sample(traj_set, size, take_endpoints):
     traj_internal = VecTraj()
     traj_internal.extend(traj_set)
-    return lp.__uniform_sample(traj_internal, size, take_endpoints)
+    return list(lp.__uniform_sample(traj_internal, size, take_endpoints))
 
 
 def to_weighted(points):
@@ -499,8 +499,8 @@ def plant_partial_rectangle(trajectories, r, p, q, eps, disc):
 
     trajectory_obj = [Trajectory(pts) for pts in trajectories]
     all_pts = uniform_sample(trajectory_obj, int(1 / eps ** 2 + 1), False)
-
-    _, _, rect = plant_rectangle(all_pts, r, p, q)
+    print(list(all_pts))
+    _, _, rect = plant_rectangle(list(all_pts), r, p, q)
     inside_rect = [traj for traj in trajectory_obj if rect.intersects_trajectory(traj)]
     outside_rect = [traj for traj in trajectory_obj if not rect.intersects_trajectory(traj)]
     red_in, blue_in = split_set(inside_rect, q)
@@ -532,13 +532,15 @@ def paired_plant_region(traj_start, traj_end, r, q, region_plant_f):
         elif reg.contains(end_pt) and not reg.contains(st_pt):
             flux_region.append((end_pt, st_pt))
         else:
-            out_region.append((st_pt, end_pt))
+            if random.random() <= .5:
+                out_region.append((st_pt, end_pt))
+            else:
+                out_region.append((end_pt, st_pt))
+
 
     q_fraction, remainder = split_set(flux_region, q)
     remainder = [(ep, sp) for (sp, ep) in remainder]
 
-    q_fraction_o, remainder_o = split_set(out_region, .5)
-    remainder = [(ep, sp) for (sp, ep) in remainder]
-    red, blue = zip(*(q_fraction + q_fraction_o + remainder + remainder_o))
+    red, blue = zip(*(q_fraction + remainder + out_region))
     return red, blue, reg
 
