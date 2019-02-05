@@ -530,13 +530,15 @@ def paired_plant_region(traj_start, traj_end, r, q, region_plant_f):
         elif reg.contains(end_pt) and not reg.contains(st_pt):
             flux_region.append((end_pt, st_pt))
         else:
-            out_region.append((st_pt, end_pt))
+            if random.random() <= .5:
+                out_region.append((st_pt, end_pt))
+            else:
+                out_region.append((end_pt, st_pt))
+
 
     q_fraction, remainder = split_set(flux_region, q)
     remainder = [(ep, sp) for (sp, ep) in remainder]
 
-    q_fraction_o, remainder_o = split_set(out_region, .5)
-    remainder = [(ep, sp) for (sp, ep) in remainder]
-    red, blue = zip(*(q_fraction + q_fraction_o + remainder + remainder_o))
+    red, blue = zip(*(q_fraction + remainder + out_region))
     return red, blue, reg
 
