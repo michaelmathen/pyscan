@@ -130,9 +130,7 @@ struct iterable_converter {
             boost::python::converter::rvalue_from_python_stage1_data* data) {
 
         boost::python::handle<> obj_iter(PyObject_GetIter(obj_ptr));
-        void* storage = (
-                (boost::python::converter::rvalue_from_python_storage<Container>*)
-                        data)->storage.bytes;
+        void* storage = ((boost::python::converter::rvalue_from_python_storage<Container>*)data)->storage.bytes;
         new (storage) Container();
         data->convertible = storage;
         Container& result = *((Container*)storage);
@@ -175,53 +173,53 @@ struct iterable_converter {
 };
 
 
-template<int dim>
-struct pypoint_converter {
-
-    static_assert(dim == 3 || dim == 2, "Converter not implemented for dimensions other than 2 or 3.");
-
-    pypoint_converter& from_python() {
-        boost::python::converter::registry::push_back(
-                &pypoint_converter::convertible,
-                &pypoint_converter::construct,
-                boost::python::type_id<pyscan::Point<dim>>());
-        return *this;
-    }
-
-    /// @brief Check if PyObject is a double tuple.
-    static void* convertible(PyObject* object) {
-        if (PyTuple_Check(object) && PyTuple_Size(object) == dim)  {
-            for (int i = 0; i < dim; i++) {
-               if (!PyFloat_Check(PyTuple_GetItem(object, 0))) {
-                   return NULL;
-               }
-            }
-            return object;
-        }
-        return NULL;
-    }
-
-    static void construct( PyObject* object, boost::python::converter::rvalue_from_python_stage1_data* data) {
-        namespace python = boost::python;
-        python::handle<> handle(python::borrowed(object));
-        typedef python::converter::rvalue_from_python_storage<pyscan::Point<dim>>
-                storage_type;
-        void* storage = reinterpret_cast<storage_type*>(data)->storage.bytes;
-
-        // Allocate the C++ type into the converter's memory block, and assign
-        // its handle to the converter's convertible variable.  The C++
-        // container is populated by passing the begin and end iterators of
-        // the python object to the container's constructor.
-        if (dim == 2) {
-            data->convertible = new (storage) pyscan::Point<>(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
-                                                                PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 1)), 1.0);
-        } else {
-            data->convertible = new (storage) pyscan::Point<3>(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
-                                                              PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 1)),
-                                                               PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 2)), 1.0);
-        }
-    }
-};
+//template<int dim>
+//struct pypoint_converter {
+//
+//    static_assert(dim == 3 || dim == 2, "Converter not implemented for dimensions other than 2 or 3.");
+//
+//    pypoint_converter& from_python() {
+//        boost::python::converter::registry::push_back(
+//                &pypoint_converter::convertible,
+//                &pypoint_converter::construct,
+//                boost::python::type_id<pyscan::Point<dim>>());
+//        return *this;
+//    }
+//
+//    /// @brief Check if PyObject is a double tuple.
+//    static void* convertible(PyObject* object) {
+//        if (PyTuple_Check(object) && PyTuple_Size(object) == dim)  {
+//            for (int i = 0; i < dim; i++) {
+//               if (!PyFloat_Check(PyTuple_GetItem(object, 0))) {
+//                   return NULL;
+//               }
+//            }
+//            return object;
+//        }
+//        return NULL;
+//    }
+//
+//    static void construct( PyObject* object, boost::python::converter::rvalue_from_python_stage1_data* data) {
+//        namespace python = boost::python;
+//        python::handle<> handle(python::borrowed(object));
+//        typedef python::converter::rvalue_from_python_storage<pyscan::Point<dim>>
+//                storage_type;
+//        void* storage = reinterpret_cast<storage_type*>(data)->storage.bytes;
+//
+//        // Allocate the C++ type into the converter's memory block, and assign
+//        // its handle to the converter's convertible variable.  The C++
+//        // container is populated by passing the begin and end iterators of
+//        // the python object to the container's constructor.
+//        if (dim == 2) {
+//            data->convertible = new (storage) pyscan::Point<>(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
+//                                                                PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 1)), 1.0);
+//        } else {
+//            data->convertible = new (storage) pyscan::Point<3>(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
+//                                                              PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 1)),
+//                                                               PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 2)), 1.0);
+//        }
+//    }
+//};
 
 
 struct pywtrajectory_converter {
@@ -385,8 +383,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
     to_python_converter<std::vector<pyscan::WPoint<2>>, vector_to_python_list<pyscan::WPoint<2>>>();
     to_python_converter<std::vector<pyscan::WPoint<3>>, vector_to_python_list<pyscan::WPoint<3>>>();
     //Should convert tuples directly pyscan points.
-    pypoint_converter<2>().from_python();
-    pypoint_converter<3>().from_python();
+//    pypoint_converter<2>().from_python();
+//    pypoint_converter<3>().from_python();
 
     pytrajectory_converter().from_python();
     pywtrajectory_converter().from_python();
