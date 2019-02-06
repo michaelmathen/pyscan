@@ -136,14 +136,16 @@ struct iterable_converter {
         Container& result = *((Container*)storage);
         std::size_t i = 0;
         for(;;i++) {
+            auto el = PyIter_Next(obj_iter.get());
             boost::python::handle<> py_elem_hdl(
-                    boost::python::allow_null(PyIter_Next(obj_iter.get())));
+                    boost::python::allow_null(el));
             if (PyErr_Occurred()) boost::python::throw_error_already_set();
             if (!py_elem_hdl.get()) break; // end of iteration
             boost::python::object py_elem_obj(py_elem_hdl);
             boost::python::extract<typename Container::value_type> elem_proxy(py_elem_obj);
             result.push_back(elem_proxy()); //ConversionPolicy::set_value(result, i, elem_proxy());
         }
+        boost::python::decref(obj_ptr);
         //ConversionPolicy::assert_size(boost::type<ContainerType>(), i);
     }
 //    template <typename Container>
@@ -173,28 +175,23 @@ struct iterable_converter {
 };
 
 
-//template<int dim>
-//struct pypoint_converter {
+
+//struct pywtrajectory_converter {
 //
-//    static_assert(dim == 3 || dim == 2, "Converter not implemented for dimensions other than 2 or 3.");
-//
-//    pypoint_converter& from_python() {
+//    pywtrajectory_converter& from_python() {
 //        boost::python::converter::registry::push_back(
-//                &pypoint_converter::convertible,
-//                &pypoint_converter::construct,
-//                boost::python::type_id<pyscan::Point<dim>>());
+//                &pywtrajectory_converter::convertible,
+//                &pywtrajectory_converter::construct,
+//                boost::python::type_id<pyscan::wtrajectory_t>());
 //        return *this;
 //    }
 //
 //    /// @brief Check if PyObject is a double tuple.
 //    static void* convertible(PyObject* object) {
-//        if (PyTuple_Check(object) && PyTuple_Size(object) == dim)  {
-//            for (int i = 0; i < dim; i++) {
-//               if (!PyFloat_Check(PyTuple_GetItem(object, 0))) {
-//                   return NULL;
-//               }
+//        if (PyTuple_Check(object) && PyTuple_Size(object) == 2) {
+//            if (PyFloat_Check(PyTuple_GetItem(object, 0)) && PyIter_Check(PyTuple_GetItem(object, 1))) {
+//                return object;
 //            }
-//            return object;
 //        }
 //        return NULL;
 //    }
@@ -202,7 +199,7 @@ struct iterable_converter {
 //    static void construct( PyObject* object, boost::python::converter::rvalue_from_python_stage1_data* data) {
 //        namespace python = boost::python;
 //        python::handle<> handle(python::borrowed(object));
-//        typedef python::converter::rvalue_from_python_storage<pyscan::Point<dim>>
+//        typedef python::converter::rvalue_from_python_storage<pyscan::wtrajectory_t>
 //                storage_type;
 //        void* storage = reinterpret_cast<storage_type*>(data)->storage.bytes;
 //
@@ -210,85 +207,42 @@ struct iterable_converter {
 //        // its handle to the converter's convertible variable.  The C++
 //        // container is populated by passing the begin and end iterators of
 //        // the python object to the container's constructor.
-//        if (dim == 2) {
-//            data->convertible = new (storage) pyscan::Point<>(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
-//                                                                PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 1)), 1.0);
-//        } else {
-//            data->convertible = new (storage) pyscan::Point<3>(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
-//                                                              PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 1)),
-//                                                               PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 2)), 1.0);
-//        }
+//
+//        data->convertible = new (storage) pyscan::wtrajectory_t(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
+//                py::extract<pyscan::point_list_t>(PyTuple_GetItem(object, 1)));
 //    }
 //};
 
 
-struct pywtrajectory_converter {
-
-    pywtrajectory_converter& from_python() {
-        boost::python::converter::registry::push_back(
-                &pywtrajectory_converter::convertible,
-                &pywtrajectory_converter::construct,
-                boost::python::type_id<pyscan::wtrajectory_t>());
-        return *this;
-    }
-
-    /// @brief Check if PyObject is a double tuple.
-    static void* convertible(PyObject* object) {
-        if (PyTuple_Check(object) && PyTuple_Size(object) == 2) {
-            if (PyFloat_Check(PyTuple_GetItem(object, 0)) && PyIter_Check(PyTuple_GetItem(object, 1))) {
-                return object;
-            }
-        }
-        return NULL;
-    }
-
-    static void construct( PyObject* object, boost::python::converter::rvalue_from_python_stage1_data* data) {
-        namespace python = boost::python;
-        python::handle<> handle(python::borrowed(object));
-        typedef python::converter::rvalue_from_python_storage<pyscan::wtrajectory_t>
-                storage_type;
-        void* storage = reinterpret_cast<storage_type*>(data)->storage.bytes;
-
-        // Allocate the C++ type into the converter's memory block, and assign
-        // its handle to the converter's convertible variable.  The C++
-        // container is populated by passing the begin and end iterators of
-        // the python object to the container's constructor.
-
-        data->convertible = new (storage) pyscan::wtrajectory_t(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
-                py::extract<pyscan::point_list_t>(PyTuple_GetItem(object, 1)));
-    }
-};
-
-
-struct pytrajectory_converter {
-
-    pytrajectory_converter& from_python() {
-        boost::python::converter::registry::push_back(
-                &pytrajectory_converter::convertible,
-                &pytrajectory_converter::construct,
-                boost::python::type_id<pyscan::trajectory_t>());
-        return *this;
-    }
-
-    /// @brief Check if PyObject is a double tuple.
-    static void* convertible(PyObject* object) {
-        return PyObject_GetIter(object) ? object : NULL;
-    }
-
-    static void construct( PyObject* object, boost::python::converter::rvalue_from_python_stage1_data* data) {
-        namespace python = boost::python;
-        python::handle<> handle(python::borrowed(object));
-        typedef python::converter::rvalue_from_python_storage<pyscan::trajectory_t>
-                storage_type;
-        void* storage = reinterpret_cast<storage_type*>(data)->storage.bytes;
-
-        // Allocate the C++ type into the converter's memory block, and assign
-        // its handle to the converter's convertible variable.  The C++
-        // container is populated by passing the begin and end iterators of
-        // the python object to the container's constructor.
-        data->convertible = new (storage) pyscan::trajectory_t(py::extract<pyscan::point_list_t>(object));
-    }
-};
+//struct pytrajectory_converter {
+//
+//    pytrajectory_converter& from_python() {
+//        boost::python::converter::registry::push_back(
+//                &pytrajectory_converter::convertible,
+//                &pytrajectory_converter::construct,
+//                boost::python::type_id<pyscan::trajectory_t>());
+//        return *this;
+//    }
+//
+//    /// @brief Check if PyObject is a double tuple.
+//    static void* convertible(PyObject* object) {
+//        return PyObject_GetIter(object) ? object : NULL;
+//    }
+//
+//    static void construct( PyObject* object, boost::python::converter::rvalue_from_python_stage1_data* data) {
+//        namespace python = boost::python;
+//        python::handle<> handle(python::borrowed(object));
+//        typedef python::converter::rvalue_from_python_storage<pyscan::trajectory_t>
+//                storage_type;
+//        void* storage = reinterpret_cast<storage_type*>(data)->storage.bytes;
+//
+//        // Allocate the C++ type into the converter's memory block, and assign
+//        // its handle to the converter's convertible variable.  The C++
+//        // container is populated by passing the begin and end iterators of
+//        // the python object to the container's constructor.
+//        data->convertible = new (storage) pyscan::trajectory_t(py::extract<pyscan::point_list_t>(object));
+//    }
+//};
 
 //namespace indexing {
 //    template<>
@@ -361,6 +315,13 @@ double evaluate_halfplane_labeled(pyscan::halfspace2_t const& d1, pyscan::lpoint
     return pyscan::evaluate_range(d1, mpts, bpts, disc);
 }
 
+double sum_f(std::vector<double> const& els) {
+    double accum = 0;
+    for(auto& e : els) {
+        accum += e;
+    }
+    return accum;
+}
 
 BOOST_PYTHON_MODULE(libpyscan) {
     using namespace py;
@@ -383,11 +344,9 @@ BOOST_PYTHON_MODULE(libpyscan) {
     to_python_converter<std::vector<pyscan::WPoint<2>>, vector_to_python_list<pyscan::WPoint<2>>>();
     to_python_converter<std::vector<pyscan::WPoint<3>>, vector_to_python_list<pyscan::WPoint<3>>>();
     //Should convert tuples directly pyscan points.
-//    pypoint_converter<2>().from_python();
-//    pypoint_converter<3>().from_python();
 
-    pytrajectory_converter().from_python();
-    pywtrajectory_converter().from_python();
+//    pytrajectory_converter().from_python();
+//    pywtrajectory_converter().from_python();
 
     // Register interable conversions.
     iterable_converter()
@@ -396,37 +355,37 @@ BOOST_PYTHON_MODULE(libpyscan) {
                     // Each dimension needs to be convertable.
             .from_python<std::vector<pyscan::Point<> >>()
             .from_python<std::vector<pyscan::WPoint<>>>()
-            .from_python<std::vector<pyscan::LPoint<>>>()
-            .from_python<std::vector<std::vector<pyscan::Point<> > > >()
-            .from_python<std::vector<std::vector<pyscan::WPoint<> > > >()
-            .from_python<std::vector<std::vector<pyscan::LPoint<> > > >()
-            .from_python<std::vector<pyscan::wtrajectory_t>>()
-            .from_python<std::vector<pyscan::trajectory_t>>();
+            .from_python<std::vector<pyscan::LPoint<>>>();
+            //.from_python<std::vector<std::vector<pyscan::Point<> > > >()
+            //.from_python<std::vector<std::vector<pyscan::WPoint<> > > >()
+            //.from_python<std::vector<std::vector<pyscan::LPoint<> > > >()
+            //.from_python<std::vector<pyscan::wtrajectory_t>>()
+            //.from_python<std::vector<pyscan::trajectory_t>>();
 
 
-    py::class_<std::vector<pyscan::Point<2>> >("VecP2")
-            .def(vector_indexing_suite<std::vector<pyscan::Point<2>> >());
-
-    py::class_<std::vector<pyscan::Point<3>>>("VecP3")
-            .def(vector_indexing_suite<std::vector<pyscan::Point<3>> >());
-
-    py::class_<std::vector<pyscan::WPoint<2>> >("VecWP2")
-            .def(vector_indexing_suite<std::vector<pyscan::WPoint<2>> >());
-
-    py::class_<std::vector<pyscan::WPoint<3>> >("VecWP3")
-            .def(vector_indexing_suite<std::vector<pyscan::WPoint<2>> >());
-
-    py::class_<std::vector<pyscan::LPoint<2>> >("VecLP2")
-            .def(vector_indexing_suite<std::vector<pyscan::LPoint<2>> >());
-
-    py::class_<std::vector<pyscan::LPoint<3>> >("VecLP3")
-            .def(vector_indexing_suite<std::vector<pyscan::LPoint<3>> >());
-
-    py::class_<std::vector<pyscan::trajectory_t> >("VecTraj")
-            .def(vector_indexing_suite<std::vector<pyscan::trajectory_t>>());
-
-    py::class_<std::vector<pyscan::wtrajectory_t > >("VecWTraj")
-            .def(vector_indexing_suite<std::vector<pyscan::wtrajectory_t>>());
+//    py::class_<std::vector<pyscan::Point<2>> >("VecP2")
+//            .def(vector_indexing_suite<std::vector<pyscan::Point<2>> >());
+//
+//    py::class_<std::vector<pyscan::Point<3>>>("VecP3")
+//            .def(vector_indexing_suite<std::vector<pyscan::Point<3>> >());
+//
+//    py::class_<std::vector<pyscan::WPoint<2>> >("VecWP2")
+//            .def(vector_indexing_suite<std::vector<pyscan::WPoint<2>> >());
+//
+//    py::class_<std::vector<pyscan::WPoint<3>> >("VecWP3")
+//            .def(vector_indexing_suite<std::vector<pyscan::WPoint<2>> >());
+//
+//    py::class_<std::vector<pyscan::LPoint<2>> >("VecLP2")
+//            .def(vector_indexing_suite<std::vector<pyscan::LPoint<2>> >());
+//
+//    py::class_<std::vector<pyscan::LPoint<3>> >("VecLP3")
+//            .def(vector_indexing_suite<std::vector<pyscan::LPoint<3>> >());
+//
+//    py::class_<std::vector<pyscan::trajectory_t> >("VecTraj")
+//            .def(vector_indexing_suite<std::vector<pyscan::trajectory_t>>());
+//
+//    py::class_<std::vector<pyscan::wtrajectory_t > >("VecWTraj")
+//            .def(vector_indexing_suite<std::vector<pyscan::wtrajectory_t>>());
 
     py::def("hull", pyscan::graham_march);
 
@@ -556,33 +515,34 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_subgrid_linear_theory", &pyscan::max_subgrid_linear_theory);
     py::def("max_rectangle", &pyscan::max_rectangle);
 
-    py::def("__make_net_grid", &pyscan::make_net_grid);
-    py::def("__make_exact_grid", &pyscan::make_exact_grid);
+    py::def("make_net_grid", &pyscan::make_net_grid);
+    py::def("make_exact_grid", &pyscan::make_exact_grid);
 
     //Max Halfspace codes
-    py::def("__max_halfplane", &pyscan::max_halfplane);
-    py::def("__max_halfplane_labeled", &pyscan::max_halfplane_labeled);
+    py::def("max_halfplane", &pyscan::max_halfplane);
+    py::def("max_halfplane_labeled", &pyscan::max_halfplane_labeled);
     py::def("max_halfspace", &pyscan::max_halfspace);
     py::def("max_halfspace_labeled", &pyscan::max_halfspace_labeled);
     //py::def("max_halfplane_fast", &pyscan::max_halfplane_fast);
-    py::def("__ham_tree_sample", &pyscan::ham_tree_sample);
+    py::def("ham_tree_sample", &pyscan::ham_tree_sample);
 
-    py::def("__max_disk", &pyscan::max_disk);
-    py::def("__max_disk_labeled", &pyscan::max_disk_labeled);
+    py::def("max_disk", &pyscan::max_disk);
+    py::def("max_disk_labeled", &pyscan::max_disk_labeled);
     //py::def("max_disk_lift_labeled", &pyscan::max_disk_labeled);
 
 
-    py::def("__evaluate_disk", &evaluate_disk);
-    py::def("__evaluate_disk_labeled", &evaluate_disk_labeled);
-    py::def("__evaluate_disk_trajectory", &evaluate_disk_traj);
+    py::def("evaluate_disk", &evaluate_disk);
+    py::def("evaluate_disk_alt", &evaluate_disk);
+    py::def("evaluate_disk_labeled", &evaluate_disk_labeled);
+    py::def("evaluate_disk_trajectory", &evaluate_disk_traj);
 
-    py::def("__evaluate_halfplane", &evaluate_halfplane);
-    py::def("__evaluate_halfplane_labeled", &evaluate_halfplane_labeled);
-    py::def("__evaluate_halfplane_trajectory", &evaluate_halfplane_traj);
+    py::def("evaluate_halfplane", &evaluate_halfplane);
+    py::def("evaluate_halfplane_labeled", &evaluate_halfplane_labeled);
+    py::def("evaluate_halfplane_trajectory", &evaluate_halfplane_traj);
 
-    py::def("__evaluate_rectangle", &evaluate_rectangle);
-    py::def("__evaluate_rectangle_labeled", &evaluate_rectangle_labeled);
-    py::def("__evaluate_rectangle_trajectory", &evaluate_rectangle_traj);
+    py::def("evaluate_rectangle", &evaluate_rectangle);
+    py::def("evaluate_rectangle_labeled", &evaluate_rectangle_labeled);
+    py::def("evaluate_rectangle_trajectory", &evaluate_rectangle_traj);
 
 
 //    py::def("max_disk_cached", &pyscan::max_disk_cached);
@@ -633,11 +593,13 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("coreset_error_disk", &pyscan::error_disk_coreset);
 
     //This is for partial scanning, but could be used for full scannings.
-    py::def("__block_sample", &pyscan::block_sample);
-    py::def("__uniform_sample", &pyscan::uniform_sample);
-    py::def("__even_sample", &pyscan::even_sample);
+    py::def("block_sample", &pyscan::block_sample);
+    py::def("uniform_sample", &pyscan::uniform_sample);
+    py::def("even_sample", &pyscan::even_sample);
 
     py::def("block_sample_error", &pyscan::block_sample_error);
     py::def("uniform_sample_error", &pyscan::uniform_sample_error);
     py::def("even_sample_error", &pyscan::even_sample_error);
+
+    py::def("sum", &sum_f);
 }

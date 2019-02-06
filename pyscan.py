@@ -5,50 +5,6 @@ import bisect
 import itertools
 import collections
 
-def toPt(wp):
-    pt_internal = VecP2()
-    pt_internal.extend(wp)
-    return pt_internal
-
-def toWPt(wp):
-    pt_internal = VecWP2()
-    pt_internal.extend(wp)
-    return pt_internal
-
-def toLPt(wp):
-    pt_internal = VecLP2()
-    pt_internal.extend(wp)
-    return pt_internal
-
-def max_halfplane(net, ms, bs, f):
-    return lp.__max_halfplane(toPt(net), toWPt(ms), toWPt(bs), f)
-
-def max_halfplane_labeled(net, ms, bs, f):
-    return lp.__max_halfplane_labeled(toPt(net), toLPt(ms), toLPt(bs), f)
-
-def max_disk(net, ms, bs, f):
-    return lp.__max_disk(toPt(net), toWPt(ms), toWPt(bs), f)
-
-def max_disk_labeled(net, ms, bs, f):
-    return lp.__max_disk_labeled(toPt(net), toLPt(ms), toLPt(bs), f)
-
-def ham_tree_sample(ms, s):
-    return list(lp.__ham_tree_sample(toWPt(ms), s))
-
-def block_sample(traj_set, size, take_endpoints):
-    traj_internal = VecTraj()
-    traj_internal.extend(traj_set)
-    return list(lp.__block_sample(traj_internal, size, take_endpoints))
-
-def even_sample(traj_set, size, take_endpoints):
-    traj_internal = VecTraj()
-    traj_internal.extend(traj_set)
-    return list(lp.__even_sample(traj_internal, size, take_endpoints))
-
-def uniform_sample(traj_set, size, take_endpoints):
-    traj_internal = VecTraj()
-    traj_internal.extend(traj_set)
-    return list(lp.__uniform_sample(traj_internal, size, take_endpoints))
 
 
 def to_weighted(points):
@@ -75,12 +31,6 @@ def evaluate_range(range, mp, bp, disc_f):
         pt_obj = mp[0]
 
     if isinstance(pt_obj, LPoint):
-        mp_new = VecLP2()
-        bp_new = VecLP2()
-        mp_new.extend(mp)
-        bp_new.extend(bp)
-        mp = mp_new
-        bp = bp_new
         if isinstance(range, Disk):
             return lp.__evaluate_disk_labeled(range, mp, bp, disc_f)
         elif isinstance(range, Halfplane):
@@ -88,12 +38,6 @@ def evaluate_range(range, mp, bp, disc_f):
         elif isinstance(range, Rectangle):
             return lp.__evaluate_rectangle_labeled(range, mp, bp, disc_f)
     elif isinstance(pt_obj, WPoint):
-        mp_new = VecWP2()
-        bp_new = VecWP2()
-        mp_new.extend(mp)
-        bp_new.extend(bp)
-        mp = mp_new
-        bp = bp_new
         if isinstance(range, Disk):
             return lp.__evaluate_disk(range, mp, bp, disc_f)
         elif isinstance(range, Halfplane):
@@ -114,13 +58,6 @@ def evaluate_range_trajectory(range, mp, bp, disc_f):
 
     if not mp and not bp:
         return evaluate(disc_f, 0, 0, 0, 0)
-
-    mp_new = VecTraj()
-    bp_new = VecTraj()
-    mp_new.extend(mp)
-    bp_new.extend(bp)
-    mp = mp_new
-    bp = bp_new
     if isinstance(range, Disk):
         return lp.__evaluate_disk_trajectory(range, mp, bp, disc_f)
     elif isinstance(range, Halfplane):

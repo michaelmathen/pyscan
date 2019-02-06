@@ -7,9 +7,10 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -Wall -Wextra -g -O2")
+set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -Wall -Wextra -g -O2 -fno-omit-frame-pointer -fsanitize=address")
 
-set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O3 -march=native -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O1 -g -fno-omit-frame-pointer -march=native -DNDEBUG")
+
 
 
 
