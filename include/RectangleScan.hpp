@@ -147,161 +147,6 @@ namespace pyscan {
         Rectangle toRectangle(Subgrid const &sg) const;
     };
 
-    class ValueInterval {
-        size_t left;
-        double value;
-        size_t right;
-    public:
-        ValueInterval();
-        ValueInterval(double val, size_t left, size_t right);
-        void print(std::ostream& os) const;
-        size_t getLeft() const;
-        size_t getRight() const;
-        void setLeft(size_t left_c);
-        void setRight(size_t right_c);
-        double getValue() const;
-        void setValue(double val);
-        ValueInterval &operator+=(double val);
-    };
-
-
-    class MaxInterval {
-        ValueInterval left_max;
-        ValueInterval right_max;
-        ValueInterval center_max;
-    public:
-        MaxInterval();
-        MaxInterval(double value, size_t index);
-        MaxInterval &operator+=(MaxInterval const &op);
-        size_t getLeft() const;
-        size_t getRight() const;
-        size_t lowCIx() const;
-        size_t upCIx() const;
-        double lValue() const;
-        double rValue() const;
-        double cValue() const;
-        void print(std::ostream& os) const;
-    };
-
-    struct SlabNode {
-        std::vector<double> red_weights;
-        std::vector<double> blue_weights;
-        std::vector<size_t> indices;
-        BloomFilter non_zeros;
-
-        using slab_ptr = std::shared_ptr<SlabNode>;
-        size_t left_col;
-        size_t right_col;
-        slab_ptr left = nullptr;
-        slab_ptr right = nullptr;
-
-
-        SlabNode(Grid const &g, size_t left_col, size_t right_col, size_t r_prime);
-
-        size_t getMid() const;
-
-        bool hasChildren() const;
-
-        void print(std::ostream &os) const;
-
-    };
-
-    class MaximumIntervals {
-        std::vector<I_Type> intervals;
-        std::vector<MaxInterval> max_intervals;
-        std::vector<double> weights;
-        // one to one mapping with weights
-        std::vector<size_t> weight_index;
-
-        size_t left_col;
-        size_t right_col;
-
-        MaximumIntervals(size_t l, size_t r);
-    public:
-
-        void print(std::ostream& os) const;
-
-        size_t getWeightNum() const;
-        size_t getIntervalNum() const;
-        explicit MaximumIntervals(size_t r);
-        void setBounds(size_t l_c, size_t r_c);
-        void updateBounds(size_t l_c, size_t r_c);
-
-        /*
-         * Indices and weights are assumed to be presorted.
-         */
-        void updateWeights(std::vector<double> const &new_weights,
-                           std::vector<size_t> const &indices,
-                           double w);
-
-        MaximumIntervals mergeZeros(BloomFilter const& f1) const;
-        MaximumIntervals mergeZeros(BloomFilter const& f1, BloomFilter const& f2) const;
-        template<typename F>
-        MaximumIntervals mergeZeros(F const& mightBePresent) const {
-            MaximumIntervals new_max(left_col, right_col);
-            new_max.max_intervals.reserve(max_intervals.size() / 2);
-            new_max.weights.reserve(weights.size() / 2);
-            new_max.intervals.reserve(max_intervals.size() / 2);
-            int mx_ix = 0;
-            int w_ix = 0;
-            /*
-             std::vector<int> zeros;
-            for (int i = 0; i < 20; i++) {
-                if (!mightBePresent(i)) {
-                    zeros.push_back(i);
-                }
-            }
-            */
-            //std::cout << zeros << std::endl;
-            //std::cout << *this << std::endl;
-
-            //std::cout << bloom << std::endl;
-            bool prev_Max = false;
-            for (size_t i = 0; i < intervals.size(); i++) {
-                if (intervals[i] == I_Type::VALUE) {
-                    if (!mightBePresent((uint32_t) weight_index[w_ix])) {
-                        if (prev_Max) {
-                            auto prev_el = new_max.max_intervals.end() - 1;
-                            (*prev_el) += MaxInterval(weights[w_ix], weight_index[w_ix]); // Merge the previous
-                        } else {
-                            new_max.max_intervals.emplace_back(weights[w_ix], weight_index[w_ix]);
-                            new_max.intervals.push_back(I_Type::MAX);
-                        }
-                        prev_Max = true;
-                    } else {
-                        prev_Max = false;
-                        new_max.weights.push_back(weights[w_ix]);
-                        new_max.weight_index.push_back(weight_index[w_ix]);
-                        new_max.intervals.push_back(I_Type::VALUE);
-                    }
-                    w_ix += 1;
-                } else {
-                    if (prev_Max) {
-                        auto prev_el = new_max.max_intervals.end() - 1;
-                        (*prev_el) += max_intervals[mx_ix]; // Merge the previous
-                    } else {
-                        new_max.max_intervals.push_back(max_intervals[mx_ix]);
-                        new_max.intervals.push_back(I_Type::MAX);
-                    }
-                    prev_Max = true;
-                    mx_ix += 1;
-                }
-            }
-            //std::cout << new_max << std::endl;
-            //std::cout << std::endl;
-            return new_max;
-        }
-
-        Subgrid getMax() const;
-        size_t maxIntervalNum() const;
-        size_t valueNum() const;
-        MaxInterval getFirstMax() const;
-        size_t getLeft() const;
-        size_t getRight() const;
-        void setLeft(size_t left);
-        void setRight(size_t right);
-    };
-
     inline Grid make_exact_grid(const wpoint_list_t& m_pts, const wpoint_list_t& b_pts) {
         return Grid(m_pts, b_pts);
     }
@@ -322,26 +167,11 @@ namespace pyscan {
             const lpoint_list_t &blue,
             const discrepancy_func_t &f);
 
-    Subgrid max_subgrid_linear_theory(Grid const &grid, long r_prime, double a, double b);
     Subgrid max_subgrid_convex(Grid const &grid, double eps, discrepancy_func_t const &f);
     Subgrid max_subgrid_linear(Grid const &grid, double a, double b);
     Subgrid max_subgrid(Grid const &grid, discrepancy_func_t const &func);
-    Subgrid max_subgrid_convex_theory(Grid const &grid, double eps, discrepancy_func_t const &f);
 
     std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& m_points, const wpoint_list_t& b_points, double eps, double a, double b);
 
-//    //Weighted and unweighted vertical splits
-//    class VerticalSplit {
-//
-//    };
-//
-////    class Resolution {
-////        Res
-////    };
-//    std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& m_pts, const wpoint_list_t& b_pts, double a, double b){
-//        double m_weight = computeTotal(m_pts);
-//        double b_weight = computeTotal(b_pts);
-//
-//    }
 }
 #endif //PYSCAN_RECTANGLESCAN_HPP

@@ -92,9 +92,6 @@ namespace pyscan {
       return max_subgrid_convex(grid, eps, f);
     }
 
-    Subgrid maxSubgridLinTheory(Grid const& grid, double eps, discrepancy_func_t const& f){
-        return max_subgrid_convex_theory(grid, eps, f);
-    }
 
     Subgrid maxSubgridSlow(Grid const &grid, discrepancy_func_t const& f) {
         return max_subgrid(grid, f);
@@ -485,9 +482,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
     py::def("max_subgrid", &pyscan::max_subgrid);
     py::def("max_subgrid_convex", &pyscan::max_subgrid_convex);
-    py::def("max_subgrid_convex_theory", &pyscan::max_subgrid_convex_theory);
     py::def("max_subgrid_linear", &pyscan::max_subgrid_linear);
-    py::def("max_subgrid_linear_theory", &pyscan::max_subgrid_linear_theory);
     py::def("max_rectangle", &pyscan::max_rectangle);
 
     py::def("make_net_grid", &pyscan::make_net_grid);
