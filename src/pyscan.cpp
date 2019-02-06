@@ -146,32 +146,7 @@ struct iterable_converter {
             result.push_back(elem_proxy()); //ConversionPolicy::set_value(result, i, elem_proxy());
         }
         boost::python::decref(obj_ptr);
-        //ConversionPolicy::assert_size(boost::type<ContainerType>(), i);
     }
-//    template <typename Container>
-//    static void construct(
-//            PyObject* object,
-//            boost::python::converter::rvalue_from_python_stage1_data* data)
-//    {
-//        namespace python = boost::python;
-//        boost::python::handle<> obj_iter(PyObject_GetIter(object));
-//
-//        typedef python::converter::rvalue_from_python_storage<Container>
-//                storage_type;
-//        void* storage = reinterpret_cast<storage_type*>(data)->storage.bytes;
-//
-//        typedef python::stl_input_iterator<typename Container::value_type>
-//                iterator;
-//
-//        // Allocate the C++ type into the converter's memory block, and assign
-//        // its handle to the converter's convertible variable.  The C++
-//        // container is populated by passing the begin and end iterators of
-//        // the python object to the container's constructor.
-//        new (storage) Container(
-//                iterator(python::object(obj_iter)), // begin
-//                iterator());                      // end
-//        data->convertible = storage;
-//    }
 };
 
 
