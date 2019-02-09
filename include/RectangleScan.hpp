@@ -156,6 +156,55 @@ namespace pyscan {
     }
 
 
+    using merge_pair = std::tuple<double, double>;
+    using merge_list_t = std::vector<merge_pair>;
+
+    class Slab {
+
+    public:
+        merge_list_t split_offsets;
+
+        merge_list_t m_merges;
+        merge_list_t b_merges;
+
+        double top_y;
+        double bottom_y;
+
+        std::weak_ptr<Slab> parent;
+        std::shared_ptr<Slab> up;
+        std::shared_ptr<Slab> down;
+
+        Slab(std::weak_ptr<Slab> p,
+             merge_list_t m_m,
+             merge_list_t b_m,
+             double ty,
+             double by);
+
+        double measure_interval(double mxx, double mnx, double a, double b);
+    };
+
+    class SlabTree {
+
+
+        using slab_ptr = std::shared_ptr<Slab>;
+        using wslab_ptr = std::weak_ptr<Slab>;
+
+        slab_ptr root;
+        wpoint_list_t mpts;
+        wpoint_list_t bpts;
+    public:
+        using slab_it_t = std::vector<Slab>::const_iterator;
+
+
+        slab_ptr get_root() {
+            return root;
+        }
+
+        SlabTree(std::vector<double> const& vert_decomp, wpoint_list_t ms, wpoint_list_t bs, double max_w);
+        double measure_rect(Rectangle const &rect, double a, double b);
+        //std::tuple<Rectangle, double> max_rectangle(double m_a, double b_b);
+    };
+
     std::tuple<Rectangle, double> max_rect_labeled(size_t r, double max_w, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func);
 
     std::tuple<Rectangle, double> max_rect_labeled_scale(

@@ -483,7 +483,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_subgrid", &pyscan::max_subgrid);
     py::def("max_subgrid_convex", &pyscan::max_subgrid_convex);
     py::def("max_subgrid_linear", &pyscan::max_subgrid_linear);
-    py::def("max_rectangle", &pyscan::max_rectangle);
+//    py::def("max_rectangle", &pyscan::max_rectangle);
 
     py::def("make_net_grid", &pyscan::make_net_grid);
     py::def("make_exact_grid", &pyscan::make_exact_grid);

@@ -1,5 +1,6 @@
 
 
+
 #include "RectangleScan.hpp"
 #include "Test_Utilities.hpp"
 
@@ -69,5 +70,69 @@ namespace {
         std::cout << subgrid.fValue() << std::endl;
 
     }
+
+    TEST(Slab, measure_interval) {
+
+        const static int n_size = 50;
+        const static int s_size = 1000;
+        auto n_pts = pyscantest::randomPoints2(n_size);
+        auto m_pts = pyscantest::randomWPoints2(s_size);
+        auto b_pts = pyscantest::randomWPoints2(s_size);
+        std::vector<double> divisions;
+        for (auto& p : n_pts) {
+            divisions.emplace_back(p(1));
+        }
+        std::sort(divisions.begin(), divisions.end());
+
+        pyscan::SlabTree tree(divisions, m_pts, b_pts, 1.0);
+        auto root = tree.get_root();
+        if (!root || !root->down) {
+            return;
+        }
+        double val = root->measure_interval(.6, .2, 1.0, 1.0);
+        pyscan::Rectangle rect1(.6, root->top_y, .2, root->bottom_y);
+        ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect1, m_pts) + pyscan::range_weight(rect1, b_pts));
+
+        val = root->down->measure_interval(.6, .2, 1.0, 1.0);
+        ASSERT_GE(root->down->top_y, root->down->bottom_y);
+        pyscan::Rectangle rect2(.6, root->down->top_y, .2, root->down->bottom_y);
+        ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect2, m_pts) + pyscan::range_weight(rect2, b_pts));
+
+        val = root->up->measure_interval(.6, .2, 1.0, 1.0);
+        ASSERT_GE(root->up->top_y, root->up->bottom_y);
+        pyscan::Rectangle rect3(.6, root->up->top_y, .2, root->up->bottom_y);
+        ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect3, m_pts) + pyscan::range_weight(rect3, b_pts));
+    }
+
+    TEST(SlabTree, approx) {
+
+        const static int n_size = 50;
+        const static int s_size = 1000;
+        auto n_pts = pyscantest::randomPoints2(n_size);
+        auto m_pts = pyscantest::randomWPoints2(s_size);
+        auto b_pts = pyscantest::randomWPoints2(s_size);
+        std::vector<double> divisions;
+        for (auto& p : n_pts) {
+            divisions.emplace_back(p(1));
+        }
+        std::sort(divisions.begin(), divisions.end());
+
+        pyscan::SlabTree tree(divisions, m_pts, b_pts, 1.0);
+        for (auto it1 = n_pts.begin(); it1 != n_pts.end() - 3; ++it1) {
+            for (auto it2 = it1 + 1; it2 != n_pts.end() - 3; ++it2) {
+                for (auto it3 = it2 + 1; it3 != n_pts.end() - 2; ++it3) {
+                    for (auto it4 = it3 + 1; it4 != n_pts.end() - 1; ++it4) {
+                        pyscan::Rectangle rect(*it1, *it2, *it3, *it4);
+                        double val = tree.measure_rect(rect, 1.0, 1.0);
+                        ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect, m_pts) + pyscan::range_weight(rect, b_pts));
+                    }
+                }
+            }
+        }
+
+
+
+    }
+
 
 }
