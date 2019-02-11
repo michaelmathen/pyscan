@@ -180,19 +180,28 @@ namespace pyscan {
              double ty,
              double by);
 
-        double measure_interval(double mxx, double mnx, double a, double b);
+        double get_mid() const {
+            double midpoint;
+            if (down != nullptr) midpoint = down->top_y;
+            else if (up != nullptr) midpoint = up->bottom_y;
+            else {
+                midpoint = (top_y + bottom_y) / 2.0;
+            }
+            return midpoint;
+        }
+
+        bool has_mid() const {
+            return down != nullptr || up != nullptr;
+        }
+
+        double measure_interval(double mxx, double mnx, double a, double b) const;
     };
 
     class SlabTree {
 
-
+    public:
         using slab_ptr = std::shared_ptr<Slab>;
         using wslab_ptr = std::weak_ptr<Slab>;
-
-        slab_ptr root;
-        wpoint_list_t mpts;
-        wpoint_list_t bpts;
-    public:
         using slab_it_t = std::vector<Slab>::const_iterator;
 
 
@@ -200,9 +209,14 @@ namespace pyscan {
             return root;
         }
 
+        slab_ptr get_containing(Rectangle const &rect) const;
         SlabTree(std::vector<double> const& vert_decomp, wpoint_list_t ms, wpoint_list_t bs, double max_w);
-        double measure_rect(Rectangle const &rect, double a, double b);
+        double measure_rect(Rectangle const &rect, double a, double b) const;
         //std::tuple<Rectangle, double> max_rectangle(double m_a, double b_b);
+    private:
+        slab_ptr root;
+        wpoint_list_t mpts;
+        wpoint_list_t bpts;
     };
 
     std::tuple<Rectangle, double> max_rect_labeled(size_t r, double max_w, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func);

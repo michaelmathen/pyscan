@@ -724,7 +724,7 @@ namespace pyscan {
                 parent(std::move(p)) {}
 
 
-    double Slab::measure_interval(double mxx, double mnx, double a, double b) {
+    double Slab::measure_interval(double mxx, double mnx, double a, double b) const {
         assert(mxx >= mnx);
         auto cmp = [](const merge_pair& p1, const merge_pair& p2) {
             return std::get<0>(p1) < std::get<0>(p2);
@@ -812,12 +812,12 @@ namespace pyscan {
                 auto m_iter_splt = std::stable_partition(m_b, m_e, part_f);
                 auto b_iter_splt = std::stable_partition(b_b, b_e, part_f);
                 active.emplace_back(*el_ptr,
-                                    &((*el_ptr)->up),
+                                    &((*el_ptr)->down),
                                     std::make_tuple(v_b, v_mid + 1),
                                     std::make_tuple(m_b, m_iter_splt),
                                     std::make_tuple(b_b, b_iter_splt));
                 active.emplace_back(*el_ptr,
-                                    &((*el_ptr)->down),
+                                    &((*el_ptr)->up),
                                     std::make_tuple(v_mid, v_e),
                                     std::make_tuple(m_iter_splt, m_e),
                                     std::make_tuple(b_iter_splt, b_e));
@@ -858,35 +858,66 @@ namespace pyscan {
         }
     }
 
-    double SlabTree::measure_rect(Rectangle const &rect, double a, double b) {
+    SlabTree::slab_ptr SlabTree::get_containing(Rectangle const &rect) const {
         auto curr_root = root;
         while (curr_root != nullptr) {
             //Check if this region is contained completely in the left or right branch.
-            if (!curr_root->down && curr_root->down->top_y >= rect.upY() && curr_root->down->bottom_y <= rect.lowY()) {
-                curr_root = curr_root->down;
-            } else if (!curr_root->up && curr_root->up->top_y >= rect.upY() && curr_root->up->bottom_y <= rect.lowY()) {
-                curr_root = curr_root->up;
+            if (curr_root->has_mid()) {
+                double mid = curr_root->get_mid();
+                if (rect.upY() < mid) {
+                    curr_root = curr_root->down;
+                } else if (rect.lowY() > mid) {
+                    curr_root = curr_root->up;
+                } else {
+                    return curr_root;
+                }
             } else {
-                break;
+                return curr_root;
             }
+        }
+        return curr_root;
+    }
+
+    double SlabTree::measure_rect(Rectangle const &rect, double a, double b) const {
+        auto curr_root = get_containing(rect);
+
+        if (curr_root == nullptr) {
+            return 0.0;
         }
         auto& upper_bound = curr_root->up;
         double sum = 0;
         while (upper_bound != nullptr) {
-            if (upper_bound->top_y > rect.upY()) {
-                upper_bound = upper_bound->down;
-            } else {
-                sum += !(upper_bound->down) ? 0.0 : upper_bound->down->measure_interval(rect.upX(), rect.lowX(), a, b);
+
+            double midpoint;
+            if (upper_bound->down != nullptr) midpoint = upper_bound->down->top_y;
+            else if (upper_bound->up != nullptr) midpoint = upper_bound->up->bottom_y;
+            else {
+                //sum += upper_bound->measure_interval(rect.upX(), rect.lowX(), a, b);
+                break;
+            }
+
+            if (midpoint < rect.upY()) {
+                sum += !upper_bound->down ? 0.0 : upper_bound->down->measure_interval(rect.upX(), rect.lowX(), a, b);
                 upper_bound = upper_bound->up;
+            } else {
+                upper_bound = upper_bound->down;
             }
         }
         auto& lower_bound = curr_root->down;
         while (lower_bound != nullptr) {
-            if (lower_bound->bottom_y < rect.lowY()) {
-                lower_bound = lower_bound->up;
-            } else {
-                sum += !(lower_bound->down) ? 0.0 : lower_bound->up->measure_interval(rect.upX(), rect.lowX(), a, b);
+            double midpoint;
+            if (lower_bound->down != nullptr) midpoint = lower_bound->down->top_y;
+            else if (lower_bound->up != nullptr) midpoint = lower_bound->up->bottom_y;
+            else {
+                //sum += lower_bound->measure_interval(rect.upX(), rect.lowX(), a, b);
+                break;
+            }
+
+            if (midpoint >= rect.lowY()) {
+                sum += !lower_bound->up ? 0.0 : lower_bound->up->measure_interval(rect.upX(), rect.lowX(), a, b);
                 lower_bound = lower_bound->down;
+            } else {
+                lower_bound = lower_bound->up;
             }
         }
         return sum;

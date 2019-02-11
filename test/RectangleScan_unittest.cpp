@@ -2,6 +2,8 @@
 
 
 #include "RectangleScan.hpp"
+#include "Utilities.hpp"
+
 #include "Test_Utilities.hpp"
 
 
@@ -71,6 +73,99 @@ namespace {
 
     }
 
+
+    TEST(SlabTree, init) {
+
+        const static int n_size = 50;
+        const static int s_size = 1000;
+        auto n_pts = pyscantest::randomPoints2(n_size);
+        auto m_pts = pyscantest::randomWPoints2(s_size);
+        auto b_pts = pyscantest::randomWPoints2(s_size);
+
+        std::vector<double> divisions;
+        for (auto& p : n_pts) {
+            divisions.emplace_back(p(1));
+        }
+        std::sort(divisions.begin(), divisions.end());
+
+        pyscan::SlabTree tree(divisions, m_pts, b_pts, 1.0);
+        auto root = tree.get_root();
+
+        std::vector<decltype(root)> curr_stack;
+        curr_stack.push_back(root);
+        std::vector<decltype(root)> leaves;
+        while (!curr_stack.empty()) {
+            auto el = curr_stack.back();
+
+            ASSERT_LE(el->bottom_y, el->top_y);
+
+            curr_stack.pop_back();
+            if (el->up != nullptr) {
+                ASSERT_FLOAT_EQ(el->top_y, el->up->top_y);
+                ASSERT_LE(el->up->bottom_y, el->top_y);
+                ASSERT_LE(el->bottom_y, el->up->bottom_y);
+                curr_stack.push_back(el->up);
+            }
+            if (el->down != nullptr) {
+                ASSERT_FLOAT_EQ(el->bottom_y, el->down->bottom_y);
+                ASSERT_LE(el->down->top_y, el->top_y);
+                ASSERT_LE(el->bottom_y, el->down->top_y);
+                curr_stack.push_back(el->down);
+            }
+            if (el->has_mid()) {
+                ASSERT_FLOAT_EQ(el->down->top_y, el->up->bottom_y);
+            }
+            if (!el->up  && !el->down){
+                leaves.push_back(el);
+            }
+        }
+
+        std::vector<double> divisions2;
+        for (auto& leaf : leaves) {
+            divisions2.push_back(leaf->bottom_y);
+        }
+
+        using pyscan::operator<<;
+        divisions2.push_back(leaves.back()->top_y);
+        ASSERT_EQ(divisions.size(), divisions2.size());
+        for (size_t i = 0; i < divisions.size(); i++) {
+            ASSERT_FLOAT_EQ(divisions2[i], divisions[i]);
+        }
+
+        size_t curr_i = 0;
+        for (auto& leaf : leaves) {
+            ASSERT_EQ(divisions[curr_i], leaf->bottom_y);
+            ASSERT_EQ(divisions[curr_i + 1], leaf->top_y);
+            curr_i++;
+        }
+
+    }
+
+    TEST(Slab, get_contains) {
+        const static int n_size = 50;
+        const static int s_size = 1000;
+        auto n_pts = pyscantest::randomPoints2(n_size);
+        auto m_pts = pyscantest::randomWPoints2(s_size);
+        auto b_pts = pyscantest::randomWPoints2(s_size);
+
+        std::vector<double> divisions;
+        for (auto& p : n_pts) {
+            divisions.emplace_back(p(1));
+        }
+        std::sort(divisions.begin(), divisions.end());
+
+        pyscan::SlabTree tree(divisions, m_pts, b_pts, 1.0);
+
+        pyscan::Rectangle rect(.3, .4, .1, .2);
+        auto slab_containing = tree.get_containing(rect);
+        ASSERT_GT(slab_containing->top_y, rect.upY());
+        ASSERT_LE(slab_containing->bottom_y, rect.lowY());
+
+        ASSERT_GE(slab_containing->get_mid(), rect.lowY());
+        ASSERT_LT(slab_containing->get_mid(), rect.upY());
+
+    }
+
     TEST(Slab, measure_interval) {
 
         const static int n_size = 50;
@@ -102,9 +197,19 @@ namespace {
         ASSERT_GE(root->up->top_y, root->up->bottom_y);
         pyscan::Rectangle rect3(.6, root->up->top_y, .2, root->up->bottom_y);
         ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect3, m_pts) + pyscan::range_weight(rect3, b_pts));
+
+
+        while (root->up != nullptr) {
+            root = root->up;
+        }
+        val = root->measure_interval(.6, .2, 1.0, 1.0);
+        ASSERT_GE(root->top_y, root->bottom_y);
+        pyscan::Rectangle rect4(.6, root->top_y, .2, root->bottom_y);
+        ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect4, m_pts) + pyscan::range_weight(rect4, b_pts));
+
     }
 
-    TEST(SlabTree, approx) {
+    TEST(SlabTree, measure_rect) {
 
         const static int n_size = 50;
         const static int s_size = 1000;

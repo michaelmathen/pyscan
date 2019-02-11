@@ -90,9 +90,9 @@ namespace pyscan {
                         split_queue.push_back(cell_n);
                         std::push_heap(split_queue.begin(), split_queue.end(), cmp);
                     } else {
-                        std::cout << upper.size() << std::endl;
-                        std::cout << lower.size() << std::endl;
-                        std::cout << std::endl;
+//                        std::cout << upper.size() << std::endl;
+//                        std::cout << lower.size() << std::endl;
+//                        std::cout << std::endl;
                     }
                 };
                 add_method(upper);
