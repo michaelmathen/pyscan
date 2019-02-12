@@ -705,10 +705,13 @@ namespace pyscan {
     void normalize(wpoint_list_t& pts) {
         //Compute the total weight.
         double total_w = 0;
-        for (auto& p : pts)  total_w += p.get_weight();
-        std::transform(pts.begin(), pts.end(), pts.begin(), [total_w](const wpt2_t& pt){
-            return wpt2_t(pt.get_weight() / total_w, pt[0], pt[1], pt[2]);
-        });
+        for (auto& p : pts) {
+            total_w += p.get_weight();
+        }
+        for (size_t i = 0; i < pts.size(); i++) {
+            auto pt = pts[i];
+            pts[i] = wpt2_t(pt.get_weight() / total_w, pt[0], pt[1], pt[2]);
+        }
     };
 
 
@@ -733,6 +736,7 @@ namespace pyscan {
         auto accum = [](double curr_val, const merge_pair& p2) {
             return curr_val + std::get<1>(p2);
         };
+        //std::cout << m_merges.size() << std::endl;
         auto m_u_b = std::lower_bound(m_merges.begin(), m_merges.end(), merge_pair(mxx, 0.0), cmp);
         auto m_l_b = std::lower_bound(m_merges.begin(), m_merges.end(), merge_pair(mnx, 0.0), cmp);
         double mval = a * std::accumulate(m_l_b, m_u_b, 0.0, accum);
@@ -746,6 +750,7 @@ namespace pyscan {
             std::move(ms)), bpts(std::move(bs)) {
         normalize(mpts);
         normalize(bpts);
+        //std::sort(vert_decomp.begin(), vert_decomp.end());
 
         using wp_it = wpoint_list_t::iterator;
         using wrng_it = std::tuple<wp_it, wp_it>;
@@ -765,12 +770,15 @@ namespace pyscan {
             double v_b = *(vert_decomp.begin());
             double v_e = *(vert_decomp.end() - 1);
             auto in_interval = [v_b, v_e] (const pt2_t& pt) {
+                //std::cout << pt(1) << std::endl;
                 return v_b <= pt(1) && pt(1) < v_e;
             };
             auto m_new_end = std::partition(mpts.begin(), mpts.end(), in_interval);
             mpts.erase(m_new_end, mpts.end());
             auto b_new_end = std::partition(bpts.begin(), bpts.end(), in_interval);
             bpts.erase(b_new_end, bpts.end());
+
+            std::cout << mpts.size() << std::endl;
         }
 
         std::sort(mpts.begin(), mpts.end(), x_order);
@@ -859,8 +867,10 @@ namespace pyscan {
     }
 
     SlabTree::slab_ptr SlabTree::get_containing(Rectangle const &rect) const {
+        assert(rect.upY() > rect.lowY());
         auto curr_root = root;
         while (curr_root != nullptr) {
+            //std::cout << "Cur Root "<<  curr_root->top_y << " " << rect.upY() <<  " " << rect.lowY() << " " << curr_root->bottom_y << std::endl;
             //Check if this region is contained completely in the left or right branch.
             if (curr_root->has_mid()) {
                 double mid = curr_root->get_mid();
@@ -884,43 +894,43 @@ namespace pyscan {
         if (curr_root == nullptr) {
             return 0.0;
         }
-        auto& upper_bound = curr_root->up;
-        double sum = 0;
+        //std::cout << "Cur Root "<<  curr_root->top_y << " " << rect.upY() <<  " " << rect.lowY() << " " << curr_root->bottom_y << std::endl;
+        auto upper_bound = curr_root->up;
+        double rect_total = 0;
         while (upper_bound != nullptr) {
-
-            double midpoint;
-            if (upper_bound->down != nullptr) midpoint = upper_bound->down->top_y;
-            else if (upper_bound->up != nullptr) midpoint = upper_bound->up->bottom_y;
-            else {
-                //sum += upper_bound->measure_interval(rect.upX(), rect.lowX(), a, b);
+            if (upper_bound->has_mid()) {
+                double midpoint = upper_bound->get_mid();
+                if (midpoint < rect.upY()) {
+                    double tmp = upper_bound->down == nullptr ? 0.0 : upper_bound->down->measure_interval(rect.upX(), rect.lowX(), a, b);
+                    rect_total += tmp;
+                    upper_bound = upper_bound->up;
+                } else {
+                    //std::cout << upper_bound->bottom_y << " " << rect.upY() << " " << upper_bound->top_y << " " << midpoint << std::endl;
+                    upper_bound = upper_bound->down;
+                }
+            } else {
+                rect_total += upper_bound->top_y <= rect.upY() ? upper_bound->measure_interval(rect.upX(), rect.lowX(), a, b) : 0.0;
                 break;
             }
-
-            if (midpoint < rect.upY()) {
-                sum += !upper_bound->down ? 0.0 : upper_bound->down->measure_interval(rect.upX(), rect.lowX(), a, b);
-                upper_bound = upper_bound->up;
-            } else {
-                upper_bound = upper_bound->down;
-            }
         }
-        auto& lower_bound = curr_root->down;
+        auto lower_bound = curr_root->down;
         while (lower_bound != nullptr) {
-            double midpoint;
-            if (lower_bound->down != nullptr) midpoint = lower_bound->down->top_y;
-            else if (lower_bound->up != nullptr) midpoint = lower_bound->up->bottom_y;
-            else {
-                //sum += lower_bound->measure_interval(rect.upX(), rect.lowX(), a, b);
+            if (lower_bound->has_mid()) {
+                double midpoint = lower_bound->get_mid();
+                if (midpoint >= rect.lowY()) {
+                    rect_total += lower_bound->up == nullptr ? 0.0 : lower_bound->up->measure_interval(rect.upX(), rect.lowX(), a, b);
+                    lower_bound = lower_bound->down;
+                } else {
+                    //std::cout << upper_bound->bottom_y << " " << rect.upY() << " " << upper_bound->top_y << " " << midpoint << std::endl;
+                    lower_bound = lower_bound->up;
+                }
+            } else {
+                rect_total += lower_bound->bottom_y >= rect.lowY() ? lower_bound->measure_interval(rect.upX(), rect.lowX(), a, b) : 0.0;
                 break;
             }
-
-            if (midpoint >= rect.lowY()) {
-                sum += !lower_bound->up ? 0.0 : lower_bound->up->measure_interval(rect.upX(), rect.lowX(), a, b);
-                lower_bound = lower_bound->down;
-            } else {
-                lower_bound = lower_bound->up;
-            }
         }
-        return sum;
+        //std::cout << "Rectangle total " << rect_total << std::endl;
+        return rect_total;
     }
 
 

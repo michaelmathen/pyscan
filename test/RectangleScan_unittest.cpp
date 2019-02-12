@@ -166,7 +166,7 @@ namespace {
 
     }
 
-    TEST(Slab, measure_interval) {
+    TEST(SlabTree, measure_interval) {
 
         const static int n_size = 50;
         const static int s_size = 1000;
@@ -211,12 +211,13 @@ namespace {
 
     TEST(SlabTree, measure_rect) {
 
-        const static int n_size = 50;
+        const static int n_size = 20;
         const static int s_size = 1000;
         auto n_pts = pyscantest::randomPoints2(n_size);
         auto m_pts = pyscantest::randomWPoints2(s_size);
         auto b_pts = pyscantest::randomWPoints2(s_size);
         std::vector<double> divisions;
+        divisions.reserve(n_pts.size());
         for (auto& p : n_pts) {
             divisions.emplace_back(p(1));
         }
@@ -229,6 +230,8 @@ namespace {
                     for (auto it4 = it3 + 1; it4 != n_pts.end() - 1; ++it4) {
                         pyscan::Rectangle rect(*it1, *it2, *it3, *it4);
                         double val = tree.measure_rect(rect, 1.0, 1.0);
+                        //auto curr_root = tree.get_root();
+                        //std::cout << "Cur Root "<<  curr_root->top_y << " " << rect.upY() <<  " " << rect.lowY() << " " << curr_root->bottom_y << std::endl;
                         ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect, m_pts) + pyscan::range_weight(rect, b_pts));
                     }
                 }

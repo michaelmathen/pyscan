@@ -30,11 +30,8 @@ namespace pyscan {
 
 
         template <class ...Coords, std::enable_if_t<(sizeof...(Coords) == dim + 1)>* = nullptr>
-        explicit Point(Coords... rest) {
-
+        explicit Point(Coords... rest) : coords{rest...} {
             static_assert(sizeof...(rest) == dim + 1, "Wrong number of arguments for the point type.");
-            std::initializer_list<double> il({rest...});
-            std::copy(il.begin(), il.end(), coords.begin());
         }
 
        /* Point<dim>& operator=(Point<dim> const& pt) {
@@ -296,7 +293,8 @@ namespace pyscan {
     public:
         template<typename ...Coords>
         explicit WPoint(double weight, Coords... rest)
-                : Point<dim>(rest...), weight(weight) {}
+                : Point<dim>(rest...), weight(weight) {
+                }
 
         WPoint()
                 : Point<dim>(), weight(0.0) {}
