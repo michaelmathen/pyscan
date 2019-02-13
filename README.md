@@ -4,7 +4,7 @@ Computing Approximate Statistical Discrepancy.
 To compile this you will need:
 
 * boost.python
-* python 2.7 or python 3.x
+* python python 3.x
 * cmake
 
 #Instructions
