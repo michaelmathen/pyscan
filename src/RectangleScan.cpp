@@ -594,10 +594,48 @@ namespace pyscan {
 
 
     //////////////////////////////////////////////////////////////////////////////////
-    //END OF LABELED RECTANGLE CODE//////////////////////////////////////////////////
+    //Max Rectangle Code//////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////
 
 
+    template<typename Arr>
+    decltype(auto) access(Arr& arr1, Arr& arr2, size_t i) {
+        if (arr1.size() <= i) {
+            return arr2.at(i - arr1.size());
+        } else {
+            return arr1.at(i);
+        }
+    }
+
+    std::tuple<epoint_list_t, epoint_list_t>
+            to_epoints(wpoint_list_t const& mpts, wpoint_list_t const& bpts){
+        /*
+         * Maps every point to a new point with integer index and also creates a reverse mapping so
+         * we can go from integer index back to the floating point value.
+         */
+
+        auto get_ix_list = [&] (size_t dim) {
+            auto cmp = [&](size_t i1, size_t i2) {
+                return access(mpts, bpts, i1)(dim) < access(mpts, bpts, i2)(dim);
+            };
+            std::vector<size_t> p(mpts.size() + bpts.size());
+            std::iota(p.begin(), p.end(), 0);
+            std::sort(p.begin(), p.end(), cmp);
+            return p;
+        };
+        auto ixx = get_ix_list(0);
+        auto ixy = get_ix_list(1);
+        epoint_list_t empts(mpts.size());
+        epoint_list_t ebpts(bpts.size());
+
+        for (size_t i = 0; i < mpts.size() + bpts.size(); i++) {
+            auto tmp = access(empts, ebpts, ixx[i]);
+            tmp(0) = i;
+            tmp.set_weight(access(mpts, bpts, ixx[i]).get_weight());
+            access(empts, ebpts, ixy[i])(1) = i;
+        }
+        return std::make_tuple(empts, ebpts);
+    }
 
     //So each slab has list of splits and approximation list.
     //--splits are pointers to points.
@@ -607,17 +645,15 @@ namespace pyscan {
     // a merge list of pointers.
 
      class Interval {
-         pt2_t* left;
-         pt2_t* right;
+         size_t left;
+         size_t right;
          double value;
      public:
-         Interval() : left(nullptr), right(nullptr), value(0.0) {}
-         Interval(pt2_t* l, pt2_t* r, double v) : left(l), right(r), value(v) {}
-         Interval(pt2_t* pt, double weight) : left(pt), right(pt), value(weight) {}
+         Interval(size_t l, size_t r, double v) : left(l), right(r), value(v) {}
 
-         pt2_t* get_r() const { return right; }
-         pt2_t* get_l() const { return left; }
-         double get_v() const {return value; }
+         size_t get_r() const { return right; }
+         size_t get_l() const { return left; }
+         double_t get_v() const {return value; }
      };
 
      class MaxIntervalAlt {
@@ -626,9 +662,8 @@ namespace pyscan {
          Interval center_max;
      public:
 
-         MaxIntervalAlt(pt2_t* pt, double weight) : left_max(pt, weight), right_max(pt, weight), center_max(pt, weight) {}
-
-         MaxIntervalAlt(pt2_t* lpt, pt2_t* rpt) : left_max(lpt, lpt, 0.0), right_max(rpt, rpt, 0.0), center_max(lpt, lpt, 0.0) {}
+         MaxIntervalAlt(size_t val, double weight) : left_max(val, val, weight), right_max(val, val, weight), center_max(val, val, weight) {}
+         MaxIntervalAlt(size_t lpt, size_t rpt) : left_max(lpt, lpt, 0.0), right_max(rpt, rpt, 0.0), center_max(lpt, lpt, 0.0) {}
 
          MaxIntervalAlt &operator+=(const MaxIntervalAlt& op) {
              if (center_max.get_v() < op.center_max.get_v()) {
@@ -656,10 +691,11 @@ namespace pyscan {
              return *this;
          }
 
-         pt2_t* left() const {
+
+         double left() const {
              return left_max.get_l();
          }
-         pt2_t* right() const {
+         double right() const {
              return left_max.get_r();
          }
 
@@ -669,8 +705,16 @@ namespace pyscan {
 
      };
 
+    void update_weights(std::vector<MaxIntervalAlt>& max_intervals, epoint_list_t const& merges) {
+        size_t j = 0;
+        for (size_t i = 0; i < merges.size(); ++i) {
+            for (; j < max_intervals.size() && merges[i].get_x() != max_intervals[j].right(); j++);
+            max_intervals[i] += MaxIntervalAlt(merges[j].get_x(), merges[j].get_weight());
+        }
+    }
 
-    merge_list_t compress(wpoint_it_t b, wpoint_it_t e, double m_w) {
+
+     epoint_list_t compress(epoint_it_t b, epoint_it_t e, double m_w) {
         /*
          * Takes a vector of weighted points and constructed a smaller set of weighted points equally spaced with
          * the a different set of weights.
@@ -695,9 +739,9 @@ namespace pyscan {
 //            break_pts.emplace_back(*(wpts.end() - 1));
 //        }
 //        return std::make_tuple(break_pts, weights);
-        merge_list_t merges;
+        epoint_list_t merges;
         for (; b != e; ++b) {
-            merges.emplace_back((*b)(0), 1.0);
+            merges.emplace_back(*b);
         }
         return merges;
     }
@@ -716,10 +760,10 @@ namespace pyscan {
 
 
     Slab::Slab(std::weak_ptr<Slab> p,
-            merge_list_t m_m,
-            merge_list_t b_m,
-            double ty,
-            double by) :
+            epoint_list_t m_m,
+            epoint_list_t b_m,
+            size_t ty,
+            size_t by) :
                 m_merges(std::move(m_m)),
                 b_merges(std::move(b_m)),
                 top_y(ty),
@@ -727,62 +771,87 @@ namespace pyscan {
                 parent(std::move(p)) {}
 
 
-    double Slab::measure_interval(double mxx, double mnx, double a, double b) const {
-        assert(mxx >= mnx);
-        auto cmp = [](const merge_pair& p1, const merge_pair& p2) {
-            return std::get<0>(p1) < std::get<0>(p2);
-        };
-
-        auto accum = [](double curr_val, const merge_pair& p2) {
-            return curr_val + std::get<1>(p2);
+    double Slab::measure_interval(size_t mxx, size_t mnx, double a, double b) const {
+        /*
+         * Measures the interval [mnx, mxx) associated with a single slab.
+         */
+        auto accum = [](double curr_val, const ept_t& p2) {
+            return curr_val + p2.get_weight();
         };
         //std::cout << m_merges.size() << std::endl;
-        auto m_u_b = std::lower_bound(m_merges.begin(), m_merges.end(), merge_pair(mxx, 0.0), cmp);
-        auto m_l_b = std::lower_bound(m_merges.begin(), m_merges.end(), merge_pair(mnx, 0.0), cmp);
+        auto m_u_b = std::lower_bound(m_merges.begin(), m_merges.end(), EPoint(mxx, 0.0, 0.0));
+        auto m_l_b = std::lower_bound(m_merges.begin(), m_merges.end(), EPoint(mnx, 0.0, 0.0));
         double mval = a * std::accumulate(m_l_b, m_u_b, 0.0, accum);
-        auto b_u_b = std::lower_bound(b_merges.begin(), b_merges.end(), merge_pair(mxx, 0.0), cmp);
-        auto b_l_b = std::lower_bound(b_merges.begin(), b_merges.end(), merge_pair(mnx, 0.0), cmp);
+        auto b_u_b = std::lower_bound(b_merges.begin(), b_merges.end(), EPoint(mxx, 0.0, 0.0));
+        auto b_l_b = std::lower_bound(b_merges.begin(), b_merges.end(), EPoint(mnx, 0.0, 0.0));
         double bval = b * std::accumulate(b_l_b, b_u_b, 0.0, accum);
         return mval + bval;
     }
 
-    SlabTree::SlabTree(std::vector<double> const &vert_decomp, wpoint_list_t ms, wpoint_list_t bs, double max_w) : mpts(
-            std::move(ms)), bpts(std::move(bs)) {
-        normalize(mpts);
-        normalize(bpts);
+    SlabTree::SlabTree(epoint_list_t ms, epoint_list_t bs, double max_w) : mpts(std::move(ms)), bpts(std::move(bs)) {
+        /*
+         * Create a vertical decomposition of the point set so that we can split the points into a sequence of horizontal
+         * strips where each contains at most max_w.
+         */
+        auto y_order = [](const ept_t& p1, const ept_t& p2){
+            return p1.get_y() < p2.get_y();
+        };
+        std::sort(mpts.begin(), mpts.end(), y_order);
+        std::sort(bpts.begin(), bpts.end(), y_order);
+        std::vector<ept_t> merge_buffer(bpts.size() + mpts.size());
+        std::merge(mpts.begin(), mpts.end(), bpts.begin(), mpts.end(), merge_buffer.begin(), y_order);
+
+        std::vector<size_t> vert_decomp;
+        vert_decomp.reserve((size_t) (1/ max_w));
+        double curr_weight = 0;
+        for (auto &p : merge_buffer) {
+            curr_weight += p.get_weight();
+            if (curr_weight >= max_w) {
+                curr_weight = 0;
+                vert_decomp.emplace_back(p.get_y());
+            }
+        }
+
+        SlabTree::init(vert_decomp, true, max_w);
+    }
+
+    SlabTree::SlabTree(std::vector<size_t> const &vert_decomp, epoint_list_t ms, epoint_list_t bs, bool compression, double max_w) :
+        mpts(std::move(ms)), bpts(std::move(bs)) {
+        /*
+         * Create a vertical decomposition of the point set so that we can split the points into a sequence of horizontal
+         * strips where each contains at most max_w.
+         */
+        SlabTree::init(vert_decomp, compression, max_w);
+    }
+
+    void SlabTree::init(std::vector<size_t> const &vert_decomp, bool compression, double max_w) {
+
         //std::sort(vert_decomp.begin(), vert_decomp.end());
 
-        using wp_it = wpoint_list_t::iterator;
-        using wrng_it = std::tuple<wp_it, wp_it>;
-        using vert_it = std::vector<double>::const_iterator;
+        using wrng_it = std::tuple<epoint_it_t , epoint_it_t >;
+        using vert_it = std::vector<size_t>::const_iterator;
         using vrng_it = std::tuple<vert_it, vert_it>;
 
         using cell_t = std::tuple<slab_ptr, slab_ptr *, vrng_it, wrng_it, wrng_it>;
         using cell_list_t = std::vector<cell_t>;
 
-        //Sort samples horizontally
-        auto x_order = [](const pt2_t& p1, const pt2_t& p2) {
-            return p1(0) < p2(0);
-        };
-
 
         {
             double v_b = *(vert_decomp.begin());
             double v_e = *(vert_decomp.end() - 1);
-            auto in_interval = [v_b, v_e] (const pt2_t& pt) {
-                //std::cout << pt(1) << std::endl;
+            //Needs to match ERectangle->contains
+            auto in_interval = [v_b, v_e] (const ept_t& pt) {
                 return v_b <= pt(1) && pt(1) < v_e;
             };
             auto m_new_end = std::partition(mpts.begin(), mpts.end(), in_interval);
             mpts.erase(m_new_end, mpts.end());
             auto b_new_end = std::partition(bpts.begin(), bpts.end(), in_interval);
             bpts.erase(b_new_end, bpts.end());
-
-            std::cout << mpts.size() << std::endl;
         }
 
-        std::sort(mpts.begin(), mpts.end(), x_order);
-        std::sort(bpts.begin(), bpts.end(), x_order);
+        //Sort these by x-axis
+        std::sort(mpts.begin(), mpts.end());
+        std::sort(bpts.begin(), bpts.end());
 
         cell_list_t active;
         active.emplace_back(nullptr, &root,
@@ -814,7 +883,8 @@ namespace pyscan {
                 auto v_mid = (v_b + (v_e - v_b) / 2);
                 assert(v_mid != v_e);
                 auto v_break = *v_mid;
-                auto part_f = [v_break](const pt2_t& ptr) {
+                auto part_f = [v_break](const ept_t& ptr) {
+                    //Has to be < so that it matches ERectangle contains
                     return ptr(1) < v_break;
                 };
                 auto m_iter_splt = std::stable_partition(m_b, m_e, part_f);
@@ -834,46 +904,56 @@ namespace pyscan {
             }
         }
 
-        auto order_f = [] (const merge_pair& mp1, const merge_pair& mp2) {
-            return std::get<0>(mp1) < std::get<0>(mp2);
-        };
-
         //Now go back through and create a list of all the lower splits.
         while (!roots.empty()) {
             auto child = roots.back();
             roots.pop_back();
 
-            //First merge the m_merges and b_merges
-            child->split_offsets.reserve(child->split_offsets.size() + child->m_merges.size() + child->b_merges.size());
+            //First merge the m_merges and b_merges into the end of the existing split_offsets
+            std::vector<size_t> m_children;
+            std::vector<size_t> b_children;
+            m_children.reserve(child->m_merges.size() + child->b_merges.size());
+            b_children.reserve(child->m_merges.size() + child->b_merges.size());
+            for (auto& p : child->m_merges) { m_children.emplace_back(p.get_x()); }
+            for (auto& p : child->b_merges) { b_children.emplace_back(p.get_x()); }
 
-            std::merge(child->m_merges.begin(),
-                       child->m_merges.end(),
-                       child->b_merges.begin(),
-                       child->b_merges.end(),
-                       std::back_inserter(child->split_offsets), order_f);
-            auto mid = child->split_offsets.begin() + child->split_offsets.size();
-            //Now merge into the already existing split offsets.
-            std::inplace_merge(child->split_offsets.begin(), mid, child->split_offsets.end(), order_f);
+            size_t pre_length = child->split_offsets.size();
+            std::merge(m_children.begin(),
+                       m_children.end(),
+                       b_children.begin(),
+                       b_children.end(),
+                       std::back_inserter(child->split_offsets));
+
+            // Now merge into the already existing split offsets.
+            std::inplace_merge(child->split_offsets.begin(),
+                    child->split_offsets.begin() + pre_length,
+                    child->split_offsets.end());
+            auto end_it = std::unique(child->split_offsets.begin(), child->split_offsets.end());
+            child->split_offsets.erase(end_it, child->split_offsets.end());
 
             //Now merge into the parent.
             auto p = child->parent.lock();
             if (p != nullptr) {
                 size_t offset = p->split_offsets.size();
+                p->split_offsets.reserve(offset + child->split_offsets.size());
                 std::copy(child->split_offsets.begin(), child->split_offsets.end(),
                           std::back_inserter(p->split_offsets));
-                std::inplace_merge(p->split_offsets.begin(), p->split_offsets.begin() + offset, p->split_offsets.end(), order_f);
+                std::inplace_merge(p->split_offsets.begin(), p->split_offsets.begin() + offset, p->split_offsets.end());
+                auto parent_it = std::unique(p->split_offsets.begin(), p->split_offsets.end());
+                p->split_offsets.erase(parent_it, p->split_offsets.end());
             }
         }
     }
 
-    SlabTree::slab_ptr SlabTree::get_containing(Rectangle const &rect) const {
+    SlabTree::slab_ptr SlabTree::get_containing(ERectangle const &rect) const {
         assert(rect.upY() > rect.lowY());
         auto curr_root = root;
         while (curr_root != nullptr) {
             //std::cout << "Cur Root "<<  curr_root->top_y << " " << rect.upY() <<  " " << rect.lowY() << " " << curr_root->bottom_y << std::endl;
             //Check if this region is contained completely in the left or right branch.
             if (curr_root->has_mid()) {
-                double mid = curr_root->get_mid();
+                size_t mid = curr_root->get_mid();
+
                 if (rect.upY() < mid) {
                     curr_root = curr_root->down;
                 } else if (rect.lowY() > mid) {
@@ -888,7 +968,7 @@ namespace pyscan {
         return curr_root;
     }
 
-    double SlabTree::measure_rect(Rectangle const &rect, double a, double b) const {
+    double SlabTree::measure_rect(ERectangle const &rect, double a, double b) const {
         auto curr_root = get_containing(rect);
 
         if (curr_root == nullptr) {
@@ -936,9 +1016,7 @@ namespace pyscan {
 
 //    std::tuple<Rectangle, double> SlabTree::max_rectangle(double m_a, double b_b) {
 //        //Initialize with list of maximum intervals.
-//        assert(!slab_heap.empty());
-//        auto &curr_splits = slab_heap[0].split_offsets;
-//        assert(!curr_splits.empty());
+//        auto &curr_splits = root->split_offsets;
 //
 //        std::vector<MaxIntervalAlt> initial_intervals;
 //        initial_intervals.reserve(curr_splits.size() - 1);
@@ -947,19 +1025,12 @@ namespace pyscan {
 //            initial_intervals.emplace_back(curr_splits[i], curr_splits[i + 1]);
 //        }
 //
-//        std::vector<std::tuple<Slab *, Slab *, Slab *, Slab *, pt2_t *, pt2_t *, std::vector<MaxIntervalAlt>>> slab_stack;
+//        using slab_frame = std::tuple<slab_ptr, slab_ptr, std::vector<MaxIntervalAlt>> ;
+//        std::vector<slab_frame> slab_stack;
+//        slab_stack.emplace_back(root->up, root->down, initial_intervals);
 //
-//        assert(slab_heap[0].up != nullptr && slab_heap[0].down != nullptr);
-//
-//        slab_stack.emplace_back(slab_heap[0].up->up, slab_heap[0].up->down,
-//                                slab_heap[0].down->up, slab_heap[0].down->down,
-//                                slab_heap[0].up->top_y, slab_heap[0].down->bottom_y,
-//                                initial_intervals
-//        );
-//
-//
-//        auto update_weight = [](std::vector<MaxIntervalAlt> &max_intervals, std::vector<pt2_t *> merges,
-//                                std::vector<double> weights, double scale) {
+//        auto update_weight = [](std::vector<MaxIntervalAlt> &max_intervals, ,
+//                                 scale) {
 //            size_t j = 0;
 //            for (size_t i = 0; i < merges.size(); ++i) {
 //                while (j < max_intervals.size() && merges[i] != max_intervals[j].right()) {
@@ -969,7 +1040,7 @@ namespace pyscan {
 //            }
 //        };
 //
-//        auto merge_splits = [](std::vector<MaxIntervalAlt> const &max_intervals, std::vector<pt2_t *> const &splits) {
+//        auto merge_splits = [](std::vector<MaxIntervalAlt> const &max_intervals, std::vector<) {
 //            size_t j = 0;
 //            std::vector<MaxIntervalAlt> new_intervals;
 //            for (size_t i = 0; i < splits.size(); ++i) {

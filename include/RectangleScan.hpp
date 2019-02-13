@@ -66,6 +66,7 @@ namespace pyscan {
     };
 
 
+
     class Rectangle : public Range<2> {
         double u_x, u_y, l_x, l_y;
     public:
@@ -156,36 +157,139 @@ namespace pyscan {
     }
 
 
-    using merge_pair = std::tuple<double, double>;
-    using merge_list_t = std::vector<merge_pair>;
+    Subgrid max_subgrid_convex(Grid const &grid, double eps, discrepancy_func_t const &f);
+    Subgrid max_subgrid_linear(Grid const &grid, double a, double b);
+    Subgrid max_subgrid(Grid const &grid, discrepancy_func_t const &func);
+
+    //////////////////////////////////////////////////////////////
+    /////Max Labeled rectangle code///////////////////////////////
+    //////////////////////////////////////////////////////////////
+
+    std::tuple<Rectangle, double> max_rect_labeled(size_t r, double max_w, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func);
+
+    std::tuple<Rectangle, double> max_rect_labeled_scale(
+            size_t r,
+            double max_r,
+            double alpha,
+            const point_list_t &net,
+            const lpoint_list_t &red,
+            const lpoint_list_t &blue,
+            const discrepancy_func_t &f);
+
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //FAST RECTANGLE SCANNING CODE//////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    class EPoint {
+        /*
+         * We convert all of our points into Exact Points.
+         */
+    public:
+        EPoint() : coord{0, 0}, weight(0.0) {}
+
+        EPoint(size_t x, size_t y, double weight) : coord{x, y}, weight(weight) {}
+
+        double get_weight() const { return weight; }
+        void set_weight(double w) { weight = w; }
+        size_t get_x() const { return coord[0]; }
+        size_t get_y() const { return coord[1]; }
+
+        bool operator<(const EPoint &b) const {
+            //By default we sort by x value.
+            return this->get_x() < b.get_x();
+        }
+        size_t operator()(const size_t& i) const {
+            assert(i == 0 || i == 1);
+            return coord[i];
+        }
+
+        size_t& operator()(const size_t& i) {
+            assert(i == 0 || i == 1);
+            return coord[i];
+        }
+
+
+    private:
+        size_t coord[2];
+        double weight;
+    };
+
+    using ept_t = EPoint;
+    using epoint_list_t = std::vector<EPoint>;
+    using epoint_it_t = std::vector<EPoint>::iterator;
+
+    std::tuple<epoint_list_t, epoint_list_t> to_epoints(wpoint_list_t const& mpts, wpoint_list_t const& bpts);
+
+    class ERectangle {
+        size_t u_x, u_y, l_x, l_y;
+    public:
+
+        ERectangle(const ept_t& p1, const ept_t& p2, const ept_t& p3, const ept_t& p4) {
+            u_x = std::max({p1(0), p2(0), p3(0), p4(0)});
+            l_x = std::min({p1(0), p2(0), p3(0), p4(0)});
+            u_y = std::max({p1(1), p2(1), p3(1), p4(1)});
+            l_y = std::min({p1(1), p2(1), p3(1), p4(1)});
+        }
+
+        ERectangle() : u_x(0), u_y(0), l_x(0), l_y(0) {}
+
+        ERectangle(size_t ux, size_t uy, size_t lx, size_t ly) : u_x(ux), u_y(uy), l_x(lx), l_y(ly) {}
+
+        inline bool contains(const ept_t& p1) const {
+            return (u_x > p1(0) && p1(0) >= l_x && u_y > p1(1) && p1(1) >= l_y);
+        }
+
+        std::string toString() const {
+            std::stringstream ss;
+            ss << "ERectangle(" << u_x << ", " << u_y << ", " << l_x << ", " << l_y << ")";
+            return ss.str();
+        }
+        size_t lowX() const { return l_x; }
+        size_t upX() const { return u_x; }
+        size_t lowY() const { return l_y; }
+        size_t upY() const { return u_y; }
+    };
+
+
+    template<typename R>
+    double range_weight(const R& range, const epoint_list_t& pts) {
+        double weight = 0.0;
+        for (auto& pt: pts) {
+            if (range.contains(pt)) {
+                weight += pt.get_weight();
+            }
+        }
+        return weight;
+    }
 
     class Slab {
 
     public:
-        merge_list_t split_offsets;
+        std::vector<size_t> split_offsets;
 
-        merge_list_t m_merges;
-        merge_list_t b_merges;
+        epoint_list_t m_merges;
+        epoint_list_t b_merges;
 
-        double top_y;
-        double bottom_y;
+        size_t top_y;
+        size_t bottom_y;
 
         std::weak_ptr<Slab> parent;
         std::shared_ptr<Slab> up;
         std::shared_ptr<Slab> down;
 
         Slab(std::weak_ptr<Slab> p,
-             merge_list_t m_m,
-             merge_list_t b_m,
-             double ty,
-             double by);
+             epoint_list_t m_m,
+             epoint_list_t b_m,
+             size_t ty,
+             size_t by);
 
-        double get_mid() const {
-            double midpoint;
+        size_t get_mid() const {
+            size_t midpoint;
             if (down != nullptr) midpoint = down->top_y;
             else if (up != nullptr) midpoint = up->bottom_y;
             else {
-                midpoint = (top_y + bottom_y) / 2.0;
+                midpoint = (top_y + bottom_y) / 2;
             }
             return midpoint;
         }
@@ -194,8 +298,9 @@ namespace pyscan {
             return down != nullptr || up != nullptr;
         }
 
-        double measure_interval(double mxx, double mnx, double a, double b) const;
+        double measure_interval(size_t mxx, size_t mnx, double a, double b) const;
     };
+
 
     class SlabTree {
 
@@ -209,30 +314,21 @@ namespace pyscan {
             return root;
         }
 
-        slab_ptr get_containing(Rectangle const &rect) const;
-        SlabTree(std::vector<double> const& vert_decomp, wpoint_list_t ms, wpoint_list_t bs, double max_w);
-        double measure_rect(Rectangle const &rect, double a, double b) const;
-        //std::tuple<Rectangle, double> max_rectangle(double m_a, double b_b);
+        slab_ptr get_containing(ERectangle const &rect) const;
+        SlabTree(epoint_list_t ms, epoint_list_t bs, double max_w);
+        SlabTree(std::vector<size_t> const &vert_decomp, epoint_list_t ms, epoint_list_t bs, bool compression, double max_w);
+
+        //Useful for debuging the structure so you can define a non compressed version with fixed decomposition.
+        void init(std::vector<size_t> const& vert_decomp, bool compression, double max_w);
+
+        double measure_rect(ERectangle const &rect, double a, double b) const;
+        std::tuple<ERectangle, double> max_rectangle(double m_a, double b_b);
     private:
         slab_ptr root;
-        wpoint_list_t mpts;
-        wpoint_list_t bpts;
+        epoint_list_t mpts;
+        epoint_list_t bpts;
     };
 
-    std::tuple<Rectangle, double> max_rect_labeled(size_t r, double max_w, lpoint_list_t const& m_points, lpoint_list_t const& b_points, const discrepancy_func_t& func);
-
-    std::tuple<Rectangle, double> max_rect_labeled_scale(
-            size_t r,
-            double max_r,
-            double alpha,
-            const point_list_t &net,
-            const lpoint_list_t &red,
-            const lpoint_list_t &blue,
-            const discrepancy_func_t &f);
-
-    Subgrid max_subgrid_convex(Grid const &grid, double eps, discrepancy_func_t const &f);
-    Subgrid max_subgrid_linear(Grid const &grid, double a, double b);
-    Subgrid max_subgrid(Grid const &grid, discrepancy_func_t const &func);
 
     std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& m_points, const wpoint_list_t& b_points, double eps, double a, double b);
 

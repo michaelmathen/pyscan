@@ -41,5 +41,21 @@ namespace pyscantest {
 
 	auto removeLabels(pyscan::lpoint_list_t const& pts) -> pyscan::wpoint_list_t;
 
+	template<typename Arr>
+	Arr samplewr(Arr const& arr, size_t s_size)  {
+		if (arr.size() == 0) {
+			return {};
+		}
+		std::random_device rd;
+		std::default_random_engine generator(rd());
+		std::uniform_int_distribution<size_t> distribution (0, arr.size() - 1);
+
+		Arr out;
+		for (size_t i = 0; i < s_size; i++) {
+			out.emplace_back(arr[distribution(generator)]);
+		}
+		return out;
+	}
+
 }
 #endif //PYSCAN_UTILITIES_HPP

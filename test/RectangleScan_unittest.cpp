@@ -74,21 +74,29 @@ namespace {
     }
 
 
-    TEST(SlabTree, init) {
-
+    std::tuple<std::vector<size_t>, pyscan::epoint_list_t, pyscan::epoint_list_t> initialize_pts() {
         const static int n_size = 50;
         const static int s_size = 1000;
-        auto n_pts = pyscantest::randomPoints2(n_size);
-        auto m_pts = pyscantest::randomWPoints2(s_size);
-        auto b_pts = pyscantest::randomWPoints2(s_size);
+        auto m_wpts = pyscantest::randomWPoints2(s_size);
+        auto b_wpts = pyscantest::randomWPoints2(s_size);
 
-        std::vector<double> divisions;
+        auto [m_pts, b_pts] = pyscan::to_epoints(m_wpts, b_wpts);
+
+        auto n_pts = pyscantest::samplewr(b_pts, n_size);
+
+        std::vector<size_t> divisions;
         for (auto& p : n_pts) {
             divisions.emplace_back(p(1));
         }
         std::sort(divisions.begin(), divisions.end());
+        return std::make_tuple(divisions, m_pts, b_pts);
+    }
 
-        pyscan::SlabTree tree(divisions, m_pts, b_pts, 1.0);
+    TEST(SlabTree, init) {
+
+        auto [divisions, m_pts, b_pts] = initialize_pts();
+
+        pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
         auto root = tree.get_root();
 
         std::vector<decltype(root)> curr_stack;
@@ -101,19 +109,19 @@ namespace {
 
             curr_stack.pop_back();
             if (el->up != nullptr) {
-                ASSERT_FLOAT_EQ(el->top_y, el->up->top_y);
+                ASSERT_EQ(el->top_y, el->up->top_y);
                 ASSERT_LE(el->up->bottom_y, el->top_y);
                 ASSERT_LE(el->bottom_y, el->up->bottom_y);
                 curr_stack.push_back(el->up);
             }
             if (el->down != nullptr) {
-                ASSERT_FLOAT_EQ(el->bottom_y, el->down->bottom_y);
+                ASSERT_EQ(el->bottom_y, el->down->bottom_y);
                 ASSERT_LE(el->down->top_y, el->top_y);
                 ASSERT_LE(el->bottom_y, el->down->top_y);
                 curr_stack.push_back(el->down);
             }
             if (el->has_mid()) {
-                ASSERT_FLOAT_EQ(el->down->top_y, el->up->bottom_y);
+                ASSERT_EQ(el->down->top_y, el->up->bottom_y);
             }
             if (!el->up  && !el->down){
                 leaves.push_back(el);
@@ -129,7 +137,7 @@ namespace {
         divisions2.push_back(leaves.back()->top_y);
         ASSERT_EQ(divisions.size(), divisions2.size());
         for (size_t i = 0; i < divisions.size(); i++) {
-            ASSERT_FLOAT_EQ(divisions2[i], divisions[i]);
+            ASSERT_EQ(divisions2[i], divisions[i]);
         }
 
         size_t curr_i = 0;
@@ -141,22 +149,15 @@ namespace {
 
     }
 
+
     TEST(Slab, get_contains) {
-        const static int n_size = 50;
-        const static int s_size = 1000;
-        auto n_pts = pyscantest::randomPoints2(n_size);
-        auto m_pts = pyscantest::randomWPoints2(s_size);
-        auto b_pts = pyscantest::randomWPoints2(s_size);
+        auto [divisions, m_pts, b_pts] = initialize_pts();
 
-        std::vector<double> divisions;
-        for (auto& p : n_pts) {
-            divisions.emplace_back(p(1));
-        }
-        std::sort(divisions.begin(), divisions.end());
+        pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
+        size_t x_min = std::min(m_pts[0](0), m_pts[1](0));
+        size_t x_max = std::max(m_pts[0](0), m_pts[1](0));
 
-        pyscan::SlabTree tree(divisions, m_pts, b_pts, 1.0);
-
-        pyscan::Rectangle rect(.3, .4, .1, .2);
+        pyscan::ERectangle rect(x_max, divisions[5], x_min, divisions[2]);
         auto slab_containing = tree.get_containing(rect);
         ASSERT_GT(slab_containing->top_y, rect.upY());
         ASSERT_LE(slab_containing->bottom_y, rect.lowY());
@@ -167,44 +168,34 @@ namespace {
     }
 
     TEST(SlabTree, measure_interval) {
+        auto [divisions, m_pts, b_pts] = initialize_pts();
 
-        const static int n_size = 50;
-        const static int s_size = 1000;
-        auto n_pts = pyscantest::randomPoints2(n_size);
-        auto m_pts = pyscantest::randomWPoints2(s_size);
-        auto b_pts = pyscantest::randomWPoints2(s_size);
-        std::vector<double> divisions;
-        for (auto& p : n_pts) {
-            divisions.emplace_back(p(1));
-        }
-        std::sort(divisions.begin(), divisions.end());
-
-        pyscan::SlabTree tree(divisions, m_pts, b_pts, 1.0);
+        pyscan::SlabTree tree(divisions, m_pts, b_pts, true, 1.0);
         auto root = tree.get_root();
         if (!root || !root->down) {
             return;
         }
-        double val = root->measure_interval(.6, .2, 1.0, 1.0);
-        pyscan::Rectangle rect1(.6, root->top_y, .2, root->bottom_y);
+        double val = root->measure_interval(20, 4, 1.0, 1.0);
+        pyscan::ERectangle rect1(.6, root->top_y, .2, root->bottom_y);
         ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect1, m_pts) + pyscan::range_weight(rect1, b_pts));
 
-        val = root->down->measure_interval(.6, .2, 1.0, 1.0);
+        val = root->down->measure_interval(20, 4, 1.0, 1.0);
         ASSERT_GE(root->down->top_y, root->down->bottom_y);
-        pyscan::Rectangle rect2(.6, root->down->top_y, .2, root->down->bottom_y);
+        pyscan::ERectangle rect2(.6, root->down->top_y, .2, root->down->bottom_y);
         ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect2, m_pts) + pyscan::range_weight(rect2, b_pts));
 
-        val = root->up->measure_interval(.6, .2, 1.0, 1.0);
+        val = root->up->measure_interval(20, 4, 1.0, 1.0);
         ASSERT_GE(root->up->top_y, root->up->bottom_y);
-        pyscan::Rectangle rect3(.6, root->up->top_y, .2, root->up->bottom_y);
+        pyscan::ERectangle rect3(.6, root->up->top_y, .2, root->up->bottom_y);
         ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect3, m_pts) + pyscan::range_weight(rect3, b_pts));
 
 
         while (root->up != nullptr) {
             root = root->up;
         }
-        val = root->measure_interval(.6, .2, 1.0, 1.0);
+        val = root->measure_interval(20, 4, 1.0, 1.0);
         ASSERT_GE(root->top_y, root->bottom_y);
-        pyscan::Rectangle rect4(.6, root->top_y, .2, root->bottom_y);
+        pyscan::ERectangle rect4(.6, root->top_y, .2, root->bottom_y);
         ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect4, m_pts) + pyscan::range_weight(rect4, b_pts));
 
     }
@@ -213,25 +204,26 @@ namespace {
 
         const static int n_size = 20;
         const static int s_size = 1000;
-        auto n_pts = pyscantest::randomPoints2(n_size);
-        auto m_pts = pyscantest::randomWPoints2(s_size);
-        auto b_pts = pyscantest::randomWPoints2(s_size);
-        std::vector<double> divisions;
-        divisions.reserve(n_pts.size());
+        auto m_wpts = pyscantest::randomWPoints2(s_size);
+        auto b_wpts = pyscantest::randomWPoints2(s_size);
+
+        auto [m_pts, b_pts] = pyscan::to_epoints(m_wpts, b_wpts);
+
+        auto n_pts = pyscantest::samplewr(b_pts, n_size);
+
+        std::vector<size_t> divisions;
         for (auto& p : n_pts) {
             divisions.emplace_back(p(1));
         }
         std::sort(divisions.begin(), divisions.end());
 
-        pyscan::SlabTree tree(divisions, m_pts, b_pts, 1.0);
+        pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
         for (auto it1 = n_pts.begin(); it1 != n_pts.end() - 3; ++it1) {
             for (auto it2 = it1 + 1; it2 != n_pts.end() - 3; ++it2) {
                 for (auto it3 = it2 + 1; it3 != n_pts.end() - 2; ++it3) {
                     for (auto it4 = it3 + 1; it4 != n_pts.end() - 1; ++it4) {
-                        pyscan::Rectangle rect(*it1, *it2, *it3, *it4);
+                        pyscan::ERectangle rect(*it1, *it2, *it3, *it4);
                         double val = tree.measure_rect(rect, 1.0, 1.0);
-                        //auto curr_root = tree.get_root();
-                        //std::cout << "Cur Root "<<  curr_root->top_y << " " << rect.upY() <<  " " << rect.lowY() << " " << curr_root->bottom_y << std::endl;
                         ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect, m_pts) + pyscan::range_weight(rect, b_pts));
                     }
                 }
