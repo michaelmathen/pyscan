@@ -629,7 +629,7 @@ namespace pyscan {
         epoint_list_t ebpts(bpts.size());
 
         for (size_t i = 0; i < mpts.size() + bpts.size(); i++) {
-            auto tmp = access(empts, ebpts, ixx[i]);
+            auto& tmp = access(empts, ebpts, ixx[i]);
             tmp(0) = i;
             tmp.set_weight(access(mpts, bpts, ixx[i]).get_weight());
             access(empts, ebpts, ixy[i])(1) = i;
@@ -1043,8 +1043,12 @@ namespace pyscan {
 
     std::tuple<ERectangle, double> SlabTree::max_rectangle(double m_a, double b_b) {
         //Initialize with list of maximum intervals.
+        ERectangle max_rect;
         auto &curr_splits = root->split_offsets;
-
+        std::cout << curr_splits << std::endl;
+        if (curr_splits.empty()) {
+            return std::make_tuple(max_rect, 0.0);
+        }
         std::vector<MaxIntervalAlt> initial_intervals;
         initial_intervals.reserve(curr_splits.size() - 1);
 
@@ -1070,7 +1074,6 @@ namespace pyscan {
 
 
         double max_v = 0;
-        ERectangle max_rect;
         while (!slab_stack.empty()) {
             auto [top_top, top_bottom, bottom_top, bottom_bottom, p_up, p_low, max_intervals] = slab_stack.back();
             slab_stack.pop_back();

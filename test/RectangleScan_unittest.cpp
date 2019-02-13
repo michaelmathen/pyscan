@@ -231,6 +231,39 @@ namespace {
         }
     }
 
+    TEST(SlabTree, split_offsets) {
+        /*
+         * Test that the split offsets were created correctly in the SlabTree.
+         */
+        const static int n_size = 20;
+        const static int s_size = 1000;
+        auto m_wpts = pyscantest::randomWPoints2(s_size);
+        auto b_wpts = pyscantest::randomWPoints2(s_size);
+
+        auto [m_pts, b_pts] = pyscan::to_epoints(m_wpts, b_wpts);
+
+        auto n_pts = pyscantest::samplewr(b_pts, n_size);
+
+        std::vector<size_t> divisions;
+        for (auto& p : n_pts) {
+            divisions.emplace_back(p(1));
+        }
+        std::sort(divisions.begin(), divisions.end());
+
+        pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
+        for (auto it1 = n_pts.begin(); it1 != n_pts.end() - 3; ++it1) {
+            for (auto it2 = it1 + 1; it2 != n_pts.end() - 3; ++it2) {
+                for (auto it3 = it2 + 1; it3 != n_pts.end() - 2; ++it3) {
+                    for (auto it4 = it3 + 1; it4 != n_pts.end() - 1; ++it4) {
+                        pyscan::ERectangle rect(*it1, *it2, *it3, *it4);
+                        double val = tree.measure_rect(rect, 1.0, 1.0);
+                        ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect, m_pts) + pyscan::range_weight(rect, b_pts));
+                    }
+                }
+            }
+        }
+    }
+
     TEST(SlabTree, max_rectangle) {
 
         const static int n_size = 20;
@@ -251,7 +284,8 @@ namespace {
         pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
 
         auto [rect, val] = tree.max_rectangle(1.0, -1.0);
-
+        std::cout << val << std::endl;
+        std::cout << rect.toString() << std::endl;
         ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect, m_pts) - pyscan::range_weight(rect, b_pts));
 
 
