@@ -705,15 +705,6 @@ namespace pyscan {
 
      };
 
-    void update_weights(std::vector<MaxIntervalAlt>& max_intervals, epoint_list_t const& merges) {
-        size_t j = 0;
-        for (size_t i = 0; i < merges.size(); ++i) {
-            for (; j < max_intervals.size() && merges[i].get_x() != max_intervals[j].right(); j++);
-            max_intervals[i] += MaxIntervalAlt(merges[j].get_x(), merges[j].get_weight());
-        }
-    }
-
-
      epoint_list_t compress(epoint_it_t b, epoint_it_t e, double m_w) {
         /*
          * Takes a vector of weighted points and constructed a smaller set of weighted points equally spaced with
@@ -945,7 +936,7 @@ namespace pyscan {
         }
     }
 
-    SlabTree::slab_ptr SlabTree::get_containing(ERectangle const &rect) const {
+    slab_ptr SlabTree::get_containing(ERectangle const &rect) const {
         assert(rect.upY() > rect.lowY());
         auto curr_root = root;
         while (curr_root != nullptr) {
@@ -1014,132 +1005,119 @@ namespace pyscan {
     }
 
 
-//    std::tuple<Rectangle, double> SlabTree::max_rectangle(double m_a, double b_b) {
-//        //Initialize with list of maximum intervals.
-//        auto &curr_splits = root->split_offsets;
-//
-//        std::vector<MaxIntervalAlt> initial_intervals;
-//        initial_intervals.reserve(curr_splits.size() - 1);
-//
-//        for (size_t i = 0; i < curr_splits.size() - 1; ++i) {
-//            initial_intervals.emplace_back(curr_splits[i], curr_splits[i + 1]);
-//        }
-//
-//        using slab_frame = std::tuple<slab_ptr, slab_ptr, std::vector<MaxIntervalAlt>> ;
-//        std::vector<slab_frame> slab_stack;
-//        slab_stack.emplace_back(root->up, root->down, initial_intervals);
-//
-//        auto update_weight = [](std::vector<MaxIntervalAlt> &max_intervals, ,
-//                                 scale) {
-//            size_t j = 0;
-//            for (size_t i = 0; i < merges.size(); ++i) {
-//                while (j < max_intervals.size() && merges[i] != max_intervals[j].right()) {
-//                    j++;
-//                }
-//                max_intervals[j] += MaxIntervalAlt(merges[i], scale * weights[i]);
-//            }
-//        };
-//
-//        auto merge_splits = [](std::vector<MaxIntervalAlt> const &max_intervals, std::vector<) {
-//            size_t j = 0;
-//            std::vector<MaxIntervalAlt> new_intervals;
-//            for (size_t i = 0; i < splits.size(); ++i) {
-//                while (j < max_intervals.size() - 1 && splits[i] != max_intervals[j].right()) {
-//                    new_intervals.emplace_back(max_intervals[j]);
-//                    j++;
-//                }
-//                new_intervals.emplace_back(max_intervals[j]);
-//                new_intervals[j] += max_intervals[j + 1];
-//                j++;
-//            }
-//            return new_intervals;
-//        };
-//
-//        auto update_and_merge = [&](Slab *top, Slab *bottom, std::vector<MaxIntervalAlt> &m1) {
-//            auto m2 = m1;
-//            if (bottom != nullptr) { //if bottom is nullptr then we merge top or don't merge top.
-//                update_weight(m1, bottom->m_merges, bottom->m_weights, m_a);
-//                update_weight(m1, bottom->b_merges, bottom->b_weights, b_b);
-//                m1 = merge_splits(m1, bottom->split_offsets);
-//
-//                m2 = merge_splits(m2, bottom->m_merges);
-//                m2 = merge_splits(m2, bottom->b_merges);
-//            }
-//            if (top != nullptr) {
-//                m1 = merge_splits(m1, top->m_merges);
-//                m1 = merge_splits(m1, top->b_merges);
-//                m2 = merge_splits(m2, top->split_offsets);
-//            }
-//            return m2;
-//        };
-//        auto get_top = [](Slab *p) {
-//            return p == nullptr ? nullptr : p->up;
-//        };
-//        auto get_bottom = [](Slab *p) {
-//            return p == nullptr ? nullptr : p->down;
-//        };
-//
-//        auto get_mid = [](Slab *top, Slab *bottom) {
-//            //This assumes that both bottom and top cannot be null.
-//            return bottom == nullptr ? top->bottom_y : bottom->top_y;
-//        };
-//
-//        double max_v = 0;
-//        Rectangle max_rect;
-//        while (!slab_stack.empty()) {
-//            auto[top_top, top_bottom, bottom_top, bottom_bottom, p_up, p_low, max_intervals] = slab_stack.back();
-//            slab_stack.pop_back();
-//            if (max_intervals.size() > 1) {
-//                // m4 doesn't have any merges
-//                // m2 is bottom_top merged.
-//                // m3 is top_bottom merged.
-//                // max_intervals is top_bottom and bottom_top merged.
-//                assert(!(top_top == nullptr &&
-//                         top_bottom == nullptr &&
-//                         bottom_top == nullptr &&
-//                         bottom_bottom == nullptr));
-//
-//                if (!(top_top == nullptr && top_bottom == nullptr)) {
-//                    auto m2 = update_and_merge(top_top, top_bottom, max_intervals);
-//                    if (!(bottom_bottom == nullptr && bottom_top == nullptr)) {
-//                        auto m4 = update_and_merge(bottom_bottom, bottom_top, m2);
-//                        slab_stack.emplace_back(get_top(top_bottom), get_bottom(top_bottom),
-//                                                get_top(bottom_top), get_bottom(bottom_top),
-//                                                get_mid(top_top, top_bottom), get_mid(bottom_top, bottom_bottom), m4);
-//                    }
-//                    slab_stack.emplace_back(get_top(top_bottom), get_bottom(top_bottom),
-//                                            get_top(bottom_bottom), get_bottom(bottom_bottom),
-//                                            get_mid(top_top, top_bottom), p_low, m2);
-//                }
-//                if (!(bottom_bottom == nullptr && bottom_top == nullptr)) {
-//                    auto m3 = update_and_merge(bottom_bottom, bottom_top, max_intervals);
-//                    slab_stack.emplace_back(get_top(top_top), get_bottom(top_top),
-//                                            get_top(bottom_top), get_bottom(bottom_top),
-//                                            p_up, get_mid(bottom_top, bottom_bottom), m3);
-//                }
-//                slab_stack.emplace_back(get_top(top_top), get_bottom(top_top),
-//                                        get_top(bottom_bottom), get_bottom(bottom_bottom),
-//                                        p_up, p_low, max_intervals);
-//
-//            } else {
-//                if (max_v < max_intervals[0].get_max().get_v()) {
-//                    double lx = max_intervals[0].get_max().get_l()->operator()(0);
-//                    double rx = max_intervals[0].get_max().get_r()->operator()(0);
-//                    double uy = (*p_up)(1);
-//                    double ly = (*p_low)(1);
-//                    max_rect = Rectangle(rx, uy, lx, ly);
-//                    max_v = max_intervals[0].get_max().get_v();
-//                }
-//            }
-//        }
-//        return std::make_tuple(max_rect, max_v);
-//
-//    }
+    void update_weights(std::vector<MaxIntervalAlt>& max_intervals, epoint_list_t const& merges, double s) {
+        size_t j = 0;
+        for (size_t i = 0; i < merges.size(); ++i) {
+            for (; j < max_intervals.size() && merges[i].get_x() != max_intervals[j].right(); j++);
+            max_intervals[i] += MaxIntervalAlt(merges[j].get_x(), merges[j].get_weight() * s);
+        }
+    }
+
+    std::vector<MaxIntervalAlt> merge_splits(std::vector<MaxIntervalAlt> const &max_intervals, std::vector<size_t> const& splits) {
+        size_t j = 0;
+        std::vector<MaxIntervalAlt> new_intervals;
+        for (size_t i = 0; i < splits.size(); ++i) {
+            while (j < max_intervals.size() - 1 && splits[i] != max_intervals[j].right()) {
+                new_intervals.emplace_back(max_intervals[j]);
+                j++;
+            }
+            new_intervals.emplace_back(max_intervals[j]);
+            new_intervals[j] += max_intervals[j + 1];
+            j++;
+        }
+        return new_intervals;
+    }
+
+    std::vector<MaxIntervalAlt> update_and_merge(slab_ptr top, slab_ptr bottom, std::vector<MaxIntervalAlt> const& m1, double m_a, double b_b) {
+        auto m2 = m1;
+        if (bottom != nullptr) { //if bottom is nullptr then we merge top or don't merge top.
+            update_weights(m2, bottom->m_merges, m_a);
+            update_weights(m2, bottom->b_merges, b_b);
+            m2 = merge_splits(m2, bottom->split_offsets);
+        }
+        if (top != nullptr) {
+            m2 = merge_splits(m2, top->split_offsets);
+        }
+        return m2;
+    }
+
+    std::tuple<ERectangle, double> SlabTree::max_rectangle(double m_a, double b_b) {
+        //Initialize with list of maximum intervals.
+        auto &curr_splits = root->split_offsets;
+
+        std::vector<MaxIntervalAlt> initial_intervals;
+        initial_intervals.reserve(curr_splits.size() - 1);
+
+        for (size_t i = 0; i < curr_splits.size() - 1; ++i) {
+            initial_intervals.emplace_back(curr_splits[i], curr_splits[i + 1]);
+        }
+
+        auto get_top = [](slab_ptr p) {
+            return p == nullptr ? nullptr : p->up;
+        };
+        auto get_bottom = [](slab_ptr p) {
+            return p == nullptr ? nullptr : p->down;
+        };
+
+        auto get_mid = [](slab_ptr top, slab_ptr bottom) {
+            //This assumes that both bottom and top cannot be null.
+            return bottom == nullptr ? top->bottom_y : bottom->top_y;
+        };
+
+        using slab_frame = std::tuple<slab_ptr, slab_ptr, slab_ptr, slab_ptr, size_t, size_t, std::vector<MaxIntervalAlt>> ;
+        std::vector<slab_frame> slab_stack;
+        slab_stack.emplace_back(get_top(root->up), get_bottom(root->up), get_top(root->down), get_bottom(root->down), root->top_y, root->bottom_y, initial_intervals);
 
 
+        double max_v = 0;
+        ERectangle max_rect;
+        while (!slab_stack.empty()) {
+            auto [top_top, top_bottom, bottom_top, bottom_bottom, p_up, p_low, max_intervals] = slab_stack.back();
+            slab_stack.pop_back();
+            if (max_intervals.size() > 1) {
+                // m4 doesn't have any merges
+                // m2 is bottom_top merged.
+                // m3 is top_bottom merged.
+                // max_intervals is top_bottom and bottom_top merged.
+                assert(!(top_top == nullptr &&
+                         top_bottom == nullptr &&
+                         bottom_top == nullptr &&
+                         bottom_bottom == nullptr));
 
-//    std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& pts, double eps) {
-//
-//        return tree.max_rectangle(a, b);
-//    }
+                if (!(top_top == nullptr && top_bottom == nullptr)) {
+                    auto m2 = update_and_merge(top_top, top_bottom, max_intervals, m_a, b_b);
+                    if (!(bottom_bottom == nullptr && bottom_top == nullptr)) {
+                        auto m4 = update_and_merge(bottom_bottom, bottom_top, m2, m_a, b_b);
+                        slab_stack.emplace_back(get_top(top_bottom), get_bottom(top_bottom),
+                                                get_top(bottom_top), get_bottom(bottom_top),
+                                                get_mid(top_top, top_bottom), get_mid(bottom_top, bottom_bottom), m4);
+                    }
+                    slab_stack.emplace_back(get_top(top_bottom), get_bottom(top_bottom),
+                                            get_top(bottom_bottom), get_bottom(bottom_bottom),
+                                            get_mid(top_top, top_bottom), p_low, m2);
+                }
+                if (!(bottom_bottom == nullptr && bottom_top == nullptr)) {
+                    auto m3 = update_and_merge(bottom_bottom, bottom_top, max_intervals, m_a, b_b);
+                    slab_stack.emplace_back(get_top(top_top), get_bottom(top_top),
+                                            get_top(bottom_top), get_bottom(bottom_top),
+                                            p_up, get_mid(bottom_top, bottom_bottom), m3);
+                }
+                slab_stack.emplace_back(get_top(top_top), get_bottom(top_top),
+                                        get_top(bottom_bottom), get_bottom(bottom_bottom),
+                                        p_up, p_low, max_intervals);
+
+            } else {
+                if (max_v < max_intervals[0].get_max().get_v()) {
+                    size_t lx = max_intervals[0].get_max().get_l();
+                    size_t rx = max_intervals[0].get_max().get_r();
+                    max_rect = ERectangle(rx, p_up, lx, p_low);
+                    max_v = max_intervals[0].get_max().get_v();
+                }
+            }
+        }
+        return std::make_tuple(max_rect, max_v);
+
+    }
+
+
 }

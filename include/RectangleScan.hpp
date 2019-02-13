@@ -301,14 +301,13 @@ namespace pyscan {
         double measure_interval(size_t mxx, size_t mnx, double a, double b) const;
     };
 
+    using slab_ptr = std::shared_ptr<Slab>;
+    using wslab_ptr = std::weak_ptr<Slab>;
+    using slab_it_t = std::vector<Slab>::const_iterator;
 
     class SlabTree {
 
     public:
-        using slab_ptr = std::shared_ptr<Slab>;
-        using wslab_ptr = std::weak_ptr<Slab>;
-        using slab_it_t = std::vector<Slab>::const_iterator;
-
 
         slab_ptr get_root() {
             return root;

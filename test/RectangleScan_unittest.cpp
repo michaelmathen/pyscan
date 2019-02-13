@@ -229,10 +229,31 @@ namespace {
                 }
             }
         }
+    }
 
+    TEST(SlabTree, max_rectangle) {
+
+        const static int n_size = 20;
+        const static int s_size = 1000;
+        auto m_wpts = pyscantest::randomWPoints2(s_size);
+        auto b_wpts = pyscantest::randomWPoints2(s_size);
+
+        auto [m_pts, b_pts] = pyscan::to_epoints(m_wpts, b_wpts);
+
+        auto n_pts = pyscantest::samplewr(b_pts, n_size);
+
+        std::vector<size_t> divisions;
+        for (auto& p : n_pts) {
+            divisions.emplace_back(p(1));
+        }
+        std::sort(divisions.begin(), divisions.end());
+
+        pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
+
+        auto [rect, val] = tree.max_rectangle(1.0, -1.0);
+
+        ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect, m_pts) - pyscan::range_weight(rect, b_pts));
 
 
     }
-
-
 }
