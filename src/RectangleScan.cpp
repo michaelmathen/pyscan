@@ -914,12 +914,16 @@ namespace pyscan {
                        b_children.begin(),
                        b_children.end(),
                        std::back_inserter(child->split_offsets));
+//            std::cout << pre_length << std::endl;
+//            std::cout << m_children.size() << " "<< b_children.size() << " "<<  child->split_offsets.size() << std::endl;
+
 
             // Now merge into the already existing split offsets.
             std::inplace_merge(child->split_offsets.begin(),
                     child->split_offsets.begin() + pre_length,
                     child->split_offsets.end());
             auto end_it = std::unique(child->split_offsets.begin(), child->split_offsets.end());
+
             child->split_offsets.erase(end_it, child->split_offsets.end());
 
             //Now merge into the parent.
@@ -931,7 +935,10 @@ namespace pyscan {
                           std::back_inserter(p->split_offsets));
                 std::inplace_merge(p->split_offsets.begin(), p->split_offsets.begin() + offset, p->split_offsets.end());
                 auto parent_it = std::unique(p->split_offsets.begin(), p->split_offsets.end());
+                //std::cout << p->split_offsets.end() - parent_it << " " << p->split_offsets.size() << std::endl;
                 p->split_offsets.erase(parent_it, p->split_offsets.end());
+                //std::cout << p->split_offsets.size() << std::endl;
+                roots.emplace_back(p);
             }
         }
     }
@@ -1045,7 +1052,7 @@ namespace pyscan {
         //Initialize with list of maximum intervals.
         ERectangle max_rect;
         auto &curr_splits = root->split_offsets;
-        std::cout << curr_splits << std::endl;
+        //std::cout << curr_splits << std::endl;
         if (curr_splits.empty()) {
             return std::make_tuple(max_rect, 0.0);
         }

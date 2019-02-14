@@ -176,17 +176,17 @@ namespace {
             return;
         }
         double val = root->measure_interval(20, 4, 1.0, 1.0);
-        pyscan::ERectangle rect1(.6, root->top_y, .2, root->bottom_y);
+        pyscan::ERectangle rect1(20, root->top_y, 4, root->bottom_y);
         ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect1, m_pts) + pyscan::range_weight(rect1, b_pts));
 
         val = root->down->measure_interval(20, 4, 1.0, 1.0);
         ASSERT_GE(root->down->top_y, root->down->bottom_y);
-        pyscan::ERectangle rect2(.6, root->down->top_y, .2, root->down->bottom_y);
+        pyscan::ERectangle rect2(20, root->down->top_y, 4, root->down->bottom_y);
         ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect2, m_pts) + pyscan::range_weight(rect2, b_pts));
 
         val = root->up->measure_interval(20, 4, 1.0, 1.0);
         ASSERT_GE(root->up->top_y, root->up->bottom_y);
-        pyscan::ERectangle rect3(.6, root->up->top_y, .2, root->up->bottom_y);
+        pyscan::ERectangle rect3(20, root->up->top_y, 4, root->up->bottom_y);
         ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect3, m_pts) + pyscan::range_weight(rect3, b_pts));
 
 
@@ -195,7 +195,7 @@ namespace {
         }
         val = root->measure_interval(20, 4, 1.0, 1.0);
         ASSERT_GE(root->top_y, root->bottom_y);
-        pyscan::ERectangle rect4(.6, root->top_y, .2, root->bottom_y);
+        pyscan::ERectangle rect4(20, root->top_y, 4, root->bottom_y);
         ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect4, m_pts) + pyscan::range_weight(rect4, b_pts));
 
     }
@@ -234,6 +234,7 @@ namespace {
     TEST(SlabTree, split_offsets) {
         /*
          * Test that the split offsets were created correctly in the SlabTree.
+         * TODO
          */
         const static int n_size = 20;
         const static int s_size = 1000;
@@ -251,15 +252,27 @@ namespace {
         std::sort(divisions.begin(), divisions.end());
 
         pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
-        for (auto it1 = n_pts.begin(); it1 != n_pts.end() - 3; ++it1) {
-            for (auto it2 = it1 + 1; it2 != n_pts.end() - 3; ++it2) {
-                for (auto it3 = it2 + 1; it3 != n_pts.end() - 2; ++it3) {
-                    for (auto it4 = it3 + 1; it4 != n_pts.end() - 1; ++it4) {
-                        pyscan::ERectangle rect(*it1, *it2, *it3, *it4);
-                        double val = tree.measure_rect(rect, 1.0, 1.0);
-                        ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect, m_pts) + pyscan::range_weight(rect, b_pts));
-                    }
-                }
+
+        auto root = tree.get_root();
+        std::vector<decltype(root)> curr_stack;
+        curr_stack.push_back(root);
+        std::vector<decltype(root)> leaves;
+        while (!curr_stack.empty()) {
+            auto el = curr_stack.back();
+            ASSERT_TRUE(std::is_sorted(el->split_offsets.begin(), el->split_offsets.end()));
+            curr_stack.pop_back();
+            if (el->up != nullptr) {
+                curr_stack.push_back(el->up);
+                ASSERT_TRUE(includes(el->split_offsets.begin(), el->split_offsets.end(),
+                        el->up->split_offsets.begin(), el->up->split_offsets.end()));
+            }
+            if (el->down != nullptr) {
+                curr_stack.push_back(el->down);
+                ASSERT_TRUE(includes(el->split_offsets.begin(), el->split_offsets.end(),
+                                     el->down->split_offsets.begin(), el->down->split_offsets.end()));
+            }
+            if (!el->up  && !el->down){
+                leaves.push_back(el);
             }
         }
     }
