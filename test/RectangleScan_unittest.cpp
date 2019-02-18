@@ -98,7 +98,6 @@ namespace {
 
         pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
         auto root = tree.get_root();
-
         std::vector<decltype(root)> curr_stack;
         curr_stack.push_back(root);
         std::vector<decltype(root)> leaves;
@@ -259,17 +258,17 @@ namespace {
         std::vector<decltype(root)> leaves;
         while (!curr_stack.empty()) {
             auto el = curr_stack.back();
-            ASSERT_TRUE(std::is_sorted(el->split_offsets.begin(), el->split_offsets.end()));
+            ASSERT_TRUE(std::is_sorted(el->global_split_offset.begin(), el->global_split_offset.end()));
             curr_stack.pop_back();
             if (el->up != nullptr) {
                 curr_stack.push_back(el->up);
-                ASSERT_TRUE(includes(el->split_offsets.begin(), el->split_offsets.end(),
-                        el->up->split_offsets.begin(), el->up->split_offsets.end()));
+                ASSERT_TRUE(includes(el->global_split_offset.begin(), el->global_split_offset.end(),
+                        el->up->global_split_offset.begin(), el->up->global_split_offset.end()));
             }
             if (el->down != nullptr) {
                 curr_stack.push_back(el->down);
-                ASSERT_TRUE(includes(el->split_offsets.begin(), el->split_offsets.end(),
-                                     el->down->split_offsets.begin(), el->down->split_offsets.end()));
+                ASSERT_TRUE(includes(el->global_split_offset.begin(), el->global_split_offset.end(),
+                                     el->down->global_split_offset.begin(), el->down->global_split_offset.end()));
             }
             if (!el->up  && !el->down){
                 leaves.push_back(el);
@@ -280,7 +279,7 @@ namespace {
     TEST(SlabTree, max_rectangle) {
 
         const static int n_size = 20;
-        const static int s_size = 1000;
+        const static int s_size = 20;
         auto m_wpts = pyscantest::randomWPoints2(s_size);
         auto b_wpts = pyscantest::randomWPoints2(s_size);
 
@@ -293,14 +292,76 @@ namespace {
             divisions.emplace_back(p(1));
         }
         std::sort(divisions.begin(), divisions.end());
-
+        auto new_end = std::unique(divisions.begin(), divisions.end());
+        divisions.erase(new_end, divisions.end());
+        using pyscan::operator<<;
+        std::cout << divisions << std::endl;
         pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
 
         auto [rect, val] = tree.max_rectangle(1.0, -1.0);
         std::cout << val << std::endl;
         std::cout << rect.toString() << std::endl;
         ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect, m_pts) - pyscan::range_weight(rect, b_pts));
+    }
+
+    using mx_list_t = std::vector<pyscan::MaxIntervalAlt>;
+
+    void interval_eq(mx_list_t a1, mx_list_t a2) {
+        ASSERT_EQ(a1.size(), a2.size());
+        for (size_t i = 0; i < a1.size(); i++) {
+            ASSERT_EQ(a1[i].left(), a2[i].left());
+            ASSERT_EQ(a1[i].right(), a2[i].right());
+            ASSERT_FLOAT_EQ(a1[i].get_max().get_v(), a2[i].get_max().get_v());
+        }
+    }
+
+    TEST(MaxIntervalAlt, merges) {
+        mx_list_t intervals = {pyscan::MaxIntervalAlt(pyscan::Interval(7, 7, 1), pyscan::Interval(7, 7, 1), pyscan::Interval(7, 7, 1)),
+                                                         pyscan::MaxIntervalAlt(pyscan::Interval(9, 9, -1), pyscan::Interval(9, 9, -1), pyscan::Interval(9, 9, -1)),
+                                                         pyscan::MaxIntervalAlt(pyscan::Interval(12, 12, 1), pyscan::Interval(12, 12, 1), pyscan::Interval(12, 12, 1)),
+                                                         pyscan::MaxIntervalAlt(pyscan::Interval(17, 19, 2), pyscan::Interval(17, 19, 2), pyscan::Interval(17, 19, 2)),
+                                                         pyscan::MaxIntervalAlt(pyscan::Interval(36, 36, -1), pyscan::Interval(36, 36, -1), pyscan::Interval(36, 36, -1)),
+                                                         pyscan::MaxIntervalAlt(pyscan::Interval(38, 38, -1), pyscan::Interval(38, 38, -1), pyscan::Interval(38, 38, -1))};
+        std::vector<size_t> s1 = {};
+        std::vector<size_t> s2 = {2, 10};
+        std::vector<size_t> s3 = {8, 10};
+        std::vector<size_t> s4 = {5, 8, 10, 39};
+        std::vector<size_t> s5 = {5, 8, 10, 37};
 
 
+        auto i1 = pyscan::reduce_merges(intervals, s1);
+        std::cout << i1 << std::endl;
+        auto i2 = pyscan::reduce_merges(intervals, s2);
+        auto i3 = pyscan::reduce_merges(intervals, s3);
+        auto i4 = pyscan::reduce_merges(intervals, s4);
+        auto i5 = pyscan::reduce_merges(intervals, s5);
+
+        mx_list_t  i1_ac = {pyscan::MaxIntervalAlt(pyscan::Interval(7, 7, 1), pyscan::Interval(12, 19, 3), pyscan::Interval(12, 38, 1))};
+        mx_list_t  i2_ac = {pyscan::MaxIntervalAlt(pyscan::Interval(7, 7, 1), pyscan::Interval(7, 7, 1), pyscan::Interval(7, 9, 0)),
+                            pyscan::MaxIntervalAlt(pyscan::Interval(12, 19, 3), pyscan::Interval(12, 19, 3), pyscan::Interval(12, 38, 1))};
+        mx_list_t  i3_ac = {pyscan::MaxIntervalAlt(pyscan::Interval(7, 7, 1), pyscan::Interval(7, 7, 1), pyscan::Interval(7, 7, 1)),
+                            pyscan::MaxIntervalAlt(pyscan::Interval(9, 9, -1), pyscan::Interval(9, 9, -1), pyscan::Interval(9, 9, -1)),
+                            pyscan::MaxIntervalAlt(pyscan::Interval(12, 19, 3), pyscan::Interval(12, 19, 3), pyscan::Interval(12, 38, 1))};
+
+        mx_list_t  i4_ac = {pyscan::MaxIntervalAlt(pyscan::Interval(7, 7, 1), pyscan::Interval(7, 7, 1), pyscan::Interval(7, 7, 1)),
+                            pyscan::MaxIntervalAlt(pyscan::Interval(9, 9, -1), pyscan::Interval(9, 9, -1), pyscan::Interval(9, 9, -1)),
+                            pyscan::MaxIntervalAlt(pyscan::Interval(12, 19, 3), pyscan::Interval(12, 19, 3), pyscan::Interval(12, 38, 1))};
+        mx_list_t  i5_ac = {pyscan::MaxIntervalAlt(pyscan::Interval(7, 7, 1), pyscan::Interval(7, 7, 1), pyscan::Interval(7, 7, 1)),
+                            pyscan::MaxIntervalAlt(pyscan::Interval(9, 9, -1), pyscan::Interval(9, 9, -1), pyscan::Interval(9, 9, -1)),
+                            pyscan::MaxIntervalAlt(pyscan::Interval(12, 19, 3), pyscan::Interval(12, 19, 3), pyscan::Interval(12, 36, 2)),
+                            pyscan::MaxIntervalAlt(pyscan::Interval(38, 38, -1), pyscan::Interval(38, 38, -1), pyscan::Interval(38, 38, -1))};
+//        mx_list_t  i3_ac = {pyscan::MaxIntervalAlt(pyscan::Interval(7, 7, 1), pyscan::Interval(12, 19, 3), pyscan::Interval(12, 38, 1))};
+//        mx_list_t  i4_ac = {pyscan::MaxIntervalAlt(pyscan::Interval(7, 7, 1), pyscan::Interval(12, 19, 3), pyscan::Interval(12, 38, 1))};
+
+
+        interval_eq(i1, i1_ac);
+        std::cout << i2 << " || " <<  i2_ac << std::endl;
+        interval_eq(i2, i2_ac);
+        std::cout << i3 << " || " <<  i3_ac << std::endl;
+        interval_eq(i3, i3_ac);
+        std::cout << i4 << " || " <<  i4_ac << std::endl;
+        interval_eq(i4, i4_ac);
+        std::cout << i5 << " || " <<  i5_ac << std::endl;
+        interval_eq(i5, i5_ac);
     }
 }

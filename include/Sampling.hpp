@@ -17,7 +17,6 @@ namespace pyscan {
                            URNG &&g,
                            const std::function<double(decltype(*arr.begin()))> &wf,
                            size_t sample_size) -> Vect {
-        std::uniform_int_distribution<size_t> d(0, arr.size() - 1);
         using el_t = typename Vect::value_type;
         using node_t = std::tuple<double, el_t>;
 

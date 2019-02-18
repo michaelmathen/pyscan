@@ -637,73 +637,62 @@ namespace pyscan {
         return std::make_tuple(empts, ebpts);
     }
 
-    //So each slab has list of splits and approximation list.
-    //--splits are pointers to points.
-    //--Approximation lists are lists of pointers as well..
+     MaxIntervalAlt::MaxIntervalAlt(size_t val, double weight) : left_max(val, val, weight), right_max(val, val, weight), center_max(val, val, weight) {}
+     MaxIntervalAlt::MaxIntervalAlt(size_t lpt, size_t rpt) : left_max(lpt, rpt, 0.0), right_max(lpt, rpt, 0.0), center_max(lpt, rpt, 0.0) {}
 
-    //Idea 2 use pointers. (so list of pointers to each point.) So at each slab have split list of pointers and
-    // a merge list of pointers.
-
-     class Interval {
-         size_t left;
-         size_t right;
-         double value;
-     public:
-         Interval(size_t l, size_t r, double v) : left(l), right(r), value(v) {}
-
-         size_t get_r() const { return right; }
-         size_t get_l() const { return left; }
-         double_t get_v() const {return value; }
-     };
-
-     class MaxIntervalAlt {
-         Interval left_max;
-         Interval right_max;
-         Interval center_max;
-     public:
-
-         MaxIntervalAlt(size_t val, double weight) : left_max(val, val, weight), right_max(val, val, weight), center_max(val, val, weight) {}
-         MaxIntervalAlt(size_t lpt, size_t rpt) : left_max(lpt, lpt, 0.0), right_max(rpt, rpt, 0.0), center_max(lpt, lpt, 0.0) {}
-
-         MaxIntervalAlt &operator+=(const MaxIntervalAlt& op) {
-             if (center_max.get_v() < op.center_max.get_v()) {
-                 center_max = op.center_max;
-             }
-
-             if (right_max.get_v() + op.left_max.get_v() > center_max.get_v()) {
-                 center_max = Interval(right_max.get_l(), op.left_max.get_r(), right_max.get_v() + op.left_max.get_v());
-             }
-
-             //If left max is whole interval then we might need to extend the interval.
-             if (left_max.get_r() == right_max.get_r()) {
-                if (left_max.get_v() + op.left_max.get_v() > left_max.get_v()) {
-                    left_max = Interval(left_max.get_l(), op.left_max.get_r(), left_max.get_v() + op.left_max.get_v());
-                }
-             }
-
-             // op.right max is whole interval of op then we might need to extend op.right_max to include right_max
-             if (op.right_max.get_l() == op.left_max.get_l() &&
-                    op.right_max.get_v() + right_max.get_v() > op.right_max.get_v()) {
-                 right_max = Interval(right_max.get_l(), op.right_max.get_r(), right_max.get_v() + op.right_max.get_v());
-             } else {
-                 right_max = op.right_max;
-             }
-             return *this;
+     MaxIntervalAlt& MaxIntervalAlt::operator+=(const MaxIntervalAlt& op) {
+         if (center_max.get_v() < op.center_max.get_v()) {
+             center_max = op.center_max;
          }
 
-
-         double left() const {
-             return left_max.get_l();
-         }
-         double right() const {
-             return left_max.get_r();
+         if (right_max.get_v() + op.left_max.get_v() > center_max.get_v()) {
+             center_max = Interval(right_max.get_l(), op.left_max.get_r(), right_max.get_v() + op.left_max.get_v());
          }
 
-         Interval get_max() const {
-             return center_max;
+         //If left max is whole interval then we might need to extend the interval.
+         if (left_max.get_r() == right_max.get_r() && left_max.get_v() + op.left_max.get_v() > left_max.get_v()) {
+             left_max = Interval(left_max.get_l(), op.left_max.get_r(), left_max.get_v() + op.left_max.get_v());
          }
 
-     };
+         // op.right max is whole interval of op then we might need to extend op.right_max to include right_max
+         if (op.right_max.get_l() == op.left_max.get_l() && op.right_max.get_v() + right_max.get_v() > op.right_max.get_v()) {
+             right_max = Interval(right_max.get_l(), op.right_max.get_r(), right_max.get_v() + op.right_max.get_v());
+         } else {
+             right_max = op.right_max;
+         }
+         return *this;
+     }
+
+//     void MaxIntervalAlt::update_left_weight(double weight){
+//
+//        // if right max is whole interval then we need to update it's weight
+//        if (right_max.get_l() == left_max.get_l()) {
+//            right_max = Interval(right_max.get_l(), right_max.get_r(), right_max.get_v() + weight);
+//        }
+//
+//        if (right_max.get_v() + op.left_max.get_v() > center_max.get_v()) {
+//            center_max = Interval(right_max.get_l(), op.left_max.get_r(), right_max.get_v() + op.left_max.get_v());
+//        }
+//
+//        //If left max is whole interval then we might need to extend the interval.
+//        if (left_max.get_r() == right_max.get_r() && left_max.get_v() + op.left_max.get_v() > left_max.get_v()) {
+//            left_max = Interval(left_max.get_l(), op.left_max.get_r(), left_max.get_v() + op.left_max.get_v());
+//        }
+//        return *this;
+//     }
+
+     double MaxIntervalAlt::left() const {
+         return left_max.get_l();
+     }
+     double MaxIntervalAlt::right() const {
+         return right_max.get_r();
+     }
+
+     Interval MaxIntervalAlt::get_max() const {
+         return center_max;
+     }
+
+
 
      epoint_list_t compress(epoint_it_t b, epoint_it_t e, double m_w) {
         /*
@@ -761,6 +750,23 @@ namespace pyscan {
                 bottom_y(by),
                 parent(std::move(p)) {}
 
+    std::vector<size_t> Slab::remove_local_splits(const std::vector<size_t>& splits) const{
+        std::vector<size_t> output_splits;
+        output_splits.reserve(splits.size());
+        std::set_difference(splits.begin(), splits.end(),
+                local_split_offsets.begin(), local_split_offsets.end(),
+                std::back_inserter(output_splits));
+        return output_splits;
+    }
+
+    std::vector<size_t> Slab::remove_global_splits(const std::vector<size_t>& splits) const {
+        std::vector<size_t> output_splits;
+        output_splits.reserve(splits.size());
+        std::set_difference(splits.begin(), splits.end(),
+                            global_split_offset.begin(), global_split_offset.end(),
+                            std::back_inserter(output_splits));
+        return output_splits;
+    }
 
     double Slab::measure_interval(size_t mxx, size_t mnx, double a, double b) const {
         /*
@@ -850,7 +856,7 @@ namespace pyscan {
                             std::make_tuple(mpts.begin(), mpts.end()),
                             std::make_tuple(bpts.begin(), bpts.end()));
 
-        std::vector<slab_ptr> roots;
+        std::queue<slab_ptr> roots;
         while (!active.empty()) {
             auto[parent, el_ptr, vrng, mrng, brng] = active.back();
 
@@ -891,54 +897,56 @@ namespace pyscan {
                                     std::make_tuple(m_iter_splt, m_e),
                                     std::make_tuple(b_iter_splt, b_e));
             } else {
-                roots.emplace_back(*el_ptr);
+                roots.emplace(*el_ptr);
             }
         }
 
+        using s_it = std::vector<size_t>::iterator;
+        auto inplace_set_union = [](std::vector<size_t>& memory, s_it b, s_it mid, s_it e) {
+            // Now merge into the already existing split offsets.
+            std::inplace_merge(b, mid, e);
+            auto end_it = std::unique(b, e);
+            memory.erase(end_it, e);
+        };
         //Now go back through and create a list of all the lower splits.
         while (!roots.empty()) {
-            auto child = roots.back();
-            roots.pop_back();
+            auto child = roots.front();
+            roots.pop();
 
-            //First merge the m_merges and b_merges into the end of the existing split_offsets
-            std::vector<size_t> m_children;
-            std::vector<size_t> b_children;
-            m_children.reserve(child->m_merges.size() + child->b_merges.size());
-            b_children.reserve(child->m_merges.size() + child->b_merges.size());
-            for (auto& p : child->m_merges) { m_children.emplace_back(p.get_x()); }
-            for (auto& p : child->b_merges) { b_children.emplace_back(p.get_x()); }
+            //First merge the m_merges and b_merges into the end of the existing global_split_offset
+            std::vector<size_t> curr_splits;
+            curr_splits.reserve(child->m_merges.size() + child->b_merges.size());
+            for (auto& p : child->m_merges) { curr_splits.emplace_back(p.get_x()); }
+            for (auto& p : child->b_merges) { curr_splits.emplace_back(p.get_x()); }
 
-            size_t pre_length = child->split_offsets.size();
-            std::merge(m_children.begin(),
-                       m_children.end(),
-                       b_children.begin(),
-                       b_children.end(),
-                       std::back_inserter(child->split_offsets));
-//            std::cout << pre_length << std::endl;
-//            std::cout << m_children.size() << " "<< b_children.size() << " "<<  child->split_offsets.size() << std::endl;
+            inplace_set_union(curr_splits, curr_splits.begin(),
+                    curr_splits.begin() + child->m_merges.size(),
+                    curr_splits.end());
+            //write this to local_splits
+            std::set_difference(curr_splits.begin(), curr_splits.end(),
+                    child->global_split_offset.begin(), child->global_split_offset.end(),
+                    std::back_inserter(child->local_split_offsets));
 
-
-            // Now merge into the already existing split offsets.
-            std::inplace_merge(child->split_offsets.begin(),
-                    child->split_offsets.begin() + pre_length,
-                    child->split_offsets.end());
-            auto end_it = std::unique(child->split_offsets.begin(), child->split_offsets.end());
-
-            child->split_offsets.erase(end_it, child->split_offsets.end());
+            size_t pre_length = child->global_split_offset.size();
+            std::copy(curr_splits.begin(), curr_splits.end(), std::back_inserter(child->global_split_offset));
+            inplace_set_union(child->global_split_offset, child->global_split_offset.begin(),
+                    child->global_split_offset.begin() + pre_length, child->global_split_offset.end());
 
             //Now merge into the parent.
             auto p = child->parent.lock();
             if (p != nullptr) {
-                size_t offset = p->split_offsets.size();
-                p->split_offsets.reserve(offset + child->split_offsets.size());
-                std::copy(child->split_offsets.begin(), child->split_offsets.end(),
-                          std::back_inserter(p->split_offsets));
-                std::inplace_merge(p->split_offsets.begin(), p->split_offsets.begin() + offset, p->split_offsets.end());
-                auto parent_it = std::unique(p->split_offsets.begin(), p->split_offsets.end());
-                //std::cout << p->split_offsets.end() - parent_it << " " << p->split_offsets.size() << std::endl;
-                p->split_offsets.erase(parent_it, p->split_offsets.end());
-                //std::cout << p->split_offsets.size() << std::endl;
-                roots.emplace_back(p);
+                size_t offset = p->global_split_offset.size();
+                p->global_split_offset.reserve(offset + child->global_split_offset.size());
+                std::copy(child->global_split_offset.begin(), child->global_split_offset.end(),
+                          std::back_inserter(p->global_split_offset));
+                std::inplace_merge(p->global_split_offset.begin(), p->global_split_offset.begin() + offset, p->global_split_offset.end());
+                auto parent_it = std::unique(p->global_split_offset.begin(), p->global_split_offset.end());
+                //std::cout << p->global_split_offset.end() - parent_it << " " << p->global_split_offset.size() << std::endl;
+                p->global_split_offset.erase(parent_it, p->global_split_offset.end());
+                //std::cout << p->global_split_offset.size() << std::endl;
+                if (p->up == nullptr || child == p->up) {
+                    roots.emplace(p);
+                }
             }
         }
     }
@@ -968,7 +976,6 @@ namespace pyscan {
 
     double SlabTree::measure_rect(ERectangle const &rect, double a, double b) const {
         auto curr_root = get_containing(rect);
-
         if (curr_root == nullptr) {
             return 0.0;
         }
@@ -1012,116 +1019,164 @@ namespace pyscan {
     }
 
 
-    void update_weights(std::vector<MaxIntervalAlt>& max_intervals, epoint_list_t const& merges, double s) {
-        size_t j = 0;
-        for (size_t i = 0; i < merges.size(); ++i) {
-            for (; j < max_intervals.size() && merges[i].get_x() != max_intervals[j].right(); j++);
-            max_intervals[i] += MaxIntervalAlt(merges[j].get_x(), merges[j].get_weight() * s);
+    std::vector<MaxIntervalAlt> insert_updates(std::vector<MaxIntervalAlt> const& max_intervals,
+                                              epoint_list_t const& updates, double scale) {
+        std::vector<MaxIntervalAlt> new_set;
+        for (auto& p : updates) {
+            new_set.emplace_back(p.get_x(), p.get_weight() * scale);
+        }
+        std::vector<MaxIntervalAlt> updated;
+        std::merge(max_intervals.begin(), max_intervals.end(), new_set.begin(), new_set.end(),
+                std::back_inserter(updated), [](MaxIntervalAlt const& m1, MaxIntervalAlt const& m2) {
+           return m1.left() < m2.left();
+        });
+        //std::cout << updated << std::endl;
+        return updated;
+    }
+
+    std::vector<MaxIntervalAlt> update_mx_intervals(std::vector<MaxIntervalAlt> const & max_intervals, slab_ptr slab,
+            double m_a, double b_b) {
+        if (slab != nullptr) {
+            return insert_updates(insert_updates(max_intervals, slab->m_merges, m_a), slab->b_merges, b_b);
+        } else {
+            return max_intervals;
         }
     }
 
-    std::vector<MaxIntervalAlt> merge_splits(std::vector<MaxIntervalAlt> const &max_intervals, std::vector<size_t> const& splits) {
+    std::vector<MaxIntervalAlt> reduce_merges(std::vector<MaxIntervalAlt> const& max_intervals,
+                                        std::vector<size_t> const& curr_splits) {
+        if (max_intervals.empty()) {
+            return {};
+        }
         size_t j = 0;
-        std::vector<MaxIntervalAlt> new_intervals;
-        for (size_t i = 0; i < splits.size(); ++i) {
-            while (j < max_intervals.size() - 1 && splits[i] != max_intervals[j].right()) {
-                new_intervals.emplace_back(max_intervals[j]);
+        long prev = -1;
+        std::vector<MaxIntervalAlt> merged;
+        merged.emplace_back(max_intervals.front());
+        for (size_t i = 0; i < max_intervals.size() - 1;) {
+            if (prev < static_cast<long>(max_intervals[i].left()) && (curr_splits.size() <= j || max_intervals[i + 1].right() < curr_splits[j])) {
+                merged.back() += max_intervals[i + 1];
+                ++i;
+            } else if (j < curr_splits.size() && curr_splits[j] <= max_intervals[i + 1].right()) {
+                prev = static_cast<long>(curr_splits[j]);
                 j++;
+            } else {
+                merged.emplace_back(max_intervals[i + 1]);
+                i++;
             }
-            new_intervals.emplace_back(max_intervals[j]);
-            new_intervals[j] += max_intervals[j + 1];
-            j++;
         }
-        return new_intervals;
+        return merged;
     }
 
-    std::vector<MaxIntervalAlt> update_and_merge(slab_ptr top, slab_ptr bottom, std::vector<MaxIntervalAlt> const& m1, double m_a, double b_b) {
-        auto m2 = m1;
-        if (bottom != nullptr) { //if bottom is nullptr then we merge top or don't merge top.
-            update_weights(m2, bottom->m_merges, m_a);
-            update_weights(m2, bottom->b_merges, b_b);
-            m2 = merge_splits(m2, bottom->split_offsets);
-        }
+    std::tuple<std::vector<size_t>, std::vector<size_t>> update_splits(slab_ptr top, slab_ptr bottom,
+            std::vector<size_t> const& split_initial) {
+        /*
+         * m2 does not include the bottom slab while m1 does.
+         */
+        std::vector<size_t> s2 = split_initial;
+        std::vector<size_t> s1 = split_initial;
         if (top != nullptr) {
-            m2 = merge_splits(m2, top->split_offsets);
+            s2 = top->remove_global_splits(s2);
+            s1 = top->remove_local_splits(s1);
         }
-        return m2;
+        if (bottom != nullptr) { //if bottom is nullptr then we merge top or don't merge top.
+            s1 = bottom->remove_global_splits(s1);
+            s2 = bottom->remove_local_splits(s2);
+        }
+        return std::make_tuple(s1, s2);
     }
+
+    slab_ptr get_top(slab_ptr p) {
+        return p == nullptr ? nullptr : p->up;
+    }
+    slab_ptr get_bottom(slab_ptr p) {
+        return p == nullptr ? nullptr : p->down;
+    }
+
+    size_t get_mid(slab_ptr top, slab_ptr bottom) {
+        //This assumes that both bottom and top cannot be null.
+        return bottom == nullptr ? top->bottom_y : bottom->top_y;
+    }
+
+
+    using slab_frame = std::tuple<slab_ptr, slab_ptr, slab_ptr, slab_ptr, size_t,
+                                 size_t,
+                                 std::vector<MaxIntervalAlt>,
+                                 std::vector<size_t>>;
+
+    void emplace_helper(std::vector<slab_frame>& slabs, slab_ptr up, slab_ptr down, size_t high, size_t low,
+            std::vector<MaxIntervalAlt> const& ms, std::vector<size_t> const& splits) {
+        if (up != nullptr) {
+            high = up->top_y;
+        }
+        if (down != nullptr) {
+            low = down->bottom_y;
+        }
+        slabs.emplace_back(get_top(up), get_bottom(up),
+                get_top(down), get_bottom(down),
+                high, low, ms, splits);
+    }
+
 
     std::tuple<ERectangle, double> SlabTree::max_rectangle(double m_a, double b_b) {
         //Initialize with list of maximum intervals.
+        std::cout << *this << std::endl;
         ERectangle max_rect;
-        auto &curr_splits = root->split_offsets;
-        //std::cout << curr_splits << std::endl;
-        if (curr_splits.empty()) {
+        auto potential_splits = root->global_split_offset;
+        if (potential_splits.empty()) {
             return std::make_tuple(max_rect, 0.0);
         }
-        std::vector<MaxIntervalAlt> initial_intervals;
-        initial_intervals.reserve(curr_splits.size() - 1);
 
-        for (size_t i = 0; i < curr_splits.size() - 1; ++i) {
-            initial_intervals.emplace_back(curr_splits[i], curr_splits[i + 1]);
-        }
-
-        auto get_top = [](slab_ptr p) {
-            return p == nullptr ? nullptr : p->up;
-        };
-        auto get_bottom = [](slab_ptr p) {
-            return p == nullptr ? nullptr : p->down;
-        };
-
-        auto get_mid = [](slab_ptr top, slab_ptr bottom) {
-            //This assumes that both bottom and top cannot be null.
-            return bottom == nullptr ? top->bottom_y : bottom->top_y;
-        };
-
-        using slab_frame = std::tuple<slab_ptr, slab_ptr, slab_ptr, slab_ptr, size_t, size_t, std::vector<MaxIntervalAlt>> ;
         std::vector<slab_frame> slab_stack;
-        slab_stack.emplace_back(get_top(root->up), get_bottom(root->up), get_top(root->down), get_bottom(root->down), root->top_y, root->bottom_y, initial_intervals);
-
+        slab_stack.emplace_back(get_top(root->up), get_bottom(root->up),
+                get_top(root->down), get_bottom(root->down),
+                root->top_y, root->bottom_y, std::vector<MaxIntervalAlt>(), potential_splits);
 
         double max_v = 0;
         while (!slab_stack.empty()) {
-            auto [top_top, top_bottom, bottom_top, bottom_bottom, p_up, p_low, max_intervals] = slab_stack.back();
+            auto [top_top, top_bottom, bottom_top, bottom_bottom, p_up, p_low, m4, p_splts] = slab_stack.back();
+            //std::cout << max_intervals << std::endl;
+//            std::cout << "[" <<  p_up << ", " << p_low << "] " << std::endl;
+//            //std::cout << max_intervals << std::endl;
+//            std::cout << "Slab" << top_top << " " << top_bottom << " " << bottom_top << " " << bottom_bottom << std::endl;
+//            std::cout << std::endl;
             slab_stack.pop_back();
-            if (max_intervals.size() > 1) {
-                // m4 doesn't have any merges
-                // m2 is bottom_top merged.
-                // m3 is top_bottom merged.
-                // max_intervals is top_bottom and bottom_top merged.
-                assert(!(top_top == nullptr &&
-                         top_bottom == nullptr &&
-                         bottom_top == nullptr &&
-                         bottom_bottom == nullptr));
+            if (!(top_top == nullptr &&
+                  top_bottom == nullptr &&
+                  bottom_top == nullptr &&
+                  bottom_bottom == nullptr)) {
+                // 4 doesn't have any merges
+                // 3 is top_bottom merged.
+                // 2 is bottom_top merged.
+                // 1 is top_bottom and bottom_top merged.
+//                assert(!(top_top == nullptr &&
+//                         top_bottom == nullptr &&
+//                         bottom_top == nullptr &&
+//                         bottom_bottom == nullptr));
+                auto [p1_tmp, p2_tmp] = update_splits(top_top, top_bottom, p_splts);
+                auto [p1, p3] = update_splits(bottom_bottom, bottom_top, p1_tmp);
+                auto [p2, p4] = update_splits(bottom_bottom, bottom_top, p2_tmp);
 
-                if (!(top_top == nullptr && top_bottom == nullptr)) {
-                    auto m2 = update_and_merge(top_top, top_bottom, max_intervals, m_a, b_b);
-                    if (!(bottom_bottom == nullptr && bottom_top == nullptr)) {
-                        auto m4 = update_and_merge(bottom_bottom, bottom_top, m2, m_a, b_b);
-                        slab_stack.emplace_back(get_top(top_bottom), get_bottom(top_bottom),
-                                                get_top(bottom_top), get_bottom(bottom_top),
-                                                get_mid(top_top, top_bottom), get_mid(bottom_top, bottom_bottom), m4);
-                    }
-                    slab_stack.emplace_back(get_top(top_bottom), get_bottom(top_bottom),
-                                            get_top(bottom_bottom), get_bottom(bottom_bottom),
-                                            get_mid(top_top, top_bottom), p_low, m2);
-                }
-                if (!(bottom_bottom == nullptr && bottom_top == nullptr)) {
-                    auto m3 = update_and_merge(bottom_bottom, bottom_top, max_intervals, m_a, b_b);
-                    slab_stack.emplace_back(get_top(top_top), get_bottom(top_top),
-                                            get_top(bottom_top), get_bottom(bottom_top),
-                                            p_up, get_mid(bottom_top, bottom_bottom), m3);
-                }
-                slab_stack.emplace_back(get_top(top_top), get_bottom(top_top),
-                                        get_top(bottom_bottom), get_bottom(bottom_bottom),
-                                        p_up, p_low, max_intervals);
+                auto m3 = update_mx_intervals(m4, top_bottom, m_a, b_b);
+                auto m1 = update_mx_intervals(m3, bottom_top, m_a, b_b);
+                auto m2 = update_mx_intervals(m4, bottom_top, m_a, b_b);
+
+
+                m1 = reduce_merges(m1, p1);
+                m2 = reduce_merges(m2, p2);
+                m3 = reduce_merges(m3, p3);
+                m4 = reduce_merges(m4, p4);
+
+                emplace_helper(slab_stack, top_top, bottom_bottom, p_up, p_low, m1, p1);
+                emplace_helper(slab_stack, top_bottom, bottom_bottom, p_up, p_low, m2, p2);
+                emplace_helper(slab_stack, top_top, bottom_top, p_up, p_low, m3, p3);
+                emplace_helper(slab_stack, top_bottom, bottom_top, p_up, p_low, m4, p4);
 
             } else {
-                if (max_v < max_intervals[0].get_max().get_v()) {
-                    size_t lx = max_intervals[0].get_max().get_l();
-                    size_t rx = max_intervals[0].get_max().get_r();
+                if (!m4.empty() && max_v < m4[0].get_max().get_v()) {
+                    size_t lx = m4[0].get_max().get_l();
+                    size_t rx = m4[0].get_max().get_r();
                     max_rect = ERectangle(rx, p_up, lx, p_low);
-                    max_v = max_intervals[0].get_max().get_v();
+                    max_v = m4[0].get_max().get_v();
                 }
             }
         }

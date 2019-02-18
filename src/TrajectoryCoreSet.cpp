@@ -296,9 +296,6 @@ namespace pyscan {
         return output;
     }
 
-
-
-    const int KERNEL_LEVELS = 3;
     point3_list_t kernel3d(point3_list_t const& pts, double eps) {
 
         auto glpts = new glReal[3 * pts.size()];

@@ -42,6 +42,7 @@ namespace pyscan {
         Point() {
             coords.fill(0.0);
         }
+        virtual ~Point() {}
 
         friend std::ostream &operator<<(std::ostream &os, Point const &pt) {
             os << "pyscan::Point<" << dim << ">(";
@@ -298,6 +299,7 @@ namespace pyscan {
 
         WPoint()
                 : Point<dim>(), weight(0.0) {}
+        virtual ~WPoint() {}
 
         friend std::ostream &operator<<(std::ostream &os, WPoint const &pt) {
             os << "WPoint(" << pt.get_weight() << ", ";
@@ -330,6 +332,9 @@ namespace pyscan {
 
         LPoint()
                 : WPoint<dim>(), label(0) {}
+
+
+        virtual ~LPoint() {}
 
         inline size_t get_label() const {
             return label;

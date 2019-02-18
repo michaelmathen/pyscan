@@ -34,6 +34,8 @@ namespace pyscan {
             return total_distance;
         }
 
+        virtual ~Trajectory() {}
+
         virtual double get_weight() const {
             return 1;
         }

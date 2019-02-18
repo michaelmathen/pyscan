@@ -209,6 +209,10 @@ namespace pyscan {
             return coord[i];
         }
 
+        friend std::ostream& operator<<(std::ostream& os, EPoint const& el) {
+            os << "ept({" << el.coord[0] << ", "  << el.coord[1] << "}, "<<  el.weight << ")";
+            return os;
+        }
 
     private:
         size_t coord[2];
@@ -263,10 +267,59 @@ namespace pyscan {
         return weight;
     }
 
+    class Interval {
+        size_t left;
+        size_t right;
+        double value;
+    public:
+        Interval(size_t l, size_t r, double v) : left(l), right(r), value(v) {}
+
+        size_t get_r() const { return right; }
+        size_t get_l() const { return left; }
+        double_t get_v() const {return value; }
+
+        friend std::ostream& operator<<(std::ostream& os, Interval const& el) {
+            os << "Interval(" << el.left << ", " <<  el.right << ", " <<  el.value << ")";
+            return os;
+        }
+    };
+
+
+    class MaxIntervalAlt {
+        Interval left_max;
+        Interval right_max;
+        Interval center_max;
+    public:
+        MaxIntervalAlt(size_t lpt, size_t rpt);
+        MaxIntervalAlt(size_t val, double weight);
+        MaxIntervalAlt(Interval l, Interval c, Interval r) : left_max(l), right_max(r), center_max(c) {}
+        MaxIntervalAlt &operator+=(const MaxIntervalAlt& op);
+//         MaxIntervalAlt &operator+=(const MaxIntervalAlt& op) {
+//             right_max = op.right_max;
+//             return *this;
+//         }
+
+        friend std::ostream& operator<<(std::ostream& os, MaxIntervalAlt const& el) {
+            os << "MaxIntervalAlt(" << el.left_max << ", "  << el.center_max << ", "<< el.right_max << "]";
+            return os;
+        }
+
+        //void update_left_weight(double weight);
+
+        double left() const;
+        double right() const;
+
+        Interval get_max() const;
+    };
+
     class Slab {
 
     public:
-        std::vector<size_t> split_offsets;
+        //This is the union of m_merges and b_merges and all child m_merges and b_merges.
+        std::vector<size_t> global_split_offset;
+
+        //This is our m_merges and b_merges set minus all child m_merges and b_merges.
+        std::vector<size_t> local_split_offsets;
 
         epoint_list_t m_merges;
         epoint_list_t b_merges;
@@ -298,6 +351,18 @@ namespace pyscan {
             return down != nullptr || up != nullptr;
         }
 
+        std::vector<size_t> remove_local_splits(const std::vector<size_t>& splits) const;
+        std::vector<size_t> remove_global_splits(const std::vector<size_t>& splits) const;
+
+        friend std::ostream& operator<<(std::ostream& os, std::shared_ptr<Slab> el) {
+            if (el == nullptr) {
+                os << "[]";
+            } else {
+                os << el->global_split_offset;
+            }
+            return os;
+        }
+
         double measure_interval(size_t mxx, size_t mnx, double a, double b) const;
     };
 
@@ -322,12 +387,42 @@ namespace pyscan {
 
         double measure_rect(ERectangle const &rect, double a, double b) const;
         std::tuple<ERectangle, double> max_rectangle(double m_a, double b_b);
+
+        friend std::ostream& operator<<(std::ostream& os, SlabTree const& el) {
+            std::queue<std::tuple<size_t, decltype(root)>> curr_queue;
+            curr_queue.emplace(0, el.root);
+            os << "TREE" << std::endl;
+            os << "0 = ";
+            size_t curr_level = 0;
+            while (!curr_queue.empty()) {
+                auto [l, el] = curr_queue.front();
+                if (l != curr_level) {
+                    os << std::endl;
+                    os << l << " = ";
+                    curr_level = l;
+                }
+                os << "[" << el->top_y << ", " << el->bottom_y << "]";
+                curr_queue.pop();
+                if (el->up != nullptr) {
+                    curr_queue.emplace(l + 1, el->up);
+                }
+                if (el->down != nullptr) {
+                    curr_queue.emplace(l + 1, el->down);
+                }
+            }
+            return os;
+        }
     private:
         slab_ptr root;
         epoint_list_t mpts;
         epoint_list_t bpts;
     };
 
+    std::vector<MaxIntervalAlt> insert_updates(std::vector<MaxIntervalAlt> const& max_intervals,
+                                               epoint_list_t const& updates, double scale);
+
+    std::vector<MaxIntervalAlt> reduce_merges(std::vector<MaxIntervalAlt> const& max_intervals,
+                                              std::vector<size_t> const& curr_splits);
 
     std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& m_points, const wpoint_list_t& b_points, double eps, double a, double b);
 
