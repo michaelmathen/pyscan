@@ -424,11 +424,13 @@ namespace pyscan {
         }
 
         slab_ptr get_containing(ERectangle const &rect) const;
+        SlabTree(slab_ptr child, double tm, double tb) : root(child), total_m(tm), total_b(tb) {}
+
         SlabTree(epoint_list_t ms, epoint_list_t bs, double max_w);
         SlabTree(std::vector<size_t> const &vert_decomp, epoint_list_t ms, epoint_list_t bs, bool compression, double max_w);
 
         //Useful for debuging the structure so you can define a non compressed version with fixed decomposition.
-        void init(std::vector<size_t> const& vert_decomp, bool compression, double max_w);
+        void init(epoint_list_t mpts, epoint_list_t bpts, std::vector<size_t> const &vert_decomp, bool compression, double max_w);
 
         double measure_rect(ERectangle const &rect, double a, double b) const;
         std::tuple<ERectangle, double> max_rectangle(double m_a, double b_b);
@@ -457,10 +459,16 @@ namespace pyscan {
             }
             return os;
         }
+
+        SlabTree get_upper_tree() const {
+            return SlabTree(root->up, total_m, total_b);
+        }
+
+        SlabTree get_lower_tree() const {
+            return SlabTree(root->down, total_m, total_b);
+        }
     private:
         slab_ptr root;
-        epoint_list_t mpts;
-        epoint_list_t bpts;
         double total_m;
         double total_b;
     };
@@ -471,7 +479,7 @@ namespace pyscan {
     std::vector<MaxIntervalAlt> reduce_merges(std::vector<MaxIntervalAlt> const& max_intervals,
                                               std::vector<size_t> const& curr_splits);
 
-    //std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& m_points, const wpoint_list_t& b_points, double eps, double a, double b);
+    std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& m_points, const wpoint_list_t& b_points, double eps, double a, double b);
 
 }
 #endif //PYSCAN_RECTANGLESCAN_HPP

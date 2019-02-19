@@ -523,6 +523,9 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_disk_scale_labeled_alt", &pyscan::max_disk_scale_labeled_alt);
     py::def("max_rect_labeled", &pyscan::max_rect_labeled);
 
+    py::def("max_rectangle", &pyscan::max_rectangle);
+
+
     py::def("max_rect_labeled_scale", pyscan::max_rect_labeled_scale);
 
     ////////////////////////////////////////////////////////////////////

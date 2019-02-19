@@ -742,7 +742,7 @@ namespace pyscan {
         return mval + bval;
     }
 
-    SlabTree::SlabTree(epoint_list_t ms, epoint_list_t bs, double max_w) : mpts(std::move(ms)), bpts(std::move(bs)),
+    SlabTree::SlabTree(epoint_list_t mpts, epoint_list_t bpts, double max_w) :
         total_m(computeTotal(mpts)), total_b(computeTotal(bpts)) {
         /*
          * Create a vertical decomposition of the point set so that we can split the points into a sequence of horizontal
@@ -767,19 +767,19 @@ namespace pyscan {
             }
         }
 
-        SlabTree::init(vert_decomp, true, max_w);
+        SlabTree::init(mpts, bpts, vert_decomp, true, max_w);
     }
 
-    SlabTree::SlabTree(std::vector<size_t> const &vert_decomp, epoint_list_t ms, epoint_list_t bs, bool compression, double max_w) :
-        mpts(std::move(ms)), bpts(std::move(bs)), total_m(computeTotal(mpts)), total_b(computeTotal(bpts)) {
+    SlabTree::SlabTree(std::vector<size_t> const &vert_decomp, epoint_list_t mpts, epoint_list_t bpts, bool compression, double max_w) :
+        total_m(computeTotal(mpts)), total_b(computeTotal(bpts)) {
         /*
          * Create a vertical decomposition of the point set so that we can split the points into a sequence of horizontal
          * strips where each contains at most max_w.
          */
-        SlabTree::init(vert_decomp, compression, max_w);
+        SlabTree::init(std::move(mpts), std::move(bpts), vert_decomp, compression, max_w);
     }
 
-    void SlabTree::init(std::vector<size_t> const &vert_decomp, bool compression, double max_w) {
+    void SlabTree::init(epoint_list_t mpts, epoint_list_t bpts, std::vector<size_t> const &vert_decomp, bool compression, double max_w) {
 
         //std::sort(vert_decomp.begin(), vert_decomp.end());
 
@@ -1120,6 +1120,31 @@ namespace pyscan {
 
     }
 
+
+    std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& mpts, const wpoint_list_t& bpts, double eps, double a, double b) {
+        auto [m_pts, b_pts, xmap, ymap] = pyscan::to_epoints(mpts, bpts);
+        SlabTree tree(m_pts, b_pts, 1 / eps);
+        std::vector<SlabTree> child_instances;
+        child_instances.emplace_back(tree);
+        ERectangle max_rect;
+        double max_v = 0;
+        while (!child_instances.empty()) {
+            auto curr_tree = child_instances.back();
+            child_instances.pop_back();
+            auto [erect, eval] = curr_tree.max_rectangle(a, b);
+            if (eval > max_v) {
+                max_rect = erect;
+                max_v = eval;
+            }
+            if (curr_tree.get_root()->up != nullptr) {
+                child_instances.emplace_back(curr_tree.get_upper_tree());
+            }
+            if (curr_tree.get_root()->down != nullptr) {
+                child_instances.emplace_back(curr_tree.get_lower_tree());
+            }
+        }
+        return std::make_tuple(Rectangle(xmap[max_rect.upX()], ymap[max_rect.upY()], xmap[max_rect.lowX()], ymap[max_rect.lowY()]), max_v);
+    }
 //    std::tuple<Rectangle, double> max_rectangle_convex(wpoint_list_t const& mpts, wpoint_list_t const& bpts, double eps, discrepancy_func_t const &f) {
 //        /*
 //         * This uses the
