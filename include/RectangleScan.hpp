@@ -223,7 +223,8 @@ namespace pyscan {
     using epoint_list_t = std::vector<EPoint>;
     using epoint_it_t = std::vector<EPoint>::iterator;
 
-    std::tuple<epoint_list_t, epoint_list_t> to_epoints(wpoint_list_t const& mpts, wpoint_list_t const& bpts);
+    std::tuple<epoint_list_t, epoint_list_t, std::unordered_map<size_t, double>, std::unordered_map<size_t, double> >
+            to_epoints(wpoint_list_t const& mpts, wpoint_list_t const& bpts);
 
     class ERectangle {
         size_t u_x, u_y, l_x, l_y;
@@ -265,6 +266,56 @@ namespace pyscan {
             }
         }
         return weight;
+    }
+
+    inline double computeTotal(const std::vector<EPoint>& pts) {
+        double res = 0.0;
+        for (auto& x: pts) res += x.get_weight();
+        return res;
+    }
+
+    template <typename R>
+    double evaluate_range(
+            const R& range,
+            const std::vector<EPoint>& red,
+            const std::vector<EPoint>& blue,
+            const discrepancy_func_t& f) {
+
+        return f(range_weight(range, red), computeTotal(red),
+                 range_weight(range, blue), computeTotal(blue));
+    }
+
+    template <typename R>
+    std::tuple<R, double> max_range4(
+            const std::vector<EPoint>& vertical_point_net,
+            const std::vector<EPoint>& horz_point_net,
+            const std::vector<EPoint>& red,
+            const std::vector<EPoint>& blue,
+            const discrepancy_func_t& f) {
+
+        double max_stat = 0.0;
+        R cur_max;
+        for (size_t i = 0; i < vertical_point_net.size() - 1; ++i) {
+            for (size_t j = i + 1; j < vertical_point_net.size(); ++j) {
+                for (size_t k = 0; k < horz_point_net.size() - 1; ++k) {
+                    for (size_t l = k + 1; l < horz_point_net.size(); ++l) {
+                        auto y_max = std::max(vertical_point_net[i].get_y(), vertical_point_net[j].get_y());
+                        auto y_min = std::min(vertical_point_net[i].get_y(), vertical_point_net[j].get_y());
+                        auto x_max = std::max(horz_point_net[i].get_x(), horz_point_net[j].get_x());
+                        auto x_min = std::min(horz_point_net[i].get_x(), horz_point_net[j].get_x());
+
+                        R now(x_max, y_max, x_min, y_min);
+                        double cur_stat = evaluate_range(now, red, blue, f);
+                        if (cur_stat > max_stat) {
+                            cur_max = now;
+                            max_stat = cur_stat;
+                        }
+                    }
+                }
+            }
+        }
+
+        return std::make_tuple(cur_max, max_stat);
     }
 
     class Interval {
@@ -318,9 +369,6 @@ namespace pyscan {
         //This is the union of m_merges and b_merges and all child m_merges and b_merges.
         std::vector<size_t> global_split_offset;
 
-        //This is our m_merges and b_merges set minus all child m_merges and b_merges.
-        std::vector<size_t> local_split_offsets;
-
         epoint_list_t m_merges;
         epoint_list_t b_merges;
 
@@ -350,9 +398,6 @@ namespace pyscan {
         bool has_mid() const {
             return down != nullptr || up != nullptr;
         }
-
-        std::vector<size_t> remove_local_splits(const std::vector<size_t>& splits) const;
-        std::vector<size_t> remove_global_splits(const std::vector<size_t>& splits) const;
 
         friend std::ostream& operator<<(std::ostream& os, std::shared_ptr<Slab> el) {
             if (el == nullptr) {
@@ -416,6 +461,8 @@ namespace pyscan {
         slab_ptr root;
         epoint_list_t mpts;
         epoint_list_t bpts;
+        double total_m;
+        double total_b;
     };
 
     std::vector<MaxIntervalAlt> insert_updates(std::vector<MaxIntervalAlt> const& max_intervals,
@@ -424,7 +471,7 @@ namespace pyscan {
     std::vector<MaxIntervalAlt> reduce_merges(std::vector<MaxIntervalAlt> const& max_intervals,
                                               std::vector<size_t> const& curr_splits);
 
-    std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& m_points, const wpoint_list_t& b_points, double eps, double a, double b);
+    //std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& m_points, const wpoint_list_t& b_points, double eps, double a, double b);
 
 }
 #endif //PYSCAN_RECTANGLESCAN_HPP

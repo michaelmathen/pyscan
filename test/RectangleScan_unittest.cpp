@@ -80,7 +80,9 @@ namespace {
         auto m_wpts = pyscantest::randomWPoints2(s_size);
         auto b_wpts = pyscantest::randomWPoints2(s_size);
 
-        auto [m_pts, b_pts] = pyscan::to_epoints(m_wpts, b_wpts);
+        auto [m_pts, b_pts, tmp1, tmp2] = pyscan::to_epoints(m_wpts, b_wpts);
+        (void)tmp1;
+        (void)tmp2;
 
         auto n_pts = pyscantest::samplewr(b_pts, n_size);
 
@@ -169,7 +171,7 @@ namespace {
     TEST(SlabTree, measure_interval) {
         auto [divisions, m_pts, b_pts] = initialize_pts();
 
-        pyscan::SlabTree tree(divisions, m_pts, b_pts, true, 1.0);
+        pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
         auto root = tree.get_root();
         if (!root || !root->down) {
             return;
@@ -206,8 +208,9 @@ namespace {
         auto m_wpts = pyscantest::randomWPoints2(s_size);
         auto b_wpts = pyscantest::randomWPoints2(s_size);
 
-        auto [m_pts, b_pts] = pyscan::to_epoints(m_wpts, b_wpts);
-
+        auto [m_pts, b_pts, tmp1, tmp2] = pyscan::to_epoints(m_wpts, b_wpts);
+        (void)tmp1;
+        (void)tmp2;
         auto n_pts = pyscantest::samplewr(b_pts, n_size);
 
         std::vector<size_t> divisions;
@@ -236,11 +239,14 @@ namespace {
          * TODO
          */
         const static int n_size = 20;
-        const static int s_size = 1000;
+        const static int s_size = 10;
         auto m_wpts = pyscantest::randomWPoints2(s_size);
         auto b_wpts = pyscantest::randomWPoints2(s_size);
+        using pyscan::operator<<;
 
-        auto [m_pts, b_pts] = pyscan::to_epoints(m_wpts, b_wpts);
+        auto [m_pts, b_pts, tmp1, tmp2] = pyscan::to_epoints(m_wpts, b_wpts);
+        (void)tmp1;
+        (void)tmp2;
 
         auto n_pts = pyscantest::samplewr(b_pts, n_size);
 
@@ -270,6 +276,18 @@ namespace {
                 ASSERT_TRUE(includes(el->global_split_offset.begin(), el->global_split_offset.end(),
                                      el->down->global_split_offset.begin(), el->down->global_split_offset.end()));
             }
+            if (el->up != nullptr && el->down != nullptr) {
+                std::vector<size_t> intersection;
+                std::set_intersection(el->up->global_split_offset.begin(), el->up->global_split_offset.end(),
+                        el->down->global_split_offset.begin(), el->down->global_split_offset.end(),
+                        std::back_inserter(intersection));
+                if (intersection.size() > 0) {
+                    for (size_t i = 0; i < intersection.size(); i++) {
+                        std::cout << intersection[i] << std::endl;
+                    }
+                    EXPECT_TRUE(false);
+                }
+            }
             if (!el->up  && !el->down){
                 leaves.push_back(el);
             }
@@ -279,11 +297,13 @@ namespace {
     TEST(SlabTree, max_rectangle) {
 
         const static int n_size = 20;
-        const static int s_size = 20;
+        const static int s_size = 100;
         auto m_wpts = pyscantest::randomWPoints2(s_size);
         auto b_wpts = pyscantest::randomWPoints2(s_size);
 
-        auto [m_pts, b_pts] = pyscan::to_epoints(m_wpts, b_wpts);
+        auto [m_pts, b_pts, tmp1, tmp2] = pyscan::to_epoints(m_wpts, b_wpts);
+        (void)tmp1;
+        (void)tmp2;
 
         auto n_pts = pyscantest::samplewr(b_pts, n_size);
 
@@ -301,7 +321,18 @@ namespace {
         auto [rect, val] = tree.max_rectangle(1.0, -1.0);
         std::cout << val << std::endl;
         std::cout << rect.toString() << std::endl;
-        ASSERT_FLOAT_EQ(val, pyscan::range_weight(rect, m_pts) - pyscan::range_weight(rect, b_pts));
+        EXPECT_FLOAT_EQ(val, pyscan::range_weight(rect, m_pts) / pyscan::computeTotal(m_pts) - pyscan::range_weight(rect, b_pts) / pyscan::computeTotal(b_pts));
+//        auto f = [] (double mw, double m_total, double bw, double b_total) {
+//            return mw / m_total - bw / b_total;
+//        };
+
+//        pyscan::epoint_list_t tmp_pts;
+//        std::copy(m_pts.begin(), m_pts.end(), std::back_inserter(tmp_pts));
+//        std::copy(b_pts.begin(), b_pts.end(), std::back_inserter(tmp_pts));
+//        auto [rect2, rect_val] = pyscan::max_range4<pyscan::ERectangle>(n_pts, tmp_pts, m_pts, b_pts, f);
+//        EXPECT_FLOAT_EQ(val, rect_val);
+//        std::cout << rect2.toString() << std::endl;
+
     }
 
     using mx_list_t = std::vector<pyscan::MaxIntervalAlt>;
