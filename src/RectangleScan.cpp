@@ -684,6 +684,8 @@ namespace pyscan {
             double curr_w = 0;
             std::vector<ept_t> break_pts;
             for (; b != e; ++b) {
+                //std::cout << m_w << " "  << curr_w << std::endl;
+
                 if ((curr_w + b->get_weight()) > m_w) {
                     break_pts.emplace_back(*b);
                     curr_w = 0;
@@ -753,15 +755,16 @@ namespace pyscan {
         };
         std::sort(mpts.begin(), mpts.end(), y_order);
         std::sort(bpts.begin(), bpts.end(), y_order);
-        std::vector<ept_t> merge_buffer(bpts.size() + mpts.size());
-        std::merge(mpts.begin(), mpts.end(), bpts.begin(), mpts.end(), merge_buffer.begin(), y_order);
+        std::vector<ept_t> merge_buffer;
+        merge_buffer.reserve(mpts.size() + bpts.size());
+        std::merge(mpts.begin(), mpts.end(), bpts.begin(), bpts.end(), std::back_inserter(merge_buffer), y_order);
 
         std::vector<size_t> vert_decomp;
-        vert_decomp.reserve((size_t) (1/ max_w));
+        vert_decomp.reserve((size_t) (1 / max_w));
         double curr_weight = 0;
         for (auto &p : merge_buffer) {
             curr_weight += p.get_weight();
-            if (curr_weight >= max_w) {
+            if (curr_weight >= max_w * (total_m + total_b)) {
                 curr_weight = 0;
                 vert_decomp.emplace_back(p.get_y());
             }
@@ -825,6 +828,7 @@ namespace pyscan {
 
 
             //Compress the current m_pts and b_pts and compute the weights.
+            //std::cout << m_e - m_b<< std::endl;
             auto m_merges = compress(m_b, m_e, compression, max_w * total_m);
             auto b_merges = compress(b_b, b_e, compression, max_w * total_b);
 
@@ -1123,7 +1127,8 @@ namespace pyscan {
 
     std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& mpts, const wpoint_list_t& bpts, double eps, double a, double b) {
         auto [m_pts, b_pts, xmap, ymap] = pyscan::to_epoints(mpts, bpts);
-        SlabTree tree(m_pts, b_pts, 1 / eps);
+        SlabTree tree(m_pts, b_pts, eps);
+        //std::cout << tree << std::endl;
         std::vector<SlabTree> child_instances;
         child_instances.emplace_back(tree);
         ERectangle max_rect;

@@ -439,6 +439,7 @@ namespace pyscan {
             std::queue<std::tuple<size_t, decltype(root)>> curr_queue;
             curr_queue.emplace(0, el.root);
             os << "TREE" << std::endl;
+            os << el.root->global_split_offset << std::endl;
             os << "0 = ";
             size_t curr_level = 0;
             while (!curr_queue.empty()) {
