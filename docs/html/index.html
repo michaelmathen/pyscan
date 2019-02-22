@@ -1,0 +1,740 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pyscan &#8212; pyscan 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Philadelphia Crime Example" href="examples/PhilyCrime.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pyscan">
+<h1>pyscan<a class="headerlink" href="#pyscan" title="Permalink to this headline">¶</a></h1>
+<p>pyscan is an approximate spatial scanning library designed to handle very large data sets using sampling techniques. pyscan supports point sets and trajectories and can be adapted to work in other related domains such as data sets aggregated to regions.</p>
+<p>Spatial Scan Statistics provide a rigorous framework in which to define anomalies and have been extensively studied in 1d and 2d domains. Most current software available for region based spatial scan statistics use exact algorithms which have scaling issues when applied to modern datasets. pyscan provides a way to significantly increase the scale at which these methods can be run at while providing real guarantees on the accuracy and power of the anomalies found. The code is under active development and has been written about in a number of publications <a class="reference internal" href="#mp18a" id="id1">[MP18b]</a><a class="reference internal" href="#mp18b" id="id2">[MP18a]</a><a class="reference internal" href="#ssss" id="id3">[MSZ+16]</a>.</p>
+</div>
+<div class="section" id="contents">
+<h1>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/PhilyCrime.html">Philadelphia Crime Example</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/PhilyCrime.html#Disk-Scanning">Disk Scanning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/PhilyCrime.html#Rectangle-Scanning">Rectangle Scanning</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p>To compile this library you will need the following dependencies.</p>
+<ul class="simple">
+<li>boost.python</li>
+<li>python python 3.x</li>
+<li>cmake</li>
+</ul>
+<p>In addition this library needs a modern version of gcc or clang that supports the c++17 standard. The <a class="reference external" href="https://github.com/google/googletest">Google Test Framework</a>. will be downloaded to build unit tests.:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">mkdir</span> <span class="n">build</span>
+<span class="n">cd</span> <span class="n">build</span>
+<span class="n">cmake</span> <span class="o">..</span>
+<span class="n">make</span>
+</pre></div>
+</div>
+<p>You should then be able to use this library as a standard python module.</p>
+</div>
+<div class="section" id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+<div class="section" id="module-pyscan">
+<span id="python-functions"></span><h1>Python Functions<a class="headerlink" href="#module-pyscan" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="pyscan.distribution">
+<code class="descclassname">pyscan.</code><code class="descname">distribution</code><span class="sig-paren">(</span><em>points</em>, <em>p</em>, <em>scan_f</em>, <em>n</em>, <em>s</em>, <em>disc=&lt;libpyscan.CFunction object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#distribution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.distribution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a distribution of the null distribution to measure the significance of the region.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_range_trajectory">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_range_trajectory</code><span class="sig-paren">(</span><em>range</em>, <em>mp</em>, <em>bp</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#evaluate_range_trajectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.evaluate_range_trajectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluates this range to compute the total discrepancy.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.null_cdf">
+<code class="descclassname">pyscan.</code><code class="descname">null_cdf</code><span class="sig-paren">(</span><em>observations</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#null_cdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.null_cdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a cdf object using a certain number of observations.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.paired_plant_region">
+<code class="descclassname">pyscan.</code><code class="descname">paired_plant_region</code><span class="sig-paren">(</span><em>traj_start</em>, <em>traj_end</em>, <em>r</em>, <em>q</em>, <em>region_plant_f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#paired_plant_region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.paired_plant_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>This plants a region where every trajectory:
+Completely outside or inside of the region has an endpoint chosen at random.
+Every trajectory with one endpoint inside the region has an endpoint chosen inside
+with probability q (exactly q fraction have one endpoint in the region)</p>
+<p>r controls how many points the region contains.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_disk">
+<code class="descclassname">pyscan.</code><code class="descname">plant_disk</code><span class="sig-paren">(</span><em>pts</em>, <em>r</em>, <em>p</em>, <em>q</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_disk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_disk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a set of red and blue points with a random disk planted containing r fraction of the points.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_full_disk">
+<code class="descclassname">pyscan.</code><code class="descname">plant_full_disk</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>disc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_full_disk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_full_disk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose a point at random from a trajectory and then expand outward from there.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_full_halfplane">
+<code class="descclassname">pyscan.</code><code class="descname">plant_full_halfplane</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>disc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_full_halfplane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_full_halfplane" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose a point at random from a trajectory and then expand outward from there.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_full_square">
+<code class="descclassname">pyscan.</code><code class="descname">plant_full_square</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>disc</em>, <em>max_count=32</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_full_square"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_full_square" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose a point at random from a trajectory and then expand outward from there.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_halfplane">
+<code class="descclassname">pyscan.</code><code class="descname">plant_halfplane</code><span class="sig-paren">(</span><em>pts</em>, <em>r</em>, <em>p</em>, <em>q</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_halfplane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_halfplane" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a set of red and blue points with a random halfplane planted containing r fraction of the points.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_partial_disk">
+<code class="descclassname">pyscan.</code><code class="descname">plant_partial_disk</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>eps</em>, <em>disc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_partial_disk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_partial_disk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose a point at random from a trajectory and then expand outward from there.
+:param trajectories this consists of lists of lists of points where the points are type Pyscan.Point
+:param r:
+:param p:
+:param q:
+:return:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_partial_halfplane">
+<code class="descclassname">pyscan.</code><code class="descname">plant_partial_halfplane</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>eps</em>, <em>disc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_partial_halfplane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_partial_halfplane" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose a point at random from a trajectory and then expand outward from there.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_rectangle">
+<code class="descclassname">pyscan.</code><code class="descname">plant_rectangle</code><span class="sig-paren">(</span><em>pts</em>, <em>r</em>, <em>p</em>, <em>q</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_rectangle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_rectangle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a set of red and blue points with a random rectangle planted containing r fraction of the points.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_region">
+<code class="descclassname">pyscan.</code><code class="descname">plant_region</code><span class="sig-paren">(</span><em>points</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>eps</em>, <em>scan_f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>This takes a scanning function and two point sets and then computes a planted region that contains some fraction r
+of the points with some tolerance.
+This then computes a red and blue set of points based on the planted region.</p>
+<p>Inside the region q fraction of points are red.
+Outside the region p fraction of points are red</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.split_set">
+<code class="descclassname">pyscan.</code><code class="descname">split_set</code><span class="sig-paren">(</span><em>pts</em>, <em>rate</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#split_set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.split_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Divides the point set into two random sets where one contains approximately rate * len(pts) number of
+points and the other has (1 - rate) * len(pts)
+:param pts:
+:param rate:
+:return:</p>
+</dd></dl>
+
+</div>
+<div class="section" id="c-functions">
+<h1>C++ Functions<a class="headerlink" href="#c-functions" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="pyscan.pyscan.max_halfplane">
+<code class="descclassname">pyscan.</code><code class="descname">max_halfplane</code><span class="sig-paren">(</span><em>net</em>, <em>mpts</em>, <em>bpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_halfplane" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scans the set of halfplanes defined by the points in the net and maximizes the function disc_f with respect to the fraction of points contained in mpts and bpts. Function takes <span class="math">\(O(ns\log n)\)</span> where n is the net size and s is the size of the mpts and bts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – List of Points</li>
+<li><strong>mpts</strong> – List of WPoints</li>
+<li><strong>bpts</strong> – List of WPoints</li>
+<li><strong>disc_f</strong> – Discrepancy function to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tuple of the found halfplane and the maximum disc_f value</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_halfplane_fast">
+<code class="descclassname">pyscan.</code><code class="descname">max_halfplane_fast</code><span class="sig-paren">(</span><em>r</em>, <em>mpts</em>, <em>bpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_halfplane_fast" title="Permalink to this definition">¶</a></dt>
+<dd><p>HERE BE DRAGONS!!! This method is still experimental and somewhat broken. This method uses a different method to scan the set of potential halfplanes with respect to the fraction of points contained in mpts and bpts. This code could potentially be much faster than the standard max_halfplane method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>r</strong> – Number of regions asymptopically to consider.</li>
+<li><strong>mpts</strong> – List of WPoints</li>
+<li><strong>bpts</strong> – List of WPoints</li>
+<li><strong>disc_f</strong> – Discrepancy function to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tuple of the found halfplane and the maximum disc_f value</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_halfspace">
+<code class="descclassname">pyscan.</code><code class="descname">max_halfspace</code><span class="sig-paren">(</span><em>net</em>, <em>mpts</em>, <em>bpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_halfspace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scans the set of halfspaces defined by the points in the net and maximizes the function disc_f with respect to the fraction of points contained in mpts and bpts. Function takes <span class="math">\(O(n^2s\log n)\)</span> where n is the net size and s is the size of the mpts and bts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – List of Point3s</li>
+<li><strong>mpts</strong> – List of WPoint3s</li>
+<li><strong>bpts</strong> – List of WPoint3s</li>
+<li><strong>disc_f</strong> – Discrepancy function to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tuple of the found halfspace and the maximum disc_f value</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_halfplane_labeled">
+<code class="descclassname">pyscan.</code><code class="descname">max_halfplane_labeled</code><span class="sig-paren">(</span><em>net</em>, <em>lmpts</em>, <em>lbpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_halfplane_labeled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scans the set of halfplanes defined by the points in the net and maximizes the function disc_f with respect to the labeled sets of points lmpts and lbpts. If two points with the same label are in the same region then the two points only contribute one of their weights to the region. This algorithm runs in time <span class="math">\(O(ns \log n)\)</span> where n is the net size and s is the size of the lmpts and lbpts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – List of Points</li>
+<li><strong>mpts</strong> – List of LPoints</li>
+<li><strong>bpts</strong> – List of LPoints</li>
+<li><strong>disc_f</strong> – Discrepancy function to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tuple of the found halfplane and the maximum disc_f value</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_halfspace_labeled">
+<code class="descclassname">pyscan.</code><code class="descname">max_halfspace_labeled</code><span class="sig-paren">(</span><em>net</em>, <em>lmpts</em>, <em>lbpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_halfspace_labeled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scans the set of halfspaces defined by the points in the net and maximizes the function disc_f with respect to the labeled sets of points lmpts and lbpts. If two points with the same label are in the same region then the two points only contribute one of their weights to the region. This algorithm runs in time <span class="math">\(O(n^2s \log n)\)</span> where n is the net size and s is the size of the lmpts and lbpts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – List of Point3s</li>
+<li><strong>mpts</strong> – List of LPoint3s</li>
+<li><strong>bpts</strong> – List of LPoint3s</li>
+<li><strong>disc_f</strong> – Discrepancy function to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tuple of the found halfspace and the maximum disc_f value</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.ham_tree_sample">
+<code class="descclassname">pyscan.</code><code class="descname">ham_tree_sample</code><span class="sig-paren">(</span><em>pts</em>, <em>size</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.ham_tree_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the list of pts and computes a ham tree sample <a class="reference internal" href="#mp18a" id="id4">[MP18b]</a>. This method can shrink the size of the sample significantly while preserving the error with respect to halfplanes. This serves as a useful preprocessing step for speeding up halfplane scanning. In theory sample sizes go from <span class="math">\(O(\frac{1}{\varepsilon^2}\)</span> to <span class="math">\(O(\frac{1}{\varepsilon^{1.53..}}\log^{.766}\frac{1}{\varepsilon})\)</span> where <span class="math">\(\varepsilon\)</span> is the absolute fraction of misplaced points in a halfplane.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pts</strong> – List of WPoints</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">List of WPoints</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_disk">
+<code class="descclassname">pyscan.</code><code class="descname">max_disk</code><span class="sig-paren">(</span><em>net</em>, <em>mpts</em>, <em>bpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_disk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scans the set of disks defined by the points in the net and maximizes the function disc_f with respect to the fraction of points contained in mpts and bpts. Function takes <span class="math">\(O(n^2s\log n)\)</span> where n is the net size and s is the size of the mpts and bts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – List of Points</li>
+<li><strong>mpts</strong> – List of WPoints</li>
+<li><strong>bpts</strong> – List of WPoints</li>
+<li><strong>disc_f</strong> – Discrepancy function to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tuple of the found disk and the maximum disc_f value</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_disk_scale">
+<code class="descclassname">pyscan.</code><code class="descname">max_disk_scale</code><span class="sig-paren">(</span><em>net</em>, <em>mpts</em>, <em>bpts</em>, <em>min_res</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_disk_scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scans the set of disks defined by the points in the net, between the min_res and 2 * min_res and maximizes the function disc_f with respect to the fraction of points contained in mpts and bpts. Internally we use the disk radius restriction to ignore far away points and prune out many potential disks. This can significantly decrease the amount of time the method takes to find the best region. In worst case this method will still take <span class="math">\(O(n^2s\log n)\)</span> where n is the net size and s is the size of the mpts and bts, but usually runtime will be much less.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – List of Points</li>
+<li><strong>mpts</strong> – List of WPoints</li>
+<li><strong>bpts</strong> – List of WPoints</li>
+<li><strong>min_res</strong> – A float that corresponds to minimum radius to consider.</li>
+<li><strong>disc_f</strong> – Discrepancy function to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tuple of the found disk and the maximum disc_f value</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_disk_labeled">
+<code class="descclassname">pyscan.</code><code class="descname">max_disk_labeled</code><span class="sig-paren">(</span><em>net</em>, <em>lmpts</em>, <em>lbpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_disk_labeled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scans the set of disks defined by the points in the net and maximizes the function disc_f with respect to the fraction of points contained in lmpts and lbpts. Points with identical labels are not double counted if they are contained in the same region. In worst case this method will still take <span class="math">\(O(n^2s\log n)\)</span> where n is the net size and s is the size of the lmpts and lbts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – List of Points</li>
+<li><strong>lmpts</strong> – List of LPoints</li>
+<li><strong>lbpts</strong> – List of LPoints</li>
+<li><strong>disc_f</strong> – Discrepancy function to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tuple of the found disk and the maximum disc_f value</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_disk_scale_labeled">
+<code class="descclassname">pyscan.</code><code class="descname">max_disk_scale_labeled</code><span class="sig-paren">(</span><em>net</em>, <em>lmpts</em>, <em>lbpts</em>, <em>compress</em>, <em>min_res</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_disk_scale_labeled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scans the set of disks defined by the points in the net and maximizes the function disc_f with respect to the fraction of points contained in lmpts and lbpts. Only considers disks with radii between min_res and 2 * min_res. This method internally maps the disk scanning problem to halfplane scanning. Using this mapping we can compress sets of points with the same labels. This compression step can significantly improve the runtime and doesn’t incurr any extra error. In worst case this method will still take <span class="math">\(O(n^2s\log n)\)</span> where n is the net size and s is the size of the lmpts and lbts, but in practice this method should be much faster than this.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – List of Points</li>
+<li><strong>lmpts</strong> – List of LPoints</li>
+<li><strong>lbpts</strong> – List of LPoints</li>
+<li><strong>compress</strong> – Turns the compression step on or off.</li>
+<li><strong>min_res</strong> – Defines the radius range to consider.</li>
+<li><strong>disc_f</strong> – Discrepancy function to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tuple of the found disk and the maximum disc_f value</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_disk_scale_labeled_alt">
+<code class="descclassname">pyscan.</code><code class="descname">max_disk_scale_labeled_alt</code><span class="sig-paren">(</span><em>net</em>, <em>lmpts</em>, <em>lbpts</em>, <em>min_res</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_disk_scale_labeled_alt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scans the set of disks defined by the points in the net and maximizes the function disc_f with respect to the fraction of points contained in lmpts and lbpts. Only considers disks with radii between min_res and 2 * min_res. This method internally directly scans disks and lacks the compression step found in the previous algorihtm, so it is slighlty slower in practice then the previous method with compression turned off.  In worst case this method will still take <span class="math">\(O(n^2s\log n)\)</span> where n is the net size and s is the size of the lmpts and lbts, but in practice this method should be much faster than this.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – List of Points</li>
+<li><strong>lmpts</strong> – List of LPoints</li>
+<li><strong>lbpts</strong> – List of LPoints</li>
+<li><strong>min_res</strong> – Defines the radius range to consider.</li>
+<li><strong>disc_f</strong> – Discrepancy function to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tuple of the found disk and the maximum disc_f value</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_subgrid">
+<code class="descclassname">pyscan.</code><code class="descname">max_subgrid</code><span class="sig-paren">(</span><em>grid</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_subgrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the maximum subgrid exactly by enumerating all the subgrids and computing disc_f on each subgrid. Takes <span class="math">\(O(n^4)\)</span> where the grid is <span class="math">\(n \times n\)</span>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>grid</strong> – A Grid object</li>
+<li><strong>disc_f</strong> – Discrepancy function to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">The maximum subgrid found.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_subgrid_linear">
+<code class="descclassname">pyscan.</code><code class="descname">max_subgrid_linear</code><span class="sig-paren">(</span><em>grid</em>, <em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_subgrid_linear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the maximum subgrid with respect to the linear function <span class="math">\(f(m, b) = xm + yb\)</span> exactly by using the Kadane algorithm. Takes <span class="math">\(O(n^3)\)</span> where the grid is <span class="math">\(n \times n\)</span>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>grid</strong> – A Grid object</li>
+<li><strong>x</strong> – Double defines linear function.</li>
+<li><strong>y</strong> – Double defines linear function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">The maximum subgrid found.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_subgrid_linear_theory">
+<code class="descclassname">pyscan.</code><code class="descname">max_subgrid_linear_theory</code><span class="sig-paren">(</span><em>grid</em>, <em>r</em>, <em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_subgrid_linear_theory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds an approximate maximum subgrid with respect to the linear function <span class="math">\(f(m, b) = xm + yb\)</span> using the algorithm from <a class="reference internal" href="#mp18b" id="id5">[MP18a]</a>. Takes <span class="math">\(O(n^2 + r^2 \log r)\)</span> where the grid is <span class="math">\(n \times n\)</span>.
+:param grid: A Grid object
+:param r: Determines how frequently to approximate the subgrids. See <a class="reference internal" href="#mp18b" id="id6">[MP18a]</a> for details.
+:param x: Double defines linear function.
+:param y: Double defines linear function.
+:rtype: The maximum subgrid found.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_subgrid_convex">
+<code class="descclassname">pyscan.</code><code class="descname">max_subgrid_convex</code><span class="sig-paren">(</span><em>grid</em>, <em>eps</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_subgrid_convex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Approximately finds the maximum subgrid of the grid with error eps by successively computing the maximum subgrid with respect to various linear function using the Kadane algorithm. Takes <span class="math">\(O(\frac{1}{\sqrt{\varepsilon}} n^3)\)</span> where the grid is <span class="math">\(n \times n\)</span>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>grid</strong> – A Grid object</li>
+<li><strong>eps</strong> – The absolute error to incur.</li>
+<li><strong>disc_f</strong> – Discrepancy function to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">The maximum subgrid found.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_subgrid_convex_theory">
+<code class="descclassname">pyscan.</code><code class="descname">max_subgrid_convex_theory</code><span class="sig-paren">(</span><em>grid</em>, <em>eps</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_subgrid_convex_theory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Approximately finds the maximum subgrid of the grid with error eps by successively computing the maximum subgrid with respect to various linear function using the algorithm from <a class="reference internal" href="#mp18b" id="id7">[MP18a]</a>. Takes <span class="math">\(O(\frac{1}{\sqrt{\varepsilon}} n^2 \log n)\)</span> where the grid is <span class="math">\(n \times n\)</span>. This method is depreciated and will be replaced shortly.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>grid</strong> – A Grid object</li>
+<li><strong>eps</strong> – The absolute error to incur.</li>
+<li><strong>disc_f</strong> – Discrepancy function to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">The maximum subgrid found.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_rectangle">
+<code class="descclassname">pyscan.</code><code class="descname">max_rectangle</code><span class="sig-paren">(</span><em>mpts</em>, <em>bpts</em>, <em>eps</em>, <em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_rectangle" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.pyscan.max_rectangle_heap">
+<code class="descclassname">pyscan.</code><code class="descname">max_rectangle_heap</code><span class="sig-paren">(</span><em>mpts</em>, <em>bpts</em>, <em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.max_rectangle_heap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements the algorithm from <a class="reference internal" href="#apv06" id="id8">[APV06]</a><a class="reference internal" href="#dgm95" id="id9">[DGM95]</a> to scan the data set in <span class="math">\(s^2 \log s\)</span> time.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mpts</strong> – List of WPoints.</li>
+<li><strong>bpts</strong> – List of WPoints.</li>
+<li><strong>x</strong> – Linear parameter.</li>
+<li><strong>y</strong> – Linear parameter.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">The maximum rectangle found.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_halfplane">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_halfplane</code><span class="sig-paren">(</span><em>reg</em>, <em>mpts</em>, <em>bpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_halfplane" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_halfplane_labeled">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_halfplane_labeled</code><span class="sig-paren">(</span><em>reg</em>, <em>lmpts</em>, <em>lbpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_halfplane_labeled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_halfplane_trajectory">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_halfplane_trajectory</code><span class="sig-paren">(</span><em>reg</em>, <em>mtrajs</em>, <em>btrajs</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_halfplane_trajectory" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_disk">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_disk</code><span class="sig-paren">(</span><em>reg</em>, <em>mpts</em>, <em>bpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_disk" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_disk_alt">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_disk_alt</code><span class="sig-paren">(</span><em>reg</em>, <em>mpts</em>, <em>bpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_disk_alt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_disk_labeled">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_disk_labeled</code><span class="sig-paren">(</span><em>reg</em>, <em>lmpts</em>, <em>lbpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_disk_labeled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_disk_trajectory">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_disk_trajectory</code><span class="sig-paren">(</span><em>reg</em>, <em>mtrajs</em>, <em>btrajs</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_disk_trajectory" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_rectangle">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_rectangle</code><span class="sig-paren">(</span><em>reg</em>, <em>mpts</em>, <em>bpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_rectangle" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_rectangle_labeled">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_rectangle_labeled</code><span class="sig-paren">(</span><em>reg</em>, <em>lmpts</em>, <em>lbpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_rectangle_labeled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_rectangle_trajectory">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_rectangle_trajectory</code><span class="sig-paren">(</span><em>reg</em>, <em>mtrajs</em>, <em>btrajs</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_rectangle_trajectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>These functions can be used to evaluate different regions on different kinds of data sets.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.size_region">
+<code class="descclassname">pyscan.</code><code class="descname">size_region</code><span class="sig-paren">(</span><em>fraction</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.size_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a discrepancy function that can be used to find a region containing a certain fraction of the points.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fraction</strong> – A double between 0 and 1.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">A discrepancy function.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate</code><span class="sig-paren">(</span><em>disc_f</em>, <em>m</em>, <em>m_total</em>, <em>b</em>, <em>b_total</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd><p>A utility function for explicitly evaluating a discrepancy function object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>disc_f</strong> – A double between 0 and 1.</li>
+<li><strong>m</strong> – A double between 0 and m_total</li>
+<li><strong>m_total</strong> – A double.</li>
+<li><strong>b</strong> – A double between 0 and b_total.</li>
+<li><strong>b_total</strong> – A double.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">A double returned by the discrepancy function.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="bibliography">
+<h1>Bibliography<a class="headerlink" href="#bibliography" title="Permalink to this headline">¶</a></h1>
+<p id="bibtex-bibliography-index-0"><table class="docutils citation" frame="void" id="apv06" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id8">[APV06]</a></td><td>Deepak Agarwal, Jeff&nbsp;M. Phillips, and Suresh Venkatasubramanian. The hunting of the bump: on maximizing statistical discrepancy. <em>SODA</em>, 2006.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="dgm95" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id9">[DGM95]</a></td><td>David&nbsp;P. Dobkin, Dimitrios Gunopulos, and Wolfgang Maass. Computing the maximum bichromatic discrepancy, with applications to computer graphics and machine learning. <em>NeuroCOLT Technical Report Series</em>, March 1995.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="mp18b" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[MP18a]</td><td><em>(<a class="fn-backref" href="#id2">1</a>, <a class="fn-backref" href="#id5">2</a>, <a class="fn-backref" href="#id6">3</a>, <a class="fn-backref" href="#id7">4</a>)</em> Michael Matheny and Jeff&nbsp;M. Phillips. Computing approximate statistical discrepancy. <em>ISAAC</em>, 2018.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="mp18a" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[MP18b]</td><td><em>(<a class="fn-backref" href="#id1">1</a>, <a class="fn-backref" href="#id4">2</a>)</em> Michael Matheny and Jeff&nbsp;M. Phillips. Practical low-dimensional halfspace range space sampling. <em>ESA</em>, 2018.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="ssss" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[MSZ+16]</a></td><td>Michael Matheny, Raghvendra Singh, Liang Zhang, Kaiqiang Wang, and Jeff&nbsp;M. Phillips. Scalable spatial scan statistics through sampling. In <em>SIGSPATIAL</em>. 2016.</td></tr>
+</tbody>
+</table>
+</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="examples/PhilyCrime.html" title="next chapter">Philadelphia Crime Example</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Michael Matheny.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

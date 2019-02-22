@@ -49,11 +49,6 @@ def evaluate_range(range, mp, bp, disc_f):
 def evaluate_range_trajectory(range, mp, bp, disc_f):
     """
     Evaluates this range to compute the total discrepancy.
-    :param range:
-    :param mp:
-    :param bp:
-    :param disc_f:
-    :return:
     """
 
     if not mp and not bp:
@@ -83,16 +78,16 @@ def split_set(pts, rate):
 
 
 
-"""
-This takes a scanning function and two point sets and then computes a planted region that contains some fraction r
-of the points with some tolerance.
-This then computes a red and blue set of points based on the planted region.
 
-Inside the region q fraction of points are red.
-Outside the region p fraction of points are red
-"""
 def plant_region(points, r, p, q, eps, scan_f):
+    """
+    This takes a scanning function and two point sets and then computes a planted region that contains some fraction r
+    of the points with some tolerance.
+    This then computes a red and blue set of points based on the planted region.
 
+    Inside the region q fraction of points are red.
+    Outside the region p fraction of points are red
+    """
     while True:
 
         net_size = int(1 / min(r, eps) + 1)
@@ -124,11 +119,6 @@ def plant_region(points, r, p, q, eps, scan_f):
 def plant_full_square(trajectories, r, p, q, disc, max_count=32):
     """
     Choose a point at random from a trajectory and then expand outward from there.
-    :param trajectories this consists of lists of lists of points where the points are type Pyscan.Point
-    :param r:
-    :param p:
-    :param q:
-    :return:
     """
     if not trajectories:
         return None
@@ -170,11 +160,6 @@ def plant_full_square(trajectories, r, p, q, disc, max_count=32):
 def plant_full_halfplane(trajectories, r, p, q, disc):
     """
     Choose a point at random from a trajectory and then expand outward from there.
-    :param trajectories this consists of lists of lists of points where the points are type Pyscan.Point
-    :param r:
-    :param p:
-    :param q:
-    :return:
     """
     def min_distance(pts, direc):
         return min([direc[0] * pt[0] + direc[1] * pt[1] for pt in pts])
@@ -197,11 +182,6 @@ def plant_full_halfplane(trajectories, r, p, q, disc):
 def plant_partial_halfplane(trajectories, r, p, q, eps, disc):
     """
     Choose a point at random from a trajectory and then expand outward from there.
-    :param trajectories this consists of lists of lists of points where the points are type Pyscan.Point
-    :param r:
-    :param p:
-    :param q:
-    :return:
     """
     def min_distance(pt, direc):
         return direc[0] * pt[0] + direc[1] * pt[1]
@@ -228,11 +208,6 @@ def plant_partial_halfplane(trajectories, r, p, q, eps, disc):
 def plant_full_disk(trajectories, r, p, q, disc):
     """
     Choose a point at random from a trajectory and then expand outward from there.
-    :param trajectories this consists of lists of lists of points where the points are type Pyscan.Point
-    :param r:
-    :param p:
-    :param q:
-    :return:
     """
     origin = random.choice(list(itertools.chain.from_iterable(trajectories)))
     trajectory_obj = [Trajectory(pts) for pts in trajectories]
@@ -280,10 +255,11 @@ def plant_partial_disk(trajectories, r, p, q, eps, disc):
     diff = evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
     return red_in + red_out, blue_in + blue_out, max_disk, diff
 
-"""
-Create a distribution of the null distribution to measure the significance of the region.
-"""
+
 def distribution(points, p, scan_f, n, s, disc=DISC):
+    """
+    Create a distribution of the null distribution to measure the significance of the region.
+    """
     while True:
         red, blue = split_set(points, p)
 
@@ -298,8 +274,6 @@ def distribution(points, p, scan_f, n, s, disc=DISC):
 def null_cdf(observations):
     """
     Generates a cdf object using a certain number of observations.
-    :param observations
-    :return:
     """
     values = sorted(observations)
     prob = [x / float(len(observations)) for x in range(len(observations))]
@@ -356,9 +330,6 @@ def random_rect(points, r):
 def plant_rectangle(pts, r, p, q):
     """
     Create a set of red and blue points with a random rectangle planted containing r fraction of the points.
-    :param p:
-    :param q:
-    :return:
     """
     rect = random_rect(pts, r)
 
@@ -380,9 +351,6 @@ def plant_rectangle(pts, r, p, q):
 def plant_disk(pts, r, p, q):
     """
     Create a set of red and blue points with a random disk planted containing r fraction of the points.
-    :param p:
-    :param q:
-    :return:
     """
 
     selected = my_sample(pts, 1)
@@ -407,9 +375,6 @@ def plant_disk(pts, r, p, q):
 def plant_halfplane(pts, r, p, q):
     """
     Create a set of red and blue points with a random halfplane planted containing r fraction of the points.
-    :param p:
-    :param q:
-    :return:
     """
 
     def min_distance(pt, direc):
@@ -446,17 +411,17 @@ def plant_partial_rectangle(trajectories, r, p, q, eps, disc):
 
 
 
-"""
-This plants a region where every trajectory:
-Completely outside or inside of the region has an endpoint chosen at random.
-Every trajectory with one endpoint inside the region has an endpoint chosen inside
-with probability q (exactly q fraction have one endpoint in the region)
 
-r controls how many points the region contains.
-
-"""
 def paired_plant_region(traj_start, traj_end, r, q, region_plant_f):
+    """
+    This plants a region where every trajectory:
+    Completely outside or inside of the region has an endpoint chosen at random.
+    Every trajectory with one endpoint inside the region has an endpoint chosen inside
+    with probability q (exactly q fraction have one endpoint in the region)
 
+    r controls how many points the region contains.
+
+    """
     _, _, reg = region_plant_f(traj_start + traj_end, r, .5, q)
 
     flux_region = []
