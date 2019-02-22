@@ -226,7 +226,7 @@ C++ Functions
 
 .. py:function:: pyscan.max_rectangle_heap(mpts, bpts, x, y)
 
-   Implements the algorithm from :cite:`APV06,DGM95` to scan the data set in :math:`s^2 \log s` time.
+   Implements the algorithm from :cite:`APV06,DGM95` to scan the data set in :math:`s^2 \log s` time. We use a Treap based rotation scheme to keep the tree balanced.
 
    :param mpts: List of WPoints.
    :param bpts: List of WPoints.
@@ -274,7 +274,25 @@ C++ Functions
    :param b_total: A double.
    :rtype: A double returned by the discrepancy function.
 
+.. py:function:: dp_compress
+   
+   
 
+ py::def("dp_compress", &pyscan::dp_compress);
+    //This grids the trajectory and assigns a single point to each cell.
+    py::def("grid_kernel", &pyscan::approx_traj_grid);
+    py::def("grid_trajectory", &pyscan::grid_traj);
+    //This grids the trajectory and creates an alpha hull in each one.
+    py::def("grid_direc_kernel", &pyscan::approx_traj_kernel_grid);
+    //This is for 2d eps-kernel useful for halfspaces.
+    py::def("halfplane_kernel", pyscan::approx_hull);
+    py::def("convex_hull", pyscan::graham_march);
+    //This is a 3d eps-kernel for disks.
+    py::def("lifting_kernel", &pyscan::lifting_coreset);
+
+    py::def("coreset_error_halfplane", &pyscan::error_halfplane_coreset);
+    py::def("coreset_error_disk", &pyscan::error_disk_coreset);
+    py::def("hull", pyscan::graham_march);
 
 
 Bibliography
