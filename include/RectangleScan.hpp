@@ -345,6 +345,6 @@ namespace pyscan {
 //    }
 
 
-   
+
 }
 #endif //PYSCAN_RECTANGLESCAN_HPP
