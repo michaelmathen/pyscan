@@ -343,5 +343,8 @@ namespace pyscan {
 //        double b_weight = computeTotal(b_pts);
 //
 //    }
+
+
+   
 }
 #endif //PYSCAN_RECTANGLESCAN_HPP

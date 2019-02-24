@@ -274,10 +274,13 @@ C++ Functions
    :param b_total: A double.
    :rtype: A double returned by the discrepancy function.
 
-.. py:function:: dp_compress
+.. py:function:: dp_compress(traj, eps)
    
-   
+   Douglas-Peuker trajectory simplification method :cite:`RAMER72`.
 
+   :param traj: The trajectory to simplify.
+   :param eps: The pruning distance in the DP algorithm.
+   :rtype: A list of points corresponding to the simplified trajectory.
  py::def("dp_compress", &pyscan::dp_compress);
     //This grids the trajectory and assigns a single point to each cell.
     py::def("grid_kernel", &pyscan::approx_traj_grid);

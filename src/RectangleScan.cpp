@@ -1672,4 +1672,8 @@ namespace pyscan {
         SlabTreeAlt tree(m_points, b_points, eps);
         return tree.max_rectangle(a, b);
     }
+
+
+
+
 }
