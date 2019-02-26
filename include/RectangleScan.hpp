@@ -357,8 +357,8 @@ namespace pyscan {
 
         //void update_left_weight(double weight);
 
-        double left() const;
-        double right() const;
+        size_t left() const;
+        size_t right() const;
 
         Interval get_max() const;
     };
@@ -482,5 +482,206 @@ namespace pyscan {
 
     std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& m_points, const wpoint_list_t& b_points, double eps, double a, double b);
 
+
+
+
+    class LeafNode {
+    public:
+
+        LeafNode(size_t pos, double weight) : max_interval(pos, weight) {}
+
+        virtual size_t get_left_bound() const {
+            return max_interval.left();
+        }
+
+        virtual size_t get_right_bound() const {
+            return max_interval.right();
+        }
+
+        virtual std::shared_ptr<LeafNode> get_right() const {
+             return nullptr;
+        }
+
+        virtual  std::shared_ptr<LeafNode> get_left() const {
+            return nullptr;
+        }
+
+        virtual bool contains(size_t x) {
+             return get_left_bound() <= x && x < get_right_bound();
+         }
+
+
+        virtual void rebuild() {
+        }
+
+        virtual size_t get_mid() const {
+            return  get_left_bound();
+        }
+
+        virtual bool is_leaf() const { return true; }
+
+        virtual void set_parent(std::shared_ptr<LeafNode> lp) {
+            parent = lp;
+        }
+
+        virtual bool is_left(std::shared_ptr<LeafNode> ptr) const { return false; }
+
+    protected:
+        friend class IntervalTreap;
+        friend class IntervalNode;
+        MaxIntervalAlt max_interval;
+        std::weak_ptr<LeafNode> parent;
+    };
+
+    class IntervalNode : public LeafNode {
+
+    public:
+
+        IntervalNode(std::shared_ptr<LeafNode> l1, std::shared_ptr<LeafNode> l2, double priority) : LeafNode(*l1),
+            r_child(l2), l_child(l1), priority(priority) {
+            max_interval += l2->max_interval;
+        }
+
+        bool is_leaf() const override { return false; }
+
+        size_t get_mid() const override {
+            return r_child->get_left_bound();
+        }
+
+        void rebuild() override {
+            /*
+             * Builds this node from its children by merging the left child and right child max intervals.
+             */
+            max_interval = l_child->max_interval;
+            max_interval += r_child->max_interval;
+        }
+
+        friend std::shared_ptr<LeafNode> l_rotation(std::shared_ptr<IntervalNode> p) {
+            /*
+             *     p               r
+             *  l    r     =>   p    rr
+             *      lr rr     l  lr
+             *
+             */
+            auto r = p->r_child;
+            auto l = p->l_child;
+            auto lr = p->r_child->get_left();
+
+            assert(!r->is_leaf());
+            ((IntervalNode*)r.get())->l_child = p;
+            p->r_child = lr;
+
+            r->set_parent(p->parent.lock());
+            p->set_parent(r);
+            lr->set_parent(p);
+
+            p->rebuild();
+            l->rebuild();
+            return r;
+        }
+
+        friend std::shared_ptr<LeafNode> r_rotation(std::shared_ptr<IntervalNode> p) {
+            /*
+             *     p               l
+             *  l     r     =>   ll    p
+             * ll rl                rl   r
+             */
+            auto r = p->r_child;
+            auto l = p->l_child;
+            auto rl = p->l_child->get_right();
+
+            assert(!l->is_leaf());
+            ((IntervalNode*)l.get())->r_child = p;
+            p->l_child = rl;
+
+            l->set_parent(p->parent.lock());
+            p->set_parent(l);
+            rl->set_parent(p);
+
+            p->rebuild();
+            l->rebuild();
+            return l;
+        }
+
+        bool is_left(std::shared_ptr<LeafNode> ptr) const override { return ptr == l_child; }
+
+    protected:
+        friend class IntervalTreap;
+        std::shared_ptr<LeafNode> r_child;
+        std::shared_ptr<LeafNode> l_child;
+        double priority;
+    };
+
+    class IntervalTreap {
+    public:
+
+        IntervalTreap() : root(nullptr), distribution(0.0, 1.0), gen(std::random_device()()) {}
+
+        std::shared_ptr<LeafNode> upper_bound(size_t val) const {
+            /*
+             * Finds the lowest node that we are contained inside.
+             */
+            auto curr_root = root;
+            auto p = curr_root;
+            while (curr_root != nullptr) {
+                p = curr_root;
+                if (curr_root->get_mid() > val) {
+                    curr_root = curr_root->get_left();
+                } else {
+                    curr_root = curr_root->get_right();
+                }
+            }
+            return p;
+        }
+
+        void insert(size_t val, double weight) {
+            auto c_right = upper_bound(val);
+            std::shared_ptr<LeafNode> c_left = std::make_shared<LeafNode>(val, weight);
+
+            if (c_right == nullptr) {
+                root = c_left;
+            } else {
+                auto p = c_right->parent.lock();
+                std::shared_ptr<LeafNode>* child = &root;
+                if (p != nullptr) {
+                    if (p->is_left(c_right)) {
+                        child = &(std::dynamic_pointer_cast<IntervalNode>(p)->l_child);
+                    } else {
+                        child = &(std::dynamic_pointer_cast<IntervalNode>(p)->r_child);
+                    }
+                }
+                if (c_right->get_mid() <= val) {
+                    std::swap(c_left, c_right);
+                }
+                *child = std::make_shared<LeafNode>(new IntervalNode(c_left, c_right, distribution(gen)));
+                auto curr_node = *child;
+                curr_node->set_parent(p);
+
+                // Binary tree now.
+
+                //Now have to bubble up the change to the root.
+                while (curr_node != nullptr) {
+                    auto parent = std::dynamic_pointer_cast<IntervalNode>(curr_node->parent.lock());
+                    auto curr = std::dynamic_pointer_cast<IntervalNode>(curr_node);
+     
+
+                    if (parent->priority > curr->priority) {
+                        if (parent->is_left(curr_node)) {
+                            curr_node = r_rotation(parent);
+                        } else {
+                            curr_node = l_rotation(parent);
+                        }
+                    }
+                }
+
+            }
+        }
+
+    private:
+        std::shared_ptr<LeafNode> root;
+        std::uniform_real_distribution<double> distribution;
+        std::minstd_rand gen;
+
+    };
 }
 #endif //PYSCAN_RECTANGLESCAN_HPP

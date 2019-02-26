@@ -662,10 +662,10 @@ namespace pyscan {
          return *this;
      }
 
-     double MaxIntervalAlt::left() const {
+     size_t MaxIntervalAlt::left() const {
          return left_max.get_l();
      }
-     double MaxIntervalAlt::right() const {
+     size_t MaxIntervalAlt::right() const {
          return right_max.get_r();
      }
 
