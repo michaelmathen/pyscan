@@ -654,24 +654,33 @@ namespace pyscan {
                     std::swap(c_left, c_right);
                 }
                 *child = std::make_shared<LeafNode>(new IntervalNode(c_left, c_right, distribution(gen)));
-                auto curr_node = *child;
-                curr_node->set_parent(p);
+                (*child)->set_parent(p);
 
                 // Binary tree now.
 
                 //Now have to bubble up the change to the root.
-                while (curr_node != nullptr) {
-                    auto parent = std::dynamic_pointer_cast<IntervalNode>(curr_node->parent.lock());
-                    auto curr = std::dynamic_pointer_cast<IntervalNode>(curr_node);
-     
+                while ((*child)->parent.lock() != nullptr) {
+                    auto p = std::dynamic_pointer_cast<IntervalNode>((*child)->parent.lock());
+                    auto curr = std::dynamic_pointer_cast<IntervalNode>(*child);
 
-                    if (parent->priority > curr->priority) {
-                        if (parent->is_left(curr_node)) {
-                            curr_node = r_rotation(parent);
+                    if (p->parent.lock() == nullptr) {
+                        child = &root;
+                    } else {
+                        if (p->parent.lock()->is_left(p)) {
+                            child = &(std::dynamic_pointer_cast<IntervalNode>(p)->l_child);
                         } else {
-                            curr_node = l_rotation(parent);
+                            child = &(std::dynamic_pointer_cast<IntervalNode>(p)->r_child);
                         }
                     }
+
+                    if (p->priority > curr->priority) {
+                        if (p->is_left(curr)) {
+                            *child = r_rotation(p);
+                        } else {
+                            *child = l_rotation(p);
+                        }
+                    }
+
                 }
 
             }
@@ -683,5 +692,10 @@ namespace pyscan {
         std::minstd_rand gen;
 
     };
+
+
+    std::tuple<ERectangle, double> max_rectangle_heap(epoint_list_t const& mpts, epoint_list_t const& bpts, double x, double y) {
+
+    }
 }
 #endif //PYSCAN_RECTANGLESCAN_HPP
