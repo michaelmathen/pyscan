@@ -1,28 +1,38 @@
 from libpyscan import *
 import libpyscan as lp
 import random
-import bisect
 import itertools
-import collections
+import math
 
 
 
 def to_weighted(points):
     return [WPoint(1.0, pt[0], pt[1], 1.0) for pt in points]
 
+
 def trajectories_to_flux(trajectories):
     return [t[0] for t in trajectories], [t[-1] for t in trajectories]
+
 
 def trajectories_to_labels(trajectories):
     return itertools.chain.from_iterable([[LPoint(label, 1.0, pt[0], pt[1], 1.0) for pt in traj]
             for label, traj in zip(range(len(trajectories)), trajectories)])
 
+
 def my_sample(samp, count):
     return random.sample(samp, min(len(samp), int(count + .5)))
 
+
 def evaluate_range(range, mp, bp, disc_f):
+    """
+    Evaluates this range to compute the total discrepancy over a set of points.
 
-
+    :param range: Some arbitrary range.
+    :param mp: measured set
+    :param bp: baseline set
+    :param disc_f: Discrepancy function.
+    :return: Discrepancy function value.
+    """
     if not mp and not bp:
         return evaluate(disc_f, 0, 0, 0, 0)
     elif not mp:
@@ -46,9 +56,16 @@ def evaluate_range(range, mp, bp, disc_f):
             return lp.__evaluate_rectangle(range, mp, bp, disc_f)
     raise ValueError()
 
+
 def evaluate_range_trajectory(range, mp, bp, disc_f):
     """
-    Evaluates this range to compute the total discrepancy.
+    Evaluates this range to compute the total discrepancy over a set of trajectories.
+
+    :param range: Some arbitrary range.
+    :param mp: measured set
+    :param bp: baseline set
+    :param disc_f: Discrepancy function.
+    :return: Discrepancy function value.
     """
 
     if not mp and not bp:
@@ -64,19 +81,9 @@ def evaluate_range_trajectory(range, mp, bp, disc_f):
 
 
 def split_set(pts, rate):
-    """
-    Divides the point set into two random sets where one contains approximately rate * len(pts) number of
-    points and the other has (1 - rate) * len(pts)
-    :param pts:
-    :param rate:
-    :return:
-    """
     red_set = my_sample(pts, len(pts) * rate)
     red_set_set = set(red_set)
     return red_set, [item for item in pts if item not in red_set_set]
-
-
-
 
 
 def plant_region(points, r, p, q, eps, scan_f):
@@ -87,6 +94,14 @@ def plant_region(points, r, p, q, eps, scan_f):
 
     Inside the region q fraction of points are red.
     Outside the region p fraction of points are red
+
+    :param points: List of points.
+    :param r: Fraction of points inside the region.
+    :param p: Fraction of points outside the region that are red.
+    :param q: Fraction of points inside the region that are red.
+    :param eps: Difference between r and the fraction of points inside the region.
+    :param scan_f: The scan function to use (ex max_disk)
+    :return: red set, blue set, region planted.
     """
     while True:
 
@@ -118,7 +133,16 @@ def plant_region(points, r, p, q, eps, scan_f):
 
 def plant_full_square(trajectories, r, p, q, disc, max_count=32):
     """
-    Choose a point at random from a trajectory and then expand outward from there.
+    Choose a point at random from a trajectory and then expand a square out from this point till this region contains
+    r fraction of all the trajectories.
+
+    :param trajectories: List of list of points.
+    :param r: double between 0 and 1
+    :param p: double between 0 and 1
+    :param q: double between 0 and 1
+    :param disc: The discrepancy function to evaluate exactly on this region.
+    :param max_count: The maximum number of times we will attempt to find the right sized region.
+    :return: red set of trajectories, blue set of trajectories, the planted region, and the exact partial discrepancy.
     """
     if not trajectories:
         return None
@@ -159,7 +183,14 @@ def plant_full_square(trajectories, r, p, q, disc, max_count=32):
 
 def plant_full_halfplane(trajectories, r, p, q, disc):
     """
-    Choose a point at random from a trajectory and then expand outward from there.
+    Choose a random direction and then finds a halfplane with this normal containing r fraction of the total trajectories.
+
+    :param trajectories: List of list of points.
+    :param r: Fraction of trajectories in region.
+    :param p: Fraction of red trajectories outside of region.
+    :param q: Fraction of red trajectories inside of region.
+    :param disc: Discrepancy function to measure exactly on region.
+    :return: red set of trajectories, blue set of trajectories, planted region, discrepancy function value.
     """
     def min_distance(pts, direc):
         return min([direc[0] * pt[0] + direc[1] * pt[1] for pt in pts])
@@ -181,8 +212,18 @@ def plant_full_halfplane(trajectories, r, p, q, disc):
 
 def plant_partial_halfplane(trajectories, r, p, q, eps, disc):
     """
-    Choose a point at random from a trajectory and then expand outward from there.
+    Choose a random direction and expand the region along this direction till we contain r fraction of the total
+    trajectory arc length.
+
+    :param trajectories: List of list of points.
+    :param r: double between 0 and 1
+    :param p: double between 0 and 1
+    :param q: double between 0 and 1
+    :param eps: This defines the maximum difference between r and the fraction of the trajectories that are in the found region.
+    :param disc: The discrepancy function to evaluate exactly on this region.
+    :return: red set of trajectories, blue set of trajectories, the planted region, and the exact partial discrepancy.
     """
+
     def min_distance(pt, direc):
         return direc[0] * pt[0] + direc[1] * pt[1]
     #so it always points down
@@ -207,7 +248,15 @@ def plant_partial_halfplane(trajectories, r, p, q, eps, disc):
 
 def plant_full_disk(trajectories, r, p, q, disc):
     """
-    Choose a point at random from a trajectory and then expand outward from there.
+    Choose a point at random from a trajectory and then expand outward from there until we find a disk contains r fraction
+    of the trajectories.
+
+    :param trajectories: List of trajectories
+    :param r: Fraction of trajectories in region.
+    :param p: Fraction of red trajectories outside of region.
+    :param q: Fraction of red trajectories inside of region.
+    :param disc: Discrepancy function to measure exactly on region.
+    :return: red set, blue set, planted disk, maximum discrepancy.
     """
     origin = random.choice(list(itertools.chain.from_iterable(trajectories)))
     trajectory_obj = [Trajectory(pts) for pts in trajectories]
@@ -227,17 +276,17 @@ def plant_full_disk(trajectories, r, p, q, disc):
 
 def plant_partial_disk(trajectories, r, p, q, eps, disc):
     """
-    Choose a point at random from a trajectory and then expand outward from there.
-    :param trajectories this consists of lists of lists of points where the points are type Pyscan.Point
-    :param r:
-    :param p:
-    :param q:
-    :return:
+    Choose a point at random from a trajectory and then expand outward from there. Computes the fraction of length inside the disk
+    for each segment and then does bisection on this amount since it is a monotonic function to compute within eps fraction.
+
+    :param trajectories: List of list of points.
+    :param r: double between 0 and 1
+    :param p: double between 0 and 1
+    :param q: double between 0 and 1
+    :param eps: This defines the maximum difference between r and the fraction of the trajectories that are in the found region.
+    :param disc: The discrepancy function to evaluate exactly on this region.
+    :return: red set of trajectories, blue set of trajectories, the planted region, and the exact partial discrepancy.
     """
-    #Compute fraction of mass inside disk
-    #For each segment inside disk add mass.
-    # For each segment partly inside disk compute overlap and add to mass.
-    #We can do bisection on this amount since it is a monotonic function to compute within eps fraction.
 
     origin_tuple = random.choice(list(itertools.chain.from_iterable(trajectories)))
     origin = Point(origin_tuple[0], origin_tuple[1], 1.0)
@@ -257,9 +306,6 @@ def plant_partial_disk(trajectories, r, p, q, eps, disc):
 
 
 def distribution(points, p, scan_f, n, s, disc=DISC):
-    """
-    Create a distribution of the null distribution to measure the significance of the region.
-    """
     while True:
         red, blue = split_set(points, p)
 
@@ -272,15 +318,19 @@ def distribution(points, p, scan_f, n, s, disc=DISC):
 
 
 def null_cdf(observations):
-    """
-    Generates a cdf object using a certain number of observations.
-    """
     values = sorted(observations)
     prob = [x / float(len(observations)) for x in range(len(observations))]
     return values, prob
 
 
 def random_rect(points, r):
+    """
+    Plants a random rectangle containing r fraction of the points.
+
+    :param points: List of points
+    :param r: Fraction of points inside of planted region.
+    :return: The planted region.
+    """
     def bBox(*bb):
         return (min(*map(lambda pt: pt[0], bb)),
                 max(*map(lambda pt: pt[0], bb)),
@@ -329,8 +379,16 @@ def random_rect(points, r):
 
 def plant_rectangle(pts, r, p, q):
     """
-    Create a set of red and blue points with a random rectangle planted containing r fraction of the points.
+    Create a set of red and blue points with a random rectangle planted containing r fraction of the points with
+    q fraction of the points in the region being red and p fraction of the points outside of the region being red.
+
+    :param pts: List of points.
+    :param r: Fraction of points contained in the planted region
+    :param p: Fraction of points outside region that red.
+    :param q: Fraction of points inside region that are red.
+    :return: red set, blue set, planted region.
     """
+
     rect = random_rect(pts, r)
 
     inside_rect = []
@@ -350,7 +408,14 @@ def plant_rectangle(pts, r, p, q):
 
 def plant_disk(pts, r, p, q):
     """
-    Create a set of red and blue points with a random disk planted containing r fraction of the points.
+    Create a set of red and blue points with a random disk planted containing r fraction of the points with
+    q fraction of the points in the region being red and p fraction of the points outside of the region being red.
+
+    :param pts: List of points.
+    :param r: Fraction of points contained in the planted region
+    :param p: Fraction of points outside region that red.
+    :param q: Fraction of points inside region that are red.
+    :return: red set, blue set, planted region.
     """
 
     selected = my_sample(pts, 1)
@@ -374,7 +439,14 @@ def plant_disk(pts, r, p, q):
 
 def plant_halfplane(pts, r, p, q):
     """
-    Create a set of red and blue points with a random halfplane planted containing r fraction of the points.
+    Create a set of red and blue points with a random halfplane planted containing r fraction of the points with
+    q fraction of the points in the region being red and p fraction of the points outside of the region being red.
+
+    :param pts: List of points
+    :param r: Fraction of points contained in the planted region
+    :param p: Fraction of points outside region that red.
+    :param q: Fraction of points inside region that are red.
+    :return: red set, blue set, planted region.
     """
 
     def min_distance(pt, direc):
@@ -397,7 +469,19 @@ def plant_halfplane(pts, r, p, q):
 
 
 def plant_partial_rectangle(trajectories, r, p, q, eps, disc):
+    """
+    This plants a region containing r fraction of the total arc length of all trajectories. q fraction of the trajectories
+    crossing this region are assigned to be anomalous and p fraction of trajectories not crossing this region are assigned
+    to be anomalous.
 
+    :param trajectories: List of list of points.
+    :param r: double between 0 and 1
+    :param p: double between 0 and 1
+    :param q: double between 0 and 1
+    :param eps: This defines the maximum difference between r and the fraction of the trajectories that are in the found region.
+    :param disc: The discrepancy function to evaluate exactly on this region.
+    :return: red set of trajectories, blue set of trajectories, the planted region, and the exact partial discrepancy.
+    """
     trajectory_obj = [Trajectory(pts) for pts in trajectories]
     all_pts = uniform_sample(trajectory_obj, int(1 / eps ** 2 + 1), False)
     _, _, rect = plant_rectangle(all_pts, r, p, q)
@@ -414,13 +498,18 @@ def plant_partial_rectangle(trajectories, r, p, q, eps, disc):
 
 def paired_plant_region(traj_start, traj_end, r, q, region_plant_f):
     """
-    This plants a region where every trajectory:
-    Completely outside or inside of the region has an endpoint chosen at random.
+    This plants a region where every trajectory
+    completely outside or inside of the region has an endpoint chosen at random.
     Every trajectory with one endpoint inside the region has an endpoint chosen inside
     with probability q (exactly q fraction have one endpoint in the region)
+    traj_start and traj_end should be the same length.
 
-    r controls how many points the region contains.
-
+    :param traj_start: List of points.
+    :param traj_end: List of points.
+    :param r: Fraction of points in the region
+    :param q: Fraction of points in the region that are anomalous
+    :param region_plant_f: Scanning function to use to find the region (example max_disk)
+    :return: Red planted set, blue planted set, and the planted region.
     """
     _, _, reg = region_plant_f(traj_start + traj_end, r, .5, q)
 
@@ -444,3 +533,67 @@ def paired_plant_region(traj_start, traj_end, r, q, region_plant_f):
     red, blue = zip(*(q_fraction + remainder + out_region))
     return red, blue, reg
 
+
+def max_disk_trajectory(net, red_sample, blue_sample, min_disk_r, max_disk_r, alpha, disc, fast_disk=True):
+    """
+    Computes the highest discrepancy disk over a set of trajectories. Executes at multiple scales using the grid
+    directional compression method and internally compresses the trajectories if fast_disk is enabled.
+
+    :param net: A list of trajectories (scaled to be in a 0 by 1 box).
+    :param red_sample: A list of trajectories (scaled to be in a 0 by 1 box).
+    :param blue_sample: A list of trajectories (scaled to be in a 0 by 1 box).
+    :param min_disk_r: The minimum disk radius to consider.
+    :param max_disk_r: The maximum disk radius to consider.
+    :param alpha: The spatial error with which to approximate the trajectories.
+    :param disc: The discrepancy function to use.
+    :param fast_disk: Default True.
+    :return:
+    """
+    mx = -1
+    curr_disk_r = max(min_disk_r, alpha)
+    reg = None
+    while True:
+
+        chord_l = math.sqrt(4 * alpha * curr_disk_r - 2 * alpha * alpha)
+        m_sample = [grid_direc_kernel(dp_compress(traj, alpha), chord_l, alpha) for traj in red_sample]
+        b_sample = [grid_direc_kernel(dp_compress(traj, alpha), chord_l, alpha) for traj in blue_sample]
+        pt_net = [grid_direc_kernel(dp_compress(traj, alpha), chord_l, alpha) for traj in net]
+        m_sample = list(trajectories_to_labels(m_sample))
+        b_sample = list(trajectories_to_labels(b_sample))
+        net_set = list(trajectories_to_labels(pt_net))
+
+
+        new_reg, new_mx = max_disk_scale_labeled(net_set, m_sample, b_sample, fast_disk, curr_disk_r, disc)
+        if new_mx > mx:
+            reg = new_reg
+            mx = new_mx
+        curr_disk_r *= 2
+        if curr_disk_r >= max_disk_r:
+            break
+    return reg, mx
+
+
+def max_disk_trajectory_fixed(net, m_sample, b_sample, min_disk_r, max_disk_r,  disc, fast_disk=True):
+    """
+    Computes the highest discrepancy disk over a set of trajectories. Executes at multiple scales, but uses whatever set
+    of points the trajectories have been compressed with.
+
+    :param net: A list of trajectories (scaled to be in a 0 by 1 box).
+    :param m_sample: A list of trajectories (scaled to be in a 0 by 1 box).
+    :param b_sample: A list of trajectories (scaled to be in a 0 by 1 box).
+    :param min_disk_r: The minimum disk radius to consider.
+    :param max_disk_r: The maximum disk radius to consider.
+    :param disc: The discrepancy function to use.
+    :param fast_disk: Default True.
+    :return: A tuple of the maximum disk and the corresponding maximum value.
+    """
+    mx = -1
+    curr_disk_r = min_disk_r
+    reg = None
+    while curr_disk_r < max_disk_r:
+        new_reg, new_mx = max_disk_scale_labeled(net, m_sample, b_sample, fast_disk, curr_disk_r, disc)
+        if new_mx > mx:
+            reg = new_reg
+            mx = new_mx
+        curr_disk_r *= 2
+    return reg, mx
