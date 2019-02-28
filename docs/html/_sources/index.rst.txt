@@ -5,19 +5,56 @@
 
 pyscan
 ==================================
+.. raw:: html
+
+    <div class="container-fluid">
+      <div class="row equal-height">
+        <div class="col-sm-3 col-xs-12">
+            <a href="examples/PhillyCrime.html" class="thumbnail">
+                <img src="_static/images/examples_PhillyCrime_11_0.png" class="img-responsive center-block">
+                <div class="caption text-center">
+                <h6>Philadelphia Crime</h6>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-3 col-xs-12">
+         <a href="http://nbviewer.jupyter.org/github/pysal/giddy/blob/master/notebooks/directional.ipynb" class="thumbnail">
+        <img src="_static/images/examples_PhillyCrime_11_0.png" class="img-responsive center-block">
+                <div class="caption text-center">
+                <h6>Rose diagram (directional LISAs)</h6>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-3 col-xs-12">
+ <a href="http://nbviewer.jupyter.org/github/pysal/splot/blob/master/notebooks/libpysal_non_planar_joins_viz.ipynb" class="thumbnail">
+                <img src="_static/images/examples_PhillyCrime_11_0.png"
+                class="img-responsive center-block">
+                <div class="caption text-center">
+                <h6>Visualizing Non Planar Neighbours
+                </h6>
+                </div>
+      </a>
+        </div>
+      </div>
+    </div>
+
+Spatial Scan Statistics provide a rigorous framework in which to define anomalies. This family of algorithms scan a set of defined regions over two, or possibly more sets of objects and attempt to maximize a function where the sets of objects have the largest disagreement. For instance given a red and blue set of points in 2d we might try to find a disk where the fraction of red points is as large as possible in comparison with the fraction of blue points. 
+
+Usually the maximized function is the Kulldorf Scan Statistic, :math:`\phi(m, b) = m \log m / b + (1 - m) \log (1 - m) / (1 - b)`, which is derived by assuming that there is a measured set of data :math:`M` that follows a Poisson distribution with respect to a baseline set of data :math:`B` :cite:`Kul97`. There are other statistics as well derived by assuming Gamma, Bernoulli, or Gaussian distributions.   
+
+Most current software available for region based spatial scan statistics use exact algorithms which have scaling issues when applied to modern datasets. Pyscan provides a way to significantly increase the scale at which these methods can be run at while providing real guarantees on the accuracy and power of the anomalies found. The code is under active development and has been written about in a number of publications :cite:`MP18a,MP18b,SSSS`.  Pyscan can scan regions defined by halfplanes, disks, and rectangles on point sets and trajectories and can be adapted to work in other related domains such as data sets aggregated to regions. All of these methods can be run at very large scales.
 
 
-pyscan is an approximate spatial scanning library designed to handle very large data sets using sampling techniques. pyscan supports point sets and trajectories and can be adapted to work in other related domains such as data sets aggregated to regions. 
-
-Spatial Scan Statistics provide a rigorous framework in which to define anomalies and have been extensively studied in 1d and 2d domains. Most current software available for region based spatial scan statistics use exact algorithms which have scaling issues when applied to modern datasets. pyscan provides a way to significantly increase the scale at which these methods can be run at while providing real guarantees on the accuracy and power of the anomalies found. The code is under active development and has been written about in a number of publications :cite:`MP18a,MP18b,SSSS`.
 
 Contents
 ==========================
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Contents
 
-   examples/PhilyCrime.ipynb
+   examples/PhillyCrime.ipynb
+   api.rst
 
 
 Installation
@@ -37,243 +74,6 @@ In addition this library needs a modern version of gcc or clang that supports th
     make
 
 You should then be able to use this library as a standard python module.
-
-Examples
-===================
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
-Python Functions 
-===================
-
-.. automodule:: pyscan
-     :members:
-
-.. py:currentmodule:: pyscan
-
-C++ Functions
-====================
-
-.. py:function:: pyscan.max_halfplane(net, mpts, bpts, disc_f)
-
-   Scans the set of halfplanes defined by the points in the net and maximizes the function disc_f with respect to the fraction of points contained in mpts and bpts. Function takes :math:`O(ns\log n)` where n is the net size and s is the size of the mpts and bts.
-
-   :param net: List of Points
-   :param mpts: List of WPoints
-   :param bpts: List of WPoints
-   :param disc_f: Discrepancy function to maximize over.
-   :rtype: Tuple of the found halfplane and the maximum disc_f value
-
-.. py:function:: pyscan.max_halfplane_fast(r, mpts, bpts, disc_f)
-
-   HERE BE DRAGONS!!! This method is still experimental and somewhat broken. This method uses a different method to scan the set of potential halfplanes with respect to the fraction of points contained in mpts and bpts. This code could potentially be much faster than the standard max_halfplane method.
-
-   :param r: Number of regions asymptopically to consider.
-   :param mpts: List of WPoints
-   :param bpts: List of WPoints
-   :param disc_f: Discrepancy function to maximize over.
-   :rtype: Tuple of the found halfplane and the maximum disc_f value
-
-.. py:function:: pyscan.max_halfspace(net, mpts, bpts, disc_f)
-
-   Scans the set of halfspaces defined by the points in the net and maximizes the function disc_f with respect to the fraction of points contained in mpts and bpts. Function takes :math:`O(n^2s\log n)` where n is the net size and s is the size of the mpts and bts.
-
-
-   :param net: List of Point3s
-   :param mpts: List of WPoint3s
-   :param bpts: List of WPoint3s
-   :param disc_f: Discrepancy function to maximize over.
-   :rtype: Tuple of the found halfspace and the maximum disc_f value
-
-.. py:function:: pyscan.max_halfplane_labeled(net, lmpts, lbpts, disc_f)
-  
-   Scans the set of halfplanes defined by the points in the net and maximizes the function disc_f with respect to the labeled sets of points lmpts and lbpts. If two points with the same label are in the same region then the two points only contribute one of their weights to the region. This algorithm runs in time :math:`O(ns \log n)` where n is the net size and s is the size of the lmpts and lbpts.
-
-   :param net: List of Points
-   :param mpts: List of LPoints
-   :param bpts: List of LPoints
-   :param disc_f: Discrepancy function to maximize over.
-   :rtype: Tuple of the found halfplane and the maximum disc_f value
-
-.. py:function:: pyscan.max_halfspace_labeled(net, lmpts, lbpts, disc_f)
-  
-   Scans the set of halfspaces defined by the points in the net and maximizes the function disc_f with respect to the labeled sets of points lmpts and lbpts. If two points with the same label are in the same region then the two points only contribute one of their weights to the region. This algorithm runs in time :math:`O(n^2s \log n)` where n is the net size and s is the size of the lmpts and lbpts.
-
-   :param net: List of Point3s
-   :param mpts: List of LPoint3s
-   :param bpts: List of LPoint3s
-   :param disc_f: Discrepancy function to maximize over.
-   :rtype: Tuple of the found halfspace and the maximum disc_f value
-
-.. py:function:: pyscan.ham_tree_sample(pts, size)
-
-   Takes the list of pts and computes a ham tree sample :cite:`MP18a`. This method can shrink the size of the sample significantly while preserving the error with respect to halfplanes. This serves as a useful preprocessing step for speeding up halfplane scanning. In theory sample sizes go from :math:`O(\frac{1}{\varepsilon^2}` to :math:`O(\frac{1}{\varepsilon^{1.53..}}\log^{.766}\frac{1}{\varepsilon})` where :math:`\varepsilon` is the absolute fraction of misplaced points in a halfplane.
-
-   :param pts: List of WPoints
-   :rtype: List of WPoints
-
-.. py:function:: pyscan.max_disk(net, mpts, bpts, disc_f)
-
-   Scans the set of disks defined by the points in the net and maximizes the function disc_f with respect to the fraction of points contained in mpts and bpts. Function takes :math:`O(n^2s\log n)` where n is the net size and s is the size of the mpts and bts.
-
-
-   :param net: List of Points
-   :param mpts: List of WPoints
-   :param bpts: List of WPoints
-   :param disc_f: Discrepancy function to maximize over.
-   :rtype: Tuple of the found disk and the maximum disc_f value
-
-.. py:function:: pyscan.max_disk_scale(net, mpts, bpts, min_res, disc_f)
-
-   Scans the set of disks defined by the points in the net, between the min_res and 2 * min_res and maximizes the function disc_f with respect to the fraction of points contained in mpts and bpts. Internally we use the disk radius restriction to ignore far away points and prune out many potential disks. This can significantly decrease the amount of time the method takes to find the best region. In worst case this method will still take :math:`O(n^2s\log n)` where n is the net size and s is the size of the mpts and bts, but usually runtime will be much less.
-
-
-   :param net: List of Points
-   :param mpts: List of WPoints
-   :param bpts: List of WPoints
-   :param min_res: A float that corresponds to minimum radius to consider.
-   :param disc_f: Discrepancy function to maximize over.
-   :rtype: Tuple of the found disk and the maximum disc_f value
-
-
-.. py:function:: pyscan.max_disk_labeled(net, lmpts, lbpts, disc_f)
-
-   Scans the set of disks defined by the points in the net and maximizes the function disc_f with respect to the fraction of points contained in lmpts and lbpts. Points with identical labels are not double counted if they are contained in the same region. In worst case this method will still take :math:`O(n^2s\log n)` where n is the net size and s is the size of the lmpts and lbts.
-
-
-   :param net: List of Points
-   :param lmpts: List of LPoints
-   :param lbpts: List of LPoints
-   :param disc_f: Discrepancy function to maximize over.
-   :rtype: Tuple of the found disk and the maximum disc_f value
-
-.. py:function:: pyscan.max_disk_scale_labeled(net, lmpts, lbpts, compress, min_res, disc_f)
-
-   Scans the set of disks defined by the points in the net and maximizes the function disc_f with respect to the fraction of points contained in lmpts and lbpts. Only considers disks with radii between min_res and 2 * min_res. This method internally maps the disk scanning problem to halfplane scanning. Using this mapping we can compress sets of points with the same labels. This compression step can significantly improve the runtime and doesn't incurr any extra error. In worst case this method will still take :math:`O(n^2s\log n)` where n is the net size and s is the size of the lmpts and lbts, but in practice this method should be much faster than this.
-
-
-   :param net: List of Points
-   :param lmpts: List of LPoints
-   :param lbpts: List of LPoints
-   :param compress: Turns the compression step on or off.
-   :param min_res: Defines the radius range to consider.
-   :param disc_f: Discrepancy function to maximize over.
-   :rtype: Tuple of the found disk and the maximum disc_f value
-
-.. py:function:: pyscan.max_disk_scale_labeled_alt(net, lmpts, lbpts, min_res, disc_f)
-
-   Scans the set of disks defined by the points in the net and maximizes the function disc_f with respect to the fraction of points contained in lmpts and lbpts. Only considers disks with radii between min_res and 2 * min_res. This method internally directly scans disks and lacks the compression step found in the previous algorihtm, so it is slighlty slower in practice then the previous method with compression turned off.  In worst case this method will still take :math:`O(n^2s\log n)` where n is the net size and s is the size of the lmpts and lbts, but in practice this method should be much faster than this.
-
-
-   :param net: List of Points
-   :param lmpts: List of LPoints
-   :param lbpts: List of LPoints
-   :param min_res: Defines the radius range to consider.
-   :param disc_f: Discrepancy function to maximize over.
-   :rtype: Tuple of the found disk and the maximum disc_f value
-
-.. py:function:: pyscan.max_subgrid(grid, disc_f)
-   
-   Finds the maximum subgrid exactly by enumerating all the subgrids and computing disc_f on each subgrid. Takes :math:`O(n^4)` where the grid is :math:`n \times n`.
-    
-   :param grid: A Grid object
-   :param disc_f: Discrepancy function to maximize over.
-   :rtype: The maximum subgrid found.
-
-.. py:function:: pyscan.max_subgrid_linear(grid, x, y)
-
-   Finds the maximum subgrid with respect to the linear function :math:`f(m, b) = xm + yb` exactly by using the Kadane algorithm. Takes :math:`O(n^3)` where the grid is :math:`n \times n`.
-
-   :param grid: A Grid object
-   :param x: Double defines linear function.
-   :param y: Double defines linear function.
-   :rtype: The maximum subgrid found.
-
-.. py:function:: pyscan.max_subgrid_linear_theory(grid, r, x, y)
-
-   Finds an approximate maximum subgrid with respect to the linear function :math:`f(m, b) = xm + yb` using the algorithm from :cite:`MP18b`. Takes :math:`O(n^2 + r^2 \log r)` where the grid is :math:`n \times n`.
-   :param grid: A Grid object
-   :param r: Determines how frequently to approximate the subgrids. See :cite:`MP18b` for details.
-   :param x: Double defines linear function.
-   :param y: Double defines linear function.
-   :rtype: The maximum subgrid found.
-
-.. py:function:: pyscan.max_subgrid_convex(grid, eps, disc_f) 
-
-   Approximately finds the maximum subgrid of the grid with error eps by successively computing the maximum subgrid with respect to various linear function using the Kadane algorithm. Takes :math:`O(\frac{1}{\sqrt{\varepsilon}} n^3)` where the grid is :math:`n \times n`.
-
-   :param grid: A Grid object
-   :param eps: The absolute error to incur.
-   :param disc_f: Discrepancy function to maximize over.
-   :rtype: The maximum subgrid found.
-
-.. py:function:: pyscan.max_subgrid_convex_theory(grid, eps, disc_f)
-
-   Approximately finds the maximum subgrid of the grid with error eps by successively computing the maximum subgrid with respect to various linear function using the algorithm from :cite:`MP18b`. Takes :math:`O(\frac{1}{\sqrt{\varepsilon}} n^2 \log n)` where the grid is :math:`n \times n`. This method is depreciated and will be replaced shortly.
-
-   :param grid: A Grid object
-   :param eps: The absolute error to incur.
-   :param disc_f: Discrepancy function to maximize over.
-   :rtype: The maximum subgrid found.
-
-.. py:function:: pyscan.max_rectangle(mpts, bpts, eps, x, y)
-
-.. py:function:: pyscan.max_rectangle_heap(mpts, bpts, x, y)
-
-   Implements the algorithm from :cite:`APV06,DGM95` to scan the data set in :math:`s^2 \log s` time.
-
-   :param mpts: List of WPoints.
-   :param bpts: List of WPoints.
-   :param x: Linear parameter.
-   :param y: Linear parameter.
-   :rtype: The maximum rectangle found.
-
-.. py:function:: evaluate_halfplane(reg, mpts, bpts, disc_f)
-
-.. py:function:: evaluate_halfplane_labeled(reg, lmpts, lbpts, disc_f)
-
-.. py:function:: evaluate_halfplane_trajectory(reg, mtrajs, btrajs, disc_f)
-
-.. py:function:: evaluate_disk(reg, mpts, bpts, disc_f)
-
-.. py:function:: evaluate_disk_alt(reg, mpts, bpts, disc_f)
-
-.. py:function:: evaluate_disk_labeled(reg, lmpts, lbpts, disc_f)
-
-.. py:function:: evaluate_disk_trajectory(reg, mtrajs, btrajs, disc_f)
-
-.. py:function:: evaluate_rectangle(reg, mpts, bpts, disc_f)
-
-.. py:function:: evaluate_rectangle_labeled(reg, lmpts, lbpts, disc_f)
-
-.. py:function:: evaluate_rectangle_trajectory(reg, mtrajs, btrajs, disc_f)
-
-   These functions can be used to evaluate different regions on different kinds of data sets.
-
-.. py:function:: size_region(fraction)
-  
-   Creates a discrepancy function that can be used to find a region containing a certain fraction of the points. 
-   
-   :param fraction: A double between 0 and 1.
-   :rtype: A discrepancy function.
-
-.. py:function:: evaluate(disc_f, m, m_total, b, b_total)
-  
-   A utility function for explicitly evaluating a discrepancy function object.
-   
-   :param disc_f: A double between 0 and 1.
-   :param m: A double between 0 and m_total
-   :param m_total: A double.
-   :param b: A double between 0 and b_total.
-   :param b_total: A double.
-   :rtype: A double returned by the discrepancy function.
-
 
 
 

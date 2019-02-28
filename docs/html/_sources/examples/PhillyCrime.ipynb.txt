@@ -4,7 +4,8 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "# Philadelphia Crime Example\n",
+    "# Philadelphia Crime Data Example\n",
+    "## Reading the Data\n",
     "Below we load in a data set of crimes incidents in the Philadelphia area and the divide the sets into all crime events and theft crime events. Using pyscan we can then extract approximate regions of interest at scale."
    ]
   },
@@ -83,6 +84,7 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
+    "## Subsampling \n",
     "It easy to use pyscan to extract an interesting region. The first step in most of the default scanning algorithms is contructing a \"net\" of points to define the regions of interest. This net can be created by taking a sample of the measured points and a sample of the baseline points and unioning them."
    ]
   },
