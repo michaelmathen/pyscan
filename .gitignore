@@ -62,7 +62,6 @@ CTestTestfile.cmake
 
 # Distribution / packaging
 .Python
-build/
 develop-eggs/
 dist/
 downloads/
