@@ -69,8 +69,15 @@
       aria-labelledby="dLabelGlobalToc"><p class="caption"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api.html">Python Functions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api.html#c-functions">C++ Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">C++ Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../point.html">Point</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../trajectory.html">Trajectory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../trajectory.html#trajectory-simplification">Trajectory Simplification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../trajectory.html#trajectories-to-points">Trajectories to Points</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../range.html">Ranges</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scanning.html">Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scanning.html#labeled-scanning">Labeled Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python_utility.html">Utility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/PhillyCrime.html">Philadelphia Crime Data Example</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../examples/PhillyCrime.html#Reading-the-Data">Reading the Data</a></li>
@@ -150,7 +157,7 @@
     <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">samp</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">samp</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">count</span> <span class="o">+</span> <span class="o">.</span><span class="mi">5</span><span class="p">)))</span>
 
 
-<div class="viewcode-block" id="evaluate_range"><a class="viewcode-back" href="../api.html#pyscan.evaluate_range">[docs]</a><span class="k">def</span> <span class="nf">evaluate_range</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">):</span>
+<div class="viewcode-block" id="evaluate_range"><a class="viewcode-back" href="../python_utility.html#pyscan.evaluate_range">[docs]</a><span class="k">def</span> <span class="nf">evaluate_range</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Evaluates this range to compute the total discrepancy over a set of points.</span>
 
@@ -184,7 +191,7 @@
     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="evaluate_range_trajectory"><a class="viewcode-back" href="../api.html#pyscan.evaluate_range_trajectory">[docs]</a><span class="k">def</span> <span class="nf">evaluate_range_trajectory</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">):</span>
+<div class="viewcode-block" id="evaluate_range_trajectory"><a class="viewcode-back" href="../python_utility.html#pyscan.evaluate_range_trajectory">[docs]</a><span class="k">def</span> <span class="nf">evaluate_range_trajectory</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Evaluates this range to compute the total discrepancy over a set of trajectories.</span>
 
@@ -213,7 +220,7 @@
     <span class="k">return</span> <span class="n">red_set</span><span class="p">,</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">pts</span> <span class="k">if</span> <span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">red_set_set</span><span class="p">]</span>
 
 
-<div class="viewcode-block" id="plant_region"><a class="viewcode-back" href="../api.html#pyscan.plant_region">[docs]</a><span class="k">def</span> <span class="nf">plant_region</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">scan_f</span><span class="p">):</span>
+<div class="viewcode-block" id="plant_region"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_region">[docs]</a><span class="k">def</span> <span class="nf">plant_region</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">scan_f</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This takes a scanning function and two point sets and then computes a planted region that contains some fraction r</span>
 <span class="sd">    of the points with some tolerance.</span>
@@ -258,7 +265,7 @@
     <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">reg</span></div>
 
 
-<div class="viewcode-block" id="plant_full_square"><a class="viewcode-back" href="../api.html#pyscan.plant_full_square">[docs]</a><span class="k">def</span> <span class="nf">plant_full_square</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">disc</span><span class="p">,</span> <span class="n">max_count</span><span class="o">=</span><span class="mi">32</span><span class="p">):</span>
+<div class="viewcode-block" id="plant_full_square"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_full_square">[docs]</a><span class="k">def</span> <span class="nf">plant_full_square</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">disc</span><span class="p">,</span> <span class="n">max_count</span><span class="o">=</span><span class="mi">32</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Choose a point at random from a trajectory and then expand a square out from this point till this region contains</span>
 <span class="sd">    r fraction of all the trajectories.</span>
@@ -308,7 +315,7 @@
 
 
 
-<div class="viewcode-block" id="plant_full_halfplane"><a class="viewcode-back" href="../api.html#pyscan.plant_full_halfplane">[docs]</a><span class="k">def</span> <span class="nf">plant_full_halfplane</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">disc</span><span class="p">):</span>
+<div class="viewcode-block" id="plant_full_halfplane"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_full_halfplane">[docs]</a><span class="k">def</span> <span class="nf">plant_full_halfplane</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">disc</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Choose a random direction and then finds a halfplane with this normal containing r fraction of the total trajectories.</span>
 
@@ -337,7 +344,7 @@
     <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">plant_region</span><span class="p">,</span> <span class="n">diff</span></div>
 
 
-<div class="viewcode-block" id="plant_partial_halfplane"><a class="viewcode-back" href="../api.html#pyscan.plant_partial_halfplane">[docs]</a><span class="k">def</span> <span class="nf">plant_partial_halfplane</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">disc</span><span class="p">):</span>
+<div class="viewcode-block" id="plant_partial_halfplane"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_partial_halfplane">[docs]</a><span class="k">def</span> <span class="nf">plant_partial_halfplane</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">disc</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Choose a random direction and expand the region along this direction till we contain r fraction of the total</span>
 <span class="sd">    trajectory arc length.</span>
@@ -373,7 +380,7 @@
     <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">plant_region</span><span class="p">,</span> <span class="n">diff</span></div>
 
 
-<div class="viewcode-block" id="plant_full_disk"><a class="viewcode-back" href="../api.html#pyscan.plant_full_disk">[docs]</a><span class="k">def</span> <span class="nf">plant_full_disk</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">disc</span><span class="p">):</span>
+<div class="viewcode-block" id="plant_full_disk"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_full_disk">[docs]</a><span class="k">def</span> <span class="nf">plant_full_disk</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">disc</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Choose a point at random from a trajectory and then expand outward from there until we find a disk contains r fraction</span>
 <span class="sd">    of the trajectories.</span>
@@ -401,7 +408,7 @@
     <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">max_disk</span><span class="p">,</span> <span class="n">diff</span></div>
 
 
-<div class="viewcode-block" id="plant_partial_disk"><a class="viewcode-back" href="../api.html#pyscan.plant_partial_disk">[docs]</a><span class="k">def</span> <span class="nf">plant_partial_disk</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">disc</span><span class="p">):</span>
+<div class="viewcode-block" id="plant_partial_disk"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_partial_disk">[docs]</a><span class="k">def</span> <span class="nf">plant_partial_disk</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">disc</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Choose a point at random from a trajectory and then expand outward from there. Computes the fraction of length inside the disk</span>
 <span class="sd">    for each segment and then does bisection on this amount since it is a monotonic function to compute within eps fraction.</span>
@@ -450,7 +457,7 @@
     <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">prob</span>
 
 
-<div class="viewcode-block" id="random_rect"><a class="viewcode-back" href="../api.html#pyscan.random_rect">[docs]</a><span class="k">def</span> <span class="nf">random_rect</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+<div class="viewcode-block" id="random_rect"><a class="viewcode-back" href="../python_utility.html#pyscan.random_rect">[docs]</a><span class="k">def</span> <span class="nf">random_rect</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Plants a random rectangle containing r fraction of the points.</span>
 
@@ -504,7 +511,7 @@
                 <span class="n">inB</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">el</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="plant_rectangle"><a class="viewcode-back" href="../api.html#pyscan.plant_rectangle">[docs]</a><span class="k">def</span> <span class="nf">plant_rectangle</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
+<div class="viewcode-block" id="plant_rectangle"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_rectangle">[docs]</a><span class="k">def</span> <span class="nf">plant_rectangle</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create a set of red and blue points with a random rectangle planted containing r fraction of the points with</span>
 <span class="sd">    q fraction of the points in the region being red and p fraction of the points outside of the region being red.</span>
@@ -533,7 +540,7 @@
     <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">rect</span></div>
 
 
-<div class="viewcode-block" id="plant_disk"><a class="viewcode-back" href="../api.html#pyscan.plant_disk">[docs]</a><span class="k">def</span> <span class="nf">plant_disk</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
+<div class="viewcode-block" id="plant_disk"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_disk">[docs]</a><span class="k">def</span> <span class="nf">plant_disk</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create a set of red and blue points with a random disk planted containing r fraction of the points with</span>
 <span class="sd">    q fraction of the points in the region being red and p fraction of the points outside of the region being red.</span>
@@ -564,7 +571,7 @@
     <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">max_disk</span></div>
 
 
-<div class="viewcode-block" id="plant_halfplane"><a class="viewcode-back" href="../api.html#pyscan.plant_halfplane">[docs]</a><span class="k">def</span> <span class="nf">plant_halfplane</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
+<div class="viewcode-block" id="plant_halfplane"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_halfplane">[docs]</a><span class="k">def</span> <span class="nf">plant_halfplane</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create a set of red and blue points with a random halfplane planted containing r fraction of the points with</span>
 <span class="sd">    q fraction of the points in the region being red and p fraction of the points outside of the region being red.</span>
@@ -595,7 +602,7 @@
     <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">plant_region</span></div>
 
 
-<div class="viewcode-block" id="plant_partial_rectangle"><a class="viewcode-back" href="../api.html#pyscan.plant_partial_rectangle">[docs]</a><span class="k">def</span> <span class="nf">plant_partial_rectangle</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">disc</span><span class="p">):</span>
+<div class="viewcode-block" id="plant_partial_rectangle"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_partial_rectangle">[docs]</a><span class="k">def</span> <span class="nf">plant_partial_rectangle</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">disc</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This plants a region containing r fraction of the total arc length of all trajectories. q fraction of the trajectories</span>
 <span class="sd">    crossing this region are assigned to be anomalous and p fraction of trajectories not crossing this region are assigned</span>
@@ -623,7 +630,7 @@
 
 
 
-<div class="viewcode-block" id="paired_plant_region"><a class="viewcode-back" href="../api.html#pyscan.paired_plant_region">[docs]</a><span class="k">def</span> <span class="nf">paired_plant_region</span><span class="p">(</span><span class="n">traj_start</span><span class="p">,</span> <span class="n">traj_end</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">region_plant_f</span><span class="p">):</span>
+<div class="viewcode-block" id="paired_plant_region"><a class="viewcode-back" href="../python_utility.html#pyscan.paired_plant_region">[docs]</a><span class="k">def</span> <span class="nf">paired_plant_region</span><span class="p">(</span><span class="n">traj_start</span><span class="p">,</span> <span class="n">traj_end</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">region_plant_f</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This plants a region where every trajectory</span>
 <span class="sd">    completely outside or inside of the region has an endpoint chosen at random.</span>
@@ -661,7 +668,7 @@
     <span class="k">return</span> <span class="n">red</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">reg</span></div>
 
 
-<div class="viewcode-block" id="max_disk_trajectory"><a class="viewcode-back" href="../api.html#pyscan.max_disk_trajectory">[docs]</a><span class="k">def</span> <span class="nf">max_disk_trajectory</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">red_sample</span><span class="p">,</span> <span class="n">blue_sample</span><span class="p">,</span> <span class="n">min_disk_r</span><span class="p">,</span> <span class="n">max_disk_r</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">disc</span><span class="p">,</span> <span class="n">fast_disk</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="max_disk_trajectory"><a class="viewcode-back" href="../python_utility.html#pyscan.max_disk_trajectory">[docs]</a><span class="k">def</span> <span class="nf">max_disk_trajectory</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">red_sample</span><span class="p">,</span> <span class="n">blue_sample</span><span class="p">,</span> <span class="n">min_disk_r</span><span class="p">,</span> <span class="n">max_disk_r</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">disc</span><span class="p">,</span> <span class="n">fast_disk</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the highest discrepancy disk over a set of trajectories. Executes at multiple scales using the grid</span>
 <span class="sd">    directional compression method and internally compresses the trajectories if fast_disk is enabled.</span>
@@ -700,7 +707,7 @@
     <span class="k">return</span> <span class="n">reg</span><span class="p">,</span> <span class="n">mx</span></div>
 
 
-<div class="viewcode-block" id="max_disk_trajectory_fixed"><a class="viewcode-back" href="../api.html#pyscan.max_disk_trajectory_fixed">[docs]</a><span class="k">def</span> <span class="nf">max_disk_trajectory_fixed</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">m_sample</span><span class="p">,</span> <span class="n">b_sample</span><span class="p">,</span> <span class="n">min_disk_r</span><span class="p">,</span> <span class="n">max_disk_r</span><span class="p">,</span>  <span class="n">disc</span><span class="p">,</span> <span class="n">fast_disk</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="max_disk_trajectory_fixed"><a class="viewcode-back" href="../python_utility.html#pyscan.max_disk_trajectory_fixed">[docs]</a><span class="k">def</span> <span class="nf">max_disk_trajectory_fixed</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">m_sample</span><span class="p">,</span> <span class="n">b_sample</span><span class="p">,</span> <span class="n">min_disk_r</span><span class="p">,</span> <span class="n">max_disk_r</span><span class="p">,</span>  <span class="n">disc</span><span class="p">,</span> <span class="n">fast_disk</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the highest discrepancy disk over a set of trajectories. Executes at multiple scales, but uses whatever set</span>
 <span class="sd">    of points the trajectories have been compressed with.</span>

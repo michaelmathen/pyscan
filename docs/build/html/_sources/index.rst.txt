@@ -55,6 +55,11 @@ Contents
 
    installation.rst
    api.rst
+   point.rst
+   trajectory.rst
+   range.rst
+   scanning.rst
+   python_utility.rst
    examples.rst
    examples/PhillyCrime.ipynb
    examples/TrajectoryApproximation.ipynb

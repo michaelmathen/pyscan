@@ -438,6 +438,26 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .def("__repr__", &pyscan::Point<>::str)
             .def("__eq__", &pyscan::Point<>::operator==);
 
+    py::class_<pyscan::pt3_t>("Point3", py::init<double, double, double, double>())
+            .def("approx_eq", &pyscan::Point<3>::approx_eq)
+            .def("__getitem__", &pyscan::Point<3>::operator())
+            .def("get_coord", &pyscan::Point<3>::get_coord)
+            .def("above", &pyscan::Point<3>::above)
+            .def("above_closed", &pyscan::Point<3>::above_closed)
+            .def("below_closed", &pyscan::Point<3>::below_closed)
+            .def("below", &pyscan::Point<3>::below)
+            .def("crosses", &pyscan::Point<3>::crosses)
+            .def("evaluate", &pyscan::Point<3>::evaluate)
+            .def("orient_down", &pyscan::Point<3>::orient_down)
+            .def("orient_up", &pyscan::Point<3>::orient_up)
+            .def("dist", &pyscan::Point<3>::dist)
+            .def("pdot", &pyscan::Point<3>::pdot)
+            .def("parallel_lt", &pyscan::Point<3>::parallel_lt)
+            .def("parallel_lte", &pyscan::Point<3>::parallel_lte)
+            .def("__str__", &pyscan::Point<3>::str)
+            .def("__repr__", &pyscan::Point<3>::str)
+            .def("__eq__", &pyscan::Point<3>::operator==);
+
     py::def("to_segment", &pyscan::to_Segment);
 
     py::def("aeq", &pyscan::util::aeq);
@@ -458,6 +478,12 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
     py::class_<pyscan::LPoint<2>, py::bases<pyscan::wpt2_t> >("LPoint", py::init<size_t, double, double, double, double>())
             .def("get_label", &pyscan::LPoint<2>::get_label);
+
+    py::class_<pyscan::WPoint<3>, py::bases<pyscan::pt3_t>>("WPoint3", py::init<double, double, double, double, double>())
+            .def("get_weight", &pyscan::WPoint<2>::get_weight);
+
+    py::class_<pyscan::LPoint<3>, py::bases<pyscan::wpt3_t> >("LPoint3", py::init<size_t, double, double, double, double, double>())
+            .def("get_label", &pyscan::LPoint<3>::get_label);
 
     py::class_<pyscan::discrepancy_func_t >("CFunction", py::no_init);
 
