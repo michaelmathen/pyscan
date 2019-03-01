@@ -26,11 +26,11 @@ pyscan
             </a>
         </div>
         <div class="col-md-3 col-xs-12">
- <a href="http://nbviewer.jupyter.org/github/pysal/splot/blob/master/notebooks/libpysal_non_planar_joins_viz.ipynb" class="thumbnail">
+ <a href="examples/alt.html" class="thumbnail">
                 <img src="_static/images/crime_vehicular_theft.png"
                 class="img-responsive center-block">
                 <div class="caption text-center">
-                <h6>Region Data
+                <h6>Region Scanning
                 </h6>
                 </div>
       </a>
