@@ -19,9 +19,9 @@ pyscan
         </div>
         <div class="col-md-3 col-xs-12">
          <a href="examples/TrajectoryApproximation.html" class="thumbnail">
-        <img src="_static/images/grid_direc.png" class="img-responsive center-block">
+        <img src="" class="img-responsive center-block">
                 <div class="caption text-center">
-                <h6>Trajectory Simplification</h6>
+                <h6></h6>
                 </div>
             </a>
         </div>
@@ -64,7 +64,7 @@ Contents
    python_utility.rst
    examples.rst
    examples/PhillyCrime.ipynb
-   examples/TrajectoryApproximation.ipynb
+
 
 
 
