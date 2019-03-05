@@ -77,6 +77,7 @@ set(SOURCE_FILES
         src/ConvexHull.cpp
         src/Segment.cpp
         src/HamTree.cpp
+        src/IntervalScan.cpp
         #src/kernel.cpp
         )
 
@@ -94,6 +95,7 @@ set(HEADER include/BloomFilter.hpp
         include/TrajectoryScan.hpp
         include/Sampling.hpp
         include/HamTree.hpp
+        include/IntervalScan.hpp
         include/Utilities.hpp)
 
 set(PY_SOURCE_FILES

@@ -373,6 +373,7 @@ namespace pyscan {
     //Return the two points on the line that are equidistance to some other point.
 //    std::tuple<Point<2>, Point<2>> chord_pts(const Point<2> &line, const Point<2> &origin, double dist);
 
+
     using pt2_t = Point<2>;
     using wpt2_t = WPoint<2>;
     using lpt2_t = LPoint<2>;

@@ -591,6 +591,7 @@ namespace pyscan {
     /////////////////////////////////////////////////////////////////////////////////
 
 
+
     template<typename Arr>
     decltype(auto) access(Arr& arr1, Arr& arr2, size_t i) {
         if (arr1.size() <= i) {
@@ -636,42 +637,6 @@ namespace pyscan {
         return std::make_tuple(empts, ebpts, x_map, y_map);
     }
 
-     MaxIntervalAlt::MaxIntervalAlt(size_t val, double weight) : left_max(val, val, weight), right_max(val, val, weight), center_max(val, val, weight) {}
-     MaxIntervalAlt::MaxIntervalAlt(size_t lpt, size_t rpt) : left_max(lpt, rpt, 0.0), right_max(lpt, rpt, 0.0), center_max(lpt, rpt, 0.0) {}
-
-     MaxIntervalAlt& MaxIntervalAlt::operator+=(const MaxIntervalAlt& op) {
-         if (center_max.get_v() < op.center_max.get_v()) {
-             center_max = op.center_max;
-         }
-
-         if (right_max.get_v() + op.left_max.get_v() > center_max.get_v()) {
-             center_max = Interval(right_max.get_l(), op.left_max.get_r(), right_max.get_v() + op.left_max.get_v());
-         }
-
-         //If left max is whole interval then we might need to extend the interval.
-         if (left_max.get_r() == right_max.get_r() && left_max.get_v() + op.left_max.get_v() > left_max.get_v()) {
-             left_max = Interval(left_max.get_l(), op.left_max.get_r(), left_max.get_v() + op.left_max.get_v());
-         }
-
-         // op.right max is whole interval of op then we might need to extend op.right_max to include right_max
-         if (op.right_max.get_l() == op.left_max.get_l() && op.right_max.get_v() + right_max.get_v() > op.right_max.get_v()) {
-             right_max = Interval(right_max.get_l(), op.right_max.get_r(), right_max.get_v() + op.right_max.get_v());
-         } else {
-             right_max = op.right_max;
-         }
-         return *this;
-     }
-
-     size_t MaxIntervalAlt::left() const {
-         return left_max.get_l();
-     }
-     size_t MaxIntervalAlt::right() const {
-         return right_max.get_r();
-     }
-
-     Interval MaxIntervalAlt::get_max() const {
-         return center_max;
-     }
 
 
 
@@ -904,8 +869,8 @@ namespace pyscan {
         }
     }
 
-    slab_ptr SlabTree::get_containing(ERectangle const &rect) const {
-        assert(rect.upY() > rect.lowY());
+    slab_ptr SlabTree::get_containing(size_t upY, size_t lowY) const {
+        assert(upY > lowY);
         auto curr_root = root;
         while (curr_root != nullptr) {
             //std::cout << "Cur Root "<<  curr_root->top_y << " " << rect.upY() <<  " " << rect.lowY() << " " << curr_root->bottom_y << std::endl;
@@ -913,9 +878,9 @@ namespace pyscan {
             if (curr_root->has_mid()) {
                 size_t mid = curr_root->get_mid();
 
-                if (rect.upY() < mid) {
+                if (upY < mid) {
                     curr_root = curr_root->down;
-                } else if (rect.lowY() > mid) {
+                } else if (lowY > mid) {
                     curr_root = curr_root->up;
                 } else {
                     return curr_root;
@@ -927,8 +892,34 @@ namespace pyscan {
         return curr_root;
     }
 
+    std::vector<size_t> SlabTree::get_vert_breakpoints() const {
+        std::vector<decltype(root)> curr_stack;
+        curr_stack.push_back(root);
+        std::vector<decltype(root)> leaves;
+        while (!curr_stack.empty()) {
+            auto el = curr_stack.back();
+            curr_stack.pop_back();
+            if (el->up != nullptr) {
+                curr_stack.push_back(el->up);
+            }
+            if (el->down != nullptr) {
+                curr_stack.push_back(el->down);
+            }
+            if (!el->up  && !el->down){
+                leaves.push_back(el);
+            }
+        }
+
+        std::vector<size_t> divisions;
+        divisions.reserve(leaves.size());
+        for (auto& leaf : leaves) {
+            divisions.push_back(leaf->bottom_y);
+        }
+        return divisions;
+    }
+
     double SlabTree::measure_rect(ERectangle const &rect, double a, double b) const {
-        auto curr_root = get_containing(rect);
+        auto curr_root = get_containing(rect.upY(), rect.lowY());
         if (curr_root == nullptr) {
             return 0.0;
         }
@@ -968,6 +959,91 @@ namespace pyscan {
     }
 
 
+    std::tuple<epoint_list_t, epoint_list_t> SlabTree::dyadic_approx(size_t upper, size_t lower) const {
+        epoint_list_t mpts;
+        epoint_list_t bpts;
+        auto curr_root = get_containing(upper, lower);
+        if (curr_root == nullptr) {
+            return {mpts, bpts};
+        }
+        auto upper_bound = curr_root->up;
+        while (upper_bound != nullptr) {
+            if (upper_bound->has_mid()) {
+                double midpoint = upper_bound->get_mid();
+                if (midpoint < upper) {
+                    if (upper_bound->down != nullptr) {
+                        std::copy(upper_bound->down->m_merges.begin(), upper_bound->down->m_merges.end(), std::back_inserter(mpts));
+                        std::copy(upper_bound->down->b_merges.begin(), upper_bound->down->b_merges.end(), std::back_inserter(bpts));
+                    }
+                    upper_bound = upper_bound->up;
+                } else {
+                    upper_bound = upper_bound->down;
+                }
+            } else {
+                if (upper_bound->top_y <= upper) {
+                    std::copy(upper_bound->m_merges.begin(), upper_bound->m_merges.end(), std::back_inserter(mpts));
+                    std::copy(upper_bound->b_merges.begin(), upper_bound->b_merges.end(), std::back_inserter(bpts));
+                }
+                break;
+            }
+        }
+        auto lower_bound = curr_root->down;
+        while (lower_bound != nullptr) {
+            if (lower_bound->has_mid()) {
+                double midpoint = lower_bound->get_mid();
+                if (midpoint >= lower) {
+                    if (lower_bound->up != nullptr) {
+                        std::copy(lower_bound->up->m_merges.begin(), lower_bound->up->m_merges.end(), std::back_inserter(mpts));
+                        std::copy(lower_bound->up->b_merges.begin(), lower_bound->up->b_merges.end(), std::back_inserter(bpts));
+                    }
+                    lower_bound = lower_bound->down;
+                } else {
+                    lower_bound = lower_bound->up;
+                }
+            } else {
+                if (lower_bound->bottom_y >= lower) {
+                    std::copy(lower_bound->m_merges.begin(), lower_bound->m_merges.end(), std::back_inserter(mpts));
+                    std::copy(lower_bound->b_merges.begin(), lower_bound->b_merges.end(), std::back_inserter(bpts));
+                }
+                break;
+            }
+        }
+        std::sort(mpts.begin(), mpts.end());
+        std::sort(bpts.begin(), bpts.end());
+        return {mpts, bpts};
+    }
+
+
+    std::tuple<ERectangle, double> SlabTree::max_rectangle_slow(double m_a, double b_b) {
+
+        ERectangle maximum_rectangle;
+        double max_v = 0;
+        std::vector<size_t> vert_splits = get_vert_breakpoints();
+        for (size_t i = 0; i < vert_splits.size() - 1; i++) {
+            for (size_t j = i + 1; j < vert_splits.size(); j++) {
+                auto [mpts, bpts] = dyadic_approx(vert_splits[j], vert_splits[i]);
+
+                std::vector<size_t> indices;
+                std::vector<double> weights;
+                for (auto& mpt : mpts) {
+                    indices.emplace_back(mpt.get_x());
+                    weights.emplace_back(mpt.get_weight() * m_a / this->total_m);
+                }
+                for (auto& bpt : bpts) {
+                    indices.emplace_back(bpt.get_x());
+                    weights.emplace_back(bpt.get_weight() * b_b / this->total_b);
+                }
+
+                auto interval = max_interval(indices, weights);
+                if (interval.get_v() > max_v) {
+                    maximum_rectangle = ERectangle(interval.get_r() + 1, vert_splits[j], interval.get_l(), vert_splits[i]);
+                    max_v = interval.get_v();
+                }
+            }
+        }
+        return std::make_tuple(maximum_rectangle, max_v);
+    }
+
     std::vector<MaxIntervalAlt> insert_updates(std::vector<MaxIntervalAlt> const& max_intervals,
                                               epoint_list_t const& updates, double scale) {
         std::vector<MaxIntervalAlt> new_set;
@@ -977,15 +1053,13 @@ namespace pyscan {
         std::vector<MaxIntervalAlt> updated;
         std::merge(max_intervals.begin(), max_intervals.end(), new_set.begin(), new_set.end(),
                 std::back_inserter(updated), [](MaxIntervalAlt const& m1, MaxIntervalAlt const& m2) {
-           return m1.left() < m2.left();
+           return m1.get_l() < m2.get_l();
         });
-        for (size_t i = 0; !updated.empty() && i < updated.size() - 1; i++){
-            assert(updated[i].right() < updated[i + 1].left());
-        }
         return updated;
     }
 
-    std::vector<MaxIntervalAlt> update_mx_intervals(std::vector<MaxIntervalAlt> const & max_intervals, slab_ptr slab,
+    std::vector<MaxIntervalAlt> update_mx_intervals(std::vector<MaxIntervalAlt> const & max_intervals,
+            slab_ptr slab,
             double m_a, double b_b) {
         if (slab != nullptr) {
             return insert_updates(insert_updates(max_intervals, slab->m_merges, m_a), slab->b_merges, b_b);
@@ -996,26 +1070,50 @@ namespace pyscan {
 
     std::vector<MaxIntervalAlt> reduce_merges(std::vector<MaxIntervalAlt> const& max_intervals,
                                         std::vector<size_t> const& curr_splits) {
-        if (max_intervals.empty()) {
-            return {};
-        }
-        size_t j = 0;
-        long prev = -1;
+
         std::vector<MaxIntervalAlt> merged;
+        if (max_intervals.empty()) {
+            return merged;
+        }
         merged.emplace_back(max_intervals.front());
-        for (size_t i = 0; max_intervals.size() != 0 && i < max_intervals.size() - 1;) {
-            if (prev < static_cast<long>(max_intervals[i].left()) && (curr_splits.size() <= j || max_intervals[i + 1].right() < curr_splits[j])) {
-                merged.back() += max_intervals[i + 1];
-                ++i;
-            } else if (j < curr_splits.size() && curr_splits[j] <= max_intervals[i + 1].right()) {
-                prev = static_cast<long>(curr_splits[j]);
-                j++;
+        for (size_t i = 1; i < max_intervals.size(); i++) {
+            auto l = merged.back().get_r();
+            auto r = max_intervals[i].get_l();
+            bool merge_this = std::any_of(curr_splits.begin(), curr_splits.end(), [&](size_t i) {
+                if (l == i || r == i) {
+                    std::cout << max_intervals << std::endl;
+                    std::cout << curr_splits << std::endl;
+                }
+                return l <= i && i <= r;
+            });
+            if (!merge_this) {
+                merged.back() += max_intervals[i];
             } else {
-                merged.emplace_back(max_intervals[i + 1]);
-                i++;
+                merged.emplace_back(max_intervals[i]);
             }
         }
         return merged;
+//        if (max_intervals.empty()) {
+//            return {};
+//        }
+//        size_t j = 0;
+//        long prev = -1;
+//        std::vector<MaxIntervalAlt> merged;
+//        merged.emplace_back(max_intervals.front());
+//        for (size_t i = 0; max_intervals.size() != 0 && i < max_intervals.size() - 1;) {
+//            if (prev < static_cast<long>(max_intervals[i].get_l()) && (curr_splits.size() <= j ||
+//                    max_intervals[i + 1].get_r() < curr_splits[j])) {
+//                merged.back() += max_intervals[i + 1];
+//                ++i;
+//            } else if (j < curr_splits.size() && curr_splits[j] <= max_intervals[i + 1].get_r()) {
+//                prev = static_cast<long>(curr_splits[j]);
+//                j++;
+//            } else {
+//                merged.emplace_back(max_intervals[i + 1]);
+//                i++;
+//            }
+//        }
+     //   return merged;
     }
 
 
@@ -1068,6 +1166,7 @@ namespace pyscan {
         }
     }
 
+
     std::tuple<ERectangle, double> SlabTree::max_rectangle(double m_a, double b_b) {
         //Initialize with list of maximum intervals.
         ERectangle max_rect;
@@ -1082,12 +1181,6 @@ namespace pyscan {
         double max_v = 0;
         while (!slab_stack.empty()) {
             auto [top_top, top_bottom, bottom_top, bottom_bottom, p_up, p_low, m4] = slab_stack.back();
-//            std::cout << m4 << std::endl;
-//            //std::cout << p_splts << std::endl;
-//            std::cout << "[" <<  p_up << ", " << p_low << "] " << std::endl;
-//            //std::cout << max_intervals << std::endl;
-//            //std::cout << "Slab" << top_top << " " << top_bottom << " " << bottom_top << " " << bottom_bottom << std::endl;
-//            std::cout << std::endl;
             slab_stack.pop_back();
             if (!(top_top == nullptr &&
                   top_bottom == nullptr &&
@@ -1115,6 +1208,7 @@ namespace pyscan {
                 if (!m4.empty() && max_v < m4[0].get_max().get_v()) {
                     size_t lx = m4[0].get_max().get_l();
                     size_t rx = m4[0].get_max().get_r();
+
                     max_rect = ERectangle(rx + 1, p_up, lx, p_low);
                     max_v = m4[0].get_max().get_v();
                 }
