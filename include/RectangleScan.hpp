@@ -395,10 +395,12 @@ namespace pyscan {
         SlabTree(std::vector<size_t> const &vert_decomp, epoint_list_t ms, epoint_list_t bs, bool compression, double max_w);
 
         //Useful for debuging the structure so you can define a non compressed version with fixed decomposition.
-        void init(epoint_list_t mpts, epoint_list_t bpts, std::vector<size_t> const &vert_decomp, bool compression, double max_w);
+        void init(epoint_list_t mpts, epoint_list_t bpts, std::vector<size_t> vert_decomp, bool compression, double max_w);
 
         double measure_rect(ERectangle const &rect, double a, double b) const;
+        std::tuple<ERectangle, double> max_rectangle_midpoint(double m_a, double b_b);
         std::tuple<ERectangle, double> max_rectangle(double m_a, double b_b);
+
         std::tuple<ERectangle, double> max_rectangle_slow(double m_a, double b_a);
 
         friend std::ostream& operator<<(std::ostream& os, SlabTree const& el) {

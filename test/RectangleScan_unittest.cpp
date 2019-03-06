@@ -131,25 +131,13 @@ namespace {
             }
         }
 
-        std::vector<size_t> divisions2;
-        for (auto &leaf : leaves) {
-            divisions2.push_back(leaf->bottom_y);
-        }
+        std::vector<size_t> divisions2 = tree.get_vert_breakpoints();
 
         using pyscan::operator<<;
-        divisions2.push_back(leaves.back()->top_y);
         ASSERT_EQ(divisions.size(), divisions2.size());
         for (size_t i = 0; i < divisions.size(); i++) {
             ASSERT_EQ(divisions2[i], divisions[i]);
         }
-
-        size_t curr_i = 0;
-        for (auto &leaf : leaves) {
-            ASSERT_EQ(divisions[curr_i], leaf->bottom_y);
-            ASSERT_EQ(divisions[curr_i + 1], leaf->top_y);
-            curr_i++;
-        }
-
     }
 
 
@@ -386,12 +374,17 @@ namespace {
 
         auto[rect, val] = tree.max_rectangle(1.0, -1.0);
         auto [rect2, rect_val] = tree.max_rectangle_slow(1.0, -1.0);
+
         std::cout << rect.toString() << " " <<  val <<  " "
             << pyscan::range_weight(rect, m_pts) / pyscan::computeTotal(m_pts) - pyscan::range_weight(rect, b_pts) / pyscan::computeTotal(b_pts)
+            << " "
+            << tree.measure_rect(rect, 1.0, -1.0)
             << std::endl;
 
         std::cout << rect2.toString() << " " << rect_val << " "
             <<  pyscan::range_weight(rect2, m_pts) / pyscan::computeTotal(m_pts) - pyscan::range_weight(rect2, b_pts) / pyscan::computeTotal(b_pts)
+            << " "
+            << tree.measure_rect(rect2, 1.0, -1.0)
             << std::endl;
 
 //        EXPECT_FLOAT_EQ(val, pyscan::range_weight(rect, m_pts) / pyscan::computeTotal(m_pts) -

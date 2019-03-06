@@ -82,6 +82,16 @@ namespace pyscan {
         };
     }
 
+    auto linear_f(double a, double b) -> std::function<double(double, double, double, double)> {
+        /*
+         * Useful for finding a region of a certain size.
+         */
+
+        return [a, b] (double mv, double m_total, double bv, double b_total) {
+            return a * mv / m_total + b * bv / b_total;
+        };
+    }
+
     std::function<double(double, double)> rho_f(std::function<double(double, double, double)> const& f, double rho) {
        return [&](double x, double y) {
            return f(x, y, rho);
@@ -475,6 +485,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
     py::def("evaluate", &pyscan::evaluate);
     py::def("size_region", &pyscan::sized_region);
+    py::def("linear_f", &pyscan::linear_f);
 
     py::def("intersection", &pyscan::intersection);
     py::def("correct_orientation", &pyscan::correct_orientation);
@@ -574,5 +585,4 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("uniform_sample_error", &pyscan::uniform_sample_error);
     py::def("even_sample_error", &pyscan::even_sample_error);
 
-    py::def("sum", &sum_f);
 }
