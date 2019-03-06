@@ -132,7 +132,7 @@ namespace pyscan {
         double total_red_weight = 0;
         double total_blue_weight = 0;
     public:
-        Grid(size_t r_arg, wpoint_list_t const& red, wpoint_list_t const& blue);
+        Grid(size_t r_arg, wpoint_list_t red, wpoint_list_t blue);
         Grid(wpoint_list_t const& red_points, wpoint_list_t const& blue_points);
         Grid(point_list_t const& net, wpoint_list_t const& red, wpoint_list_t const& blue);
         double totalRedWeight() const;

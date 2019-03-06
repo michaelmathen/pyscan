@@ -15,24 +15,19 @@
 namespace pyscan {
 
 
-    template<typename F>
-    void quantiles(wpoint_list_t const& pts, std::vector<double>& indices, size_t r, F f) {
-        auto order = util::sort_permutation(pts.begin(), pts.end(), [&](pt2_t const& p1, pt2_t const& p2){
-            return f(p1) < f(p2);
-        });
-        double total_weight = std::accumulate(pts.begin(), pts.end(), 0, [](double w, wpt2_t const& p){
-            return w + p.get_weight();
-        });
 
-        double eps_s = total_weight / r;
-        double curr_weight = 0;
-        std::for_each(order.begin(), order.end(), [&](size_t ix) {
-            curr_weight += pts[ix].get_weight();
-            if (curr_weight > eps_s) {
-                indices.push_back(f(pts[ix]));
-                curr_weight = 0;
+    point_list_t quantiles(wpoint_list_t const& pts, double m_w) {
+        double curr_w = 0;
+        point_list_t break_pts;
+        for (auto b = pts.begin(); b != pts.end(); ++b) {
+            if ((curr_w + b->get_weight()) > m_w) {
+                break_pts.emplace_back((*b)[0], (*b)[1], (*b)[2]);
+                curr_w = 0;
+            } else {
+                curr_w += b->get_weight();
             }
-        });
+        }
+        return break_pts;
     }
 
     Grid::Grid(wpoint_list_t const& red_points,
@@ -85,31 +80,52 @@ namespace pyscan {
      * Takes a grid resolution,r, and a red set of points and a blue set of points. Computes a grid from this.z
      */
     Grid::Grid(size_t r_arg,
-        wpoint_list_t const& red_points,
-        wpoint_list_t const& blue_points) :
+        wpoint_list_t red_points,
+        wpoint_list_t blue_points) :
         r(r_arg),
         red_counts(r_arg * r_arg, 0),
         blue_counts(r_arg * r_arg, 0),
         x_coords(),
-        y_coords()
+        y_coords(),
+        total_red_weight(computeTotal(red_points)),
+        total_blue_weight(computeTotal(blue_points))
     {
 
         //Compute the grid from the n_begin and n_end and then fill in the values with the two sampled things.
-        auto getX = [](Point<> const &p1) {
-            return p1(0);
+        auto xcmp = [](Point<> const &p1, Point<> const& p2) {
+            return p1(0) < p2(0);
         };
-        auto getY = [](Point<> const &p1) {
-            return p1(1);
+        auto ycmp = [](Point<> const &p1, Point<> const& p2) {
+            return p1(1) < p2(1);
         };
 
 
+        auto insert_coords = [](point_list_t const& pts, size_t dim, std::vector<double>& coords) {
+            coords.reserve(pts.size() + coords.size());
+            for (auto& pt : pts) {
+                coords.emplace_back(pt(dim));
+            }
+        };
 
-        quantiles(red_points, x_coords, r_arg, getX);
-        quantiles(blue_points, x_coords, r_arg, getX);
-        quantiles(red_points, y_coords, r_arg, getY);
-        quantiles(blue_points, y_coords, r_arg, getY);
-        std::sort(x_coords.begin(), x_coords.end());
-        std::sort(y_coords.begin(), y_coords.end());
+        std::sort(red_points.begin(), red_points.end(), xcmp);
+        std::sort(blue_points.begin(), blue_points.end(), xcmp);
+        auto r_p_x = quantiles(red_points, 2 * total_red_weight / r_arg);
+        auto b_p_x = quantiles(blue_points, 2 * total_blue_weight / r_arg);
+
+        insert_coords(r_p_x, 0, x_coords);
+        insert_coords(b_p_x, 0, x_coords);
+
+        std::sort(red_points.begin(), red_points.end(), ycmp);
+        std::sort(blue_points.begin(), blue_points.end(), ycmp);
+        auto r_p_y = quantiles(red_points, 2 * total_red_weight / r_arg);
+        auto b_p_y = quantiles(blue_points, 2 * total_blue_weight / r_arg);
+
+        insert_coords(r_p_y, 1, y_coords);
+        insert_coords(b_p_y, 1, y_coords);
+
+        std::inplace_merge(x_coords.begin(), x_coords.begin() + r_p_x.size(), x_coords.end());
+        std::inplace_merge(y_coords.begin(), y_coords.begin() + r_p_y.size(), y_coords.end());
+
 
         for (auto& point : red_points)  {
             long ix = std::upper_bound(x_coords.begin(), x_coords.end(), point(0)) - x_coords.begin() - 1;
@@ -117,7 +133,6 @@ namespace pyscan {
             if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
                 red_counts[iy * r + ix] += point.get_weight();
             }
-            total_red_weight += point.get_weight();
         }
         for (auto& point : blue_points) {
             long ix = std::upper_bound(x_coords.begin(), x_coords.end(), point(0)) - x_coords.begin() - 1;
@@ -125,7 +140,6 @@ namespace pyscan {
             if (ix < r && iy < r && 0 <= ix && 0 <= iy) {
                 blue_counts[iy * r + ix] += point.get_weight();
             }
-            total_blue_weight += point.get_weight();
         }
     }
 
@@ -650,7 +664,7 @@ namespace pyscan {
             std::vector<ept_t> break_pts;
             for (; b != e; ++b) {
                 if ((curr_w + b->get_weight()) > m_w) {
-                    break_pts.emplace_back(*b);
+                    break_pts.emplace_back(b->get_x(), b->get_y(), curr_w + b->get_weight());
                     curr_w = 0;
                 } else {
                     curr_w += b->get_weight();
