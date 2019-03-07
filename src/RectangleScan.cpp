@@ -654,31 +654,47 @@ namespace pyscan {
 
 
 
-     epoint_list_t compress(epoint_it_t b, epoint_it_t e, bool compression, double m_w) {
+     epoint_list_t even_compress_internal(epoint_it_t b, epoint_it_t e, double m_w) {
         /*
          * Takes a vector of weighted points and constructed a smaller set of weighted points equally spaced with
          * the a different set of weights.
          */
-        if (compression) {
-            double curr_w = 0;
-            std::vector<ept_t> break_pts;
-            for (; b != e; ++b) {
-                if ((curr_w + b->get_weight()) > m_w) {
-                    break_pts.emplace_back(b->get_x(), b->get_y(), curr_w + b->get_weight());
-                    curr_w = 0;
-                } else {
-                    curr_w += b->get_weight();
-                }
+        double curr_w = 0;
+        std::vector<ept_t> break_pts;
+        for (; b != e; ++b) {
+            if ((curr_w + b->get_weight()) > m_w) {
+                break_pts.emplace_back(b->get_x(), b->get_y(), curr_w + b->get_weight());
+                curr_w = 0;
+            } else {
+                curr_w += b->get_weight();
             }
-            return break_pts;
-        } else {
-             epoint_list_t merges;
-             for (; b != e; ++b) {
-                 merges.emplace_back(*b);
-             }
-             return merges;
-         }
+        }
+        return break_pts;
     }
+
+
+    template <typename UURG>
+    epoint_list_t block_compress_internal(epoint_it_t b, epoint_it_t e, double m_w, UURG&& gen) {
+        /*
+         * Takes a vector of weighted points and constructed a smaller set of weighted points equally spaced with
+         * the a different set of weights.
+         */
+        double curr_w = 0;
+        std::vector<ept_t> break_pts;
+        auto last_b = b;
+        for (; b != e; ++b) {
+            if ((curr_w + b->get_weight()) > m_w) {
+                std::uniform_int_distribution<size_t> dist(0, static_cast<size_t>(b - last_b ));
+                break_pts.emplace_back(*(last_b + dist(gen)));
+                break_pts.back().set_weight(curr_w + b->get_weight());
+                curr_w = 0;
+            } else {
+                curr_w += b->get_weight();
+            }
+        }
+        return break_pts;
+    }
+
 
     void normalize(wpoint_list_t& pts) {
         //Compute the total weight.
@@ -747,21 +763,18 @@ namespace pyscan {
                 vert_decomp.emplace_back(p.get_y());
             }
         }
-        auto y_cmp = [] (ept_t const& p1, ept_t const& p2) {
-            return p1.get_y() < p2.get_y();
-        };
-        auto mmx_it = max_element(mpts.begin(), mpts.end(), y_cmp);
-        auto bmx_it = max_element(bpts.begin(), bpts.end(), y_cmp);
+        auto mmx_it = mpts.end() - 1;
+        auto bmx_it = bpts.end() - 1;
         if (mmx_it->get_y() < bmx_it->get_y()) {
             vert_decomp.emplace_back(bmx_it->get_y() + 1);
         } else {
             vert_decomp.emplace_back(mmx_it->get_y() + 1);
         }
 
-        SlabTree::init(mpts, bpts, vert_decomp, true, max_w);
+        SlabTree::init(mpts, bpts, vert_decomp);
     }
 
-    SlabTree::SlabTree(std::vector<size_t> vert_decomp, epoint_list_t mpts, epoint_list_t bpts, bool compression, double max_w) :
+    SlabTree::SlabTree(std::vector<size_t> vert_decomp, epoint_list_t mpts, epoint_list_t bpts) :
         total_m(computeTotal(mpts)), total_b(computeTotal(bpts)) {
         /*
          * Create a vertical decomposition of the point set so that we can split the points into a sequence of horizontal
@@ -779,11 +792,10 @@ namespace pyscan {
         } else {
             vert_decomp.emplace_back(mmx_it->get_y() + 1);
         }
-
-        SlabTree::init(std::move(mpts), std::move(bpts), vert_decomp, compression, max_w);
+        SlabTree::init(std::move(mpts), std::move(bpts), vert_decomp);
     }
 
-    void SlabTree::init(epoint_list_t mpts, epoint_list_t bpts, std::vector<size_t> const& vert_decomp, bool compression, double max_w) {
+    void SlabTree::init(epoint_list_t mpts, epoint_list_t bpts, std::vector<size_t> const& vert_decomp) {
 
         //std::sort(vert_decomp.begin(), vert_decomp.end());
 
@@ -795,18 +807,6 @@ namespace pyscan {
         using cell_t = std::tuple<slab_ptr, slab_ptr *, vrng_it, wrng_it, wrng_it>;
         using cell_list_t = std::vector<cell_t>;
 
-//        {
-//            int64_t v_b = *(vert_decomp.begin());
-//            int64_t v_e = *(vert_decomp.end() - 1);
-//            //Needs to match ERectangle->contains
-//            auto in_interval = [v_b, v_e] (const ept_t& pt) {
-//                return v_b <= (int64_t)pt(1) && (int64_t)pt(1) < v_e;
-//            };
-//            auto m_new_end = std::partition(mpts.begin(), mpts.end(), in_interval);
-//            mpts.erase(m_new_end, mpts.end());
-//            auto b_new_end = std::partition(bpts.begin(), bpts.end(), in_interval);
-//            bpts.erase(b_new_end, bpts.end());
-//        }
 
         //Sort these by x-axis
         std::sort(mpts.begin(), mpts.end());
@@ -830,8 +830,9 @@ namespace pyscan {
 
 
             //Compress the current m_pts and b_pts and compute the weights.
-            auto m_merges = compress(m_b, m_e, compression, max_w * total_m);
-            auto b_merges = compress(b_b, b_e, compression, max_w * total_b);
+            //Need the
+            auto m_merges = epoint_list_t(m_b, m_e);
+            auto b_merges = epoint_list_t(b_b, b_e);
 
             //Compute the slab now.
             *el_ptr = std::shared_ptr<Slab>(new Slab(parent, m_merges, b_merges, *(v_e - 1), *v_b));
@@ -858,10 +859,48 @@ namespace pyscan {
                                     std::make_tuple(v_mid, v_e),
                                     std::make_tuple(m_iter_splt, m_e),
                                     std::make_tuple(b_iter_splt, b_e));
-            } else {
-                roots.emplace(*el_ptr);
             }
         }
+    }
+
+
+    std::vector<slab_ptr> SlabTree::get_leaves() const {
+        std::vector<decltype(root)> curr_stack;
+        curr_stack.push_back(root);
+        std::vector<decltype(root)> leaves;
+        while (!curr_stack.empty()) {
+            auto el = curr_stack.back();
+            curr_stack.pop_back();
+            if (el->up != nullptr) {
+                curr_stack.push_back(el->up);
+            }
+            if (el->down != nullptr) {
+                curr_stack.push_back(el->down);
+            }
+            if (!el->up  && !el->down){
+                leaves.push_back(el);
+            }
+        }
+        return leaves;
+    }
+
+    void SlabTree::reset_splits() {
+        std::vector<decltype(root)> curr_stack;
+        curr_stack.push_back(root);
+        while (!curr_stack.empty()) {
+            auto el = curr_stack.back();
+            curr_stack.pop_back();
+            if (el != nullptr) {
+                el->global_split_offset = std::vector<size_t>();
+                curr_stack.push_back(el->down);
+                curr_stack.push_back(el->up);
+            }
+        }
+    }
+
+    void SlabTree::compute_splits() {
+
+        auto roots = get_leaves();
 
         using s_it = std::vector<size_t>::iterator;
         auto inplace_set_union = [](std::vector<size_t>& memory, s_it b, s_it mid, s_it e) {
@@ -872,8 +911,8 @@ namespace pyscan {
         };
         //Now go back through and create a list of all the lower splits.
         while (!roots.empty()) {
-            auto child = roots.front();
-            roots.pop();
+            auto child = roots.back();
+            roots.pop_back();
             //Now merge into the parent.
             auto p = child->parent.lock();
             if (p != nullptr) {
@@ -897,12 +936,55 @@ namespace pyscan {
                 std::copy(curr_splits.begin(), curr_splits.end(), std::back_inserter(p->global_split_offset));
 
                 inplace_set_union(p->global_split_offset, p->global_split_offset.begin(),
-                        p->global_split_offset.begin() + offset2, p->global_split_offset.end());
+                                  p->global_split_offset.begin() + offset2, p->global_split_offset.end());
                 if (p->up == nullptr || child == p->up) {
-                    roots.emplace(p);
+                    roots.emplace_back(p);
                 }
             }
         }
+    }
+
+    void SlabTree::block_compress(double max_w) {
+
+        std::vector<slab_ptr> curr_slabs;
+        if (root == nullptr) {
+            return;
+        }
+        std::random_device rd;
+        std::minstd_rand gen(rd());
+
+        curr_slabs.emplace_back(root->up);
+        curr_slabs.emplace_back(root->down);
+        while (!curr_slabs.empty()) {
+            auto curr_root = curr_slabs.back();
+            curr_slabs.pop_back();
+            if (curr_root != nullptr) {
+                curr_root->m_merges = block_compress_internal(curr_root->m_merges.begin(), curr_root->m_merges.end(), max_w * total_m, gen);
+                curr_root->b_merges = block_compress_internal(curr_root->b_merges.begin(), curr_root->b_merges.end(), max_w * total_b, gen);
+                curr_slabs.emplace_back(curr_root->up);
+                curr_slabs.emplace_back(curr_root->down);
+            }
+        }
+    }
+
+    void SlabTree::even_compress(double max_w) {
+        std::vector<slab_ptr> curr_slabs;
+        curr_slabs.emplace_back(root);
+        while (!curr_slabs.empty()) {
+            auto curr_root = curr_slabs.back();
+            curr_slabs.pop_back();
+            if (curr_root != nullptr) {
+                curr_root->m_merges = even_compress_internal(curr_root->m_merges.begin(), curr_root->m_merges.end(),
+                                               max_w * total_m);
+                curr_root->b_merges = even_compress_internal(curr_root->b_merges.begin(), curr_root->b_merges.end(), max_w * total_b);
+                curr_slabs.emplace_back(curr_root->up);
+                curr_slabs.emplace_back(curr_root->down);
+            }
+        }
+    }
+
+    void cascade_compress(double max_w){
+
     }
 
     slab_ptr SlabTree::get_containing(size_t upY, size_t lowY) const {
@@ -1258,6 +1340,8 @@ namespace pyscan {
     std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& mpts, const wpoint_list_t& bpts, double eps, double a, double b) {
         auto [m_pts, b_pts, xmap, ymap] = pyscan::to_epoints(mpts, bpts);
         SlabTree tree(m_pts, b_pts, eps);
+        tree.even_compress(eps);
+        tree.compute_splits();
         auto [max_rect, max_v] = tree.max_rectangle(a, b);
         return std::make_tuple(Rectangle(xmap[max_rect.upX()], ymap[max_rect.upY()], xmap[max_rect.lowX()], ymap[max_rect.lowY()]), max_v);
     }

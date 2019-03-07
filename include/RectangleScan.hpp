@@ -393,10 +393,10 @@ namespace pyscan {
         SlabTree(slab_ptr child, double tm, double tb) : root(child), total_m(tm), total_b(tb) {}
 
         SlabTree(epoint_list_t ms, epoint_list_t bs, double max_w);
-        SlabTree(std::vector<size_t> vert_decomp, epoint_list_t ms, epoint_list_t bs, bool compression, double max_w);
+        SlabTree(std::vector<size_t> vert_decomp, epoint_list_t ms, epoint_list_t bs);
 
         //Useful for debuging the structure so you can define a non compressed version with fixed decomposition.
-        void init(epoint_list_t mpts, epoint_list_t bpts, std::vector<size_t> const& vert_decomp, bool compression, double max_w);
+        void init(epoint_list_t mpts, epoint_list_t bpts, std::vector<size_t> const& vert_decomp);
 
         double measure_rect(ERectangle const &rect, double a, double b) const;
         std::tuple<ERectangle, double> max_rectangle_midpoint(double m_a, double b_b);
@@ -437,6 +437,13 @@ namespace pyscan {
         SlabTree get_lower_tree() const {
             return SlabTree(root->down, total_m, total_b);
         }
+
+        void reset_splits();
+        void compute_splits();
+        std::vector<slab_ptr> get_leaves() const;
+        void block_compress(double max_w);
+        void even_compress(double max_w);
+        void cascade_compress(double max_w);
 
         std::vector<size_t> get_vert_breakpoints() const;
 

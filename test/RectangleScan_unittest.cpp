@@ -100,7 +100,8 @@ namespace {
 
         auto[divisions, m_pts, b_pts] = initialize_pts();
 
-        pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
+        pyscan::SlabTree tree(divisions, m_pts, b_pts);
+        tree.compute_splits();
         auto root = tree.get_root();
         std::vector<decltype(root)> curr_stack;
         curr_stack.push_back(root);
@@ -144,7 +145,8 @@ namespace {
     TEST(Slab, get_contains) {
         auto[divisions, m_pts, b_pts] = initialize_pts();
 
-        pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
+        pyscan::SlabTree tree(divisions, m_pts, b_pts);
+        tree.compute_splits();
         size_t x_min = std::min(m_pts[0](0), m_pts[1](0));
         size_t x_max = std::max(m_pts[0](0), m_pts[1](0));
 
@@ -161,7 +163,8 @@ namespace {
     TEST(SlabTree, measure_interval) {
         auto[divisions, m_pts, b_pts] = initialize_pts();
 
-        pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
+        pyscan::SlabTree tree(divisions, m_pts, b_pts);
+        tree.compute_splits();
         auto root = tree.get_root();
         if (!root || !root->down) {
             return;
@@ -209,7 +212,7 @@ namespace {
         }
         std::sort(divisions.begin(), divisions.end());
 
-        pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
+        pyscan::SlabTree tree(divisions, m_pts, b_pts);
         for (auto it1 = n_pts.begin(); it1 != n_pts.end() - 3; ++it1) {
             for (auto it2 = it1 + 1; it2 != n_pts.end() - 3; ++it2) {
                 for (auto it3 = it2 + 1; it3 != n_pts.end() - 2; ++it3) {
@@ -246,8 +249,8 @@ namespace {
         }
         std::sort(divisions.begin(), divisions.end());
 
-        pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
-
+        pyscan::SlabTree tree(divisions, m_pts, b_pts);
+        tree.compute_splits();
         auto root = tree.get_root();
         std::vector<decltype(root)> curr_stack;
         curr_stack.push_back(root);
@@ -303,7 +306,7 @@ namespace {
         auto new_end = std::unique(divisions.begin(), divisions.end());
         divisions.erase(new_end, divisions.end());
         using pyscan::operator<<;
-        pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
+        pyscan::SlabTree tree(divisions, m_pts, b_pts);
 
         for (size_t i = 0; i < divisions.size(); i++){
             for (size_t j = i; j < divisions.size(); j++) {
@@ -370,8 +373,8 @@ namespace {
         divisions.erase(new_end, divisions.end());
         using pyscan::operator<<;
         std::cout << divisions << std::endl;
-        pyscan::SlabTree tree(divisions, m_pts, b_pts, false, 1.0);
-
+        pyscan::SlabTree tree(divisions, m_pts, b_pts);
+        tree.compute_splits();
         auto[rect, val] = tree.max_rectangle(1.0, -1.0);
         auto [rect2, rect_val] = tree.max_rectangle_slow(1.0, -1.0);
 
