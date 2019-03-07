@@ -10,9 +10,6 @@
 
 namespace pyscan{
 
-    const int MIN_TRAJ_SIZE = 4;
-
-
     inline static pt2_t internal_drop_point(const pt3_t& fixed_point, const pt3_t& p) {
         return pt2_t(fixed_point[0] * p[1] - fixed_point[1] * p[0],
                      fixed_point[0] * p[2] - fixed_point[2] * p[0],

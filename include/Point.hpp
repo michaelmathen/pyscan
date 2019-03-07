@@ -30,11 +30,8 @@ namespace pyscan {
 
 
         template <class ...Coords, std::enable_if_t<(sizeof...(Coords) == dim + 1)>* = nullptr>
-        explicit Point(Coords... rest) {
-
+        explicit Point(Coords... rest) : coords{rest...} {
             static_assert(sizeof...(rest) == dim + 1, "Wrong number of arguments for the point type.");
-            std::initializer_list<double> il({rest...});
-            std::copy(il.begin(), il.end(), coords.begin());
         }
 
        /* Point<dim>& operator=(Point<dim> const& pt) {
@@ -45,6 +42,7 @@ namespace pyscan {
         Point() {
             coords.fill(0.0);
         }
+        virtual ~Point() {}
 
         friend std::ostream &operator<<(std::ostream &os, Point const &pt) {
             os << "pyscan::Point<" << dim << ">(";
@@ -296,10 +294,12 @@ namespace pyscan {
     public:
         template<typename ...Coords>
         explicit WPoint(double weight, Coords... rest)
-                : Point<dim>(rest...), weight(weight) {}
+                : Point<dim>(rest...), weight(weight) {
+                }
 
         WPoint()
                 : Point<dim>(), weight(0.0) {}
+        virtual ~WPoint() {}
 
         friend std::ostream &operator<<(std::ostream &os, WPoint const &pt) {
             os << "WPoint(" << pt.get_weight() << ", ";
@@ -332,6 +332,9 @@ namespace pyscan {
 
         LPoint()
                 : WPoint<dim>(), label(0) {}
+
+
+        virtual ~LPoint() {}
 
         inline size_t get_label() const {
             return label;
@@ -369,6 +372,7 @@ namespace pyscan {
 
     //Return the two points on the line that are equidistance to some other point.
 //    std::tuple<Point<2>, Point<2>> chord_pts(const Point<2> &line, const Point<2> &origin, double dist);
+
 
     using pt2_t = Point<2>;
     using wpt2_t = WPoint<2>;

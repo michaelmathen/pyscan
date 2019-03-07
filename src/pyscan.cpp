@@ -82,6 +82,16 @@ namespace pyscan {
         };
     }
 
+    auto linear_f(double a, double b) -> std::function<double(double, double, double, double)> {
+        /*
+         * Useful for finding a region of a certain size.
+         */
+
+        return [a, b] (double mv, double m_total, double bv, double b_total) {
+            return a * mv / m_total + b * bv / b_total;
+        };
+    }
+
     std::function<double(double, double)> rho_f(std::function<double(double, double, double)> const& f, double rho) {
        return [&](double x, double y) {
            return f(x, y, rho);
@@ -92,9 +102,6 @@ namespace pyscan {
       return max_subgrid_convex(grid, eps, f);
     }
 
-    Subgrid maxSubgridLinTheory(Grid const& grid, double eps, discrepancy_func_t const& f){
-        return max_subgrid_convex_theory(grid, eps, f);
-    }
 
     Subgrid maxSubgridSlow(Grid const &grid, discrepancy_func_t const& f) {
         return max_subgrid(grid, f);
@@ -504,6 +511,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
     py::def("evaluate", &pyscan::evaluate);
     py::def("size_region", &pyscan::sized_region);
+    py::def("linear_f", &pyscan::linear_f);
 
     py::def("intersection", &pyscan::intersection);
     py::def("correct_orientation", &pyscan::correct_orientation);
@@ -511,10 +519,8 @@ BOOST_PYTHON_MODULE(libpyscan) {
 
     py::def("max_subgrid", &pyscan::max_subgrid);
     py::def("max_subgrid_convex", &pyscan::max_subgrid_convex);
-    py::def("max_subgrid_convex_theory", &pyscan::max_subgrid_convex_theory);
     py::def("max_subgrid_linear", &pyscan::max_subgrid_linear);
-    py::def("max_subgrid_linear_theory", &pyscan::max_subgrid_linear_theory);
-    py::def("max_rectangle", &pyscan::max_rectangle);
+//    py::def("max_rectangle", &pyscan::max_rectangle);
 
     py::def("make_net_grid", &pyscan::make_net_grid);
     py::def("make_exact_grid", &pyscan::make_exact_grid);
@@ -553,6 +559,9 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("max_disk_scale_labeled", &pyscan::max_disk_scale_labeled);
     py::def("max_disk_scale_labeled_alt", &pyscan::max_disk_scale_labeled_alt);
     py::def("max_rect_labeled", &pyscan::max_rect_labeled);
+
+    py::def("max_rectangle", &pyscan::max_rectangle);
+
 
     py::def("max_rect_labeled_scale", pyscan::max_rect_labeled_scale);
 
@@ -602,5 +611,4 @@ BOOST_PYTHON_MODULE(libpyscan) {
     py::def("uniform_sample_error", &pyscan::uniform_sample_error);
     py::def("even_sample_error", &pyscan::even_sample_error);
 
-    py::def("sum", &sum_f);
 }

@@ -29,6 +29,8 @@ public:
             return false;
         }
     }
+    virtual ~Range(){}
+
 };
 
 template<int dim, template<int> typename Traj=WTrajectory>
