@@ -738,7 +738,7 @@ namespace pyscan {
 
         std::vector<size_t> vert_decomp;
         vert_decomp.reserve((size_t) (1 / max_w));
-
+        vert_decomp.emplace_back(0);
         double curr_weight = 0;
         for (auto &p : merge_buffer) {
             curr_weight += p.get_weight();
@@ -747,22 +747,27 @@ namespace pyscan {
                 vert_decomp.emplace_back(p.get_y());
             }
         }
+        auto y_cmp = [] (ept_t const& p1, ept_t const& p2) {
+            return p1.get_y() < p2.get_y();
+        };
+        auto mmx_it = max_element(mpts.begin(), mpts.end(), y_cmp);
+        auto bmx_it = max_element(bpts.begin(), bpts.end(), y_cmp);
+        if (mmx_it->get_y() < bmx_it->get_y()) {
+            vert_decomp.emplace_back(bmx_it->get_y() + 1);
+        } else {
+            vert_decomp.emplace_back(mmx_it->get_y() + 1);
+        }
 
         SlabTree::init(mpts, bpts, vert_decomp, true, max_w);
     }
 
-    SlabTree::SlabTree(std::vector<size_t> const &vert_decomp, epoint_list_t mpts, epoint_list_t bpts, bool compression, double max_w) :
+    SlabTree::SlabTree(std::vector<size_t> vert_decomp, epoint_list_t mpts, epoint_list_t bpts, bool compression, double max_w) :
         total_m(computeTotal(mpts)), total_b(computeTotal(bpts)) {
         /*
          * Create a vertical decomposition of the point set so that we can split the points into a sequence of horizontal
          * strips where each contains at most max_w.
          */
-        SlabTree::init(std::move(mpts), std::move(bpts), vert_decomp, compression, max_w);
-    }
 
-    void SlabTree::init(epoint_list_t mpts, epoint_list_t bpts, std::vector<size_t> vert_decomp, bool compression, double max_w) {
-
-        //std::sort(vert_decomp.begin(), vert_decomp.end());
         vert_decomp.insert(vert_decomp.begin(), 0);
         auto y_cmp = [] (ept_t const& p1, ept_t const& p2) {
             return p1.get_y() < p2.get_y();
@@ -774,6 +779,14 @@ namespace pyscan {
         } else {
             vert_decomp.emplace_back(mmx_it->get_y() + 1);
         }
+
+        SlabTree::init(std::move(mpts), std::move(bpts), vert_decomp, compression, max_w);
+    }
+
+    void SlabTree::init(epoint_list_t mpts, epoint_list_t bpts, std::vector<size_t> const& vert_decomp, bool compression, double max_w) {
+
+        //std::sort(vert_decomp.begin(), vert_decomp.end());
+
 
         using wrng_it = std::tuple<epoint_it_t , epoint_it_t >;
         using vert_it = std::vector<size_t>::const_iterator;

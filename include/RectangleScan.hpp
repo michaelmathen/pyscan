@@ -16,8 +16,9 @@
 #include <tuple>
 #include <limits>
 #include <iostream>
-#include "BloomFilter.hpp"
 
+#include "Sampling.hpp"
+#include "BloomFilter.hpp"
 #include "Range.hpp"
 #include "Statistics.hpp"
 #include "Point.hpp"
@@ -392,10 +393,10 @@ namespace pyscan {
         SlabTree(slab_ptr child, double tm, double tb) : root(child), total_m(tm), total_b(tb) {}
 
         SlabTree(epoint_list_t ms, epoint_list_t bs, double max_w);
-        SlabTree(std::vector<size_t> const &vert_decomp, epoint_list_t ms, epoint_list_t bs, bool compression, double max_w);
+        SlabTree(std::vector<size_t> vert_decomp, epoint_list_t ms, epoint_list_t bs, bool compression, double max_w);
 
         //Useful for debuging the structure so you can define a non compressed version with fixed decomposition.
-        void init(epoint_list_t mpts, epoint_list_t bpts, std::vector<size_t> vert_decomp, bool compression, double max_w);
+        void init(epoint_list_t mpts, epoint_list_t bpts, std::vector<size_t> const& vert_decomp, bool compression, double max_w);
 
         double measure_rect(ERectangle const &rect, double a, double b) const;
         std::tuple<ERectangle, double> max_rectangle_midpoint(double m_a, double b_b);
@@ -446,6 +447,65 @@ namespace pyscan {
         double total_m;
         double total_b;
     };
+
+
+
+    template <typename Pt>
+    auto kd_partition(std::vector<Pt> pts, size_t part_num, size_t sample_num) -> std::vector<Pt> {
+        /*
+         * This implements kd partition algorithm using a weighted median algorithm.
+         */
+        std::random_device rd;
+        std::default_random_engine gen(rd());
+        if (part_num * sample_num >= pts.size()) {
+            return pts;
+        }
+        using cell_t = std::tuple<epoint_it_t, epoint_it_t, bool>;
+
+        auto cmpx = [] (ept_t const& p1, ept_t const& p2) {
+            return p1(0) < p2(0);
+        };
+        auto cmpy = [] (ept_t const& p1, ept_t const& p2) {
+            return p1(1) < p2(1);
+        };
+        auto wf = [] (ept_t const& p) {
+            return p.get_weight();
+        };
+
+        std::vector<cell_t> cell_listing;
+        cell_listing.reserve(part_num);
+        cell_listing.emplace_back(pts.begin(), pts.end(), true);
+        while (cell_listing.size() < part_num) {
+            auto [b, e, flip] = cell_listing.back();
+
+            decltype(b) center_it;
+            if (flip) {
+                center_it = weighted_median(b, e, cmpx, wf, gen);
+            } else {
+                center_it = weighted_median(b, e, cmpy, wf, gen);
+            }
+            cell_listing.pop_back();
+            cell_listing.emplace_back(b, center_it, !flip);
+            cell_listing.emplace_back(center_it, e, !flip);
+        }
+
+        //Now sample the partitions.
+        std::vector<Pt> output_list;
+        output_list.reserve(part_num * sample_num);
+        while (!cell_listing.empty()) {
+            auto [b, e, flip] = cell_listing.back();
+            (void)flip;
+            size_t begining = output_list.size();
+            random_sample_wor(b, e, gen, wf, sample_num, std::back_inserter(output_list));
+            auto tw = std::accumulate(b, e, 0.0, [&](double val, Pt const& p) {
+                return val + wf(p);
+            });
+            for (size_t i = begining; i < output_list.size(); i++) {
+                output_list[i].set_weight(output_list.size() - begining);
+            }
+        }
+        return output_list;
+    }
 
     std::vector<MaxIntervalAlt> insert_updates(std::vector<MaxIntervalAlt> const& max_intervals,
                                                epoint_list_t const& updates, double scale);
