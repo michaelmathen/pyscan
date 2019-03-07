@@ -1340,7 +1340,7 @@ namespace pyscan {
     std::tuple<Rectangle, double> max_rectangle(const wpoint_list_t& mpts, const wpoint_list_t& bpts, double eps, double a, double b) {
         auto [m_pts, b_pts, xmap, ymap] = pyscan::to_epoints(mpts, bpts);
         SlabTree tree(m_pts, b_pts, eps);
-        tree.even_compress(eps);
+        tree.even_compress(eps / log(1 / eps));
         tree.compute_splits();
         auto [max_rect, max_v] = tree.max_rectangle(a, b);
         return std::make_tuple(Rectangle(xmap[max_rect.upX()], ymap[max_rect.upY()], xmap[max_rect.lowX()], ymap[max_rect.lowY()]), max_v);
