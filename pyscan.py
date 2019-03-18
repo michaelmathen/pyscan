@@ -399,10 +399,8 @@ def plant_rectangle(pts, r, p, q):
         else:
             outside_rect.append(pt)
 
-    red_in = split_set(inside_rect, q)
-    blue_in = split_set(inside_rect, q)
-    red_out = split_set(outside_rect, p)
-    blue_out = split_set(outside_rect, p)
+    red_in, blue_in = split_set(inside_rect, q)
+    red_out, blue_out = split_set(outside_rect, p)
     return red_in + red_out, blue_in + blue_out, rect
 
 
@@ -430,10 +428,8 @@ def plant_disk(pts, r, p, q):
     inside_disk = ordered[:int(r * len(ordered))]
     outside_disk = ordered[int(r * len(ordered)):]
 
-    red_in = split_set(inside_disk, q)
-    blue_in = split_set(inside_disk, q)
-    red_out = split_set(outside_disk, p)
-    blue_out = split_set(outside_disk, p)
+    red_in, blue_in = split_set(inside_disk, q)
+    red_out, blue_out = split_set(outside_disk, p)
     return red_in + red_out, blue_in + blue_out, max_disk
 
 
@@ -450,21 +446,21 @@ def plant_halfplane(pts, r, p, q):
     """
 
     def min_distance(pt, direc):
-        return direc[0] * pt[0] + direc[1] * pt[1]
+        return direc[0] * pt[0] + direc[1] * pt[1] 
     rand_direc = (random.gauss(0, 1), abs(random.gauss(0, 1)))
 
     ordered = sorted(pts, key=lambda x: min_distance(x, rand_direc))
     inside_halfplane = ordered[:int(r * len(ordered))]
     outside_halfplane = ordered[int(r * len(ordered)):]
 
-    pt = ordered[int((1 - r) * len(ordered))]
+    pt = ordered[int(r * len(ordered))]
     lc = pt[0] * rand_direc[0] + pt[1] * rand_direc[1]
-    plant_region = Halfplane(Point(rand_direc[0], rand_direc[1], -lc))
 
-    red_in = split_set(inside_halfplane, q)
-    blue_in = split_set(inside_halfplane, q)
-    red_out = split_set(outside_halfplane, p)
-    blue_out = split_set(outside_halfplane, p)
+
+    plant_region = Halfplane(Point(-rand_direc[0], -rand_direc[1], lc))
+
+    red_in, blue_in = split_set(inside_halfplane, q)
+    red_out, blue_out = split_set(outside_halfplane, p)
     return red_in + red_out, blue_in + blue_out, plant_region
 
 

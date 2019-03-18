@@ -11,6 +11,9 @@
 #include <boost/python/stl_iterator.hpp>
 #include  <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
+#include <typeinfo>
+
+
 #include "ConvexHull.hpp"
 #include "Segment.hpp"
 #include "RectangleScan.hpp"
@@ -114,125 +117,46 @@ namespace pyscan {
 
 };
 
-
-struct iterable_converter {
-    template <typename Container>
-    iterable_converter&
-    from_python()
-    {
-        boost::python::converter::registry::push_back(
-                &iterable_converter::convertible,
-                &iterable_converter::construct<Container>,
-                boost::python::type_id<Container>());
-        return *this;
-    }
-
-    static void* convertible(PyObject* object)
-    {
-        return PyObject_GetIter(object) ? object : NULL;
-    }
-    template <typename Container>
-    static void construct(
-            PyObject* obj_ptr,
-            boost::python::converter::rvalue_from_python_stage1_data* data) {
-
-        boost::python::handle<> obj_iter(PyObject_GetIter(obj_ptr));
-        void* storage = ((boost::python::converter::rvalue_from_python_storage<Container>*)data)->storage.bytes;
-        new (storage) Container();
-        data->convertible = storage;
-        Container& result = *((Container*)storage);
-        std::size_t i = 0;
-        for(;;i++) {
-            auto el = PyIter_Next(obj_iter.get());
-            boost::python::handle<> py_elem_hdl(
-                    boost::python::allow_null(el));
-            if (PyErr_Occurred()) boost::python::throw_error_already_set();
-            if (!py_elem_hdl.get()) break; // end of iteration
-            boost::python::object py_elem_obj(py_elem_hdl);
-            boost::python::extract<typename Container::value_type> elem_proxy(py_elem_obj);
-            result.push_back(elem_proxy()); //ConversionPolicy::set_value(result, i, elem_proxy());
-        }
-        boost::python::decref(obj_ptr);
+/*
+ * Default converter that just assumes that ConvertVal can be static_cast to RetVal
+ */
+template<typename ConvertVal, typename RetVal>
+struct Converter {
+    RetVal convert(ConvertVal const& val) {
+        return static_cast<RetVal>(val);
     }
 };
 
 
+/*
+ * Converter that attempts to convert a PyObject* into a vector of items.
+ */
+template<typename RetVal>
+struct Converter<const py::object&, std::vector<RetVal>> {
+    RetVal convert(const py::object& iterable) {
+        return std::vector<T>(py::stl_input_iterator<RetVal>(iterable),
+                              py::stl_input_iterator<RetVal>())
+    }
+};
 
-//struct pywtrajectory_converter {
-//
-//    pywtrajectory_converter& from_python() {
-//        boost::python::converter::registry::push_back(
-//                &pywtrajectory_converter::convertible,
-//                &pywtrajectory_converter::construct,
-//                boost::python::type_id<pyscan::wtrajectory_t>());
-//        return *this;
-//    }
-//
-//    /// @brief Check if PyObject is a double tuple.
-//    static void* convertible(PyObject* object) {
-//        if (PyTuple_Check(object) && PyTuple_Size(object) == 2) {
-//            if (PyFloat_Check(PyTuple_GetItem(object, 0)) && PyIter_Check(PyTuple_GetItem(object, 1))) {
-//                return object;
-//            }
-//        }
-//        return NULL;
-//    }
-//
-//    static void construct( PyObject* object, boost::python::converter::rvalue_from_python_stage1_data* data) {
-//        namespace python = boost::python;
-//        python::handle<> handle(python::borrowed(object));
-//        typedef python::converter::rvalue_from_python_storage<pyscan::wtrajectory_t>
-//                storage_type;
-//        void* storage = reinterpret_cast<storage_type*>(data)->storage.bytes;
-//
-//        // Allocate the C++ type into the converter's memory block, and assign
-//        // its handle to the converter's convertible variable.  The C++
-//        // container is populated by passing the begin and end iterators of
-//        // the python object to the container's constructor.
-//
-//        data->convertible = new (storage) pyscan::wtrajectory_t(PyFloat_AS_DOUBLE(PyTuple_GetItem(object, 0)),
-//                py::extract<pyscan::point_list_t>(PyTuple_GetItem(object, 1)));
-//    }
-//};
+template<typename ConvertVal, typename ElVal>
+ConvertVal convert(ElVal obj_ptr) {
+    Converter<ConvertVal, ElVal> converter;
+    return converter.convert(obj_ptr);
+}
 
+template<typename Ret, typename ...Args>
+struct auto_converter {
+    std::function<Ret(Args...)> func;
 
-//struct pytrajectory_converter {
-//
-//    pytrajectory_converter& from_python() {
-//        boost::python::converter::registry::push_back(
-//                &pytrajectory_converter::convertible,
-//                &pytrajectory_converter::construct,
-//                boost::python::type_id<pyscan::trajectory_t>());
-//        return *this;
-//    }
-//
-//    /// @brief Check if PyObject is a double tuple.
-//    static void* convertible(PyObject* object) {
-//        return PyObject_GetIter(object) ? object : NULL;
-//    }
-//
-//    static void construct( PyObject* object, boost::python::converter::rvalue_from_python_stage1_data* data) {
-//        namespace python = boost::python;
-//        python::handle<> handle(python::borrowed(object));
-//        typedef python::converter::rvalue_from_python_storage<pyscan::trajectory_t>
-//                storage_type;
-//        void* storage = reinterpret_cast<storage_type*>(data)->storage.bytes;
-//
-//        // Allocate the C++ type into the converter's memory block, and assign
-//        // its handle to the converter's convertible variable.  The C++
-//        // container is populated by passing the begin and end iterators of
-//        // the python object to the container's constructor.
-//        data->convertible = new (storage) pyscan::trajectory_t(py::extract<pyscan::point_list_t>(object));
-//    }
-//};
+    auto_converter(std::function<Ret(Args...)> const& f) : func(f) {}
 
-//namespace indexing {
-//    template<>
-//    struct value_traits<pyscan::Trajectory<2>> : public value_traits<int> {
-//        static bool const equality_comparable = false;
-//        static bool const lessthan_comparable = false;
-//    };
-//}
+    template<typename ...Args2>
+    Ret operator()(Args2... args) {
+
+        return func(convert<Args>(std::forward<Args2>(args))...);
+    }
+};
 
 /*
  * This converts two argument c++ tuples into python tuples automatically when they are returned from the c++ code.
@@ -297,13 +221,6 @@ double evaluate_halfplane_labeled(pyscan::halfspace2_t const& d1, pyscan::lpoint
     return pyscan::evaluate_range(d1, mpts, bpts, disc);
 }
 
-double sum_f(std::vector<double> const& els) {
-    double accum = 0;
-    for(auto& e : els) {
-        accum += e;
-    }
-    return accum;
-}
 
 BOOST_PYTHON_MODULE(libpyscan) {
     using namespace py;
@@ -320,48 +237,25 @@ BOOST_PYTHON_MODULE(libpyscan) {
     to_python_converter<std::tuple<pyscan::Rectangle, double>, tuple_to_python_tuple<pyscan::Rectangle, double>>();
     to_python_converter<std::tuple<pyscan::pt2_t, double>, tuple_to_python_tuple<pyscan::pt2_t, double>>();
 
-    to_python_converter<std::vector<double>, vector_to_python_list<double>>();
-    to_python_converter<std::vector<pyscan::Point<2>>, vector_to_python_list<pyscan::Point<2>>>();
-    to_python_converter<std::vector<pyscan::Point<3>>, vector_to_python_list<pyscan::Point<3>>>();
-    to_python_converter<std::vector<pyscan::WPoint<2>>, vector_to_python_list<pyscan::WPoint<2>>>();
-    to_python_converter<std::vector<pyscan::WPoint<3>>, vector_to_python_list<pyscan::WPoint<3>>>();
-    //Should convert tuples directly pyscan points.
-
-//    pytrajectory_converter().from_python();
-//    pywtrajectory_converter().from_python();
-
-    // Register interable conversions.
-    iterable_converter()
-            // Build-in type.
-            .from_python<std::vector<double> >()
-                    // Each dimension needs to be convertable.
-            .from_python<std::vector<pyscan::Point<> >>()
-            .from_python<std::vector<pyscan::WPoint<>>>()
-            .from_python<std::vector<pyscan::LPoint<>>>();
-            //.from_python<std::vector<std::vector<pyscan::Point<> > > >()
-            //.from_python<std::vector<std::vector<pyscan::WPoint<> > > >()
-            //.from_python<std::vector<std::vector<pyscan::LPoint<> > > >()
-            //.from_python<std::vector<pyscan::wtrajectory_t>>()
-            //.from_python<std::vector<pyscan::trajectory_t>>();
 
 
-//    py::class_<std::vector<pyscan::Point<2>> >("VecP2")
-//            .def(vector_indexing_suite<std::vector<pyscan::Point<2>> >());
-//
-//    py::class_<std::vector<pyscan::Point<3>>>("VecP3")
-//            .def(vector_indexing_suite<std::vector<pyscan::Point<3>> >());
-//
-//    py::class_<std::vector<pyscan::WPoint<2>> >("VecWP2")
-//            .def(vector_indexing_suite<std::vector<pyscan::WPoint<2>> >());
-//
-//    py::class_<std::vector<pyscan::WPoint<3>> >("VecWP3")
-//            .def(vector_indexing_suite<std::vector<pyscan::WPoint<2>> >());
-//
-//    py::class_<std::vector<pyscan::LPoint<2>> >("VecLP2")
-//            .def(vector_indexing_suite<std::vector<pyscan::LPoint<2>> >());
-//
-//    py::class_<std::vector<pyscan::LPoint<3>> >("VecLP3")
-//            .def(vector_indexing_suite<std::vector<pyscan::LPoint<3>> >());
+    py::class_<std::vector<pyscan::Point<2>> >("VecP2")
+            .def(vector_indexing_suite<std::vector<pyscan::Point<2>> >());
+
+    py::class_<std::vector<pyscan::Point<3>>>("VecP3")
+            .def(vector_indexing_suite<std::vector<pyscan::Point<3>> >());
+
+    py::class_<std::vector<pyscan::WPoint<2>> >("VecWP2")
+            .def(vector_indexing_suite<std::vector<pyscan::WPoint<2>> >());
+
+    py::class_<std::vector<pyscan::WPoint<3>> >("VecWP3")
+            .def(vector_indexing_suite<std::vector<pyscan::WPoint<2>> >());
+
+    py::class_<std::vector<pyscan::LPoint<2>> >("VecLP2")
+            .def(vector_indexing_suite<std::vector<pyscan::LPoint<2>> >());
+
+    py::class_<std::vector<pyscan::LPoint<3>> >("VecLP3")
+            .def(vector_indexing_suite<std::vector<pyscan::LPoint<3>> >());
 //
 //    py::class_<std::vector<pyscan::trajectory_t> >("VecTraj")
 //            .def(vector_indexing_suite<std::vector<pyscan::trajectory_t>>());
@@ -425,6 +319,7 @@ BOOST_PYTHON_MODULE(libpyscan) {
             .def("__str__", &pyscan::HalfSpace<3>::str)
             .def("__repr__", &pyscan::HalfSpace<3>::str)
             .def("intersects_segment", &pyscan::HalfSpace<3>::intersects_segment);
+
     py::class_<pyscan::pt2_t>("Point", py::init<double, double, double>())
             .def("approx_eq", &pyscan::Point<2>::approx_eq)
             .def("__getitem__", &pyscan::Point<2>::operator())

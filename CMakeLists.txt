@@ -12,17 +12,10 @@ set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -Wall -Wextra -g -O1 -fno-omit-frame-pointer")
 set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O2 -march=native -DNDEBUG")
 
 
-
-
-
-find_package( PythonLibs 3 REQUIRED )
+find_package(PythonLibs 3 REQUIRED)
 include_directories( ${PYTHON_INCLUDE_DIRS} )
 
-set(version ${PYTHONLIBS_VERSION_STRING})
-STRING( REGEX REPLACE "([0-9.]+).[0-9]+(rc[0-9]+)?" "\\1" version ${version} )
-STRING( REGEX REPLACE "[^0-9]" "" version ${version} )
-
-find_package(Boost COMPONENTS "python${version}" REQUIRED)
+find_package(Boost COMPONENTS "python3" REQUIRED)
 
 execute_process(COMMAND ${CMAKE_COMMAND} .
         RESULT_VARIABLE result

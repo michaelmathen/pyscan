@@ -18,7 +18,7 @@ Examples
             </a>
         </div>
         <div class="col-md-3 col-xs-12">
-         <a href="" class="thumbnail">
+         <a href="examples/BasicExample.html" class="thumbnail">
         <img src="" class="img-responsive center-block">
                 <div class="caption text-center">
                 <h6>Trajectory Simplification</h6>

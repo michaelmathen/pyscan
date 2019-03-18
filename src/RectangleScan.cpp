@@ -1023,12 +1023,12 @@ namespace pyscan {
 //            return std::max(size / (lg * lg * lg * lg);
 //        };
 
-        
+
 
     }
 
     slab_ptr SlabTree::get_containing(size_t upY, size_t lowY) const {
-        assert(upY > lowY);
+        assert(upY >= lowY);
         auto curr_root = root;
         while (curr_root != nullptr) {
             //Check if this region is contained completely in the left or right branch.

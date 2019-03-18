@@ -34,6 +34,7 @@ namespace pyscan {
 
         this->right = op.get_r();
         this->value = op.get_v() + get_v();
+        return *this;
     }
 
     Interval MaxIntervalAlt::get_max() const {

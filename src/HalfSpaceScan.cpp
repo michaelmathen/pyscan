@@ -97,7 +97,7 @@ namespace pyscan{
                 continue;
             }
 
-            auto& l1 = halfplanes[0];
+            auto l1 = halfplanes[0];
             std::vector<double> red_delta(halfplanes.size() - 1, 0.0);
             std::vector<double> blue_delta(halfplanes.size() - 1, 0.0);
             std::vector<double> angles;
