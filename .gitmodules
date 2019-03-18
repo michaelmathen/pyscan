@@ -1,0 +1,6 @@
+[submodule "thirdparty/cmake_example"]
+	path = thirdparty/cmake_example
+	url = https://github.com/pybind/cmake_example.git
+[submodule "thirdparty/pybind11"]
+	path = thirdparty/pybind11
+	url = https://github.com/pybind/pybind11.git
