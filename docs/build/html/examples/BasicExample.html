@@ -299,11 +299,11 @@ div.nboutput div.output_area.stderr {
 <p>Below I create a code example where I plant a region containing 5% of
 the points and make this region anomalous. Inside of the region 80% of
 the points are from the red set while outside of the region 50% of the
-points are red. We would like to recover this planted by using the
-max_halfplane scanning algorithm.</p>
+points are red. We would like to recover this planted region by using
+the max_halfplane scanning algorithm.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [3]:
+<span></span>In [19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
@@ -344,7 +344,7 @@ max_halfplane scanning algorithm.</p>
 
 
 <span class="c1"># generate some random points</span>
-<span class="n">pts</span> <span class="o">=</span> <span class="p">[</span><span class="n">pyscan</span><span class="o">.</span><span class="n">WPoint</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),</span> <span class="mf">1.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">)]</span>
+<span class="n">pts</span> <span class="o">=</span> <span class="p">[</span><span class="n">pyscan</span><span class="o">.</span><span class="n">WPoint</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),</span> <span class="mf">1.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10000</span><span class="p">)]</span>
 <span class="n">red</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">max_region</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">plant_halfplane</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="o">.</span><span class="mi">05</span><span class="p">,</span> <span class="o">.</span><span class="mi">5</span><span class="p">,</span> <span class="o">.</span><span class="mi">8</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">get_coord</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">red</span><span class="p">),</span> <span class="n">get_coord</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">red</span><span class="p">),</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span>
@@ -363,16 +363,16 @@ max_halfplane scanning algorithm.</p>
 <img alt="../_images/examples_BasicExample_1_0.png" src="../_images/examples_BasicExample_1_0.png" />
 </div>
 </div>
-<p>The algorithms will subsample the data based on an <span class="math">\(\varepsilon\)</span>
-quantity. There will be two samples uses in the algorithm one of size
-<span class="math">\(O(1/\varepsilon)\)</span> and another of size <span class="math">\(O(1/\varepsilon^2)\)</span>.
-If we do not set <span class="math">\(\varepsilon\)</span> to be small enough we will not
-recover the region. Below I steadily decrease <span class="math">\(\varepsilon\)</span> and
-therefore increase the sample sizes. At first we will not recover the
-anomalous region.</p>
+<p>The algorithms will subsample the data based on an error parameter
+called <span class="math">\(\varepsilon\)</span>. There will be two samples uses in the
+algorithm one of size <span class="math">\(O(1/\varepsilon)\)</span> and another of size
+<span class="math">\(O(1/\varepsilon^2)\)</span>. If we do not set <span class="math">\(\varepsilon\)</span> to be
+small enough we will not recover the region. Below I steadily decrease
+<span class="math">\(\varepsilon\)</span> and therefore increase the sample sizes. At first we
+will not recover the anomalous region.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [4]:
+<span></span>In [10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
@@ -407,7 +407,7 @@ anomalous region.</p>
 at .01 we almost perfectly recover it.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [4]:
+<span></span>In [20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
@@ -428,6 +428,71 @@ at .01 we almost perfectly recover it.</p>
 </div>
 <div class="output_area docutils container">
 <img alt="../_images/examples_BasicExample_5_1.png" src="../_images/examples_BasicExample_5_1.png" />
+</div>
+</div>
+<p>We can plant a different where 60% of the points are from the anomalous
+red set and leave the baseline set at 50/50. This makes the region much
+harder to recover.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [33]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="n">red</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">max_region</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">plant_halfplane</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="o">.</span><span class="mi">05</span><span class="p">,</span> <span class="o">.</span><span class="mi">5</span><span class="p">,</span> <span class="o">.</span><span class="mi">6</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">get_coord</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">red</span><span class="p">),</span> <span class="n">get_coord</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">red</span><span class="p">),</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">get_coord</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">blue</span><span class="p">),</span> <span class="n">get_coord</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">blue</span><span class="p">),</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="n">f</span><span class="p">(</span><span class="n">max_region</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">f</span><span class="p">(</span><span class="n">max_region</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">4.0</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_BasicExample_7_0.png" src="../_images/examples_BasicExample_7_0.png" />
+</div>
+</div>
+<p>We now fail to recover the region with the earlier parameters that were
+able to recover the region.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [35]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="n">plot_plane</span><span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">max_region</span><span class="p">,</span> <span class="o">.</span><span class="mi">025</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_BasicExample_9_0.png" src="../_images/examples_BasicExample_9_0.png" />
+</div>
+</div>
+<p>Increasing the error paramter even more allows us to again recover the
+region.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [36]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="n">plot_plane</span><span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">max_region</span><span class="p">,</span> <span class="o">.</span><span class="mi">005</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_BasicExample_11_0.png" src="../_images/examples_BasicExample_11_0.png" />
 </div>
 </div>
 </div>
