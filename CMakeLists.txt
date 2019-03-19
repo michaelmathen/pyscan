@@ -8,14 +8,13 @@ endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -Wall -Wextra -g -O1 -fno-omit-frame-pointer")
-
 set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O2 -march=native -DNDEBUG")
 
 
-find_package(PythonLibs 3 REQUIRED)
-include_directories( ${PYTHON_INCLUDE_DIRS} )
+add_subdirectory(thirdparty/pybind11)
 
-find_package(Boost COMPONENTS "python3" REQUIRED)
+
+find_package(Boost REQUIRED)
 
 execute_process(COMMAND ${CMAKE_COMMAND} .
         RESULT_VARIABLE result
@@ -164,5 +163,6 @@ endforeach()
 #Compile the python wrapper############################
 #######################################################
 configure_file(pyscan.py ${CMAKE_CURRENT_BINARY_DIR}/pyscan.py COPYONLY)
-add_library(pyscan SHARED $<TARGET_OBJECTS:src_obj> ${PY_SOURCE_FILES})
-target_link_libraries(pyscan ${Boost_LIBRARIES} ${THIRDPARTY_LIBRARIES})
+pybind11_add_module(libpyscan SHARED $<TARGET_OBJECTS:src_obj> ${PY_SOURCE_FILES})
+#add_library(pyscan SHARED $<TARGET_OBJECTS:src_obj> ${PY_SOURCE_FILES})
+target_link_libraries(libpyscan PRIVATE ${THIRDPARTY_LIBRARIES})
