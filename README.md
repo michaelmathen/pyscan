@@ -7,9 +7,10 @@ To compile this you will need:
 * python python 3.x
 * cmake
 
-#Instructions
+## Instructions
 
 ```
+> git submodule update --init
 > mkdir build
 > cd build
 > cmake ..
