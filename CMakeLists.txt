@@ -16,6 +16,12 @@ add_subdirectory(thirdparty/pybind11)
 
 find_package(Boost REQUIRED)
 
+find_package(CGAL)
+include( ${CGAL_USE_FILE} )
+#set(CGAL_DONT_OVERRIDE_CMAKE_FLAGS TRUE CACHE BOOL "Force CGAL to maintain CMAKE flags")
+#include(${CGAL_USE_FILE})
+
+
 execute_process(COMMAND ${CMAKE_COMMAND} .
         RESULT_VARIABLE result
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/ )
@@ -48,12 +54,15 @@ endif()
 
 
 set(THIRDPARTY_LIBRARIES ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/libappext.so
-        ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/libann.so)
+        ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/libann.so
+        CGAL::CGAL)
 
 include_directories(
         ${Boost_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/include)
+        ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/include
+
+)
 
 set(SOURCE_FILES
         src/BloomFilter.cpp
@@ -70,6 +79,7 @@ set(SOURCE_FILES
         src/Segment.cpp
         src/HamTree.cpp
         src/IntervalScan.cpp
+        src/RegionCoreSet.cpp
         #src/kernel.cpp
         )
 
@@ -79,6 +89,7 @@ set(HEADER include/BloomFilter.hpp
         include/HalfSpaceScan.hpp
         include/Point.hpp
         include/RectangleScan.hpp
+        include/RegionCoreSet.hpp
         include/Segment.hpp
         include/SparseGrid.hpp
         include/Statistics.hpp

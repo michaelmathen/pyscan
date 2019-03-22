@@ -443,7 +443,7 @@ namespace pyscan {
         std::vector<slab_ptr> get_leaves() const;
         void block_compress(double max_w);
         void even_compress(double max_w);
-        void cascade_compress(double max_w);
+        //void cascade_compress(double max_w);
 
         std::vector<size_t> get_vert_breakpoints() const;
 

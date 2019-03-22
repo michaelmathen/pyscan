@@ -44,12 +44,26 @@ namespace pyscan {
     point_list_t block_sample_error(const point_list_t& trajectories, double eps, bool take_endpoints);
 
 
+    long index(double x, double y, double lx, double ly, double chord_l, long g_size);
+
+    std::vector<std::vector<Point<2>>> grid_horz(point_list_t::const_iterator traj_b,
+                                                 point_list_t::const_iterator traj_e,
+                                                 double chord_l,
+                                                 double& ux, double &uy, double& lx, double& ly);
+
+    std::vector<std::vector<Point<2>>> grid_vert(point_list_t::const_iterator traj_b,
+                                                 point_list_t::const_iterator traj_e,
+                                                 double chord_l,
+                                                 double& ux, double &uy, double& lx, double& ly);
+
+
+
     std::tuple<halfspace2_t, double> error_halfplane_coreset(const trajectory_t& trajectory, const point_list_t& pts);
 
-    std::tuple<Disk, double> error_disk_coreset(const trajectory_t& trajectory,
-            double min_res,
-            double max_radius,
-            const point_list_t& pts);
+//    std::tuple<Disk, double> error_disk_coreset(const trajectory_t& trajectory,
+//            double min_res,
+//            double max_radius,
+//            const point_list_t& pts);
 
     //std::tuple<Rectangle, double> error_rectangle_coreset()
 }

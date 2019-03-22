@@ -695,24 +695,24 @@ namespace pyscan {
         return break_pts;
     }
 
-    epoint_list_t cascade_compress_internal(
-            epoint_it_t b,
-            epoint_it_t e,
-            epoint_it_t uncle_comp_b,
-            epoint_it_t uncle_comp_e,
-            epoint_it_t uncle_b,
-            epoint_it_t uncle_e,
-            double m_w) {
-        for (auto b1 = uncle_comp_b; b1 != uncle_comp_e; ++b1) {
-            b1->set_weight(-b1->get_weight());
-        }
-        epoint_list_t compressed;
-        compressed.resize((e - b) + (uncle_comp_e - uncle_comp_b) + (uncle_e - uncle_b));
-        std::merge(b, e, uncle_comp_b, uncle_comp_e, std::back_inserter(compressed));
-        std::copy(uncle_b, uncle_e, std::back_inserter(compressed));
-        std::inplace_merge(compressed.begin(), compressed.begin() + (e - b) + (uncle_comp_e - uncle_comp_b), compressed.end());
-        return even_compress_internal(compressed.begin(), compressed.end(), m_w);
-    }
+//    epoint_list_t cascade_compress_internal(
+//            epoint_it_t b,
+//            epoint_it_t e,
+//            epoint_it_t uncle_comp_b,
+//            epoint_it_t uncle_comp_e,
+//            epoint_it_t uncle_b,
+//            epoint_it_t uncle_e,
+//            double m_w) {
+//        for (auto b1 = uncle_comp_b; b1 != uncle_comp_e; ++b1) {
+//            b1->set_weight(-b1->get_weight());
+//        }
+//        epoint_list_t compressed;
+//        compressed.resize((e - b) + (uncle_comp_e - uncle_comp_b) + (uncle_e - uncle_b));
+//        std::merge(b, e, uncle_comp_b, uncle_comp_e, std::back_inserter(compressed));
+//        std::copy(uncle_b, uncle_e, std::back_inserter(compressed));
+//        std::inplace_merge(compressed.begin(), compressed.begin() + (e - b) + (uncle_comp_e - uncle_comp_b), compressed.end());
+//        return even_compress_internal(compressed.begin(), compressed.end(), m_w);
+//    }
 
     void normalize(wpoint_list_t& pts) {
         //Compute the total weight.
@@ -1001,31 +1001,31 @@ namespace pyscan {
         }
     }
 
-    void SlabTree::cascade_compress(double eps){
-        /*
-         * This method will first partition m_merges and b_merges into log^4 ( 1/ eps ) partitions and sample
-         * a certain number of points from each cell. This will follow the scheme from A1 in
-         * Computing Approximate Statistical Discrepancy.
-         *
-         * Then we construct a 1/eps by 1/eps grid over the epoint m_merges and epoint b_merges.
-         * We then compute a compression for each slab while keeping track of the compressed representation
-         * of the points between the slab and the midline and a set of points corresponding to grid columns.
-         * We then use the scheme from A3 to create the compressed representation in each slab.
-         */
-//        auto lg2 = [] (size_t val) {
-//            int lg = 0;
-//            while (val >>= 1) ++lg;
-//            return lg;
-//        };
-//        auto special_lglg = [&lg2] (size_t size) {
-//            size_t lg = std::max(lg2(size), 1);
-//            //Get the correct power of c
-//            return std::max(size / (lg * lg * lg * lg);
-//        };
-
-
-
-    }
+//    void SlabTree::cascade_compress(double eps){
+//        /*
+//         * This method will first partition m_merges and b_merges into log^4 ( 1/ eps ) partitions and sample
+//         * a certain number of points from each cell. This will follow the scheme from A1 in
+//         * Computing Approximate Statistical Discrepancy.
+//         *
+//         * Then we construct a 1/eps by 1/eps grid over the epoint m_merges and epoint b_merges.
+//         * We then compute a compression for each slab while keeping track of the compressed representation
+//         * of the points between the slab and the midline and a set of points corresponding to grid columns.
+//         * We then use the scheme from A3 to create the compressed representation in each slab.
+//         */
+////        auto lg2 = [] (size_t val) {
+////            int lg = 0;
+////            while (val >>= 1) ++lg;
+////            return lg;
+////        };
+////        auto special_lglg = [&lg2] (size_t size) {
+////            size_t lg = std::max(lg2(size), 1);
+////            //Get the correct power of c
+////            return std::max(size / (lg * lg * lg * lg);
+////        };
+//
+//
+//
+//    }
 
     slab_ptr SlabTree::get_containing(size_t upY, size_t lowY) const {
         assert(upY >= lowY);

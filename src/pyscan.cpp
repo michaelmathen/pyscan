@@ -4,15 +4,12 @@
 
 #include <functional>
 #include <iostream>
+#include <typeinfo>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-//#include <boost/iterator_adaptors.hpp>
-//#include <boost/python.hpp>
-//#include <boost/python/stl_iterator.hpp>
-//#include  <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
-#include <typeinfo>
+
 
 
 #include "ConvexHull.hpp"
@@ -25,6 +22,7 @@
 #include "ConvexHull.hpp"
 #include "TrajectoryCoreSet.hpp"
 #include "HamTree.hpp"
+#include "RegionCoreSet.hpp"
 
 
 
@@ -83,32 +81,6 @@ namespace pyscan {
     }
 
 };
-
-/*
- * This converts two argument c++ tuples into python tuples automatically when they are returned from the c++ code.
- * s -- a two element tuple of type t1 and t2
- * returns -- a two element python tuple of type t1 and t2.
- */
-//template<typename T1, typename T2>
-//struct tuple_to_python_tuple {
-//    static PyObject* convert(const std::tuple<T1, T2> &s) {
-//        return boost::python::incref(py::make_tuple(std::get<0>(s), std::get<1>(s)).ptr());
-//    }
-//};
-
-
-/*
- * This converts returned vectors automatically into python lists when the are returned from the c++ code.
- * s -- a vector of type T
- * returns -- A python list containing the elements of s.
- */
-//template <typename T>
-//struct vector_to_python_list {
-//    static PyObject* convert(const std::vector<T> &s) {
-//        auto new_list = std_vector_to_py_list(s);
-//        return boost::python::incref(new_list.ptr());
-//    }
-//};
 
 
 double evaluate_halfplane(pyscan::halfspace2_t const& d1, pyscan::wpoint_list_t const&  mpts, pyscan::wpoint_list_t const& bpts, pyscan::discrepancy_func_t const& disc) {
@@ -400,7 +372,7 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
     pyscan_module.def("lifting_kernel", &pyscan::lifting_coreset);
 
     pyscan_module.def("coreset_error_halfplane", &pyscan::error_halfplane_coreset);
-    pyscan_module.def("coreset_error_disk", &pyscan::error_disk_coreset);
+    //pyscan_module.def("coreset_error_disk", &pyscan::error_disk_coreset);
 
     //This is for partial scanning, but could be used for full scannings.
     pyscan_module.def("block_sample", &pyscan::block_sample);
@@ -410,5 +382,13 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
     pyscan_module.def("block_sample_error", &pyscan::block_sample_error);
     pyscan_module.def("uniform_sample_error", &pyscan::uniform_sample_error);
     pyscan_module.def("even_sample_error", &pyscan::even_sample_error);
+
+    pyscan_module.def("polygon_sample", &pyscan::polygon_sample);
+    pyscan_module.def("polygon_grid", &pyscan::polygon_grid);
+
+    pyscan_module.def("polygon_grid_even", &pyscan::polygon_grid_even);
+    pyscan_module.def("polygon_grid_hull", &pyscan::polygon_grid_hull);
+
+
 
 }

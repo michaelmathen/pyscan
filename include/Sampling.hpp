@@ -75,6 +75,63 @@ namespace pyscan {
         return out;
     }
 
+
+    template<class It, class URNG, class OutIt>
+    OutIt random_sample_wr(It b, It e,
+                            URNG &&g,
+                            std::function<double(It)> wf,
+                            size_t sample_size, OutIt out) {
+
+        std::vector<double> cum_sums;
+        double initial = 0;
+        for (It bb = b; bb != e; bb++) {
+            initial += wf(bb);
+            cum_sums.emplace_back(initial);
+        }
+
+        std::vector<size_t> indices;
+        std::uniform_real_distribution<double> dist(0, initial);
+        for (size_t s = 0; s < sample_size; s++) {
+
+            auto it = std::upper_bound(cum_sums.begin(), cum_sums.end(), dist(g));
+            if (it == cum_sums.end()) {
+                it--;
+            }
+            indices.emplace_back(it - cum_sums.begin());
+        }
+        std::sort(indices.begin(), indices.end());
+        auto ib = indices.begin();
+        size_t i = 0;
+        while(ib != indices.end()) {
+            while (i != *ib) {
+                i++;
+                b++;
+            }
+            *out = b;
+            ib++;
+            out++;
+        }
+        return out;
+    }
+
+    template<class It, class URNG>
+    auto random_w_selection(It b, It e, URNG&& gen, const std::function<double(decltype(*b))> &wf) -> decltype(*b) {
+        std::vector<double> cum_sums;
+        cum_sums.reserve(e - b);
+        double initial = 0;
+        for (auto bb = b; bb != e; bb++) {
+            initial += wf(*bb);
+            cum_sums.emplace_back(initial);
+        }
+
+        std::uniform_real_distribution<double> dist(0, initial);
+        auto it = std::upper_bound(cum_sums.begin(), cum_sums.end(), dist(gen));
+        if (it == cum_sums.end()) {
+            it--;
+        }
+        return  *(b + (it - cum_sums.begin()));
+    }
+
     template<class Vect, class URNG>
     auto random_sample_wr(Vect const &arr, URNG &&g, size_t sample_size) -> Vect {
         Vect output;
@@ -187,5 +244,8 @@ namespace pyscan {
         }
         return weighted_median_slow(b, e, cmp, wf);
     }
+
+
+
 }
 #endif //PYSCAN_SAMPLING_HPP

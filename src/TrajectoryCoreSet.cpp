@@ -64,7 +64,8 @@ namespace pyscan {
      */
     std::unordered_map<long, std::vector<Point<>>> grid_traj(point_list_t::const_iterator traj_b,
                                                             point_list_t::const_iterator traj_e,
-                                                            double chord_l) {
+                                                            double chord_l,
+                                                            double& ux, double &uy, double& lx, double& ly) {
 
 
         auto last_pt = traj_b;
@@ -73,7 +74,6 @@ namespace pyscan {
             return {};
         }
 
-        double lx, ly, ux, uy;
         std::tie(lx, ly, ux, uy) = bounding_box(traj_b, traj_e);
 
         long g_size = static_cast<long>((ux - lx) / chord_l) + 1;
@@ -150,8 +150,8 @@ namespace pyscan {
      */
     point_list_t  grid_traj(point_list_t const& traj, double grid_resoluation) {
         point_list_t pts;
-
-        for (auto& elements : grid_traj(traj.begin(), traj.end(), grid_resoluation)) {
+        double ly, lx, ux, uy;
+        for (auto& elements : grid_traj(traj.begin(), traj.end(), grid_resoluation, ux, uy, lx, ly)) {
             pts.insert(pts.end(), elements.second.begin(), elements.second.end());
         }
         remove_duplicates(pts);
@@ -245,7 +245,8 @@ namespace pyscan {
     std::unordered_map<long, std::vector<Point<>>>
     approximate_traj_cells(point_list_t::const_iterator traj_b,
                             point_list_t::const_iterator traj_e, double chord_l, double eps) {
-        auto cells = grid_traj(traj_b, traj_e, chord_l);
+        double ux, uy, lx, ly;
+        auto cells = grid_traj(traj_b, traj_e, chord_l, ux, uy, lx, ly);
         for (auto b = cells.begin(); b != cells.end(); b++) {
             auto approx = eps_core_set(eps, [&](Vec2 const& direction) {
                 auto pt_max = std::max_element(b->second.begin(), b->second.end(),
@@ -577,31 +578,34 @@ namespace pyscan {
         return std::make_tuple(max_plane, eps);
     }
 
-    std::tuple<Disk, double> error_disk_coreset(const trajectory_t& trajectory,
-                double min_radius,
-                double max_radius,
-                const point_list_t& pts) {
-        Disk max_disk;
-        if (3 > pts.size()){
-            return std::make_tuple(max_disk, std::numeric_limits<double>::infinity());
-        }
-        double eps = 0;
-        for (size_t i = 0; i < pts.size() - 2; i++) {
-            for (size_t j = i + 1; j < pts.size() - 1; j++) {
-                for (size_t k = j + 1; k < pts.size(); k++) {
-                    Disk curr_disk(pts[i], pts[j], pts[k]);
-                    if (curr_disk.getRadius() > max_radius || min_radius > curr_disk.getRadius()) {
-                        continue;
-                    }
-                    auto min_dist = trajectory.point_dist(curr_disk.getOrigin());
-                    double error = std::abs(curr_disk.getRadius() - min_dist);
-                    if (eps < error) {
-                        eps = error;
-                        max_disk = curr_disk;
-                    }
-                }
-            }
-        }
-        return std::make_tuple(max_disk, eps);
-    }
+//    std::tuple<Disk, double> error_disk_coreset(const trajectory_t& trajectory,
+//                double min_radius,
+//                double max_radius,
+//                const point_list_t& pts) {
+//        Disk max_disk;
+//        if (3 > pts.size()){
+//            return std::make_tuple(max_disk, std::numeric_limits<double>::infinity());
+//        }
+//        double eps = 0;
+//        for (size_t i = 0; i < pts.size() - 2; i++) {
+//            for (size_t j = i + 1; j < pts.size() - 1; j++) {
+//                for (size_t k = j + 1; k < pts.size(); k++) {
+//                    Disk curr_disk(pts[i], pts[j], pts[k]);
+//                    if (curr_disk.getRadius() > max_radius || min_radius > curr_disk.getRadius()) {
+//                        continue;
+//                    }
+//                    auto min_dist = trajectory.point_dist(curr_disk.getOrigin());
+//                    double error = std::abs(curr_disk.getRadius() - min_dist);
+//                    if (eps < error) {
+//                        eps = error;
+//                        max_disk = curr_disk;
+//                    }
+//                }
+//            }
+//        }
+//        return std::make_tuple(max_disk, eps);
+//    }
+
+
+
 }
