@@ -341,7 +341,7 @@ namespace pyscan {
                         return 0.0;
                     }
                 };
-                random_sample_wr(cdt.finite_faces_begin(), cdt.finite_faces_end(), gen, wf , sample_size, std::back_inserter(sample_face));
+                random_sample_wr(cdt.finite_faces_begin(), cdt.finite_faces_end(), gen, wf , pt_counts[i], std::back_inserter(sample_face));
 
                 for (auto& face : sample_face) {
                     auto pt = triangle_sample(cdt.triangle(face), gen);

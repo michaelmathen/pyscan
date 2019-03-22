@@ -17,7 +17,7 @@ add_subdirectory(thirdparty/pybind11)
 find_package(Boost REQUIRED)
 
 find_package(CGAL)
-include( ${CGAL_USE_FILE} )
+#include( ${CGAL_USE_FILE} )
 #set(CGAL_DONT_OVERRIDE_CMAKE_FLAGS TRUE CACHE BOOL "Force CGAL to maintain CMAKE flags")
 #include(${CGAL_USE_FILE})
 
