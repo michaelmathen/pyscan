@@ -5,13 +5,21 @@
 #include <map>
 #include <algorithm>
 #include <vector>
+#include <cmath>
 
 template <typename T>
 class SparseGrid {
 public:
+    using bbox_t = std::tuple<double, double, double, double>;
+
     using iterator_t = typename std::multimap<uint64_t, T>::const_iterator;
 
-    SparseGrid(const std::vector<T>& items, uint32_t grid_r) : r(grid_r) {
+    SparseGrid(bbox_t bb, const std::vector<T>& items, double min_res) :
+        bx(std::get<0>(bb)),
+        by(std::get<1>(bb)),
+        scale(std::max(std::abs(std::get<0>(bb) - std::get<2>(bb)),
+                       std::abs(std::get<1>(bb) - std::get<3>(bb)))),
+        r(static_cast<uint32_t>(lround(floor(scale / min_res)))) {
         assert(r > 0);
         if (items.size() == 0) {
             return;
@@ -31,12 +39,12 @@ public:
     }
 
     double get_resolution() const {
-        return 1.0 / static_cast<double>(r);
+        return scale / static_cast<double>(r);
     }
 
     std::pair<uint32_t, uint32_t> get_cell(const T& pt) const {
-        uint32_t a = static_cast<uint32_t>(pt(0) * r);
-        uint32_t b = static_cast<uint32_t>(pt(1) * r);
+        auto a = static_cast<uint32_t>((pt(0) - bx) / scale * r);
+        auto b = static_cast<uint32_t>((pt(1) - by) / scale * r);
         a = (a == r) ? r - 1 : a;
         b = (b == r) ? r - 1 : b;
         return std::make_pair(a, b);
@@ -54,9 +62,15 @@ public:
     iterator_t end() const {
         return z_pts.cend();
     }
+
+    uint32_t get_grid_size() const {
+        return r;
+    }
     
 private:
     std::multimap<uint64_t, T> z_pts;
+    double bx, by;
+    double scale;
     uint32_t r;
 };
 

@@ -357,11 +357,12 @@ namespace pyscan {
             double min_res,
             const discrepancy_func_t &f) {
 
+        auto bb = bbox(point_net, red, blue);
         double red_tot = computeTotal(red);
         double blue_tot = computeTotal(blue);
-        size_t grid_r = lround(floor(1 / min_res));
-        SparseGrid<pt2_t> grid_net(point_net, grid_r);
-        SparseGrid<T> grid_red(red, grid_r), grid_blue(blue, grid_r);
+        SparseGrid<pt2_t> grid_net(bb, point_net, min_res);
+        auto grid_r = grid_net.get_grid_size();
+        SparseGrid<T> grid_red(bb, red, min_res), grid_blue(bb, blue, min_res);
 
         Disk cur_max;
         double max_stat = 0.0;
@@ -511,12 +512,13 @@ namespace pyscan {
             double min_res,
             const discrepancy_func_t &f) {
 
+        auto bb = bbox(point_net, red, blue);
 
         double red_tot = computeTotal(red);
         double blue_tot = computeTotal(blue);
-        size_t grid_r = lround(floor(1 / min_res));
-        SparseGrid<lpt2_t> grid_net(point_net, grid_r);
-        SparseGrid<lpt2_t> grid_red(red, grid_r), grid_blue(blue, grid_r);
+        SparseGrid<lpt2_t> grid_net(bb, point_net, min_res);
+        auto grid_r = grid_net.get_grid_size();
+        SparseGrid<lpt2_t> grid_red(bb, red, min_res), grid_blue(bb, blue, min_res);
 
         Disk cur_max;
         double max_stat = 0.0;

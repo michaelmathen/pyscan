@@ -327,7 +327,6 @@ namespace pyscan {
         for (size_t i = 0; i < pt_counts.size(); i++) {
             if (pt_counts[i] > 0) {
                 cgal_poly_list_t partition_polys;
-                std::cout << "Made it here " << cpolys[i].is_simple() << std::endl;
                 CDT cdt;
                 cdt.insert_constraint(cpolys[i].vertices_begin(), cpolys[i].vertices_end(), true);
 

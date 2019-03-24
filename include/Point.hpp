@@ -433,6 +433,30 @@ namespace pyscan {
         pts.erase(new_end + 1, pts.end());
     }
 
+    inline bool cmpX(Point<2> const& p1, Point<2> const& p2) {
+        return p1(0) < p2(0);
+    }
+
+    inline bool cmpY(Point<2> const& p1, Point<2> const& p2) {
+        return p1(0) < p2(0);
+    }
+
+    using bbox_t = std::tuple<double, double, double, double>;
+
+    template<typename Pt>
+    bbox_t bbox(std::vector<Pt> const& pts) {
+        auto [mnx, mxx] = std::minmax_element(pts.begin(), pts.end(), cmpX);
+        auto [mny, mxy] = std::minmax_element(pts.begin(), pts.end(), cmpY);
+        return std::make_tuple((*mnx)(0), (*mny)(1), (*mxx)(0), (*mxy)(1));
+    }
+
+    template<typename Pt, typename ...Args>
+    bbox_t bbox(std::vector<Pt> const& pts, Args ...rest) {
+        auto [mnx1, mny1, mxx1, mxy1] = bbox(rest...);
+        auto [mnx2, mny2, mxx2, mxy2] = bbox(pts);
+        return std::make_tuple(std::min(mnx1, mnx2), std::min(mny1, mny2), std::max(mxx1, mxx2), std::max(mxy1, mxy2));
+    }
+
 
 //    template <int dim, class URNG>
 //    wpoint_list_t weighted_random_sample_wor(wpoint_list_t& arr, URNG&& g, size_t sample_size) {

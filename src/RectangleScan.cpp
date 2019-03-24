@@ -551,12 +551,13 @@ namespace pyscan {
             const lpoint_list_t &blue,
             const discrepancy_func_t &f) {
 
+        auto bb = bbox(net, red, blue);
 
         double red_tot = computeTotal(red);
         double blue_tot = computeTotal(blue);
-        size_t grid_r = lround(floor(1 / alpha));
-        SparseGrid<pt2_t> grid_net(net, grid_r);
-        SparseGrid<lpt2_t> grid_red(red, grid_r), grid_blue(blue, grid_r);
+        SparseGrid<pt2_t> grid_net(bb, net, alpha);
+        SparseGrid<lpt2_t> grid_red(bb, red, alpha), grid_blue(bb, blue, alpha);
+        auto grid_r = grid_net.get_grid_size();
         size_t sub_grid_size = lround(ceil(alpha / max_r));
         Rectangle max_rect;
         double max_stat = 0.0;
