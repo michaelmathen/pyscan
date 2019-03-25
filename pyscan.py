@@ -593,3 +593,4 @@ def max_disk_trajectory_fixed(net, m_sample, b_sample, min_disk_r, max_disk_r,  
             mx = new_mx
         curr_disk_r *= 2
     return reg, mx
+

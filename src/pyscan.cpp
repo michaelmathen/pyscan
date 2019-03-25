@@ -10,7 +10,7 @@
 #include <pybind11/stl.h>
 
 
-
+#include "JeffCodes.hpp"
 
 #include "ConvexHull.hpp"
 #include "Segment.hpp"
@@ -389,6 +389,11 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
     pyscan_module.def("polygon_grid_even", &pyscan::polygon_grid_even);
     pyscan_module.def("polygon_grid_hull", &pyscan::polygon_grid_hull);
 
+    pyscan_module.def("naive_find_rect", &pyscan::naive_find_rect);
+    pyscan_module.def("naive_scan_grid", &pyscan::naive_scan_grid);
+    pyscan_module.def("naive_approx_find_rect", &pyscan::naive_approx_find_rect);
+    pyscan_module.def("scan_grid", &pyscan::scan_grid);
+    pyscan_module.def("find_rect", &pyscan::find_rect);
 
 
 }

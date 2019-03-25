@@ -9,13 +9,13 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -Wall -Wextra -g -O1 -fno-omit-frame-pointer")
 set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O2 -march=native -DNDEBUG")
-
+set(CMAKE_C_FLAGS_DEBUG "-fPIC -Wall -Wextra -g -O1 -fno-omit-frame-pointer")
+set(CMAKE_C_FLAGS_RELEASE "-fPIC -w -O2 -march=native -DNDEBUG")
 
 add_subdirectory(thirdparty/pybind11)
 
 
 find_package(Boost REQUIRED)
-
 find_package(CGAL)
 #include( ${CGAL_USE_FILE} )
 #set(CGAL_DONT_OVERRIDE_CMAKE_FLAGS TRUE CACHE BOOL "Force CGAL to maintain CMAKE flags")
@@ -28,8 +28,6 @@ execute_process(COMMAND ${CMAKE_COMMAND} .
 if(result)
     message(FATAL_ERROR "CMake step for ANN: ${result}")
 endif()
-
-
 execute_process(COMMAND ${CMAKE_COMMAND} --build .
         RESULT_VARIABLE result
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/ )
@@ -52,16 +50,19 @@ if(result)
     message(FATAL_ERROR "build failed for coreset: ${result}")
 endif()
 
-
-set(THIRDPARTY_LIBRARIES ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/libappext.so
+add_subdirectory(thirdparty/discrepancy)
+set(THIRDPARTY_LIBRARIES
+        ${CMAKE_BINARY_DIR}/thirdparty/discrepancy/libdiscrepancy.so
+        ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/libappext.so
         ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/libann.so
         CGAL::CGAL)
 
 include_directories(
         ${Boost_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/thirdparty/discrepancy/include
         ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/include
-
+        ${CMAKE_SOURCE_DIR}/thirdparty/discrepancy/include
 )
 
 set(SOURCE_FILES
@@ -80,8 +81,13 @@ set(SOURCE_FILES
         src/HamTree.cpp
         src/IntervalScan.cpp
         src/RegionCoreSet.cpp
+        src/JeffCodes.cpp
+
         #src/kernel.cpp
         )
+
+#set(SOURCE_JEFF_FILES
+#        )
 
 set(HEADER include/BloomFilter.hpp
         include/DiskScan.hpp
@@ -141,7 +147,7 @@ endif()
 
 SET(TEST_LINK_LIBRARIES gtest_main ${THIRDPARTY_LIBRARIES})
 
-
+#add_library(discrepancy_obj OBJECT ${SOURCE_JEFF_FILES})
 add_library(src_obj OBJECT ${SOURCE_FILES})
 ########################################
 #Compile various tests##################
@@ -160,14 +166,10 @@ set(TEST_NAMES
 foreach(TEST ${TEST_NAMES})
 
     add_executable(${TEST} ${CMAKE_SOURCE_DIR}/test/${TEST}.cpp $<TARGET_OBJECTS:src_obj>)
-    target_link_libraries(${TEST} ${TEST_LINK_LIBRARIES})
+    target_link_libraries(${TEST} ${TEST_LINK_LIBRARIES} )
     add_test(NAME ${TEST} COMMAND ${TEST})
 
 endforeach()
-
-
-
-
 
 
 #######################################################
