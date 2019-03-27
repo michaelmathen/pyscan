@@ -86,13 +86,13 @@ Contents
    scanning.rst
    python_utility.rst
    examples.rst
-   examples/PhillyCrime.ipynb
    examples/BasicExample.ipynb
+   examples/PhillyCrime.ipynb
    examples/RegionSimplification.ipynb
    examples/RegionScanning.ipynb
-   examples/TrajectoryApproximation.ipynb
-   examples/TrajectoryPartialScanning.ipynb
-   examples/TrajectoryFullScanning.ipynb
+..  examples/TrajectoryApproximation.ipynb
+..  examples/TrajectoryPartialScanning.ipynb
+..  examples/TrajectoryFullScanning.ipynb
 
 
 
