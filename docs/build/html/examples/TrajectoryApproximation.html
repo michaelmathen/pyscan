@@ -28,6 +28,8 @@
     <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Trajectory Partial Scanning" href="TrajectoryPartialScanning.html" />
+    <link rel="prev" title="Region Scanning" href="RegionScanning.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -67,7 +69,7 @@
   <ul class="dropdown-menu globaltoc"
       role="menu"
       aria-labelledby="dLabelGlobalToc"><p class="caption"><span class="caption-text">Contents</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">Api</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../point.html">Point</a></li>
@@ -89,6 +91,19 @@
 <li class="toctree-l2"><a class="reference internal" href="RegionSimplification.html#Disk(or-Rectangle)-Compression">Disk(or Rectangle) Compression</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="RegionScanning.html">Region Scanning</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Trajectory Approximation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Halfplane-Compression">Halfplane Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Disk(or-Rectangle)-Compression">Disk(or Rectangle) Compression</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="TrajectoryPartialScanning.html">Trajectory Partial Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TrajectoryPartialScanning.html#Halfplane-Partial-Scanning">Halfplane Partial Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TrajectoryPartialScanning.html#Disk-Partial-Scanning">Disk Partial Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TrajectoryFullScanning.html">Trajectory Full Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TrajectoryFullScanning.html#Halfplane-Scanning">Halfplane Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TrajectoryFullScanning.html#Disk-Scanning">Disk Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TrajectoryFullScanning.html#Rectangle-Scanning">Rectangle Scanning</a></li>
 </ul>
 </ul>
 </li>
@@ -579,7 +594,7 @@ currently has issues with stability.</p>
 methods.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [7]:
+<span></span>In [9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
@@ -588,7 +603,7 @@ methods.</p>
 <span class="n">plot_approx</span><span class="p">(</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pts</span><span class="p">,</span> <span class="n">core_set_pts</span><span class="p">)</span>
 <span class="n">core_set_pts</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">grid_kernel</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
 <span class="n">plot_approx</span><span class="p">(</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">pts</span><span class="p">,</span> <span class="n">core_set_pts</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;gridding.png&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

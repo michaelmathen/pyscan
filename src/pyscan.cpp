@@ -119,6 +119,57 @@ double evaluate_halfplane_labeled(pyscan::halfspace2_t const& d1, pyscan::lpoint
     return pyscan::evaluate_range(d1, mpts, bpts, disc);
 }
 
+//namespace pybind11 { namespace detail {
+//    template <> struct type_caster<pyscan::Point<2>> {
+//    public:
+//        /**
+//         * This macro establishes the name 'inty' in
+//         * function signatures and declares a local variable
+//         * 'value' of type inty
+//         */
+//    PYBIND11_TYPE_CASTER(pyscan::Point<2>, _("Point"));
+//
+//        /**
+//         * Conversion part 1 (Python->C++): convert a PyObject into a inty
+//         * instance or return false upon failure. The second argument
+//         * indicates whether implicit conversions should be applied.
+//         */
+//        bool load(handle src, bool) {
+//            /* Extract PyObject from handle */
+//            PyObject *source = src.ptr();
+//            /* Try converting into a Python integer value */
+//            if (!PyTuple_Check(source) && PyTuple_Size(source) != 2) {
+//                return false;
+//            }
+//            PyObject *tmp1 = PyNumber_Float(PyTuple_GetItem(source, 0));
+//            PyObject *tmp2 = PyNumber_Float(PyTuple_GetItem(source, 1));
+//            if (!tmp1 || !tmp2) {
+//                return false;
+//            }
+//
+//            /* Now try to convert into a C++ int */
+//            this->value = pyscan::Point<2>(PyFloat_AsDouble(tmp1), PyFloat_AsDouble(tmp2), 1.0);
+//            Py_DECREF(tmp1);
+//            Py_DECREF(tmp2);
+//            /* Ensure return code was OK (to avoid out-of-range errors etc) */
+//            return !((value[0] == -1 || value[1] == -1) && !PyErr_Occurred());
+//        }
+//
+//        /**
+//         * Conversion part 2 (C++ -> Python): convert an inty instance into
+//         * a Python object. The second and third arguments are used to
+//         * indicate the return value policy and parent object (for
+//         * ``return_value_policy::reference_internal``) and are generally
+//         * ignored by implicit casters.
+//         */
+//        static handle cast(pyscan::Point<2> const& pt, return_value_policy /* policy */, handle /* parent */) {
+//            PyObject* tmp = PyTuple_New(2);
+//            PyTuple_SetItem(tmp, 0, PyFloat_FromDouble(pt[0]));
+//            PyTuple_SetItem(tmp, 1, PyFloat_FromDouble(pt[1]));
+//            return tmp;
+//        }
+//    };
+//}} // namespace pybind11::detail
 
 PYBIND11_MODULE(libpyscan, pyscan_module){
     namespace py = pybind11;

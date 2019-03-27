@@ -86,6 +86,24 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="examples/BasicExample.html">Planting Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/RegionSimplification.html">Region Simplification</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/RegionSimplification.html#Halfplane-Compression">Halfplane Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/RegionSimplification.html#Disk(or-Rectangle)-Compression">Disk(or Rectangle) Compression</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples/RegionScanning.html">Region Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/TrajectoryApproximation.html">Trajectory Approximation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/TrajectoryApproximation.html#Halfplane-Compression">Halfplane Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/TrajectoryApproximation.html#Disk(or-Rectangle)-Compression">Disk(or Rectangle) Compression</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples/TrajectoryPartialScanning.html">Trajectory Partial Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/TrajectoryPartialScanning.html#Halfplane-Partial-Scanning">Halfplane Partial Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/TrajectoryPartialScanning.html#Disk-Partial-Scanning">Disk Partial Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/TrajectoryFullScanning.html">Trajectory Full Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/TrajectoryFullScanning.html#Halfplane-Scanning">Halfplane Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/TrajectoryFullScanning.html#Disk-Scanning">Disk Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/TrajectoryFullScanning.html#Rectangle-Scanning">Rectangle Scanning</a></li>
 </ul>
 </ul>
 </li>
@@ -172,6 +190,34 @@
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Discrepancy function value.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.max_disk_region">
+<code class="descclassname">pyscan.</code><code class="descname">max_disk_region</code><span class="sig-paren">(</span><em>net</em>, <em>red_sample</em>, <em>blue_sample</em>, <em>min_disk_r</em>, <em>max_disk_r</em>, <em>alpha</em>, <em>disc</em>, <em>fast_disk=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#max_disk_region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.max_disk_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the highest discrepancy disk over a set of trajectories. Executes at multiple scales using the grid
+directional compression method and internally compresses the trajectories if fast_disk is enabled.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – A list of trajectories</li>
+<li><strong>red_sample</strong> – A list of trajectories</li>
+<li><strong>blue_sample</strong> – A list of trajectories</li>
+<li><strong>min_disk_r</strong> – The minimum disk radius to consider.</li>
+<li><strong>max_disk_r</strong> – The maximum disk radius to consider.</li>
+<li><strong>alpha</strong> – The spatial error with which to approximate the trajectories.</li>
+<li><strong>disc</strong> – The discrepancy function to use.</li>
+<li><strong>fast_disk</strong> – Default True.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
 </td>
 </tr>
 </tbody>

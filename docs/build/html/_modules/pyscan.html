@@ -89,6 +89,23 @@
 <li class="toctree-l2"><a class="reference internal" href="../examples/RegionSimplification.html#Disk(or-Rectangle)-Compression">Disk(or Rectangle) Compression</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/RegionScanning.html">Region Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/TrajectoryApproximation.html">Trajectory Approximation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/TrajectoryApproximation.html#Halfplane-Compression">Halfplane Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/TrajectoryApproximation.html#Disk(or-Rectangle)-Compression">Disk(or Rectangle) Compression</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/TrajectoryPartialScanning.html">Trajectory Partial Scanning</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/TrajectoryPartialScanning.html#Halfplane-Partial-Scanning">Halfplane Partial Scanning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/TrajectoryPartialScanning.html#Disk-Partial-Scanning">Disk Partial Scanning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/TrajectoryFullScanning.html">Trajectory Full Scanning</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/TrajectoryFullScanning.html#Halfplane-Scanning">Halfplane Scanning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/TrajectoryFullScanning.html#Disk-Scanning">Disk Scanning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/TrajectoryFullScanning.html#Rectangle-Scanning">Rectangle Scanning</a></li>
+</ul>
+</li>
 </ul>
 </ul>
 </li>
@@ -174,18 +191,18 @@
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pt_obj</span><span class="p">,</span> <span class="n">LPoint</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Disk</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">lp</span><span class="o">.</span><span class="n">__evaluate_disk_labeled</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">evaluate_disk_labeled</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Halfplane</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">lp</span><span class="o">.</span><span class="n">__evaluate_disk_labeled</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">evaluate_disk_labeled</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Rectangle</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">lp</span><span class="o">.</span><span class="n">__evaluate_rectangle_labeled</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">evaluate_rectangle_labeled</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pt_obj</span><span class="p">,</span> <span class="n">WPoint</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Disk</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">lp</span><span class="o">.</span><span class="n">__evaluate_disk</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">evaluate_disk</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Halfplane</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">lp</span><span class="o">.</span><span class="n">__evaluate_halfplane</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">evaluate_halfplane</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Rectangle</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">lp</span><span class="o">.</span><span class="n">__evaluate_rectangle</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">evaluate_rectangle</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">()</span></div>
 
 
@@ -203,11 +220,11 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">mp</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">bp</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">disc_f</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Disk</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">lp</span><span class="o">.</span><span class="n">__evaluate_disk_trajectory</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">evaluate_disk_trajectory</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Halfplane</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">lp</span><span class="o">.</span><span class="n">__evaluate_halfplane_trajectory</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">evaluate_halfplane_trajectory</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Rectangle</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">lp</span><span class="o">.</span><span class="n">__evaluate_rectangle_trajectory</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">evaluate_rectangle_trajectory</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">()</span></div>
 
@@ -293,7 +310,7 @@
     <span class="k">while</span> <span class="n">num</span> <span class="o">&lt;</span> <span class="n">max_count</span><span class="p">:</span>
         <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">upper_bound</span> <span class="o">+</span> <span class="n">lower_bound</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
         <span class="n">reg</span> <span class="o">=</span> <span class="n">Rectangle</span><span class="p">(</span><span class="n">seed_pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">size</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">seed_pt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">size</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">seed_pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">size</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">seed_pt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">size</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span> <span class="k">if</span> <span class="n">reg</span><span class="o">.</span><span class="n">intersects_trajectory</span><span class="p">(</span><span class="n">traj</span><span class="p">))</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span> <span class="k">if</span> <span class="n">reg</span><span class="o">.</span><span class="n">intersects_trajectory</span><span class="p">(</span><span class="n">Trajectory</span><span class="p">(</span><span class="n">traj</span><span class="p">)))</span>
         <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">count</span> <span class="o">-</span> <span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">trajectories</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">break</span>
         <span class="k">if</span> <span class="n">count</span> <span class="o">-</span> <span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -303,9 +320,9 @@
         <span class="n">num</span> <span class="o">+=</span> <span class="mi">1</span>
 
 
-    <span class="n">inside_rect</span> <span class="o">=</span> <span class="p">[</span><span class="n">traj</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span> <span class="k">if</span> <span class="n">reg</span><span class="o">.</span><span class="n">intersects_trajectory</span><span class="p">(</span><span class="n">traj</span><span class="p">)]</span>
+    <span class="n">inside_rect</span> <span class="o">=</span> <span class="p">[</span><span class="n">traj</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span> <span class="k">if</span> <span class="n">reg</span><span class="o">.</span><span class="n">intersects_trajectory</span><span class="p">(</span><span class="n">Trajectory</span><span class="p">(</span><span class="n">traj</span><span class="p">))]</span>
     <span class="n">red_in</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">([</span><span class="nb">tuple</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">inside_rect</span><span class="p">],</span> <span class="n">q</span><span class="p">)</span>
-    <span class="n">outside_rect</span> <span class="o">=</span> <span class="p">[</span><span class="n">traj</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">reg</span><span class="o">.</span><span class="n">intersects_trajectory</span><span class="p">(</span><span class="n">traj</span><span class="p">)]</span>
+    <span class="n">outside_rect</span> <span class="o">=</span> <span class="p">[</span><span class="n">traj</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">reg</span><span class="o">.</span><span class="n">intersects_trajectory</span><span class="p">(</span><span class="n">Trajectory</span><span class="p">(</span><span class="n">traj</span><span class="p">))]</span>
     <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_out</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">([</span><span class="nb">tuple</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">outside_rect</span><span class="p">],</span> <span class="n">p</span><span class="p">)</span>
 
     <span class="n">diff</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">disc</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_in</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_in</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_out</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_in</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_in</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_out</span><span class="p">))</span>
@@ -724,6 +741,45 @@
             <span class="n">reg</span> <span class="o">=</span> <span class="n">new_reg</span>
             <span class="n">mx</span> <span class="o">=</span> <span class="n">new_mx</span>
         <span class="n">curr_disk_r</span> <span class="o">*=</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">reg</span><span class="p">,</span> <span class="n">mx</span></div>
+
+
+<div class="viewcode-block" id="max_disk_region"><a class="viewcode-back" href="../python_utility.html#pyscan.max_disk_region">[docs]</a><span class="k">def</span> <span class="nf">max_disk_region</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">red_sample</span><span class="p">,</span> <span class="n">blue_sample</span><span class="p">,</span> <span class="n">min_disk_r</span><span class="p">,</span> <span class="n">max_disk_r</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">disc</span><span class="p">,</span> <span class="n">fast_disk</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the highest discrepancy disk over a set of trajectories. Executes at multiple scales using the grid</span>
+<span class="sd">    directional compression method and internally compresses the trajectories if fast_disk is enabled.</span>
+
+<span class="sd">    :param net: A list of trajectories</span>
+<span class="sd">    :param red_sample: A list of trajectories</span>
+<span class="sd">    :param blue_sample: A list of trajectories</span>
+<span class="sd">    :param min_disk_r: The minimum disk radius to consider.</span>
+<span class="sd">    :param max_disk_r: The maximum disk radius to consider.</span>
+<span class="sd">    :param alpha: The spatial error with which to approximate the trajectories.</span>
+<span class="sd">    :param disc: The discrepancy function to use.</span>
+<span class="sd">    :param fast_disk: Default True.</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mx</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">curr_disk_r</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">min_disk_r</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="n">reg</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+
+        <span class="n">chord_l</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">curr_disk_r</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="n">m_sample</span> <span class="o">=</span> <span class="p">[</span><span class="n">polygon_grid_hull</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">curr_disk_r</span><span class="p">)</span> <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="n">red_sample</span><span class="p">]</span>
+        <span class="n">b_sample</span> <span class="o">=</span> <span class="p">[</span><span class="n">polygon_grid_hull</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">curr_disk_r</span><span class="p">)</span> <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span>  <span class="n">blue_sample</span><span class="p">]</span>
+        <span class="n">pt_net</span> <span class="o">=</span> <span class="p">[</span><span class="n">polygon_grid_hull</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">curr_disk_r</span><span class="p">)</span> <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="n">net</span><span class="p">]</span>
+        <span class="n">m_sample</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">trajectories_to_labels</span><span class="p">(</span><span class="n">m_sample</span><span class="p">))</span>
+        <span class="n">b_sample</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">trajectories_to_labels</span><span class="p">(</span><span class="n">b_sample</span><span class="p">))</span>
+        <span class="n">net_set</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">trajectories_to_labels</span><span class="p">(</span><span class="n">pt_net</span><span class="p">))</span>
+
+
+        <span class="n">new_reg</span><span class="p">,</span> <span class="n">new_mx</span> <span class="o">=</span> <span class="n">max_disk_scale_labeled</span><span class="p">(</span><span class="n">net_set</span><span class="p">,</span> <span class="n">m_sample</span><span class="p">,</span> <span class="n">b_sample</span><span class="p">,</span> <span class="n">fast_disk</span><span class="p">,</span> <span class="n">curr_disk_r</span><span class="p">,</span> <span class="n">disc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_mx</span> <span class="o">&gt;</span> <span class="n">mx</span><span class="p">:</span>
+            <span class="n">reg</span> <span class="o">=</span> <span class="n">new_reg</span>
+            <span class="n">mx</span> <span class="o">=</span> <span class="n">new_mx</span>
+        <span class="n">curr_disk_r</span> <span class="o">*=</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">curr_disk_r</span> <span class="o">&gt;=</span> <span class="n">max_disk_r</span><span class="p">:</span>
+            <span class="k">break</span>
     <span class="k">return</span> <span class="n">reg</span><span class="p">,</span> <span class="n">mx</span></div>
 </pre></div>
 

@@ -46,7 +46,31 @@ Most current software available for region based spatial scan statistics use exa
 
 Our code is currently hosted on github at https://github.com/michaelmathen/pyscan.git.
 
+.. raw:: html
+    .row.col-centered > [class*='col-'] { 
+        display: inline-block;
+        float: none;
+    }
 
+    <div class="container-fluid">
+        <div class="col-md-4 col-xs-12">
+        <img src="_static/images/halfplane_scan.jpg" width="100%" height="80%" class="img-responsive center-block">
+                <div class="caption text-center">
+                <h3>Halfplane Scanning</h3>
+                </div>
+            </a>
+       </div>
+
+        <div class="col-md-4 col-xs-12">
+                <img src="_static/images/rect_scan.jpg" width="100%" height="100%" class="img-responsive center-block">
+                <div class="caption text-center">
+                <h3>Rectangle Scanning
+                </h3>
+                </div>
+      </a>
+        </div>
+      </div>
+    </div>
 
 Contents
 ==========================
@@ -65,6 +89,11 @@ Contents
    examples/PhillyCrime.ipynb
    examples/BasicExample.ipynb
    examples/RegionSimplification.ipynb
+   examples/RegionScanning.ipynb
+   examples/TrajectoryApproximation.ipynb
+   examples/TrajectoryPartialScanning.ipynb
+   examples/TrajectoryFullScanning.ipynb
+
 
 
 

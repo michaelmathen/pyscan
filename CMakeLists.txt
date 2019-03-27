@@ -52,7 +52,8 @@ endif()
 
 add_subdirectory(thirdparty/discrepancy)
 set(THIRDPARTY_LIBRARIES
-        ${CMAKE_BINARY_DIR}/thirdparty/discrepancy/libdiscrepancy.so
+        discrepancy
+        #${CMAKE_BINARY_DIR}/thirdparty/discrepancy/libdiscrepancy.so
         ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/libappext.so
         ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/libann.so
         CGAL::CGAL)

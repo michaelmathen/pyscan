@@ -42,18 +42,18 @@ def evaluate_range(range, mp, bp, disc_f):
 
     if isinstance(pt_obj, LPoint):
         if isinstance(range, Disk):
-            return lp.__evaluate_disk_labeled(range, mp, bp, disc_f)
+            return evaluate_disk_labeled(range, mp, bp, disc_f)
         elif isinstance(range, Halfplane):
-            return lp.__evaluate_disk_labeled(range, mp, bp, disc_f)
+            return evaluate_disk_labeled(range, mp, bp, disc_f)
         elif isinstance(range, Rectangle):
-            return lp.__evaluate_rectangle_labeled(range, mp, bp, disc_f)
+            return evaluate_rectangle_labeled(range, mp, bp, disc_f)
     elif isinstance(pt_obj, WPoint):
         if isinstance(range, Disk):
-            return lp.__evaluate_disk(range, mp, bp, disc_f)
+            return evaluate_disk(range, mp, bp, disc_f)
         elif isinstance(range, Halfplane):
-            return lp.__evaluate_halfplane(range, mp, bp, disc_f)
+            return evaluate_halfplane(range, mp, bp, disc_f)
         elif isinstance(range, Rectangle):
-            return lp.__evaluate_rectangle(range, mp, bp, disc_f)
+            return evaluate_rectangle(range, mp, bp, disc_f)
     raise ValueError()
 
 
@@ -71,11 +71,11 @@ def evaluate_range_trajectory(range, mp, bp, disc_f):
     if not mp and not bp:
         return evaluate(disc_f, 0, 0, 0, 0)
     if isinstance(range, Disk):
-        return lp.__evaluate_disk_trajectory(range, mp, bp, disc_f)
+        return evaluate_disk_trajectory(range, mp, bp, disc_f)
     elif isinstance(range, Halfplane):
-        return lp.__evaluate_halfplane_trajectory(range, mp, bp, disc_f)
+        return evaluate_halfplane_trajectory(range, mp, bp, disc_f)
     elif isinstance(range, Rectangle):
-        return lp.__evaluate_rectangle_trajectory(range, mp, bp, disc_f)
+        return evaluate_rectangle_trajectory(range, mp, bp, disc_f)
     else:
         raise ValueError()
 
@@ -161,7 +161,7 @@ def plant_full_square(trajectories, r, p, q, disc, max_count=32):
     while num < max_count:
         size = (upper_bound + lower_bound) / 2
         reg = Rectangle(seed_pt[0] + size / 2, seed_pt[1] + size / 2, seed_pt[0] - size / 2, seed_pt[1] - size / 2)
-        count = sum(1 for traj in trajectories if reg.intersects_trajectory(traj))
+        count = sum(1 for traj in trajectories if reg.intersects_trajectory(Trajectory(traj)))
         if abs(count - r * len(trajectories)) <= 2:
             break
         if count - r * len(trajectories) > 0:
@@ -171,9 +171,9 @@ def plant_full_square(trajectories, r, p, q, disc, max_count=32):
         num += 1
 
 
-    inside_rect = [traj for traj in trajectories if reg.intersects_trajectory(traj)]
+    inside_rect = [traj for traj in trajectories if reg.intersects_trajectory(Trajectory(traj))]
     red_in, blue_in = split_set([tuple(traj) for traj in inside_rect], q)
-    outside_rect = [traj for traj in trajectories if not reg.intersects_trajectory(traj)]
+    outside_rect = [traj for traj in trajectories if not reg.intersects_trajectory(Trajectory(traj))]
     red_out, blue_out = split_set([tuple(traj) for traj in outside_rect], p)
 
     diff = evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
@@ -594,3 +594,41 @@ def max_disk_trajectory_fixed(net, m_sample, b_sample, min_disk_r, max_disk_r,  
         curr_disk_r *= 2
     return reg, mx
 
+
+def max_disk_region(net, red_sample, blue_sample, min_disk_r, max_disk_r, alpha, disc, fast_disk=True):
+    """
+    Computes the highest discrepancy disk over a set of trajectories. Executes at multiple scales using the grid
+    directional compression method and internally compresses the trajectories if fast_disk is enabled.
+
+    :param net: A list of trajectories
+    :param red_sample: A list of trajectories
+    :param blue_sample: A list of trajectories
+    :param min_disk_r: The minimum disk radius to consider.
+    :param max_disk_r: The maximum disk radius to consider.
+    :param alpha: The spatial error with which to approximate the trajectories.
+    :param disc: The discrepancy function to use.
+    :param fast_disk: Default True.
+    :return:
+    """
+    mx = -1
+    curr_disk_r = max(min_disk_r, alpha)
+    reg = None
+    while True:
+
+        chord_l = math.sqrt(4 * alpha * curr_disk_r - 2 * alpha * alpha)
+        m_sample = [polygon_grid_hull(reg, alpha, curr_disk_r) for reg in red_sample]
+        b_sample = [polygon_grid_hull(reg, alpha, curr_disk_r) for reg in  blue_sample]
+        pt_net = [polygon_grid_hull(reg, alpha, curr_disk_r) for reg in net]
+        m_sample = list(trajectories_to_labels(m_sample))
+        b_sample = list(trajectories_to_labels(b_sample))
+        net_set = list(trajectories_to_labels(pt_net))
+
+
+        new_reg, new_mx = max_disk_scale_labeled(net_set, m_sample, b_sample, fast_disk, curr_disk_r, disc)
+        if new_mx > mx:
+            reg = new_reg
+            mx = new_mx
+        curr_disk_r *= 2
+        if curr_disk_r >= max_disk_r:
+            break
+    return reg, mx

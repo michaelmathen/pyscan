@@ -86,6 +86,24 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="BasicExample.html">Planting Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RegionSimplification.html">Region Simplification</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="RegionSimplification.html#Halfplane-Compression">Halfplane Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RegionSimplification.html#Disk(or-Rectangle)-Compression">Disk(or Rectangle) Compression</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="RegionScanning.html">Region Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TrajectoryApproximation.html">Trajectory Approximation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="TrajectoryApproximation.html#Halfplane-Compression">Halfplane Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TrajectoryApproximation.html#Disk(or-Rectangle)-Compression">Disk(or Rectangle) Compression</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="TrajectoryPartialScanning.html">Trajectory Partial Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TrajectoryPartialScanning.html#Halfplane-Partial-Scanning">Halfplane Partial Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TrajectoryPartialScanning.html#Disk-Partial-Scanning">Disk Partial Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TrajectoryFullScanning.html">Trajectory Full Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TrajectoryFullScanning.html#Halfplane-Scanning">Halfplane Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TrajectoryFullScanning.html#Disk-Scanning">Disk Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TrajectoryFullScanning.html#Rectangle-Scanning">Rectangle Scanning</a></li>
 </ul>
 </ul>
 </li>
@@ -311,7 +329,7 @@ Using pyscan we can then extract approximate regions of interest at
 scale.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [1]:
+<span></span>In [17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
@@ -342,7 +360,7 @@ scale.</p>
 
         <span class="n">point</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">WPoint</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
         <span class="n">baseline</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s2">&quot;theft&quot;</span> <span class="ow">in</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;TEXT_GENERAL_CODE&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+        <span class="k">if</span> <span class="s2">&quot;thefts&quot;</span> <span class="ow">in</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;TEXT_GENERAL_CODE&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
             <span class="n">measured</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -352,7 +370,7 @@ background crime. In the below example we shuffle the points so that
 measured points or baseline points are systematically drawn over.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [2]:
+<span></span>In [18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
@@ -361,7 +379,9 @@ measured points or baseline points are systematically drawn over.</p>
 <span class="n">xs</span> <span class="o">=</span> <span class="n">get_coord</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">mixed_pts</span><span class="p">])</span>
 <span class="n">ys</span> <span class="o">=</span> <span class="n">get_coord</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">mixed_pts</span><span class="p">])</span>
 <span class="n">cs</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">mixed_pts</span><span class="p">]</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">cs</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+<span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">cs</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -383,12 +403,14 @@ taking a sample of the measured points and a sample of the baseline
 points and unioning them.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [3]:
+<span></span>In [9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">net</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">my_sample</span><span class="p">(</span><span class="n">measured</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span> <span class="o">+</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">my_sample</span><span class="p">(</span><span class="n">baseline</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">get_coord</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">net</span><span class="p">),</span> <span class="n">get_coord</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">net</span><span class="p">),</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+<span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">get_coord</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">net</span><span class="p">),</span> <span class="n">get_coord</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">net</span><span class="p">),</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -406,7 +428,7 @@ samples should be roughly 1/4 * len(net)^2, so in this example the
 sample sizes should be 5000.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [4]:
+<span></span>In [10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
@@ -420,7 +442,9 @@ sample sizes should be 5000.</p>
 <span class="n">xs</span> <span class="o">=</span> <span class="n">get_coord</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">mixed_samples</span><span class="p">])</span>
 <span class="n">ys</span> <span class="o">=</span> <span class="n">get_coord</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">mixed_samples</span><span class="p">])</span>
 <span class="n">cs</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">mixed_samples</span><span class="p">]</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">cs</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">cs</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -437,21 +461,23 @@ using one of the various pyscan scanning functions. ## Halfplane
 Scanning</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [7]:
+<span></span>In [20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span><span class="n">disc_f</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">RKULLDORF</span>
+<span></span><span class="n">disc_f</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">KULLDORF</span>
 <span class="n">halfplane</span><span class="p">,</span> <span class="n">h_val</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">max_halfplane</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">m_sample</span><span class="p">,</span> <span class="n">b_sample</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
 
-<span class="c1"># Plot halfplane</span>
-<span class="n">l</span> <span class="o">=</span> <span class="n">halfplane</span><span class="o">.</span><span class="n">get_coords</span><span class="p">()</span>
+
 <span class="c1"># l = (a, b, c) where ax + by + c = 0 =&gt; (-ax -c) / b = y</span>
-<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">mr</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">get_coords</span><span class="p">()</span>
     <span class="k">return</span> <span class="o">-</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">l</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">cs</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="o">-</span><span class="mf">75.3</span><span class="p">,</span> <span class="o">-</span><span class="mf">74.95</span><span class="p">],</span> <span class="p">[</span><span class="n">f</span><span class="p">(</span><span class="o">-</span><span class="mf">75.2</span><span class="p">),</span> <span class="n">f</span><span class="p">(</span><span class="o">-</span><span class="mf">74.95</span><span class="p">)])</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">cs</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="o">-</span><span class="mf">75.3</span><span class="p">,</span> <span class="o">-</span><span class="mf">74.95</span><span class="p">],</span> <span class="p">[</span><span class="n">f</span><span class="p">(</span><span class="n">halfplane</span><span class="p">,</span> <span class="o">-</span><span class="mf">75.2</span><span class="p">),</span> <span class="n">f</span><span class="p">(</span><span class="n">halfplane</span><span class="p">,</span> <span class="o">-</span><span class="mf">74.95</span><span class="p">)])</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
 </pre></div>
@@ -469,14 +495,15 @@ Scanning</p>
 <h2>Disk Scanning<a class="headerlink" href="#Disk-Scanning" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [8]:
+<span></span>In [21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">disk</span><span class="p">,</span> <span class="n">d_val</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">max_disk</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">m_sample</span><span class="p">,</span> <span class="n">b_sample</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
 
 <span class="c1"># Plot disk</span>
-<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">cs</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
 <span class="n">d</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">Circle</span><span class="p">(</span><span class="n">disk</span><span class="o">.</span><span class="n">get_origin</span><span class="p">(),</span> <span class="n">disk</span><span class="o">.</span><span class="n">get_radius</span><span class="p">(),</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=.</span><span class="mi">8</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">add_artist</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
@@ -498,7 +525,7 @@ Scanning</p>
 possible to use a net if needed.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [10]:
+<span></span>In [22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
@@ -509,7 +536,8 @@ possible to use a net if needed.</p>
 <span class="n">subgrid</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">max_subgrid</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
 <span class="n">rect</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">toRectangle</span><span class="p">(</span><span class="n">subgrid</span><span class="p">)</span>
 
-<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">cs</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
 <span class="n">r</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">Rectangle</span><span class="p">((</span><span class="n">rect</span><span class="o">.</span><span class="n">lowX</span><span class="p">(),</span> <span class="n">rect</span><span class="o">.</span><span class="n">lowY</span><span class="p">()),</span> <span class="n">rect</span><span class="o">.</span><span class="n">upX</span><span class="p">()</span> <span class="o">-</span> <span class="n">rect</span><span class="o">.</span><span class="n">lowX</span><span class="p">(),</span> <span class="n">rect</span><span class="o">.</span><span class="n">upY</span><span class="p">()</span> <span class="o">-</span> <span class="n">rect</span><span class="o">.</span><span class="n">lowY</span><span class="p">(),</span>
                   <span class="n">alpha</span><span class="o">=.</span><span class="mi">8</span><span class="p">,</span>
@@ -528,15 +556,19 @@ possible to use a net if needed.</p>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [13]:
+<span></span>In [26]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span><span class="c1"># a faster approximate method</span>
+<span></span><span class="c1"># a faster approximate method. Recommend you use the RKULLDORF method for this since the standard Kulldorf</span>
+<span class="c1"># function can be a bit unstable for small and very large regions.</span>
+<span class="n">disc_f</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">RKULLDORF</span>
+
 <span class="n">subgrid</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">max_subgrid_convex</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="o">.</span><span class="mi">01</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
 <span class="n">rect</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">toRectangle</span><span class="p">(</span><span class="n">subgrid</span><span class="p">)</span>
 
-<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">cs</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
 <span class="n">r</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">Rectangle</span><span class="p">((</span><span class="n">rect</span><span class="o">.</span><span class="n">lowX</span><span class="p">(),</span> <span class="n">rect</span><span class="o">.</span><span class="n">lowY</span><span class="p">()),</span> <span class="n">rect</span><span class="o">.</span><span class="n">upX</span><span class="p">()</span> <span class="o">-</span> <span class="n">rect</span><span class="o">.</span><span class="n">lowX</span><span class="p">(),</span> <span class="n">rect</span><span class="o">.</span><span class="n">upY</span><span class="p">()</span> <span class="o">-</span> <span class="n">rect</span><span class="o">.</span><span class="n">lowY</span><span class="p">(),</span>
                   <span class="n">alpha</span><span class="o">=.</span><span class="mi">8</span><span class="p">,</span>

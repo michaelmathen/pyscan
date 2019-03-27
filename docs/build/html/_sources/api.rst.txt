@@ -25,6 +25,10 @@ encoding other information into the points.
 * :ref:`scanning-label`
 * :ref:`labeled-scanning-label`
 
+We also have some older codes that were used for experiments in :cite:`AMPVZ06` that have been wrapped for use in the python framework.
+
+* :ref:`jeff-codes`
+
 Utility Methods :ref:`utility-label`.
 
 
