@@ -103,6 +103,7 @@ coverage.xml
 
 # Jupyter Notebook
 .ipynb_checkpoints
+examples_.ipynb_checkpoints*
 
 # pyenv
 .python-version

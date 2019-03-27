@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Utility &#8212; pyscan 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootswatch-3.3.6/cosmo/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Examples" href="examples.html" />
+    <link rel="prev" title="Scanning" href="scanning.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html"><span><img src="_static/NetRange.png"></span>
+          pyscan</a>
+        <span class="navbar-text navbar-version pull-left"><b>1.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="installation.html">Installation</a></li>
+                <li><a href="api.html">API</a></li>
+                <li><a href="examples.html">Examples</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><p class="caption"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Api</a></li>
+<li class="toctree-l1"><a class="reference internal" href="point.html">Point</a></li>
+<li class="toctree-l1"><a class="reference internal" href="range.html">Ranges</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scanning.html">Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scanning.html#labeled-scanning">Labeled Scanning</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Utility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/BasicExample.html">Planting Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/PhillyCrime.html">Philadelphia Crime Data Example</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/PhillyCrime.html#Reading-the-Data">Reading the Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/PhillyCrime.html#Subsampling">Subsampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/PhillyCrime.html#Disk-Scanning">Disk Scanning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/PhillyCrime.html#Rectangle-Scanning">Rectangle Scanning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples/RegionSimplification.html">Region Simplification</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/RegionSimplification.html#Halfplane-Compression">Halfplane Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/RegionSimplification.html#Disk(or-Rectangle)-Compression">Disk(or Rectangle) Compression</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples/RegionScanning.html">Region Scanning</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Utility</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12 content">
+      
+  <div class="section" id="utility">
+<span id="utility-label"></span><h1>Utility<a class="headerlink" href="#utility" title="Permalink to this headline">¶</a></h1>
+<p>These methods are mostly utility methods written in python in pyscan.py.</p>
+<span class="target" id="module-pyscan"></span><dl class="function">
+<dt id="pyscan.evaluate_range">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_range</code><span class="sig-paren">(</span><em>range</em>, <em>mp</em>, <em>bp</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#evaluate_range"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.evaluate_range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluates this range to compute the total discrepancy over a set of points.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>range</strong> – Some arbitrary range.</li>
+<li><strong>mp</strong> – measured set</li>
+<li><strong>bp</strong> – baseline set</li>
+<li><strong>disc_f</strong> – Discrepancy function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Discrepancy function value.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_range_trajectory">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_range_trajectory</code><span class="sig-paren">(</span><em>range</em>, <em>mp</em>, <em>bp</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#evaluate_range_trajectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.evaluate_range_trajectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluates this range to compute the total discrepancy over a set of trajectories.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>range</strong> – Some arbitrary range.</li>
+<li><strong>mp</strong> – measured set</li>
+<li><strong>bp</strong> – baseline set</li>
+<li><strong>disc_f</strong> – Discrepancy function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Discrepancy function value.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.max_disk_region">
+<code class="descclassname">pyscan.</code><code class="descname">max_disk_region</code><span class="sig-paren">(</span><em>net</em>, <em>red_sample</em>, <em>blue_sample</em>, <em>min_disk_r</em>, <em>max_disk_r</em>, <em>alpha</em>, <em>disc</em>, <em>fast_disk=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#max_disk_region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.max_disk_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the highest discrepancy disk over a set of trajectories. Executes at multiple scales using the grid
+directional compression method and internally compresses the trajectories if fast_disk is enabled.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – A list of trajectories</li>
+<li><strong>red_sample</strong> – A list of trajectories</li>
+<li><strong>blue_sample</strong> – A list of trajectories</li>
+<li><strong>min_disk_r</strong> – The minimum disk radius to consider.</li>
+<li><strong>max_disk_r</strong> – The maximum disk radius to consider.</li>
+<li><strong>alpha</strong> – The spatial error with which to approximate the trajectories.</li>
+<li><strong>disc</strong> – The discrepancy function to use.</li>
+<li><strong>fast_disk</strong> – Default True.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.max_disk_trajectory">
+<code class="descclassname">pyscan.</code><code class="descname">max_disk_trajectory</code><span class="sig-paren">(</span><em>net</em>, <em>red_sample</em>, <em>blue_sample</em>, <em>min_disk_r</em>, <em>max_disk_r</em>, <em>alpha</em>, <em>disc</em>, <em>fast_disk=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#max_disk_trajectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.max_disk_trajectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the highest discrepancy disk over a set of trajectories. Executes at multiple scales using the grid
+directional compression method and internally compresses the trajectories if fast_disk is enabled.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – A list of trajectories (scaled to be in a 0 by 1 box).</li>
+<li><strong>red_sample</strong> – A list of trajectories (scaled to be in a 0 by 1 box).</li>
+<li><strong>blue_sample</strong> – A list of trajectories (scaled to be in a 0 by 1 box).</li>
+<li><strong>min_disk_r</strong> – The minimum disk radius to consider.</li>
+<li><strong>max_disk_r</strong> – The maximum disk radius to consider.</li>
+<li><strong>alpha</strong> – The spatial error with which to approximate the trajectories.</li>
+<li><strong>disc</strong> – The discrepancy function to use.</li>
+<li><strong>fast_disk</strong> – Default True.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.max_disk_trajectory_fixed">
+<code class="descclassname">pyscan.</code><code class="descname">max_disk_trajectory_fixed</code><span class="sig-paren">(</span><em>net</em>, <em>m_sample</em>, <em>b_sample</em>, <em>min_disk_r</em>, <em>max_disk_r</em>, <em>disc</em>, <em>fast_disk=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#max_disk_trajectory_fixed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.max_disk_trajectory_fixed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the highest discrepancy disk over a set of trajectories. Executes at multiple scales, but uses whatever set
+of points the trajectories have been compressed with.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – A list of trajectories (scaled to be in a 0 by 1 box).</li>
+<li><strong>m_sample</strong> – A list of trajectories (scaled to be in a 0 by 1 box).</li>
+<li><strong>b_sample</strong> – A list of trajectories (scaled to be in a 0 by 1 box).</li>
+<li><strong>min_disk_r</strong> – The minimum disk radius to consider.</li>
+<li><strong>max_disk_r</strong> – The maximum disk radius to consider.</li>
+<li><strong>disc</strong> – The discrepancy function to use.</li>
+<li><strong>fast_disk</strong> – Default True.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A tuple of the maximum disk and the corresponding maximum value.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.paired_plant_region">
+<code class="descclassname">pyscan.</code><code class="descname">paired_plant_region</code><span class="sig-paren">(</span><em>traj_start</em>, <em>traj_end</em>, <em>r</em>, <em>q</em>, <em>region_plant_f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#paired_plant_region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.paired_plant_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>This plants a region where every trajectory
+completely outside or inside of the region has an endpoint chosen at random.
+Every trajectory with one endpoint inside the region has an endpoint chosen inside
+with probability q (exactly q fraction have one endpoint in the region)
+traj_start and traj_end should be the same length.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>traj_start</strong> – List of points.</li>
+<li><strong>traj_end</strong> – List of points.</li>
+<li><strong>r</strong> – Fraction of points in the region</li>
+<li><strong>q</strong> – Fraction of points in the region that are anomalous</li>
+<li><strong>region_plant_f</strong> – Scanning function to use to find the region (example max_disk)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Red planted set, blue planted set, and the planted region.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_disk">
+<code class="descclassname">pyscan.</code><code class="descname">plant_disk</code><span class="sig-paren">(</span><em>pts</em>, <em>r</em>, <em>p</em>, <em>q</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_disk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_disk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a set of red and blue points with a random disk planted containing r fraction of the points with
+q fraction of the points in the region being red and p fraction of the points outside of the region being red.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pts</strong> – List of points.</li>
+<li><strong>r</strong> – Fraction of points contained in the planted region</li>
+<li><strong>p</strong> – Fraction of points outside region that red.</li>
+<li><strong>q</strong> – Fraction of points inside region that are red.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">red set, blue set, planted region.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_full_disk">
+<code class="descclassname">pyscan.</code><code class="descname">plant_full_disk</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>disc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_full_disk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_full_disk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose a point at random from a trajectory and then expand outward from there until we find a disk contains r fraction
+of the trajectories.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>trajectories</strong> – List of trajectories</li>
+<li><strong>r</strong> – Fraction of trajectories in region.</li>
+<li><strong>p</strong> – Fraction of red trajectories outside of region.</li>
+<li><strong>q</strong> – Fraction of red trajectories inside of region.</li>
+<li><strong>disc</strong> – Discrepancy function to measure exactly on region.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">red set, blue set, planted disk, maximum discrepancy.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_full_halfplane">
+<code class="descclassname">pyscan.</code><code class="descname">plant_full_halfplane</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>disc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_full_halfplane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_full_halfplane" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose a random direction and then finds a halfplane with this normal containing r fraction of the total trajectories.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>trajectories</strong> – List of list of points.</li>
+<li><strong>r</strong> – Fraction of trajectories in region.</li>
+<li><strong>p</strong> – Fraction of red trajectories outside of region.</li>
+<li><strong>q</strong> – Fraction of red trajectories inside of region.</li>
+<li><strong>disc</strong> – Discrepancy function to measure exactly on region.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">red set of trajectories, blue set of trajectories, planted region, discrepancy function value.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_full_square">
+<code class="descclassname">pyscan.</code><code class="descname">plant_full_square</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>disc</em>, <em>max_count=32</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_full_square"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_full_square" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose a point at random from a trajectory and then expand a square out from this point till this region contains
+r fraction of all the trajectories.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>trajectories</strong> – List of list of points.</li>
+<li><strong>r</strong> – double between 0 and 1</li>
+<li><strong>p</strong> – double between 0 and 1</li>
+<li><strong>q</strong> – double between 0 and 1</li>
+<li><strong>disc</strong> – The discrepancy function to evaluate exactly on this region.</li>
+<li><strong>max_count</strong> – The maximum number of times we will attempt to find the right sized region.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">red set of trajectories, blue set of trajectories, the planted region, and the exact partial discrepancy.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_halfplane">
+<code class="descclassname">pyscan.</code><code class="descname">plant_halfplane</code><span class="sig-paren">(</span><em>pts</em>, <em>r</em>, <em>p</em>, <em>q</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_halfplane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_halfplane" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a set of red and blue points with a random halfplane planted containing r fraction of the points with
+q fraction of the points in the region being red and p fraction of the points outside of the region being red.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pts</strong> – List of points</li>
+<li><strong>r</strong> – Fraction of points contained in the planted region</li>
+<li><strong>p</strong> – Fraction of points outside region that red.</li>
+<li><strong>q</strong> – Fraction of points inside region that are red.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">red set, blue set, planted region.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_partial_disk">
+<code class="descclassname">pyscan.</code><code class="descname">plant_partial_disk</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>eps</em>, <em>disc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_partial_disk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_partial_disk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose a point at random from a trajectory and then expand outward from there. Computes the fraction of length inside the disk
+for each segment and then does bisection on this amount since it is a monotonic function to compute within eps fraction.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>trajectories</strong> – List of list of points.</li>
+<li><strong>r</strong> – double between 0 and 1</li>
+<li><strong>p</strong> – double between 0 and 1</li>
+<li><strong>q</strong> – double between 0 and 1</li>
+<li><strong>eps</strong> – This defines the maximum difference between r and the fraction of the trajectories that are in the found region.</li>
+<li><strong>disc</strong> – The discrepancy function to evaluate exactly on this region.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">red set of trajectories, blue set of trajectories, the planted region, and the exact partial discrepancy.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_partial_halfplane">
+<code class="descclassname">pyscan.</code><code class="descname">plant_partial_halfplane</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>eps</em>, <em>disc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_partial_halfplane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_partial_halfplane" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose a random direction and expand the region along this direction till we contain r fraction of the total
+trajectory arc length.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>trajectories</strong> – List of list of points.</li>
+<li><strong>r</strong> – double between 0 and 1</li>
+<li><strong>p</strong> – double between 0 and 1</li>
+<li><strong>q</strong> – double between 0 and 1</li>
+<li><strong>eps</strong> – This defines the maximum difference between r and the fraction of the trajectories that are in the found region.</li>
+<li><strong>disc</strong> – The discrepancy function to evaluate exactly on this region.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">red set of trajectories, blue set of trajectories, the planted region, and the exact partial discrepancy.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_partial_rectangle">
+<code class="descclassname">pyscan.</code><code class="descname">plant_partial_rectangle</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>eps</em>, <em>disc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_partial_rectangle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_partial_rectangle" title="Permalink to this definition">¶</a></dt>
+<dd><p>This plants a region containing r fraction of the total arc length of all trajectories. q fraction of the trajectories
+crossing this region are assigned to be anomalous and p fraction of trajectories not crossing this region are assigned
+to be anomalous.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>trajectories</strong> – List of list of points.</li>
+<li><strong>r</strong> – double between 0 and 1</li>
+<li><strong>p</strong> – double between 0 and 1</li>
+<li><strong>q</strong> – double between 0 and 1</li>
+<li><strong>eps</strong> – This defines the maximum difference between r and the fraction of the trajectories that are in the found region.</li>
+<li><strong>disc</strong> – The discrepancy function to evaluate exactly on this region.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">red set of trajectories, blue set of trajectories, the planted region, and the exact partial discrepancy.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_rectangle">
+<code class="descclassname">pyscan.</code><code class="descname">plant_rectangle</code><span class="sig-paren">(</span><em>pts</em>, <em>r</em>, <em>p</em>, <em>q</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_rectangle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_rectangle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a set of red and blue points with a random rectangle planted containing r fraction of the points with
+q fraction of the points in the region being red and p fraction of the points outside of the region being red.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pts</strong> – List of points.</li>
+<li><strong>r</strong> – Fraction of points contained in the planted region</li>
+<li><strong>p</strong> – Fraction of points outside region that red.</li>
+<li><strong>q</strong> – Fraction of points inside region that are red.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">red set, blue set, planted region.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_region">
+<code class="descclassname">pyscan.</code><code class="descname">plant_region</code><span class="sig-paren">(</span><em>points</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>eps</em>, <em>scan_f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>This takes a scanning function and two point sets and then computes a planted region that contains some fraction r
+of the points with some tolerance.
+This then computes a red and blue set of points based on the planted region.</p>
+<p>Inside the region q fraction of points are red.
+Outside the region p fraction of points are red</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>points</strong> – List of points.</li>
+<li><strong>r</strong> – Fraction of points inside the region.</li>
+<li><strong>p</strong> – Fraction of points outside the region that are red.</li>
+<li><strong>q</strong> – Fraction of points inside the region that are red.</li>
+<li><strong>eps</strong> – Difference between r and the fraction of points inside the region.</li>
+<li><strong>scan_f</strong> – The scan function to use (ex max_disk)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">red set, blue set, region planted.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.random_rect">
+<code class="descclassname">pyscan.</code><code class="descname">random_rect</code><span class="sig-paren">(</span><em>points</em>, <em>r</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#random_rect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.random_rect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plants a random rectangle containing r fraction of the points.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>points</strong> – List of points</li>
+<li><strong>r</strong> – Fraction of points inside of planted region.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">The planted region.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_halfplane">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_halfplane</code><span class="sig-paren">(</span><em>reg</em>, <em>mpts</em>, <em>bpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_halfplane" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_halfplane_labeled">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_halfplane_labeled</code><span class="sig-paren">(</span><em>reg</em>, <em>lmpts</em>, <em>lbpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_halfplane_labeled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_halfplane_trajectory">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_halfplane_trajectory</code><span class="sig-paren">(</span><em>reg</em>, <em>mtrajs</em>, <em>btrajs</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_halfplane_trajectory" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_disk">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_disk</code><span class="sig-paren">(</span><em>reg</em>, <em>mpts</em>, <em>bpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_disk" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_disk_alt">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_disk_alt</code><span class="sig-paren">(</span><em>reg</em>, <em>mpts</em>, <em>bpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_disk_alt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_disk_labeled">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_disk_labeled</code><span class="sig-paren">(</span><em>reg</em>, <em>lmpts</em>, <em>lbpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_disk_labeled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_disk_trajectory">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_disk_trajectory</code><span class="sig-paren">(</span><em>reg</em>, <em>mtrajs</em>, <em>btrajs</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_disk_trajectory" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_rectangle">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_rectangle</code><span class="sig-paren">(</span><em>reg</em>, <em>mpts</em>, <em>bpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_rectangle" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_rectangle_labeled">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_rectangle_labeled</code><span class="sig-paren">(</span><em>reg</em>, <em>lmpts</em>, <em>lbpts</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_rectangle_labeled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate_rectangle_trajectory">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate_rectangle_trajectory</code><span class="sig-paren">(</span><em>reg</em>, <em>mtrajs</em>, <em>btrajs</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate_rectangle_trajectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>These functions can be used to evaluate different regions on different kinds of data sets.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.size_region">
+<code class="descclassname">pyscan.</code><code class="descname">size_region</code><span class="sig-paren">(</span><em>fraction</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.size_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a discrepancy function that can be used to find a region containing a certain fraction of the points.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fraction</strong> – A double between 0 and 1.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">A discrepancy function.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.evaluate">
+<code class="descclassname">pyscan.</code><code class="descname">evaluate</code><span class="sig-paren">(</span><em>disc_f</em>, <em>m</em>, <em>m_total</em>, <em>b</em>, <em>b_total</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd><p>A utility function for explicitly evaluating a discrepancy function object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>disc_f</strong> – A double between 0 and 1.</li>
+<li><strong>m</strong> – A double between 0 and m_total</li>
+<li><strong>m_total</strong> – A double.</li>
+<li><strong>b</strong> – A double between 0 and b_total.</li>
+<li><strong>b_total</strong> – A double.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">A double returned by the discrepancy function.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="_sources/python_utility.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2019, Michael Matheny.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

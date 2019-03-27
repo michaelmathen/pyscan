@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pyscan &#8212; pyscan 1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootswatch-3.3.6/cosmo/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html"><span><img src="../_static/NetRange.png"></span>
+          pyscan</a>
+        <span class="navbar-text navbar-version pull-left"><b>1.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../installation.html">Installation</a></li>
+                <li><a href="../api.html">API</a></li>
+                <li><a href="../examples.html">Examples</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">Api</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../point.html">Point</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../range.html">Ranges</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scanning.html">Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scanning.html#labeled-scanning">Labeled Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python_utility.html">Utility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/BasicExample.html">Planting Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/PhillyCrime.html">Philadelphia Crime Data Example</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/PhillyCrime.html#Reading-the-Data">Reading the Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/PhillyCrime.html#Subsampling">Subsampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/PhillyCrime.html#Disk-Scanning">Disk Scanning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/PhillyCrime.html#Rectangle-Scanning">Rectangle Scanning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/RegionSimplification.html">Region Simplification</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/RegionSimplification.html#Halfplane-Compression">Halfplane Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/RegionSimplification.html#Disk(or-Rectangle)-Compression">Disk(or Rectangle) Compression</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/RegionScanning.html">Region Scanning</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12 content">
+      
+  <h1>Source code for pyscan</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">libpyscan</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">libpyscan</span> <span class="k">as</span> <span class="nn">lp</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+
+
+<span class="k">def</span> <span class="nf">to_weighted</span><span class="p">(</span><span class="n">points</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">WPoint</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">points</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">trajectories_to_flux</span><span class="p">(</span><span class="n">trajectories</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">],</span> <span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">trajectories_to_labels</span><span class="p">(</span><span class="n">trajectories</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">([[</span><span class="n">LPoint</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">traj</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">traj</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)),</span> <span class="n">trajectories</span><span class="p">)])</span>
+
+
+<span class="k">def</span> <span class="nf">my_sample</span><span class="p">(</span><span class="n">samp</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">samp</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">samp</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">count</span> <span class="o">+</span> <span class="o">.</span><span class="mi">5</span><span class="p">)))</span>
+
+
+<div class="viewcode-block" id="evaluate_range"><a class="viewcode-back" href="../python_utility.html#pyscan.evaluate_range">[docs]</a><span class="k">def</span> <span class="nf">evaluate_range</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluates this range to compute the total discrepancy over a set of points.</span>
+
+<span class="sd">    :param range: Some arbitrary range.</span>
+<span class="sd">    :param mp: measured set</span>
+<span class="sd">    :param bp: baseline set</span>
+<span class="sd">    :param disc_f: Discrepancy function.</span>
+<span class="sd">    :return: Discrepancy function value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">mp</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">bp</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">disc_f</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">mp</span><span class="p">:</span>
+        <span class="n">pt_obj</span> <span class="o">=</span> <span class="n">bp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pt_obj</span> <span class="o">=</span> <span class="n">mp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pt_obj</span><span class="p">,</span> <span class="n">LPoint</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Disk</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">evaluate_disk_labeled</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Halfplane</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">evaluate_disk_labeled</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Rectangle</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">evaluate_rectangle_labeled</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pt_obj</span><span class="p">,</span> <span class="n">WPoint</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Disk</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">evaluate_disk</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Halfplane</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">evaluate_halfplane</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Rectangle</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">evaluate_rectangle</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="evaluate_range_trajectory"><a class="viewcode-back" href="../python_utility.html#pyscan.evaluate_range_trajectory">[docs]</a><span class="k">def</span> <span class="nf">evaluate_range_trajectory</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluates this range to compute the total discrepancy over a set of trajectories.</span>
+
+<span class="sd">    :param range: Some arbitrary range.</span>
+<span class="sd">    :param mp: measured set</span>
+<span class="sd">    :param bp: baseline set</span>
+<span class="sd">    :param disc_f: Discrepancy function.</span>
+<span class="sd">    :return: Discrepancy function value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">mp</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">bp</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">disc_f</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Disk</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">evaluate_disk_trajectory</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Halfplane</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">evaluate_halfplane_trajectory</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">Rectangle</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">evaluate_rectangle_trajectory</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">disc_f</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">()</span></div>
+
+
+<span class="k">def</span> <span class="nf">split_set</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">rate</span><span class="p">):</span>
+    <span class="n">red_set</span> <span class="o">=</span> <span class="n">my_sample</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span> <span class="o">*</span> <span class="n">rate</span><span class="p">)</span>
+    <span class="n">red_set_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">red_set</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">red_set</span><span class="p">,</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">pts</span> <span class="k">if</span> <span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">red_set_set</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="plant_region"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_region">[docs]</a><span class="k">def</span> <span class="nf">plant_region</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">scan_f</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This takes a scanning function and two point sets and then computes a planted region that contains some fraction r</span>
+<span class="sd">    of the points with some tolerance.</span>
+<span class="sd">    This then computes a red and blue set of points based on the planted region.</span>
+
+<span class="sd">    Inside the region q fraction of points are red.</span>
+<span class="sd">    Outside the region p fraction of points are red</span>
+
+<span class="sd">    :param points: List of points.</span>
+<span class="sd">    :param r: Fraction of points inside the region.</span>
+<span class="sd">    :param p: Fraction of points outside the region that are red.</span>
+<span class="sd">    :param q: Fraction of points inside the region that are red.</span>
+<span class="sd">    :param eps: Difference between r and the fraction of points inside the region.</span>
+<span class="sd">    :param scan_f: The scan function to use (ex max_disk)</span>
+<span class="sd">    :return: red set, blue set, region planted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+
+        <span class="n">net_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="nb">min</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">eps</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">s_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="nb">min</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">eps</span><span class="p">)</span><span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">net</span> <span class="o">=</span> <span class="n">my_sample</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">net_size</span><span class="p">)</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">my_sample</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">s_size</span><span class="p">)</span>
+        <span class="n">disc</span> <span class="o">=</span> <span class="n">size_region</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">reg</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">scan_f</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="p">[],</span> <span class="n">disc</span><span class="p">)</span>
+
+        <span class="n">val</span> <span class="o">=</span> <span class="n">evaluate_range</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="p">[],</span> <span class="n">disc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="n">eps</span><span class="p">:</span>
+            <span class="k">break</span>
+
+    <span class="n">in_region</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">out_region</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">pts</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">reg</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">pt</span><span class="p">):</span>
+            <span class="n">in_region</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">out_region</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+
+    <span class="n">red_in</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">in_region</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+
+    <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_out</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">out_region</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">reg</span></div>
+
+
+<div class="viewcode-block" id="plant_full_square"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_full_square">[docs]</a><span class="k">def</span> <span class="nf">plant_full_square</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">disc</span><span class="p">,</span> <span class="n">max_count</span><span class="o">=</span><span class="mi">32</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Choose a point at random from a trajectory and then expand a square out from this point till this region contains</span>
+<span class="sd">    r fraction of all the trajectories.</span>
+
+<span class="sd">    :param trajectories: List of list of points.</span>
+<span class="sd">    :param r: double between 0 and 1</span>
+<span class="sd">    :param p: double between 0 and 1</span>
+<span class="sd">    :param q: double between 0 and 1</span>
+<span class="sd">    :param disc: The discrepancy function to evaluate exactly on this region.</span>
+<span class="sd">    :param max_count: The maximum number of times we will attempt to find the right sized region.</span>
+<span class="sd">    :return: red set of trajectories, blue set of trajectories, the planted region, and the exact partial discrepancy.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">trajectories</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">traj</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">traj</span><span class="p">:</span>
+        <span class="n">count</span><span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">traj</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">seed_pt</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span>
+    <span class="n">upper_bound</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">lower_bound</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">num</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">num</span> <span class="o">&lt;</span> <span class="n">max_count</span><span class="p">:</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">upper_bound</span> <span class="o">+</span> <span class="n">lower_bound</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">reg</span> <span class="o">=</span> <span class="n">Rectangle</span><span class="p">(</span><span class="n">seed_pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">size</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">seed_pt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">size</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">seed_pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">size</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">seed_pt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">size</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span> <span class="k">if</span> <span class="n">reg</span><span class="o">.</span><span class="n">intersects_trajectory</span><span class="p">(</span><span class="n">Trajectory</span><span class="p">(</span><span class="n">traj</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">count</span> <span class="o">-</span> <span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">trajectories</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="k">if</span> <span class="n">count</span> <span class="o">-</span> <span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">upper_bound</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lower_bound</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="n">num</span> <span class="o">+=</span> <span class="mi">1</span>
+
+
+    <span class="n">inside_rect</span> <span class="o">=</span> <span class="p">[</span><span class="n">traj</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span> <span class="k">if</span> <span class="n">reg</span><span class="o">.</span><span class="n">intersects_trajectory</span><span class="p">(</span><span class="n">Trajectory</span><span class="p">(</span><span class="n">traj</span><span class="p">))]</span>
+    <span class="n">red_in</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">([</span><span class="nb">tuple</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">inside_rect</span><span class="p">],</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">outside_rect</span> <span class="o">=</span> <span class="p">[</span><span class="n">traj</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">reg</span><span class="o">.</span><span class="n">intersects_trajectory</span><span class="p">(</span><span class="n">Trajectory</span><span class="p">(</span><span class="n">traj</span><span class="p">))]</span>
+    <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_out</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">([</span><span class="nb">tuple</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">outside_rect</span><span class="p">],</span> <span class="n">p</span><span class="p">)</span>
+
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">disc</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_in</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_in</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_out</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_in</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_in</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_out</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">diff</span></div>
+
+
+
+<div class="viewcode-block" id="plant_full_halfplane"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_full_halfplane">[docs]</a><span class="k">def</span> <span class="nf">plant_full_halfplane</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">disc</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Choose a random direction and then finds a halfplane with this normal containing r fraction of the total trajectories.</span>
+
+<span class="sd">    :param trajectories: List of list of points.</span>
+<span class="sd">    :param r: Fraction of trajectories in region.</span>
+<span class="sd">    :param p: Fraction of red trajectories outside of region.</span>
+<span class="sd">    :param q: Fraction of red trajectories inside of region.</span>
+<span class="sd">    :param disc: Discrepancy function to measure exactly on region.</span>
+<span class="sd">    :return: red set of trajectories, blue set of trajectories, planted region, discrepancy function value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">min_distance</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">direc</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">min</span><span class="p">([</span><span class="n">direc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">direc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">pts</span><span class="p">])</span>
+    <span class="n">rand_direc</span> <span class="o">=</span> <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">gauss</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">random</span><span class="o">.</span><span class="n">gauss</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">trajectories</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">min_distance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">rand_direc</span><span class="p">))</span>
+
+    <span class="n">pt</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">trajectories</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">trajectories</span><span class="p">))],</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">pt</span><span class="p">:</span> <span class="n">rand_direc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">rand_direc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">lc</span> <span class="o">=</span> <span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">rand_direc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">rand_direc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">plant_region</span> <span class="o">=</span> <span class="n">Halfplane</span><span class="p">(</span><span class="n">Point</span><span class="p">(</span><span class="n">rand_direc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rand_direc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="n">lc</span><span class="p">))</span>
+
+    <span class="n">inside_plane</span> <span class="o">=</span> <span class="n">trajectories</span><span class="p">[:</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">trajectories</span><span class="p">))]</span>
+    <span class="n">outside_plane</span> <span class="o">=</span> <span class="n">trajectories</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)):]</span>
+    <span class="n">red_in</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">([</span><span class="nb">tuple</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">inside_plane</span><span class="p">],</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_out</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">([</span><span class="nb">tuple</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">outside_plane</span><span class="p">],</span> <span class="n">p</span><span class="p">)</span>
+
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">disc</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_in</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_in</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_out</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_in</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_in</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_out</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">plant_region</span><span class="p">,</span> <span class="n">diff</span></div>
+
+
+<div class="viewcode-block" id="plant_partial_halfplane"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_partial_halfplane">[docs]</a><span class="k">def</span> <span class="nf">plant_partial_halfplane</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">disc</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Choose a random direction and expand the region along this direction till we contain r fraction of the total</span>
+<span class="sd">    trajectory arc length.</span>
+
+<span class="sd">    :param trajectories: List of list of points.</span>
+<span class="sd">    :param r: double between 0 and 1</span>
+<span class="sd">    :param p: double between 0 and 1</span>
+<span class="sd">    :param q: double between 0 and 1</span>
+<span class="sd">    :param eps: This defines the maximum difference between r and the fraction of the trajectories that are in the found region.</span>
+<span class="sd">    :param disc: The discrepancy function to evaluate exactly on this region.</span>
+<span class="sd">    :return: red set of trajectories, blue set of trajectories, the planted region, and the exact partial discrepancy.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">min_distance</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">direc</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">direc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">direc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1">#so it always points down</span>
+    <span class="n">rand_direc</span> <span class="o">=</span> <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">gauss</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">gauss</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+
+    <span class="n">trajectory_obj</span> <span class="o">=</span> <span class="p">[</span><span class="n">Trajectory</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span> <span class="k">for</span> <span class="n">pts</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">]</span>
+    <span class="n">all_pts</span> <span class="o">=</span> <span class="n">uniform_sample</span><span class="p">(</span><span class="n">trajectory_obj</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">eps</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">all_pts</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">all_pts</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">min_distance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">rand_direc</span><span class="p">))</span>
+
+    <span class="n">pt</span> <span class="o">=</span> <span class="n">all_pts</span><span class="p">[</span><span class="nb">int</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">r</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_pts</span><span class="p">))]</span>
+    <span class="n">lc</span> <span class="o">=</span> <span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">rand_direc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">rand_direc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">plant_region</span> <span class="o">=</span> <span class="n">Halfplane</span><span class="p">(</span><span class="n">Point</span><span class="p">(</span><span class="n">rand_direc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rand_direc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="n">lc</span><span class="p">))</span>
+
+    <span class="n">inside_disk</span> <span class="o">=</span> <span class="p">[</span><span class="n">traj</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectory_obj</span> <span class="k">if</span> <span class="n">plant_region</span><span class="o">.</span><span class="n">intersects_trajectory</span><span class="p">(</span><span class="n">traj</span><span class="p">)]</span>
+    <span class="n">outside_disk</span> <span class="o">=</span> <span class="p">[</span><span class="n">traj</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectory_obj</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">plant_region</span><span class="o">.</span><span class="n">intersects_trajectory</span><span class="p">(</span><span class="n">traj</span><span class="p">)]</span>
+
+    <span class="n">red_in</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">inside_disk</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_out</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">outside_disk</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">disc</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_in</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_in</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_out</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_in</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_in</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_out</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">plant_region</span><span class="p">,</span> <span class="n">diff</span></div>
+
+
+<div class="viewcode-block" id="plant_full_disk"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_full_disk">[docs]</a><span class="k">def</span> <span class="nf">plant_full_disk</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">disc</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Choose a point at random from a trajectory and then expand outward from there until we find a disk contains r fraction</span>
+<span class="sd">    of the trajectories.</span>
+
+<span class="sd">    :param trajectories: List of trajectories</span>
+<span class="sd">    :param r: Fraction of trajectories in region.</span>
+<span class="sd">    :param p: Fraction of red trajectories outside of region.</span>
+<span class="sd">    :param q: Fraction of red trajectories inside of region.</span>
+<span class="sd">    :param disc: Discrepancy function to measure exactly on region.</span>
+<span class="sd">    :return: red set, blue set, planted disk, maximum discrepancy.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">origin</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)))</span>
+    <span class="n">trajectory_obj</span> <span class="o">=</span> <span class="p">[</span><span class="n">Trajectory</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span> <span class="k">for</span> <span class="n">pts</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">]</span>
+
+    <span class="n">trajectories</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">trajectory_obj</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">el</span><span class="p">:</span> <span class="n">el</span><span class="o">.</span><span class="n">point_dist</span><span class="p">(</span><span class="n">origin</span><span class="p">))</span>
+
+    <span class="n">inside_disk</span> <span class="o">=</span> <span class="n">trajectories</span><span class="p">[:</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">trajectories</span><span class="p">))]</span>
+    <span class="n">outside_disk</span> <span class="o">=</span> <span class="n">trajectories</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)):]</span>
+
+    <span class="n">max_disk</span> <span class="o">=</span> <span class="n">Disk</span><span class="p">(</span><span class="n">origin</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">origin</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">inside_disk</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">point_dist</span><span class="p">(</span><span class="n">origin</span><span class="p">))</span>
+
+    <span class="n">red_in</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">([</span><span class="nb">tuple</span><span class="p">(</span><span class="n">traj</span><span class="o">.</span><span class="n">get_pts</span><span class="p">())</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">inside_disk</span><span class="p">],</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_out</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">([</span><span class="nb">tuple</span><span class="p">(</span><span class="n">traj</span><span class="o">.</span><span class="n">get_pts</span><span class="p">())</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">outside_disk</span><span class="p">],</span> <span class="n">p</span><span class="p">)</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">disc</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_in</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_in</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_out</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_in</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_in</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_out</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">max_disk</span><span class="p">,</span> <span class="n">diff</span></div>
+
+
+<div class="viewcode-block" id="plant_partial_disk"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_partial_disk">[docs]</a><span class="k">def</span> <span class="nf">plant_partial_disk</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">disc</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Choose a point at random from a trajectory and then expand outward from there. Computes the fraction of length inside the disk</span>
+<span class="sd">    for each segment and then does bisection on this amount since it is a monotonic function to compute within eps fraction.</span>
+
+<span class="sd">    :param trajectories: List of list of points.</span>
+<span class="sd">    :param r: double between 0 and 1</span>
+<span class="sd">    :param p: double between 0 and 1</span>
+<span class="sd">    :param q: double between 0 and 1</span>
+<span class="sd">    :param eps: This defines the maximum difference between r and the fraction of the trajectories that are in the found region.</span>
+<span class="sd">    :param disc: The discrepancy function to evaluate exactly on this region.</span>
+<span class="sd">    :return: red set of trajectories, blue set of trajectories, the planted region, and the exact partial discrepancy.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">origin_tuple</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)))</span>
+    <span class="n">origin</span> <span class="o">=</span> <span class="n">Point</span><span class="p">(</span><span class="n">origin_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">origin_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">trajectory_obj</span> <span class="o">=</span> <span class="p">[</span><span class="n">Trajectory</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span> <span class="k">for</span> <span class="n">pts</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">]</span>
+    <span class="n">all_pts</span> <span class="o">=</span> <span class="n">uniform_sample</span><span class="p">(</span><span class="n">trajectory_obj</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">eps</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">trajectories</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">all_pts</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">origin</span><span class="p">))</span>
+
+    <span class="n">disk_boundary</span> <span class="o">=</span> <span class="n">trajectories</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_pts</span><span class="p">))]</span>
+    <span class="n">max_disk</span> <span class="o">=</span> <span class="n">Disk</span><span class="p">(</span><span class="n">origin</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">origin</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">origin</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">disk_boundary</span><span class="p">))</span>
+    <span class="n">inside_disk</span> <span class="o">=</span> <span class="p">[</span><span class="n">traj</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectory_obj</span> <span class="k">if</span> <span class="n">max_disk</span><span class="o">.</span><span class="n">intersects_trajectory</span><span class="p">(</span><span class="n">traj</span><span class="p">)]</span>
+    <span class="n">outside_disk</span> <span class="o">=</span> <span class="p">[</span><span class="n">traj</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectory_obj</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">max_disk</span><span class="o">.</span><span class="n">intersects_trajectory</span><span class="p">(</span><span class="n">traj</span><span class="p">)]</span>
+
+    <span class="n">red_in</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">inside_disk</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_out</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">outside_disk</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">disc</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_in</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_in</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_out</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_in</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_in</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_out</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">max_disk</span><span class="p">,</span> <span class="n">diff</span></div>
+
+
+<span class="k">def</span> <span class="nf">distribution</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">scan_f</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">disc</span><span class="o">=</span><span class="n">DISC</span><span class="p">):</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">red</span><span class="p">,</span> <span class="n">blue</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+
+        <span class="n">net_set</span> <span class="o">=</span> <span class="n">my_sample</span><span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">red</span><span class="p">),</span> <span class="n">n</span><span class="p">))</span> <span class="o">+</span> <span class="n">my_sample</span><span class="p">(</span><span class="n">blue</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">blue</span><span class="p">),</span> <span class="n">n</span><span class="p">))</span>
+        <span class="n">m_sample</span> <span class="o">=</span> <span class="n">my_sample</span><span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">red</span><span class="p">),</span> <span class="n">s</span><span class="p">),</span> <span class="n">red</span><span class="p">)</span>
+        <span class="n">b_sample</span> <span class="o">=</span> <span class="n">my_sample</span><span class="p">(</span><span class="n">blue</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">blue</span><span class="p">),</span> <span class="n">s</span><span class="p">),</span> <span class="n">blue</span><span class="p">)</span>
+        <span class="n">reg</span><span class="p">,</span> <span class="n">val</span> <span class="o">=</span> <span class="n">scan_f</span><span class="p">(</span><span class="n">net_set</span><span class="p">,</span> <span class="n">m_sample</span><span class="p">,</span> <span class="n">b_sample</span><span class="p">,</span> <span class="n">disc</span><span class="p">)</span>
+
+        <span class="k">yield</span> <span class="n">val</span>
+
+
+<span class="k">def</span> <span class="nf">null_cdf</span><span class="p">(</span><span class="n">observations</span><span class="p">):</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">observations</span><span class="p">)</span>
+    <span class="n">prob</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">observations</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">observations</span><span class="p">))]</span>
+    <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">prob</span>
+
+
+<div class="viewcode-block" id="random_rect"><a class="viewcode-back" href="../python_utility.html#pyscan.random_rect">[docs]</a><span class="k">def</span> <span class="nf">random_rect</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plants a random rectangle containing r fraction of the points.</span>
+
+<span class="sd">    :param points: List of points</span>
+<span class="sd">    :param r: Fraction of points inside of planted region.</span>
+<span class="sd">    :return: The planted region.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">bBox</span><span class="p">(</span><span class="o">*</span><span class="n">bb</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="o">*</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">pt</span><span class="p">:</span> <span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bb</span><span class="p">)),</span>
+                <span class="nb">max</span><span class="p">(</span><span class="o">*</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">pt</span><span class="p">:</span> <span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bb</span><span class="p">)),</span>
+                <span class="nb">min</span><span class="p">(</span><span class="o">*</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">pt</span><span class="p">:</span> <span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">bb</span><span class="p">)),</span>
+                <span class="nb">max</span><span class="p">(</span><span class="o">*</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">pt</span><span class="p">:</span> <span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">bb</span><span class="p">)))</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="p">[</span><span class="n">pt1</span><span class="p">,</span> <span class="n">pt2</span><span class="p">]</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">minX</span><span class="p">,</span> <span class="n">maxX</span><span class="p">,</span> <span class="n">minY</span><span class="p">,</span> <span class="n">maxY</span><span class="p">)</span> <span class="o">=</span> <span class="n">bBox</span><span class="p">(</span><span class="n">pt1</span><span class="p">,</span> <span class="n">pt2</span><span class="p">)</span>
+            <span class="n">fx</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">pt</span><span class="p">:</span> <span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">fy</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">pt</span><span class="p">:</span> <span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fx</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">pt</span><span class="p">:</span> <span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">fy</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">pt</span><span class="p">:</span> <span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">(</span><span class="n">minY</span><span class="p">,</span> <span class="n">maxY</span><span class="p">,</span> <span class="n">minX</span><span class="p">,</span> <span class="n">maxX</span><span class="p">)</span> <span class="o">=</span> <span class="n">bBox</span><span class="p">(</span><span class="n">pt1</span><span class="p">,</span> <span class="n">pt2</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">sf</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">pt</span><span class="p">:</span> <span class="n">fx</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sf</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">pt</span><span class="p">:</span> <span class="o">-</span><span class="n">fx</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+            <span class="n">minX</span><span class="p">,</span> <span class="n">maxX</span> <span class="o">=</span> <span class="n">maxX</span><span class="p">,</span> <span class="n">minX</span>
+
+        <span class="n">subPoints</span> <span class="o">=</span> <span class="p">[</span><span class="n">pt</span> <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">points</span> <span class="k">if</span> <span class="n">minY</span> <span class="o">&lt;=</span> <span class="n">fy</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span> <span class="ow">and</span> <span class="n">fy</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">maxY</span><span class="p">]</span>
+        <span class="c1"># Make a pass through the data and find the lower and upper bound.</span>
+        <span class="n">inB</span> <span class="o">=</span> <span class="p">[</span><span class="n">pt</span> <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">subPoints</span> <span class="k">if</span> <span class="n">minX</span> <span class="o">&lt;=</span> <span class="n">fx</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span> <span class="ow">and</span> <span class="n">fx</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">maxX</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>  <span class="c1"># random.randint(0, 1) == 0:</span>
+            <span class="n">ab</span> <span class="o">=</span> <span class="p">[</span><span class="n">pt</span> <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">subPoints</span> <span class="k">if</span> <span class="n">maxX</span> <span class="o">&lt;</span> <span class="n">fx</span><span class="p">(</span><span class="n">pt</span><span class="p">)]</span>
+            <span class="n">ab</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="o">-</span><span class="n">sf</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ab</span> <span class="o">=</span> <span class="p">[</span><span class="n">pt</span> <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">subPoints</span> <span class="k">if</span> <span class="n">fx</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">minX</span><span class="p">]</span>
+            <span class="n">ab</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">sf</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">ab</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inB</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">+</span> <span class="o">.</span><span class="mi">5</span><span class="p">):</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inB</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">+</span> <span class="o">.</span><span class="mi">5</span><span class="p">):</span>
+                <span class="p">(</span><span class="n">lx</span><span class="p">,</span> <span class="n">ux</span><span class="p">,</span> <span class="n">ly</span><span class="p">,</span> <span class="n">uy</span><span class="p">)</span> <span class="o">=</span> <span class="n">bBox</span><span class="p">(</span><span class="o">*</span><span class="n">inB</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">Rectangle</span><span class="p">(</span><span class="n">ux</span><span class="p">,</span> <span class="n">uy</span><span class="p">,</span> <span class="n">lx</span><span class="p">,</span> <span class="n">ly</span><span class="p">)</span>
+            <span class="n">el</span> <span class="o">=</span> <span class="n">ab</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="n">inB</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">el</span><span class="p">)</span>
+            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">ab</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">sf</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="o">==</span> <span class="n">sf</span><span class="p">(</span><span class="n">ab</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">el</span> <span class="o">=</span> <span class="n">ab</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                <span class="n">inB</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">el</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="plant_rectangle"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_rectangle">[docs]</a><span class="k">def</span> <span class="nf">plant_rectangle</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a set of red and blue points with a random rectangle planted containing r fraction of the points with</span>
+<span class="sd">    q fraction of the points in the region being red and p fraction of the points outside of the region being red.</span>
+
+<span class="sd">    :param pts: List of points.</span>
+<span class="sd">    :param r: Fraction of points contained in the planted region</span>
+<span class="sd">    :param p: Fraction of points outside region that red.</span>
+<span class="sd">    :param q: Fraction of points inside region that are red.</span>
+<span class="sd">    :return: red set, blue set, planted region.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">rect</span> <span class="o">=</span> <span class="n">random_rect</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+
+    <span class="n">inside_rect</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">outside_rect</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">pts</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">rect</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">pt</span><span class="p">):</span>
+            <span class="n">inside_rect</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">outside_rect</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+
+    <span class="n">red_in</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">inside_rect</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_out</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">outside_rect</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">rect</span></div>
+
+
+<div class="viewcode-block" id="plant_disk"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_disk">[docs]</a><span class="k">def</span> <span class="nf">plant_disk</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a set of red and blue points with a random disk planted containing r fraction of the points with</span>
+<span class="sd">    q fraction of the points in the region being red and p fraction of the points outside of the region being red.</span>
+
+<span class="sd">    :param pts: List of points.</span>
+<span class="sd">    :param r: Fraction of points contained in the planted region</span>
+<span class="sd">    :param p: Fraction of points outside region that red.</span>
+<span class="sd">    :param q: Fraction of points inside region that are red.</span>
+<span class="sd">    :return: red set, blue set, planted region.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">selected</span> <span class="o">=</span> <span class="n">my_sample</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">selected</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">origin</span> <span class="o">=</span> <span class="n">selected</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">ordered</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">origin</span><span class="p">))</span>
+    <span class="n">disk_boundary</span> <span class="o">=</span> <span class="n">ordered</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">ordered</span><span class="p">))]</span>
+    <span class="n">max_disk</span> <span class="o">=</span> <span class="n">Disk</span><span class="p">(</span><span class="n">origin</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">origin</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">origin</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">disk_boundary</span><span class="p">))</span>
+
+    <span class="n">inside_disk</span> <span class="o">=</span> <span class="n">ordered</span><span class="p">[:</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">ordered</span><span class="p">))]</span>
+    <span class="n">outside_disk</span> <span class="o">=</span> <span class="n">ordered</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">ordered</span><span class="p">)):]</span>
+
+    <span class="n">red_in</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">inside_disk</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_out</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">outside_disk</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">max_disk</span></div>
+
+
+<div class="viewcode-block" id="plant_halfplane"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_halfplane">[docs]</a><span class="k">def</span> <span class="nf">plant_halfplane</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a set of red and blue points with a random halfplane planted containing r fraction of the points with</span>
+<span class="sd">    q fraction of the points in the region being red and p fraction of the points outside of the region being red.</span>
+
+<span class="sd">    :param pts: List of points</span>
+<span class="sd">    :param r: Fraction of points contained in the planted region</span>
+<span class="sd">    :param p: Fraction of points outside region that red.</span>
+<span class="sd">    :param q: Fraction of points inside region that are red.</span>
+<span class="sd">    :return: red set, blue set, planted region.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">min_distance</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">direc</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">direc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">direc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> 
+    <span class="n">rand_direc</span> <span class="o">=</span> <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">gauss</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="nb">abs</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">gauss</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+
+    <span class="n">ordered</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">min_distance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">rand_direc</span><span class="p">))</span>
+    <span class="n">inside_halfplane</span> <span class="o">=</span> <span class="n">ordered</span><span class="p">[:</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">ordered</span><span class="p">))]</span>
+    <span class="n">outside_halfplane</span> <span class="o">=</span> <span class="n">ordered</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">ordered</span><span class="p">)):]</span>
+
+    <span class="n">pt</span> <span class="o">=</span> <span class="n">ordered</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">ordered</span><span class="p">))]</span>
+    <span class="n">lc</span> <span class="o">=</span> <span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">rand_direc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">rand_direc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+
+    <span class="n">plant_region</span> <span class="o">=</span> <span class="n">Halfplane</span><span class="p">(</span><span class="n">Point</span><span class="p">(</span><span class="o">-</span><span class="n">rand_direc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="n">rand_direc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">lc</span><span class="p">))</span>
+
+    <span class="n">red_in</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">inside_halfplane</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_out</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">outside_halfplane</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">plant_region</span></div>
+
+
+<div class="viewcode-block" id="plant_partial_rectangle"><a class="viewcode-back" href="../python_utility.html#pyscan.plant_partial_rectangle">[docs]</a><span class="k">def</span> <span class="nf">plant_partial_rectangle</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">disc</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This plants a region containing r fraction of the total arc length of all trajectories. q fraction of the trajectories</span>
+<span class="sd">    crossing this region are assigned to be anomalous and p fraction of trajectories not crossing this region are assigned</span>
+<span class="sd">    to be anomalous.</span>
+
+<span class="sd">    :param trajectories: List of list of points.</span>
+<span class="sd">    :param r: double between 0 and 1</span>
+<span class="sd">    :param p: double between 0 and 1</span>
+<span class="sd">    :param q: double between 0 and 1</span>
+<span class="sd">    :param eps: This defines the maximum difference between r and the fraction of the trajectories that are in the found region.</span>
+<span class="sd">    :param disc: The discrepancy function to evaluate exactly on this region.</span>
+<span class="sd">    :return: red set of trajectories, blue set of trajectories, the planted region, and the exact partial discrepancy.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trajectory_obj</span> <span class="o">=</span> <span class="p">[</span><span class="n">Trajectory</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span> <span class="k">for</span> <span class="n">pts</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">]</span>
+    <span class="n">all_pts</span> <span class="o">=</span> <span class="n">uniform_sample</span><span class="p">(</span><span class="n">trajectory_obj</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">eps</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">rect</span> <span class="o">=</span> <span class="n">plant_rectangle</span><span class="p">(</span><span class="n">all_pts</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">inside_rect</span> <span class="o">=</span> <span class="p">[</span><span class="n">traj</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectory_obj</span> <span class="k">if</span> <span class="n">rect</span><span class="o">.</span><span class="n">intersects_trajectory</span><span class="p">(</span><span class="n">traj</span><span class="p">)]</span>
+    <span class="n">outside_rect</span> <span class="o">=</span> <span class="p">[</span><span class="n">traj</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectory_obj</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">rect</span><span class="o">.</span><span class="n">intersects_trajectory</span><span class="p">(</span><span class="n">traj</span><span class="p">)]</span>
+    <span class="n">red_in</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">inside_rect</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_out</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">outside_rect</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">disc</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_in</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_in</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">red_out</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_in</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_in</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">blue_out</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">red_in</span> <span class="o">+</span> <span class="n">red_out</span><span class="p">,</span> <span class="n">blue_in</span> <span class="o">+</span> <span class="n">blue_out</span><span class="p">,</span> <span class="n">rect</span><span class="p">,</span> <span class="n">diff</span></div>
+
+
+
+
+<div class="viewcode-block" id="paired_plant_region"><a class="viewcode-back" href="../python_utility.html#pyscan.paired_plant_region">[docs]</a><span class="k">def</span> <span class="nf">paired_plant_region</span><span class="p">(</span><span class="n">traj_start</span><span class="p">,</span> <span class="n">traj_end</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">region_plant_f</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This plants a region where every trajectory</span>
+<span class="sd">    completely outside or inside of the region has an endpoint chosen at random.</span>
+<span class="sd">    Every trajectory with one endpoint inside the region has an endpoint chosen inside</span>
+<span class="sd">    with probability q (exactly q fraction have one endpoint in the region)</span>
+<span class="sd">    traj_start and traj_end should be the same length.</span>
+
+<span class="sd">    :param traj_start: List of points.</span>
+<span class="sd">    :param traj_end: List of points.</span>
+<span class="sd">    :param r: Fraction of points in the region</span>
+<span class="sd">    :param q: Fraction of points in the region that are anomalous</span>
+<span class="sd">    :param region_plant_f: Scanning function to use to find the region (example max_disk)</span>
+<span class="sd">    :return: Red planted set, blue planted set, and the planted region.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">reg</span> <span class="o">=</span> <span class="n">region_plant_f</span><span class="p">(</span><span class="n">traj_start</span> <span class="o">+</span> <span class="n">traj_end</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="o">.</span><span class="mi">5</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+
+    <span class="n">flux_region</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">out_region</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">st_pt</span><span class="p">,</span> <span class="n">end_pt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">traj_start</span><span class="p">,</span> <span class="n">traj_end</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">reg</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">st_pt</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">reg</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">end_pt</span><span class="p">):</span>
+            <span class="n">flux_region</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">st_pt</span><span class="p">,</span> <span class="n">end_pt</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">reg</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">end_pt</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">reg</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">st_pt</span><span class="p">):</span>
+            <span class="n">flux_region</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">end_pt</span><span class="p">,</span> <span class="n">st_pt</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="o">.</span><span class="mi">5</span><span class="p">:</span>
+                <span class="n">out_region</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">st_pt</span><span class="p">,</span> <span class="n">end_pt</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">out_region</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">end_pt</span><span class="p">,</span> <span class="n">st_pt</span><span class="p">))</span>
+
+
+    <span class="n">q_fraction</span><span class="p">,</span> <span class="n">remainder</span> <span class="o">=</span> <span class="n">split_set</span><span class="p">(</span><span class="n">flux_region</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">remainder</span> <span class="o">=</span> <span class="p">[(</span><span class="n">ep</span><span class="p">,</span> <span class="n">sp</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="n">ep</span><span class="p">)</span> <span class="ow">in</span> <span class="n">remainder</span><span class="p">]</span>
+
+    <span class="n">red</span><span class="p">,</span> <span class="n">blue</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">q_fraction</span> <span class="o">+</span> <span class="n">remainder</span> <span class="o">+</span> <span class="n">out_region</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">red</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">reg</span></div>
+
+
+<div class="viewcode-block" id="max_disk_trajectory"><a class="viewcode-back" href="../python_utility.html#pyscan.max_disk_trajectory">[docs]</a><span class="k">def</span> <span class="nf">max_disk_trajectory</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">red_sample</span><span class="p">,</span> <span class="n">blue_sample</span><span class="p">,</span> <span class="n">min_disk_r</span><span class="p">,</span> <span class="n">max_disk_r</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">disc</span><span class="p">,</span> <span class="n">fast_disk</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the highest discrepancy disk over a set of trajectories. Executes at multiple scales using the grid</span>
+<span class="sd">    directional compression method and internally compresses the trajectories if fast_disk is enabled.</span>
+
+<span class="sd">    :param net: A list of trajectories (scaled to be in a 0 by 1 box).</span>
+<span class="sd">    :param red_sample: A list of trajectories (scaled to be in a 0 by 1 box).</span>
+<span class="sd">    :param blue_sample: A list of trajectories (scaled to be in a 0 by 1 box).</span>
+<span class="sd">    :param min_disk_r: The minimum disk radius to consider.</span>
+<span class="sd">    :param max_disk_r: The maximum disk radius to consider.</span>
+<span class="sd">    :param alpha: The spatial error with which to approximate the trajectories.</span>
+<span class="sd">    :param disc: The discrepancy function to use.</span>
+<span class="sd">    :param fast_disk: Default True.</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mx</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">curr_disk_r</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">min_disk_r</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="n">reg</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+
+        <span class="n">chord_l</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">curr_disk_r</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="n">m_sample</span> <span class="o">=</span> <span class="p">[</span><span class="n">grid_direc_kernel</span><span class="p">(</span><span class="n">dp_compress</span><span class="p">(</span><span class="n">traj</span><span class="p">,</span> <span class="n">alpha</span><span class="p">),</span> <span class="n">chord_l</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">red_sample</span><span class="p">]</span>
+        <span class="n">b_sample</span> <span class="o">=</span> <span class="p">[</span><span class="n">grid_direc_kernel</span><span class="p">(</span><span class="n">dp_compress</span><span class="p">(</span><span class="n">traj</span><span class="p">,</span> <span class="n">alpha</span><span class="p">),</span> <span class="n">chord_l</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">blue_sample</span><span class="p">]</span>
+        <span class="n">pt_net</span> <span class="o">=</span> <span class="p">[</span><span class="n">grid_direc_kernel</span><span class="p">(</span><span class="n">dp_compress</span><span class="p">(</span><span class="n">traj</span><span class="p">,</span> <span class="n">alpha</span><span class="p">),</span> <span class="n">chord_l</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">net</span><span class="p">]</span>
+        <span class="n">m_sample</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">trajectories_to_labels</span><span class="p">(</span><span class="n">m_sample</span><span class="p">))</span>
+        <span class="n">b_sample</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">trajectories_to_labels</span><span class="p">(</span><span class="n">b_sample</span><span class="p">))</span>
+        <span class="n">net_set</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">trajectories_to_labels</span><span class="p">(</span><span class="n">pt_net</span><span class="p">))</span>
+
+
+        <span class="n">new_reg</span><span class="p">,</span> <span class="n">new_mx</span> <span class="o">=</span> <span class="n">max_disk_scale_labeled</span><span class="p">(</span><span class="n">net_set</span><span class="p">,</span> <span class="n">m_sample</span><span class="p">,</span> <span class="n">b_sample</span><span class="p">,</span> <span class="n">fast_disk</span><span class="p">,</span> <span class="n">curr_disk_r</span><span class="p">,</span> <span class="n">disc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_mx</span> <span class="o">&gt;</span> <span class="n">mx</span><span class="p">:</span>
+            <span class="n">reg</span> <span class="o">=</span> <span class="n">new_reg</span>
+            <span class="n">mx</span> <span class="o">=</span> <span class="n">new_mx</span>
+        <span class="n">curr_disk_r</span> <span class="o">*=</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">curr_disk_r</span> <span class="o">&gt;=</span> <span class="n">max_disk_r</span><span class="p">:</span>
+            <span class="k">break</span>
+    <span class="k">return</span> <span class="n">reg</span><span class="p">,</span> <span class="n">mx</span></div>
+
+
+<div class="viewcode-block" id="max_disk_trajectory_fixed"><a class="viewcode-back" href="../python_utility.html#pyscan.max_disk_trajectory_fixed">[docs]</a><span class="k">def</span> <span class="nf">max_disk_trajectory_fixed</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">m_sample</span><span class="p">,</span> <span class="n">b_sample</span><span class="p">,</span> <span class="n">min_disk_r</span><span class="p">,</span> <span class="n">max_disk_r</span><span class="p">,</span>  <span class="n">disc</span><span class="p">,</span> <span class="n">fast_disk</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the highest discrepancy disk over a set of trajectories. Executes at multiple scales, but uses whatever set</span>
+<span class="sd">    of points the trajectories have been compressed with.</span>
+
+<span class="sd">    :param net: A list of trajectories (scaled to be in a 0 by 1 box).</span>
+<span class="sd">    :param m_sample: A list of trajectories (scaled to be in a 0 by 1 box).</span>
+<span class="sd">    :param b_sample: A list of trajectories (scaled to be in a 0 by 1 box).</span>
+<span class="sd">    :param min_disk_r: The minimum disk radius to consider.</span>
+<span class="sd">    :param max_disk_r: The maximum disk radius to consider.</span>
+<span class="sd">    :param disc: The discrepancy function to use.</span>
+<span class="sd">    :param fast_disk: Default True.</span>
+<span class="sd">    :return: A tuple of the maximum disk and the corresponding maximum value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mx</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">curr_disk_r</span> <span class="o">=</span> <span class="n">min_disk_r</span>
+    <span class="n">reg</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">while</span> <span class="n">curr_disk_r</span> <span class="o">&lt;</span> <span class="n">max_disk_r</span><span class="p">:</span>
+        <span class="n">new_reg</span><span class="p">,</span> <span class="n">new_mx</span> <span class="o">=</span> <span class="n">max_disk_scale_labeled</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">m_sample</span><span class="p">,</span> <span class="n">b_sample</span><span class="p">,</span> <span class="n">fast_disk</span><span class="p">,</span> <span class="n">curr_disk_r</span><span class="p">,</span> <span class="n">disc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_mx</span> <span class="o">&gt;</span> <span class="n">mx</span><span class="p">:</span>
+            <span class="n">reg</span> <span class="o">=</span> <span class="n">new_reg</span>
+            <span class="n">mx</span> <span class="o">=</span> <span class="n">new_mx</span>
+        <span class="n">curr_disk_r</span> <span class="o">*=</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">reg</span><span class="p">,</span> <span class="n">mx</span></div>
+
+
+<div class="viewcode-block" id="max_disk_region"><a class="viewcode-back" href="../python_utility.html#pyscan.max_disk_region">[docs]</a><span class="k">def</span> <span class="nf">max_disk_region</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">red_sample</span><span class="p">,</span> <span class="n">blue_sample</span><span class="p">,</span> <span class="n">min_disk_r</span><span class="p">,</span> <span class="n">max_disk_r</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">disc</span><span class="p">,</span> <span class="n">fast_disk</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the highest discrepancy disk over a set of trajectories. Executes at multiple scales using the grid</span>
+<span class="sd">    directional compression method and internally compresses the trajectories if fast_disk is enabled.</span>
+
+<span class="sd">    :param net: A list of trajectories</span>
+<span class="sd">    :param red_sample: A list of trajectories</span>
+<span class="sd">    :param blue_sample: A list of trajectories</span>
+<span class="sd">    :param min_disk_r: The minimum disk radius to consider.</span>
+<span class="sd">    :param max_disk_r: The maximum disk radius to consider.</span>
+<span class="sd">    :param alpha: The spatial error with which to approximate the trajectories.</span>
+<span class="sd">    :param disc: The discrepancy function to use.</span>
+<span class="sd">    :param fast_disk: Default True.</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mx</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">curr_disk_r</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">min_disk_r</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="n">reg</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+
+        <span class="n">chord_l</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">curr_disk_r</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="n">m_sample</span> <span class="o">=</span> <span class="p">[</span><span class="n">polygon_grid_hull</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">curr_disk_r</span><span class="p">)</span> <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="n">red_sample</span><span class="p">]</span>
+        <span class="n">b_sample</span> <span class="o">=</span> <span class="p">[</span><span class="n">polygon_grid_hull</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">curr_disk_r</span><span class="p">)</span> <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span>  <span class="n">blue_sample</span><span class="p">]</span>
+        <span class="n">pt_net</span> <span class="o">=</span> <span class="p">[</span><span class="n">polygon_grid_hull</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">curr_disk_r</span><span class="p">)</span> <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="n">net</span><span class="p">]</span>
+        <span class="n">m_sample</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">trajectories_to_labels</span><span class="p">(</span><span class="n">m_sample</span><span class="p">))</span>
+        <span class="n">b_sample</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">trajectories_to_labels</span><span class="p">(</span><span class="n">b_sample</span><span class="p">))</span>
+        <span class="n">net_set</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">trajectories_to_labels</span><span class="p">(</span><span class="n">pt_net</span><span class="p">))</span>
+
+
+        <span class="n">new_reg</span><span class="p">,</span> <span class="n">new_mx</span> <span class="o">=</span> <span class="n">max_disk_scale_labeled</span><span class="p">(</span><span class="n">net_set</span><span class="p">,</span> <span class="n">m_sample</span><span class="p">,</span> <span class="n">b_sample</span><span class="p">,</span> <span class="n">fast_disk</span><span class="p">,</span> <span class="n">curr_disk_r</span><span class="p">,</span> <span class="n">disc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_mx</span> <span class="o">&gt;</span> <span class="n">mx</span><span class="p">:</span>
+            <span class="n">reg</span> <span class="o">=</span> <span class="n">new_reg</span>
+            <span class="n">mx</span> <span class="o">=</span> <span class="n">new_mx</span>
+        <span class="n">curr_disk_r</span> <span class="o">*=</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">curr_disk_r</span> <span class="o">&gt;=</span> <span class="n">max_disk_r</span><span class="p">:</span>
+            <span class="k">break</span>
+    <span class="k">return</span> <span class="n">reg</span><span class="p">,</span> <span class="n">mx</span></div>
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+      
+    </p>
+    <p>
+        &copy; Copyright 2019, Michael Matheny.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
