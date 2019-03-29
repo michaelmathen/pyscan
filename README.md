@@ -18,3 +18,6 @@ To compile this you will need:
 ``` 
 You should then be able to use this library as a standard python module by doing:
 import pyscan
+
+## Website
+https://michaelmathen.github.io/pyscan/
