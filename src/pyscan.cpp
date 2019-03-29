@@ -199,7 +199,7 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
             .def("__str__", &pyscan::Rectangle::toString)
             .def("contains", &pyscan::Rectangle::contains)
             .def("intersects_segment", &pyscan::Rectangle::intersects_segment)
-            .def("intersects_trajectory", &pyscan::Rectangle::intersects_trajectory);
+            .def("intersects_trajectory", &pyscan::Rectangle::intersects_trajectory<bool>);
 
     py::class_<pyscan::Subgrid>(pyscan_module, "Subgrid")
             .def(py::init<size_t, size_t, size_t, size_t, double>())
@@ -219,7 +219,7 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
             .def("intersects_segment", &pyscan::Disk::intersects_segment)
             .def("__str__", &pyscan::Disk::str)
             .def("__repr__", &pyscan::Disk::str)
-            .def("intersects_trajectory", &pyscan::Disk::intersects_trajectory);
+            .def("intersects_trajectory", &pyscan::Disk::intersects_trajectory<bool>);
 
     py::class_<pyscan::HalfSpace<2>>(pyscan_module, "Halfplane")
             .def(py::init<pyscan::Point<2>>())
@@ -228,7 +228,7 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
             .def("intersects_segment", &pyscan::HalfSpace<2>::intersects_segment)
             .def("__str__", &pyscan::HalfSpace<2>::str)
             .def("__repr__", &pyscan::HalfSpace<2>::str)
-            .def("intersects_trajectory", &pyscan::HalfSpace<2>::intersects_trajectory);
+            .def("intersects_trajectory", &pyscan::HalfSpace<2>::intersects_trajectory<bool>);
 
     py::class_<pyscan::HalfSpace<3>>(pyscan_module, "Halfspace")
             .def(py::init<pyscan::Point<3>>())
@@ -240,6 +240,7 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
 
     py::class_<pyscan::pt2_t>(pyscan_module, "Point")
             .def(py::init<double, double, double>())
+            .def(py::init<std::tuple<double, double>>())
             .def("approx_eq", &pyscan::Point<2>::approx_eq)
             .def("__getitem__", &pyscan::Point<2>::operator())
             .def("get_coord", &pyscan::Point<2>::get_coord)
@@ -261,6 +262,7 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
 
     py::class_<pyscan::pt3_t>(pyscan_module, "Point3")
             .def(py::init<double, double, double, double>())
+            .def(py::init<std::tuple<double, double, double>>())
             .def("approx_eq", &pyscan::Point<3>::approx_eq)
             .def("__getitem__", &pyscan::Point<3>::operator())
             .def("get_coord", &pyscan::Point<3>::get_coord)
@@ -392,6 +394,7 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
 
     py::class_<pyscan::trajectory_t>(pyscan_module, "Trajectory")
         .def(py::init<pyscan::point_list_t>())
+        .def(py::init<std::vector<std::tuple<double, double>>>())
         .def("point_dist", &pyscan::trajectory_t::point_dist)
         .def("get_weight", &pyscan::trajectory_t::get_weight)
         .def("get_length", &pyscan::trajectory_t::get_length)
@@ -400,6 +403,7 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
 
     py::class_<pyscan::wtrajectory_t>(pyscan_module, "WTrajectory")
         .def(py::init<double, pyscan::point_list_t>())
+        .def(py::init<double, std::vector<std::tuple<double, double>>>())
         .def("point_dist", &pyscan::wtrajectory_t::point_dist)
         .def("get_weight", &pyscan::wtrajectory_t::get_weight)
         .def("get_length", &pyscan::wtrajectory_t::get_length)

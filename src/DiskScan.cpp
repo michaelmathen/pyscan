@@ -519,7 +519,6 @@ namespace pyscan {
         SparseGrid<lpt2_t> grid_net(bb, point_net, min_res);
         auto grid_r = grid_net.get_grid_size();
         SparseGrid<lpt2_t> grid_red(bb, red, min_res), grid_blue(bb, blue, min_res);
-
         Disk cur_max;
         double max_stat = 0.0;
         for (auto center_cell = grid_net.begin(); center_cell != grid_net.end();) {
@@ -588,7 +587,6 @@ namespace pyscan {
                             lifted_red, lifted_blue, compress, f_func, [&](double m, double b) {
                         return f(m, red_tot, b, blue_tot);
                     });
-
                     //assert(util::aeq(evaluate_range(to_disk(proj_h), red_chunk, blue_chunk, f), local_max_stat));
                     //assert(util::aeq(evaluate_range(to_disk(proj_h), red, blue, f), local_max_stat));
 

@@ -22,6 +22,13 @@
 
 namespace pyscan {
 
+    template<typename tuple_t>
+    constexpr auto get_array_from_tuple(tuple_t&& tuple) {
+        constexpr auto get_array = [](auto&& ... x){
+            return std::array{std::forward<decltype(x)>(x) ... , 1.0};
+        };
+        return std::apply(get_array, std::forward<tuple_t>(tuple));
+    }
 
     // Coordiates in homgenous space.
     template<int dim = 2>
@@ -34,6 +41,9 @@ namespace pyscan {
             static_assert(sizeof...(rest) == dim + 1, "Wrong number of arguments for the point type.");
         }
 
+        template <class ...Coords, std::enable_if_t<(sizeof...(Coords) == dim)>* = nullptr>
+        explicit Point(std::tuple<Coords...> c) : coords(get_array_from_tuple(c)) {}
+
        /* Point<dim>& operator=(Point<dim> const& pt) {
             std::copy(coords.begin(), coords.end(), pt.coords.begin());
             return *this;
@@ -42,7 +52,7 @@ namespace pyscan {
         Point() {
             coords.fill(0.0);
         }
-        virtual ~Point() {}
+        virtual ~Point() = default;
 
         friend std::ostream &operator<<(std::ostream &os, Point const &pt) {
             os << "pyscan::Point<" << dim << ">(";
@@ -299,7 +309,7 @@ namespace pyscan {
 
         WPoint()
                 : Point<dim>(), weight(0.0) {}
-        virtual ~WPoint() {}
+        virtual ~WPoint() = default;
 
         friend std::ostream &operator<<(std::ostream &os, WPoint const &pt) {
             os << "WPoint(" << pt.get_weight() << ", ";
@@ -334,7 +344,7 @@ namespace pyscan {
                 : WPoint<dim>(), label(0) {}
 
 
-        virtual ~LPoint() {}
+        virtual ~LPoint() = default;
 
         inline size_t get_label() const {
             return label;

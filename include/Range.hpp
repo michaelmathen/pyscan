@@ -13,7 +13,9 @@ class Range {
 public:
     virtual bool contains(const Point<dim>& pt) const = 0;
     virtual bool intersects_segment(const Point<dim> &p1, const Point<dim> &p2) const = 0;
-    virtual bool intersects_trajectory(Trajectory<dim> const& trajectory) const {
+
+    template <typename Dummy = bool>
+    typename std::enable_if<dim == 2, Dummy>::type intersects_trajectory(Trajectory const& trajectory) const {
         if (trajectory.empty()) {
             return false;
         } else if (trajectory.size() == 1) {
@@ -29,12 +31,11 @@ public:
             return false;
         }
     }
-    virtual ~Range(){}
-
+    virtual ~Range() = default;
 };
 
-template<int dim, template<int> typename Traj=WTrajectory>
-double computeTotal(const std::vector<Traj<dim>> &traj_set) {
+template<typename Traj=WTrajectory>
+double computeTotal(const std::vector<Traj> &traj_set) {
     double weight = 0;
     for (auto& traj : traj_set) {
         weight += traj.get_weight();
@@ -42,9 +43,10 @@ double computeTotal(const std::vector<Traj<dim>> &traj_set) {
     return weight;
 }
 
-template <int dim, template<int> typename Traj=WTrajectory>
-double range_weight(const Range<dim>& range,
-                    const std::vector<Traj<dim>>& traj_set){
+template <typename Traj=WTrajectory>
+typename std::enable_if<std::is_base_of<Trajectory, Traj>::value, double>::type
+range_weight(const Range<2>& range,
+                    const std::vector<Trajectory>& traj_set) {
     double weight = 0;
     for (auto& traj : traj_set) {
         if (range.intersects_trajectory(traj)) {
@@ -98,11 +100,11 @@ double range_weight(const Range<dim>& range, const std::vector<LPoint<dim>>& pts
     return weight;
 }
 
-template <int dim, template<int> typename Pt=WPoint>
+template <int dim, typename Obj>
 double evaluate_range(
         const Range<dim>& range,
-        const std::vector<Pt<dim> >& red,
-        const std::vector<Pt<dim> >& blue,
+        const std::vector<Obj>& red,
+        const std::vector<Obj>& blue,
         const discrepancy_func_t& f) {
 
     return f(range_weight(range, red), computeTotal(red),

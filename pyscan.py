@@ -595,7 +595,7 @@ def max_disk_trajectory_fixed(net, m_sample, b_sample, min_disk_r, max_disk_r,  
     return reg, mx
 
 
-def max_disk_region(net, red_sample, blue_sample, min_disk_r, max_disk_r, alpha, disc, fast_disk=True):
+def max_disk_region(net, red_sample, red_weight, blue_sample, blue_weight, min_disk_r, max_disk_r, alpha, disc, fast_disk=True):
     """
     Computes the highest discrepancy disk over a set of trajectories. Executes at multiple scales using the grid
     directional compression method and internally compresses the trajectories if fast_disk is enabled.
@@ -615,15 +615,15 @@ def max_disk_region(net, red_sample, blue_sample, min_disk_r, max_disk_r, alpha,
     reg = None
     while True:
 
-        chord_l = math.sqrt(4 * alpha * curr_disk_r - 2 * alpha * alpha)
         m_sample = [polygon_grid_hull(reg, alpha, curr_disk_r) for reg in red_sample]
         b_sample = [polygon_grid_hull(reg, alpha, curr_disk_r) for reg in  blue_sample]
         pt_net = [polygon_grid_hull(reg, alpha, curr_disk_r) for reg in net]
-        m_sample = list(trajectories_to_labels(m_sample))
-        b_sample = list(trajectories_to_labels(b_sample))
+
+        m_sample = [[LPoint(i, w, pt[0], pt[1], 1.0) for pt in reg] for reg, w, i in zip(m_sample, red_weight, range(len(m_sample)))]
+        b_sample = [[LPoint(i, w, pt[0], pt[1], 1.0) for pt in reg] for reg, w, i in zip(b_sample, blue_weight, range(len(m_sample)))]
+        m_sample = list(itertools.chain.from_iterable(m_sample))
+        b_sample = list(itertools.chain.from_iterable(b_sample))
         net_set = list(trajectories_to_labels(pt_net))
-
-
         new_reg, new_mx = max_disk_scale_labeled(net_set, m_sample, b_sample, fast_disk, curr_disk_r, disc)
         if new_mx > mx:
             reg = new_reg

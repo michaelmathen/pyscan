@@ -10,9 +10,8 @@
 
 namespace pyscan {
 
-    template<int dim>
     class Trajectory {
-        using pt_t = Point<dim>;
+        using pt_t = Point<2>;
         using p_list_t = std::vector<pt_t>;
         using p_it_t = typename p_list_t::iterator;
         using cp_it_t = typename p_list_t::const_iterator;
@@ -21,6 +20,14 @@ namespace pyscan {
 
     public:
         explicit Trajectory(point_list_t pts) : trajectory_pts(std::move(pts)) {}
+
+        explicit Trajectory(std::vector<std::tuple<double, double>> const& pts) {
+            trajectory_pts.reserve(pts.size());
+            for (auto& p : pts) {
+                trajectory_pts.emplace_back(p);
+            }
+        }
+
 
         virtual double get_length() const {
             if (trajectory_pts.empty()) return 0.0;
@@ -34,7 +41,7 @@ namespace pyscan {
             return total_distance;
         }
 
-        virtual ~Trajectory() {}
+        virtual ~Trajectory() = default;
 
         virtual double get_weight() const {
             return 1;
@@ -89,7 +96,8 @@ namespace pyscan {
                 return false;
             }
         }
-        inline double point_dist(const Point<dim> &p1) const {
+
+        inline double point_dist(const Point<2> &p1) const {
             /*
              * Computes the distance to the trajectory.
              */
@@ -112,11 +120,11 @@ namespace pyscan {
         }
     };
 
-    template<int dim>
-    class WTrajectory : public Trajectory<dim> {
+    class WTrajectory : public Trajectory {
         double weight;
     public:
-        WTrajectory(double w, point_list_t pts) : Trajectory<dim>(std::move(pts)), weight(w) {}
+        WTrajectory(double w, point_list_t pts) : Trajectory(std::move(pts)), weight(w) {}
+        WTrajectory(double w, std::vector<std::tuple<double, double>> const& pts): Trajectory(pts), weight(w) {}
 
         double get_weight() const override {
             return weight;
@@ -128,8 +136,8 @@ namespace pyscan {
 
     };
 
-    using trajectory_t = Trajectory<2>;
-    using wtrajectory_t = WTrajectory<2>;
+    using trajectory_t = Trajectory;
+    using wtrajectory_t = WTrajectory;
     using trajectory_set_t = std::vector<trajectory_t>;
     using wtrajectory_set_t = std::vector<wtrajectory_t>;
 }

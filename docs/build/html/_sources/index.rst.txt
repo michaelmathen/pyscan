@@ -8,30 +8,30 @@ pyscan
 .. raw:: html
 
     <div class="container-fluid">
+        <div class="row equal-height">
         <div class="col-md-3 col-xs-12">
          <a href="examples/BasicExample.html" class="thumbnail">
-        <img src="_static/images/basicexample.png" width="100%" height="80%" class="img-responsive center-block">
+        <img src="_static/images/basicexample.png" class="img-responsive center-block">
                 <div class="caption text-center">
-                <h6>Basic Example</h6>
+                <h6>Discrepancy</h6>
                 </div>
             </a>
        </div>
-      <div class="row equal-height">
+      
         <div class="col-md-3 col-xs-12">
             <a href="examples/PhillyCrime.html" class="thumbnail">
-                <img src="_static/images/crime_vehicular_theft.png" width="100%" height="60%" class="img-responsive center-block">
+                <img src="_static/images/crime_philly.png" class="img-responsive center-block">
                 <div class="caption text-center">
-                <h6>Philadelphia Crime</h6>
+                <h6>Point Sets</h6>
                 </div>
             </a>
         </div>
 
         <div class="col-md-3 col-xs-12">
  <a href="examples/RegionSimplification.html" class="thumbnail">
-                <img src="_static/images/regionsimplification.png" width="100%" height="100%" class="img-responsive center-block">
+                <img src="_static/images/region_scanning.png" class="img-responsive center-block">
                 <div class="caption text-center">
-                <h6>Region Scanning
-                </h6>
+                <h6>Regions</h6>
                 </div>
       </a>
         </div>
@@ -90,6 +90,7 @@ Contents
    examples/PhillyCrime.ipynb
    examples/RegionSimplification.ipynb
    examples/RegionScanning.ipynb
+   examples/RegionScanningCont.ipynb
 ..  examples/TrajectoryApproximation.ipynb
 ..  examples/TrajectoryPartialScanning.ipynb
 ..  examples/TrajectoryFullScanning.ipynb
