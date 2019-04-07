@@ -1,0 +1,8 @@
+//
+// Created by mmath on 3/29/19.
+//
+
+#ifndef PYSCAN_FASTHALFSPACE_HPP
+#define PYSCAN_FASTHALFSPACE_HPP
+
+#endif //PYSCAN_FASTHALFSPACE_HPP
