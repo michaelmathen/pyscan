@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Trajectory Partial Scanning &#8212; pyscan 1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootswatch-3.3.6/cosmo/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html"><span><img src="../_static/NetRange.png"></span>
+          pyscan</a>
+        <span class="navbar-text navbar-version pull-left"><b>1.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../installation.html">Installation</a></li>
+                <li><a href="../api.html">API</a></li>
+                <li><a href="../examples.html">Examples</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">Api</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../point.html">Point</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../range.html">Ranges</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scanning.html">Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scanning.html#labeled-scanning">Labeled Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python_utility.html">Utility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BasicExample.html">Planting Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PhillyCrime.html">Philadelphia Crime Data Example</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="PhillyCrime.html#Reading-the-Data">Reading the Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhillyCrime.html#Subsampling">Subsampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhillyCrime.html#Disk-Scanning">Disk Scanning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PhillyCrime.html#Rectangle-Scanning">Rectangle Scanning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="RegionSimplification.html">Region Simplification</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="RegionSimplification.html#Halfplane-Compression">Halfplane Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RegionSimplification.html#Disk(or-Rectangle)-Compression">Disk(or Rectangle) Compression</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="RegionScanning.html">Region Scanning</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Trajectory Partial Scanning</a><ul>
+<li><a class="reference internal" href="#Halfplane-Partial-Scanning">Halfplane Partial Scanning</a></li>
+<li><a class="reference internal" href="#Disk-Partial-Scanning">Disk Partial Scanning</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12 content">
+      
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput,
+div.nbinput div.prompt,
+div.nbinput div.input_area,
+div.nbinput div[class*=highlight],
+div.nbinput div[class*=highlight] pre,
+div.nboutput,
+div.nbinput div.prompt,
+div.nbinput div.output_area,
+div.nboutput div[class*=highlight],
+div.nboutput div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput,
+div.nboutput {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput,
+    div.nboutput {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput div.prompt pre {
+    color: #303F9F;
+}
+
+/* output prompt */
+div.nboutput div.prompt pre {
+    color: #D84315;
+}
+
+/* all prompts */
+div.nbinput div.prompt,
+div.nboutput div.prompt {
+    min-width: 9ex;
+    padding-top: 0.4em;
+    padding-right: 0.4em;
+    text-align: right;
+    flex: 0;
+}
+@media (max-width: 540px) {
+    div.nbinput div.prompt,
+    div.nboutput div.prompt {
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput div.prompt.empty {
+        padding: 0;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput div.prompt pre,
+div.nboutput div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput div.input_area,
+div.nboutput div.output_area {
+    padding: 0.4em;
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput div.input_area,
+    div.nboutput div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput div.input_area {
+    border: 1px solid #cfcfcf;
+    border-radius: 2px;
+    background: #f7f7f7;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.pngmath center alignment in output cells */
+div.nboutput div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+</style>
+<div class="section" id="Trajectory-Partial-Scanning">
+<h1>Trajectory Partial Scanning<a class="headerlink" href="#Trajectory-Partial-Scanning" title="Permalink to this headline">¶</a></h1>
+<p>Now that we have a set of trajectories we will plant a region of
+interest containing roughly 10% of the trajectories where 20% will be
+from the blue set and 80% from the red set and then attempt to find that
+region or another region that is more anomalous.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pyscan</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">statistics</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">plot_points</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">pts</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+    <span class="n">xs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ys</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">pts</span><span class="p">:</span>
+        <span class="n">xs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">ys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">plot_points_traj</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">pts</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+    <span class="n">xs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ys</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">pts</span><span class="p">:</span>
+        <span class="n">xs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">ys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">plot_approx</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">traj_pts</span><span class="p">,</span> <span class="n">core_set_pts</span><span class="p">):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="o">-.</span><span class="mi">01</span><span class="p">,</span> <span class="mf">1.01</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="o">-.</span><span class="mi">01</span><span class="p">,</span> <span class="mf">1.01</span><span class="p">])</span>
+    <span class="n">plot_points_traj</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">traj_pts</span><span class="p">,</span> <span class="s2">&quot;g&quot;</span><span class="p">)</span>
+    <span class="n">plot_points</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">core_set_pts</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">plot_full_trajectories</span><span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">ax</span><span class="p">):</span>
+    <span class="n">plot_set</span> <span class="o">=</span> <span class="p">[(</span><span class="n">reg</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="n">blue</span><span class="p">]</span> <span class="o">+</span> <span class="p">[(</span><span class="n">reg</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="n">red</span><span class="p">]</span>
+    <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">plot_set</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">traj</span><span class="p">,</span> <span class="n">is_blue</span> <span class="ow">in</span> <span class="n">plot_set</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_blue</span><span class="p">:</span>
+            <span class="n">plot_points_traj</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">traj</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_points_traj</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">traj</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">remove_long_trajectories</span><span class="p">(</span><span class="n">trajectories</span><span class="p">,</span> <span class="n">percent</span><span class="o">=.</span><span class="mi">9</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">toTraj</span><span class="p">(</span><span class="n">pts</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">Trajectory</span><span class="p">([</span><span class="n">pyscan</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pts</span><span class="p">])</span>
+
+    <span class="n">ltraj</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">toTraj</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span><span class="o">.</span><span class="n">get_length</span><span class="p">()</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">)</span>
+    <span class="n">perc_len_traj</span> <span class="o">=</span> <span class="n">ltraj</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">percent</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">trajectories</span><span class="p">))]</span>
+    <span class="k">del</span> <span class="n">ltraj</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">traj</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span> <span class="k">if</span> <span class="n">toTraj</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span><span class="o">.</span><span class="n">get_length</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">perc_len_traj</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">mxx</span><span class="p">,</span> <span class="n">mnx</span><span class="p">,</span> <span class="n">mxy</span><span class="p">,</span> <span class="n">mny</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">mnx</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">mxx</span> <span class="o">-</span> <span class="n">mnx</span><span class="p">),</span> <span class="p">(</span><span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">mny</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">mxy</span> <span class="o">-</span> <span class="n">mny</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">read_csv</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">filter_long</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">traj_id_set</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">curr_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">mnx</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+        <span class="n">mxx</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+        <span class="n">mny</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+        <span class="n">mxy</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">curr_id</span><span class="p">:</span>
+                    <span class="n">curr_id</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">traj_id_set</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+                <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span> <span class="ow">or</span> <span class="n">math</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">])):</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span> <span class="ow">or</span> <span class="n">math</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">])):</span>
+                    <span class="k">continue</span>
+
+                <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+                <span class="n">mnx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">mnx</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+                <span class="n">mny</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">mny</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                <span class="n">mxx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">mxx</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+                <span class="n">mxy</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">mxy</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                <span class="n">traj_id_set</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">])))</span>
+
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">continue</span>
+        <span class="n">norm_traces</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="n">traj_id_set</span><span class="p">:</span>
+            <span class="n">norm_trace</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">trace</span> <span class="o">=</span> <span class="n">traj_id_set</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">trace</span><span class="p">:</span>
+                <span class="n">norm_trace</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">normalize</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">mxx</span><span class="p">,</span> <span class="n">mnx</span><span class="p">,</span> <span class="n">mxy</span><span class="p">,</span> <span class="n">mny</span><span class="p">))</span>
+            <span class="n">norm_traces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">norm_trace</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">filter_long</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">remove_long_trajectories</span><span class="p">(</span><span class="n">norm_traces</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">norm_traces</span>
+
+<span class="c1"># Ok we finally have the trajectories scaled to be in a [0,1]x[0,1] box with the extremely</span>
+<span class="c1">#long trajectories removed</span>
+<span class="n">trajectories</span> <span class="o">=</span> <span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;./bjtaxi_samples_10k.tsv&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="Halfplane-Partial-Scanning">
+<h2>Halfplane Partial Scanning<a class="headerlink" href="#Halfplane-Partial-Scanning" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="c1">#Just set some parameter for finding the region.</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">800</span>
+<span class="n">s</span> <span class="o">=</span> <span class="mi">20000</span>
+<span class="n">r</span> <span class="o">=</span> <span class="o">.</span><span class="mi">05</span>
+<span class="n">p</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span>
+<span class="n">q</span> <span class="o">=</span> <span class="o">.</span><span class="mi">2</span>
+<span class="n">eps_r</span> <span class="o">=</span> <span class="o">.</span><span class="mi">001</span>
+
+<span class="c1">#Plant a region</span>
+<span class="n">trajec_set</span> <span class="o">=</span> <span class="p">[[</span><span class="n">pyscan</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">traj</span><span class="p">]</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">]</span>
+<span class="n">red</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">mx_plane</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">plant_partial_halfplane</span><span class="p">(</span><span class="n">trajec_set</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">eps_r</span><span class="p">,</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">DISC</span><span class="p">)</span>
+<span class="n">m_sample</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">uniform_sample</span><span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">b_sample</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">uniform_sample</span><span class="p">(</span><span class="n">blue</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">net_set1</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">my_sample</span><span class="p">(</span><span class="n">m_sample</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">net_set2</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">my_sample</span><span class="p">(</span><span class="n">b_sample</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">net_set</span> <span class="o">=</span> <span class="n">net_set1</span> <span class="o">+</span> <span class="n">net_set2</span>
+
+<span class="n">m_sample</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">to_weighted</span><span class="p">(</span><span class="n">m_sample</span><span class="p">)</span>
+<span class="n">b_sample</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">to_weighted</span><span class="p">(</span><span class="n">b_sample</span><span class="p">)</span>
+
+<span class="n">reg</span><span class="p">,</span> <span class="n">mx</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">max_halfplane</span><span class="p">(</span><span class="n">net_set</span><span class="p">,</span> <span class="n">m_sample</span><span class="p">,</span> <span class="n">b_sample</span><span class="p">,</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">DISC</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Planted Region: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">mx_plane</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Found Region: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">reg</span><span class="p">))</span>
+
+<span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+<span class="c1">#Now lets plot what we got.</span>
+<span class="n">xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">01</span><span class="p">)</span>
+<span class="n">ys</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">-</span> <span class="n">mx_plane</span><span class="o">.</span><span class="n">get_coords</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">xs</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">mx_plane</span><span class="o">.</span><span class="n">get_coords</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;g&quot;</span><span class="p">)</span>
+
+<span class="n">ys</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">-</span> <span class="n">reg</span><span class="o">.</span><span class="n">get_coords</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">xs</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">reg</span><span class="o">.</span><span class="n">get_coords</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">plot_full_trajectories</span><span class="p">([</span><span class="n">traj</span><span class="o">.</span><span class="n">get_pts</span><span class="p">()</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">my_sample</span><span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="mi">100</span><span class="p">)],</span>
+                       <span class="p">[</span><span class="n">traj</span><span class="o">.</span><span class="n">get_pts</span><span class="p">()</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">my_sample</span><span class="p">(</span><span class="n">blue</span><span class="p">,</span> <span class="mi">100</span><span class="p">)],</span> <span class="n">ax</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Planted Region: HalfSpace(pyscan::Point&lt;2&gt;(-1.23057, -0.182595, 0.279671))
+Found Region: HalfSpace(pyscan::Point&lt;2&gt;(-0.959084, -0.283122, 0.526223))
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_TrajectoryPartialScanning_3_1.png" src="../_images/examples_TrajectoryPartialScanning_3_1.png" />
+</div>
+</div>
+<p>Unlike with point based models our planting code is much less likely to
+plant the actual maximum region and so usually the scanning algorithms
+find better regions, but the found region usually overlaps the planted
+region.</p>
+</div>
+<div class="section" id="Disk-Partial-Scanning">
+<h2>Disk Partial Scanning<a class="headerlink" href="#Disk-Partial-Scanning" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="n">n</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">s</span> <span class="o">=</span> <span class="mi">4000</span>
+
+<span class="n">r</span> <span class="o">=</span> <span class="o">.</span><span class="mi">05</span>
+<span class="n">p</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span>
+<span class="n">q</span> <span class="o">=</span> <span class="o">.</span><span class="mi">2</span>
+<span class="n">eps_r</span> <span class="o">=</span> <span class="o">.</span><span class="mi">001</span>
+<span class="c1">#Plant a region</span>
+<span class="n">trajec_set</span> <span class="o">=</span> <span class="p">[[</span><span class="n">pyscan</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">traj</span><span class="p">]</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">]</span>
+
+<span class="n">red</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">planted_reg</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">plant_partial_disk</span><span class="p">(</span><span class="n">trajec_set</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">eps_r</span><span class="p">,</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">DISC</span><span class="p">)</span>
+<span class="n">m_sample</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">uniform_sample</span><span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">b_sample</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">uniform_sample</span><span class="p">(</span><span class="n">blue</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">net_set1</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">my_sample</span><span class="p">(</span><span class="n">m_sample</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">net_set2</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">my_sample</span><span class="p">(</span><span class="n">b_sample</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">net_set</span> <span class="o">=</span> <span class="n">net_set1</span> <span class="o">+</span> <span class="n">net_set2</span>
+
+<span class="n">m_sample</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">to_weighted</span><span class="p">(</span><span class="n">m_sample</span><span class="p">)</span>
+<span class="n">b_sample</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">to_weighted</span><span class="p">(</span><span class="n">b_sample</span><span class="p">)</span>
+
+
+<span class="n">reg</span><span class="p">,</span> <span class="n">mx</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">max_disk_scale</span><span class="p">(</span><span class="n">net_set</span><span class="p">,</span> <span class="n">m_sample</span><span class="p">,</span> <span class="n">b_sample</span><span class="p">,</span> <span class="o">.</span><span class="mi">05</span><span class="p">,</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">DISC</span><span class="p">)</span>
+
+
+<span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+<span class="c1">#Now lets plot what we got.</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Planted Region: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">planted_reg</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Found Region: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">reg</span><span class="p">))</span>
+<span class="n">actor</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">Circle</span><span class="p">((</span><span class="n">reg</span><span class="o">.</span><span class="n">get_origin</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span> <span class="n">reg</span><span class="o">.</span><span class="n">get_origin</span><span class="p">()[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">reg</span><span class="o">.</span><span class="n">get_radius</span><span class="p">(),</span> <span class="n">alpha</span><span class="o">=.</span><span class="mi">3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">add_artist</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+<span class="n">actor</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">Circle</span><span class="p">((</span><span class="n">planted_reg</span><span class="o">.</span><span class="n">get_origin</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span> <span class="n">planted_reg</span><span class="o">.</span><span class="n">get_origin</span><span class="p">()[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">planted_reg</span><span class="o">.</span><span class="n">get_radius</span><span class="p">(),</span>
+                   <span class="n">alpha</span><span class="o">=.</span><span class="mi">6</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;g&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">add_artist</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+
+
+<span class="n">plot_full_trajectories</span><span class="p">([</span><span class="n">traj</span><span class="o">.</span><span class="n">get_pts</span><span class="p">()</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">my_sample</span><span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="mi">100</span><span class="p">)],</span>
+                       <span class="p">[</span><span class="n">traj</span><span class="o">.</span><span class="n">get_pts</span><span class="p">()</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">my_sample</span><span class="p">(</span><span class="n">blue</span><span class="p">,</span> <span class="mi">100</span><span class="p">)],</span> <span class="n">ax</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Planted Region: Disk(pyscan::Point&lt;2&gt;(0.334905, 0.400674, 1), 0.0825591)
+Found Region: Disk(pyscan::Point&lt;2&gt;(0.388503, 0.44225, 1), 0.0998047)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_TrajectoryPartialScanning_6_1.png" src="../_images/examples_TrajectoryPartialScanning_6_1.png" />
+</div>
+</div>
+</div>
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="../_sources/examples/TrajectoryPartialScanning.ipynb.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2019, Michael Matheny.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

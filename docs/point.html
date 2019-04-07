@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Point &#8212; pyscan 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootswatch-3.3.6/cosmo/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Ranges" href="range.html" />
+    <link rel="prev" title="Api" href="api.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html"><span><img src="_static/NetRange.png"></span>
+          pyscan</a>
+        <span class="navbar-text navbar-version pull-left"><b>1.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="installation.html">Installation</a></li>
+                <li><a href="api.html">API</a></li>
+                <li><a href="examples.html">Examples</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><p class="caption"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Api</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Point</a></li>
+<li class="toctree-l1"><a class="reference internal" href="range.html">Ranges</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scanning.html">Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scanning.html#labeled-scanning">Labeled Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python_utility.html">Utility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/BasicExample.html">Planting Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/PhillyCrime.html">Philadelphia Crime Data Example</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/PhillyCrime.html#Reading-the-Data">Reading the Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/PhillyCrime.html#Subsampling">Subsampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/PhillyCrime.html#Disk-Scanning">Disk Scanning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/PhillyCrime.html#Rectangle-Scanning">Rectangle Scanning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples/RegionSimplification.html">Region Simplification</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/RegionSimplification.html#Halfplane-Compression">Halfplane Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/RegionSimplification.html#Disk(or-Rectangle)-Compression">Disk(or Rectangle) Compression</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples/RegionScanning.html">Region Scanning</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Point</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12 content">
+      
+  <div class="section" id="point">
+<h1>Point<a class="headerlink" href="#point" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="pyscan.pyscan.Point">
+<em class="property">class </em><code class="descclassname">pyscan.</code><code class="descname">Point</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>c</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.Point" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a point class. Internally the data is represented using a homogenous coordinate system. For those not familiar this means that a homogenous coordinate <span class="math">\((a, b, c)\)</span> in standard coordinates would be <span class="math">\((a / c, b / c)\)</span>). These points can also be used to represent lines in which case the homogenous coordinate <span class="math">\((a, b, c)\)</span> is the line <span class="math">\(a x + b y + c = 0\)</span>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>a</strong> – double</li>
+<li><strong>b</strong> – double</li>
+<li><strong>c</strong> – double</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pyscan</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p2</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">approx_eq</span><span class="p">(</span><span class="n">p2</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">parallel_lte</span><span class="p">(</span><span class="n">p2</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">p2</span><span class="p">)</span>
+<span class="go">26.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">1.0</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="pyscan.Point.approx_eq">
+<code class="descclassname">Point.</code><code class="descname">approx_eq</code><span class="sig-paren">(</span><em>p_other</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Point.approx_eq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks to see if these points are approximately the same. Internally compares floats using float distance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>p_other</strong> – Another Point object.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">True or False.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Point.__getitem__">
+<code class="descclassname">Point.</code><code class="descname">__getitem__</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Point.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value at the standard coordinate index.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>index</strong> – An integer.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">A double.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Point.get_coord">
+<code class="descclassname">Point.</code><code class="descname">get_coord</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Point.get_coord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the homogenous coordinate at index.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>index</strong> – An integer.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">A double.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Point.above">
+<code class="descclassname">Point.</code><code class="descname">above</code><span class="sig-paren">(</span><em>pt</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Point.above" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether this point is above the line represented by pt. Note that a line and point can have an upward or downward orientation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pt</strong> – A line (or point).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">boolean.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Point.above_closed">
+<code class="descclassname">Point.</code><code class="descname">above_closed</code><span class="sig-paren">(</span><em>pt</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Point.above_closed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether this point is above the line or contained inside of the line represented by pt. Note that a line and point can have an upward or downward orientation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pt</strong> – A line (or point).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">boolean.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Point.below">
+<code class="descclassname">Point.</code><code class="descname">below</code><span class="sig-paren">(</span><em>pt</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Point.below" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether this point is below the line represented by pt. Note that a line and point can have an upward or downward orientation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pt</strong> – A line (or point).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">boolean.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Point.below_closed">
+<code class="descclassname">Point.</code><code class="descname">below_closed</code><span class="sig-paren">(</span><em>pt</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Point.below_closed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether this point is below the line or contained inside of the line represented by pt. Note that a line and point can have an upward or downward orientation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pt</strong> – A line (or point).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">boolean.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Point.crosses">
+<code class="descclassname">Point.</code><code class="descname">crosses</code><span class="sig-paren">(</span><em>p1</em>, <em>p2</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Point.crosses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether the line represented by the homogenous coordinates in point crosses the line segment between p1 and p2. In the dual formulation this can be thought of as
+checking if this point lies inside of the double wedge defined by the lines p1 and p2.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>p1</strong> – A point(or line).</li>
+<li><strong>p2</strong> – A point(or line).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">boolean.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Point.evaluate">
+<code class="descclassname">Point.</code><code class="descname">evaluate</code><span class="sig-paren">(</span><em>pt</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Point.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the dot product between this point’s and the argument’s homogenous coordinates.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>p1</strong> – A point(or line).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">double</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Point.orient_down">
+<code class="descclassname">Point.</code><code class="descname">orient_down</code><span class="sig-paren">(</span><em>ix</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Point.orient_down" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensures that the line’s normal is oriented such that ix coordinate of the normal is negative.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ix</strong> – Integer between 0 and 2.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#pyscan.pyscan.Point" title="pyscan.pyscan.Point">Point</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Point.orient_up">
+<code class="descclassname">Point.</code><code class="descname">orient_up</code><span class="sig-paren">(</span><em>ix</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Point.orient_up" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensures that the line’s normal is oriented such that ix coordinate of the normal is positive.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ix</strong> – Integer between 0 and 2.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#pyscan.pyscan.Point" title="pyscan.pyscan.Point">Point</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Point.dist">
+<code class="descclassname">Point.</code><code class="descname">dist</code><span class="sig-paren">(</span><em>pt</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Point.dist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the euclidean distance between this point and pt.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pt</strong> – Point object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">double</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Point.pdot">
+<code class="descclassname">Point.</code><code class="descname">pdot</code><span class="sig-paren">(</span><em>pt</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Point.pdot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dot product using the normalized coordinates.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pt</strong> – Point object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">double</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Point.parallel_lt">
+<code class="descclassname">Point.</code><code class="descname">parallel_lt</code><span class="sig-paren">(</span><em>pt</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Point.parallel_lt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks to see if this line is parallel to the line represented by pt and also happens to be less than it in terms of their orientations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pt</strong> – Point object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Point.parallel_lte">
+<code class="descclassname">Point.</code><code class="descname">parallel_lte</code><span class="sig-paren">(</span><em>pt</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Point.parallel_lte" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks to see if this line is parallel to the line represented by pt and also happens to be less than or equal to it in terms of their orientations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pt</strong> – Point object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="pyscan.pyscan.WPoint">
+<em class="property">class </em><code class="descclassname">pyscan.</code><code class="descname">WPoint</code><span class="sig-paren">(</span><em>weight</em>, <em>a</em>, <em>b</em>, <em>c</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.WPoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>This inherits all the methods that <a class="reference internal" href="#pyscan.pyscan.Point" title="pyscan.pyscan.Point"><code class="xref any py py-class docutils literal"><span class="pre">Point</span></code></a> has, but also has positive weight.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>weight</strong> – double</li>
+<li><strong>a</strong> – double</li>
+<li><strong>b</strong> – double</li>
+<li><strong>c</strong> – double</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.WPoint.get_weight">
+<code class="descclassname">WPoint.</code><code class="descname">get_weight</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.WPoint.get_weight" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns this points weight.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">double</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="pyscan.pyscan.LPoint">
+<em class="property">class </em><code class="descclassname">pyscan.</code><code class="descname">LPoint</code><span class="sig-paren">(</span><em>label</em>, <em>weight</em>, <em>a</em>, <em>b</em>, <em>c</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.LPoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>This inherits all the methods that <a class="reference internal" href="#pyscan.pyscan.WPoint" title="pyscan.pyscan.WPoint"><code class="xref any py py-class docutils literal"><span class="pre">WPoint</span></code></a> has, but also has a integer label.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>label</strong> – A non negative integer.</li>
+<li><strong>weight</strong> – double</li>
+<li><strong>a</strong> – double</li>
+<li><strong>b</strong> – double</li>
+<li><strong>c</strong> – double</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.LPoint.get_label">
+<code class="descclassname">LPoint.</code><code class="descname">get_label</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.LPoint.get_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns this points label.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descclassname">LPoint.</code><code class="descname">get_label</code><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
+<dd><p>Returns this points label.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="pyscan.pyscan.Point3">
+<em class="property">class </em><code class="descclassname">pyscan.</code><code class="descname">Point3</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>c</em>, <em>d</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.Point3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same methods as <a class="reference internal" href="#pyscan.pyscan.Point" title="pyscan.pyscan.Point"><code class="xref any py py-class docutils literal"><span class="pre">Point</span></code></a>, but for 3d points.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pyscan.pyscan.WPoint3">
+<em class="property">class </em><code class="descclassname">pyscan.</code><code class="descname">WPoint3</code><span class="sig-paren">(</span><em>weight</em>, <em>a</em>, <em>b</em>, <em>c</em>, <em>d</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.WPoint3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="pyscan.pyscan.LPoint3">
+<em class="property">class </em><code class="descclassname">pyscan.</code><code class="descname">LPoint3</code><span class="sig-paren">(</span><em>label</em>, <em>weight</em>, <em>a</em>, <em>b</em>, <em>c</em>, <em>d</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.LPoint3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="_sources/point.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2019, Michael Matheny.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

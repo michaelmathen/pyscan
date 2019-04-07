@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Trajectory &#8212; pyscan 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootswatch-3.3.6/cosmo/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html"><span><img src="_static/NetRange.png"></span>
+          pyscan</a>
+        <span class="navbar-text navbar-version pull-left"><b>1.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="installation.html">Installation</a></li>
+                <li><a href="api.html">API</a></li>
+                <li><a href="examples.html">Examples</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Api</a></li>
+<li class="toctree-l1"><a class="reference internal" href="point.html">Point</a></li>
+<li class="toctree-l1"><a class="reference internal" href="range.html">Ranges</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scanning.html">Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scanning.html#labeled-scanning">Labeled Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python_utility.html">Utility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/BasicExample.html">Planting Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/PhillyCrime.html">Philadelphia Crime Data Example</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/PhillyCrime.html#Reading-the-Data">Reading the Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/PhillyCrime.html#Subsampling">Subsampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/PhillyCrime.html#Disk-Scanning">Disk Scanning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/PhillyCrime.html#Rectangle-Scanning">Rectangle Scanning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples/RegionSimplification.html">Region Simplification</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/RegionSimplification.html#Halfplane-Compression">Halfplane Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/RegionSimplification.html#Disk(or-Rectangle)-Compression">Disk(or Rectangle) Compression</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples/RegionScanning.html">Region Scanning</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Trajectory</a></li>
+<li><a class="reference internal" href="#trajectory-simplification">Trajectory Simplification</a></li>
+<li><a class="reference internal" href="#trajectories-to-points">Trajectories to Points</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12 content">
+      
+  <div class="section" id="trajectory">
+<h1>Trajectory<a class="headerlink" href="#trajectory" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="pyscan.pyscan.Trajectory">
+<em class="property">class </em><code class="descclassname">pyscan.</code><code class="descname">Trajectory</code><span class="sig-paren">(</span><em>pts</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.Trajectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>This object represents a trajectory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pts</strong> – List containing Point objects</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Trajectory.point_dist">
+<code class="descclassname">Trajectory.</code><code class="descname">point_dist</code><span class="sig-paren">(</span><em>pt</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Trajectory.point_dist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the minimum distance from this point to the trajectory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pt</strong> – Point</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">double</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Trajectory.get_weight">
+<code class="descclassname">Trajectory.</code><code class="descname">get_weight</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Trajectory.get_weight" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the weight of the trajectory. By default this will be 1 unless you create a weighted trajectory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">double</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Trajectory.get_length">
+<code class="descclassname">Trajectory.</code><code class="descname">get_length</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Trajectory.get_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the weight of the trajectory. By default this will be 1 unless you create a weighted trajectory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">double</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyscan.Trajectory.get_pts">
+<code class="descclassname">Trajectory.</code><code class="descname">get_pts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Trajectory.get_pts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the trajectories internal point list.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">List containing Point objects</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="pyscan.pyscan.WTrajectory">
+<em class="property">class </em><code class="descclassname">pyscan.</code><code class="descname">WTrajectory</code><span class="sig-paren">(</span><em>weight</em>, <em>pts</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.pyscan.WTrajectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>This object represents a weighted trajectory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>weight</strong> – double</li>
+<li><strong>pts</strong> – List containing Point objects</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="trajectory-simplification">
+<h1>Trajectory Simplification<a class="headerlink" href="#trajectory-simplification" title="Permalink to this headline">¶</a></h1>
+<p>See <code class="xref any docutils literal"><span class="pre">TrajectoryApproximation</span></code> for examples of these function being used.</p>
+<dl class="function">
+<dt id="pyscan.dp_compress">
+<code class="descclassname">pyscan.</code><code class="descname">dp_compress</code><span class="sig-paren">(</span><em>traj</em>, <em>alpha</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.dp_compress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Douglas-Peuker trajectory simplification method [RAMER72].</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>traj</strong> – List of points.</li>
+<li><strong>alpha</strong> – The pruning distance in the DP algorithm.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">A list of points corresponding to the simplified trajectory.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.grid_kernel">
+<code class="descclassname">pyscan.</code><code class="descname">grid_kernel</code><span class="sig-paren">(</span><em>traj</em>, <em>alpha</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.grid_kernel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Grids the trajectory using a <span class="math">\(1/\alpha \times 1/\alpha\)</span> grid and picks the center point of each cell the trajectory crosses.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>traj</strong> – List of points.</li>
+<li><strong>alpha</strong> – double</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">A list of points corresponding to the simplified trajectory.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.grid_trajectory">
+<code class="descclassname">pyscan.</code><code class="descname">grid_trajectory</code><span class="sig-paren">(</span><em>traj</em>, <em>alpha</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.grid_trajectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Grids the trajectory using a <span class="math">\(1/\alpha \times 1/\alpha\)</span> grid and picks the points where the trajectory crosses the boundaries of the cell.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>traj</strong> – List of points.</li>
+<li><strong>alpha</strong> – double</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">A list of points corresponding to the simplified trajectory.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.grid_direc_kernel">
+<code class="descclassname">pyscan.</code><code class="descname">grid_direc_kernel</code><span class="sig-paren">(</span><em>traj</em>, <em>r</em>, <em>alpha</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.grid_direc_kernel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Grids the trajectory using a <span class="math">\(1/r \times 1/r\)</span> grid and then applies a directional kernel to each cell with <span class="math">\(\alpha\)</span> error. This simplification get error
+of <span class="math">\(\alpha\)</span> for disks with radii greater than <span class="math">\(r\)</span>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>traj</strong> – List of points.</li>
+<li><strong>r</strong> – double</li>
+<li><strong>alpha</strong> – double</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">A list of points corresponding to the simplified trajectory.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.halfplane_kernel">
+<code class="descclassname">pyscan.</code><code class="descname">halfplane_kernel</code><span class="sig-paren">(</span><em>traj</em>, <em>alpha</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.halfplane_kernel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a directional kernel with <span class="math">\(\alpha\)</span> error. This simplification get error of <span class="math">\(\alpha\)</span> for halfplanes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>traj</strong> – List of points.</li>
+<li><strong>alpha</strong> – double</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">A list of points corresponding to the simplified trajectory.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.hull">
+<code class="descclassname">pyscan.</code><code class="descname">hull</code><span class="sig-paren">(</span><em>traj</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.hull" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the convex hull of the trajectory. This simplification has zero error for halfplanes and can significantly speed up scanning for labeled data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>traj</strong> – List of points.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">A list of points corresponding to the simplified trajectory.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.lifting_kernel">
+<code class="descclassname">pyscan.</code><code class="descname">lifting_kernel</code><span class="sig-paren">(</span><em>traj</em>, <em>alpha</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.lifting_kernel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the convex hull of the trajectory lifted to a 3d paraboloid. This simplification has <span class="math">\(alpha\)</span> error for disks, but currently has stability issues.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>traj</strong> – List of points.</li>
+<li><strong>alpha</strong> – double</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">A list of points corresponding to the simplified trajectory.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.uniform_sample_error">
+<code class="descclassname">pyscan.</code><code class="descname">uniform_sample_error</code><span class="sig-paren">(</span><em>traj</em>, <em>alpha</em>, <em>endpoints</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.uniform_sample_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Chooses uniformly randomly <span class="math">\(L/\alpha\)</span> points on the trajectory where <span class="math">\(L\)</span> is the arc length. If the endpoint variable is true then this method
+also takes the endpoints of the trajectory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>traj</strong> – List of points.</li>
+<li><strong>alpha</strong> – double</li>
+<li><strong>endpoints</strong> – boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">A list of points corresponding to the simplified trajectory.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.even_sample_error">
+<code class="descclassname">pyscan.</code><code class="descname">even_sample_error</code><span class="sig-paren">(</span><em>traj</em>, <em>alpha</em>, <em>endpoints</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.even_sample_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Chooses a point ever <span class="math">\(\alpha\)</span> distance apart. If the endpoint variable is true then this method
+also takes the endpoints of the trajectory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>traj</strong> – List of points.</li>
+<li><strong>alpha</strong> – double</li>
+<li><strong>endpoints</strong> – boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">A list of points corresponding to the simplified trajectory.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="trajectories-to-points">
+<h1>Trajectories to Points<a class="headerlink" href="#trajectories-to-points" title="Permalink to this headline">¶</a></h1>
+<p>These algorithms can be used to convert the trajectory to a point set that can then be fed into one of the approximate scanning methods.</p>
+<dl class="function">
+<dt id="pyscan.block_sample">
+<code class="descclassname">pyscan.</code><code class="descname">block_sample</code><span class="sig-paren">(</span><em>trajectories</em>, <em>s</em>, <em>endpoints</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.block_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Chooses s points such that one point is chosen at random inside of each arc length segment of length <span class="math">\(L/s\)</span> where L is the summed length of all the
+trajectories in trajectories. If the endpoint variable is true then this method
+also takes the endpoints of the trajectory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>trajectories</strong> – A list of Trajectories</li>
+<li><strong>alpha</strong> – integer</li>
+<li><strong>endpoints</strong> – boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">A list of weighted points</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.uniform_sample">
+<code class="descclassname">pyscan.</code><code class="descname">uniform_sample</code><span class="sig-paren">(</span><em>trajectories</em>, <em>s</em>, <em>endpoints</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.uniform_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uniformly samples <span class="math">\(s\)</span> points on the trajectories. If the endpoint variable is true then this method
+also takes the endpoints of the trajectory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>traj</strong> – A list of Trajectories</li>
+<li><strong>alpha</strong> – integer</li>
+<li><strong>endpoints</strong> – boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">A list of weighted points</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.even_sample">
+<code class="descclassname">pyscan.</code><code class="descname">even_sample</code><span class="sig-paren">(</span><em>trajectories</em>, <em>s</em>, <em>endpoints</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.even_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Chooses <span class="math">\(s\)</span> points such that one point is every arc length segment of length <span class="math">\(L/s\)</span> where L is the summed length of all the
+trajectories in trajectories. If the endpoint variable is true then this method
+also takes the endpoints of the trajectory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>traj</strong> – A list of Trajectories</li>
+<li><strong>alpha</strong> – integer</li>
+<li><strong>endpoints</strong> – boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">A list of weighted points</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="_sources/trajectory.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2019, Michael Matheny.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
