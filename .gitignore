@@ -100,11 +100,11 @@ coverage.xml
 .hypothesis/
 
 
-
+*.swp
 # Jupyter Notebook
 .ipynb_checkpoints
 examples_.ipynb_checkpoints*
-
+doc_src/build
 # pyenv
 .python-version
 
