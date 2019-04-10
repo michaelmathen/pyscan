@@ -529,6 +529,49 @@ def paired_plant_region(traj_start, traj_end, r, q, region_plant_f):
     red, blue = zip(*(q_fraction + remainder + out_region))
     return red, blue, reg
 
+try:
+    from shapely.geometry import Polygon
+
+    def plant_full_disk_region(region_set, r, p, q):
+        regions = [Polygon(reg) for reg in region_set]
+        (mnx, mny, mxx, mxy) = regions[0].bounds
+        for reg in regions:
+            (nmnx, nmny, nmxx, nmxy) = reg.bounds
+            mnx = min(nmnx, mnx)
+            mny = min(nmny, mny)
+            mxx = max(mxx, nmxx)
+            mxy = max(mxy, nmxy)
+        intersect_regions = []
+        non_intersect_regions = []
+        while True:
+            seed_pt = (mny + random.random() * (mxx - mnx), random.random() * (mxy - mny) + mny)
+            #Check to see how many regions intersect
+            for reg in regions:
+                if reg.intersects(seed_pt):
+                    intersect_regions.append(reg)
+                else:
+                    non_intersect_regions.append(reg)
+            if len(intersect_regions) <= r * len(regions):
+                break
+
+        close_regions = sorted(non_intersect_regions, key=lambda x: x.distance(seed_pt))
+        breakpoint = int(r * len(regions)) - len(intersect_regions)
+        disk_boundary = close_regions[breakpoint]
+
+        max_disk = Disk(seed_pt[0], seed_pt[1], disk_boundary.distance(seed_pt))
+
+        inside_disk = close_regions[:breakpoint] + intersect_regions
+        outside_disk = close_regions[breakpoint:]
+
+        red_in, blue_in = split_set(inside_disk, q)
+        red_out, blue_out = split_set(outside_disk, p)
+        return red_in + red_out, blue_in + blue_out, max_disk
+    
+except:
+    pass
+
+
+
 
 def max_disk_trajectory(net, red_sample, blue_sample, min_disk_r, max_disk_r, alpha, disc, fast_disk=True):
     """
