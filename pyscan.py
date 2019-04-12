@@ -131,7 +131,7 @@ def plant_region(points, r, p, q, eps, scan_f):
     return red_in + red_out, blue_in + blue_out, reg
 
 
-def plant_full_square(trajectories, r, p, q, disc, max_count=32):
+def plant_full_square(trajectories, r, p, q, max_count=32):
     """
     Choose a point at random from a trajectory and then expand a square out from this point till this region contains
     r fraction of all the trajectories.
@@ -177,11 +177,11 @@ def plant_full_square(trajectories, r, p, q, disc, max_count=32):
     red_out, blue_out = split_set([tuple(traj) for traj in outside_rect], p)
 
     diff = evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
-    return red_in + red_out, blue_in + blue_out, reg, diff
+    return red_in + red_out, blue_in + blue_out, reg
 
 
 
-def plant_full_halfplane(trajectories, r, p, q, disc):
+def plant_full_halfplane(trajectories, r, p, q):
     """
     Choose a random direction and then finds a halfplane with this normal containing r fraction of the total trajectories.
 
@@ -206,11 +206,10 @@ def plant_full_halfplane(trajectories, r, p, q, disc):
     red_in, blue_in = split_set([tuple(traj) for traj in inside_plane], q)
     red_out, blue_out = split_set([tuple(traj) for traj in outside_plane], p)
 
-    diff = evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
-    return red_in + red_out, blue_in + blue_out, plant_region, diff
+    return red_in + red_out, blue_in + blue_out, plant_region
 
 
-def plant_partial_halfplane(trajectories, r, p, q, eps, disc):
+def plant_partial_halfplane(trajectories, r, p, q, eps):
     """
     Choose a random direction and expand the region along this direction till we contain r fraction of the total
     trajectory arc length.
@@ -242,11 +241,10 @@ def plant_partial_halfplane(trajectories, r, p, q, eps, disc):
 
     red_in, blue_in = split_set(inside_disk, q)
     red_out, blue_out = split_set(outside_disk, p)
-    diff = evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
-    return red_in + red_out, blue_in + blue_out, plant_region, diff
+    return red_in + red_out, blue_in + blue_out, plant_region
 
 
-def plant_full_disk(trajectories, r, p, q, disc):
+def plant_full_disk(trajectories, r, p, q):
     """
     Choose a point at random from a trajectory and then expand outward from there until we find a disk contains r fraction
     of the trajectories.
@@ -270,11 +268,10 @@ def plant_full_disk(trajectories, r, p, q, disc):
 
     red_in, blue_in = split_set([tuple(traj.get_pts()) for traj in inside_disk], q)
     red_out, blue_out = split_set([tuple(traj.get_pts()) for traj in outside_disk], p)
-    diff = evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
-    return red_in + red_out, blue_in + blue_out, max_disk, diff
+    return red_in + red_out, blue_in + blue_out, max_disk
 
 
-def plant_partial_disk(trajectories, r, p, q, eps, disc):
+def plant_partial_disk(trajectories, r, p, q, eps):
     """
     Choose a point at random from a trajectory and then expand outward from there. Computes the fraction of length inside the disk
     for each segment and then does bisection on this amount since it is a monotonic function to compute within eps fraction.
@@ -301,8 +298,7 @@ def plant_partial_disk(trajectories, r, p, q, eps, disc):
 
     red_in, blue_in = split_set(inside_disk, q)
     red_out, blue_out = split_set(outside_disk, p)
-    diff = evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
-    return red_in + red_out, blue_in + blue_out, max_disk, diff
+    return red_in + red_out, blue_in + blue_out, max_disk
 
 
 def distribution(points, p, scan_f, n, s, disc=DISC):
@@ -464,7 +460,7 @@ def plant_halfplane(pts, r, p, q):
     return red_in + red_out, blue_in + blue_out, plant_region
 
 
-def plant_partial_rectangle(trajectories, r, p, q, eps, disc):
+def plant_partial_rectangle(trajectories, r, p, q, eps):
     """
     This plants a region containing r fraction of the total arc length of all trajectories. q fraction of the trajectories
     crossing this region are assigned to be anomalous and p fraction of trajectories not crossing this region are assigned
@@ -475,8 +471,7 @@ def plant_partial_rectangle(trajectories, r, p, q, eps, disc):
     :param p: double between 0 and 1
     :param q: double between 0 and 1
     :param eps: This defines the maximum difference between r and the fraction of the trajectories that are in the found region.
-    :param disc: The discrepancy function to evaluate exactly on this region.
-    :return: red set of trajectories, blue set of trajectories, the planted region, and the exact partial discrepancy.
+    :return: red set of trajectories, blue set of trajectories, the planted region.
     """
     trajectory_obj = [Trajectory(pts) for pts in trajectories]
     all_pts = uniform_sample(trajectory_obj, int(1 / eps ** 2 + 1), False)
@@ -486,8 +481,7 @@ def plant_partial_rectangle(trajectories, r, p, q, eps, disc):
     red_in, blue_in = split_set(inside_rect, q)
     red_out, blue_out = split_set(outside_rect, p)
 
-    diff = evaluate(disc, len(red_in), len(red_in) + len(red_out), len(blue_in), len(blue_in) + len(blue_out))
-    return red_in + red_out, blue_in + blue_out, rect, diff
+    return red_in + red_out, blue_in + blue_out, rect
 
 
 
@@ -529,49 +523,78 @@ def paired_plant_region(traj_start, traj_end, r, q, region_plant_f):
     red, blue = zip(*(q_fraction + remainder + out_region))
     return red, blue, reg
 
-try:
-    from shapely.geometry import Polygon
 
-    def plant_full_disk_region(region_set, r, p, q):
-        regions = [Polygon(reg) for reg in region_set]
-        (mnx, mny, mxx, mxy) = regions[0].bounds
-        for reg in regions:
-            (nmnx, nmny, nmxx, nmxy) = reg.bounds
-            mnx = min(nmnx, mnx)
-            mny = min(nmny, mny)
-            mxx = max(mxx, nmxx)
-            mxy = max(mxy, nmxy)
-        intersect_regions = []
-        non_intersect_regions = []
-        while True:
-            seed_pt = (mny + random.random() * (mxx - mnx), random.random() * (mxy - mny) + mny)
-            #Check to see how many regions intersect
-            for reg in regions:
-                if reg.intersects(seed_pt):
-                    intersect_regions.append(reg)
-                else:
-                    non_intersect_regions.append(reg)
-            if len(intersect_regions) <= r * len(regions):
-                break
+def close_region(region):
+    """
+    Ensures that this region starts and ends at the same point. This is useful for using trajectory methods
+    for regions.
+    :param region: List of points
+    :return: list of points
+    """
+    if region:
+        if region[-1] == region[0]:
+            return region
+        else:
+            return region.append(region[0])
+    else:
+        return region
 
-        close_regions = sorted(non_intersect_regions, key=lambda x: x.distance(seed_pt))
-        breakpoint = int(r * len(regions)) - len(intersect_regions)
-        disk_boundary = close_regions[breakpoint]
-
-        max_disk = Disk(seed_pt[0], seed_pt[1], disk_boundary.distance(seed_pt))
-
-        inside_disk = close_regions[:breakpoint] + intersect_regions
-        outside_disk = close_regions[breakpoint:]
-
-        red_in, blue_in = split_set(inside_disk, q)
-        red_out, blue_out = split_set(outside_disk, p)
-        return red_in + red_out, blue_in + blue_out, max_disk
-    
-except:
-    pass
+def plant_full_disk_region(region_set, r, p, q):
+    """
+    Choose a point at random from a region and then expand a disk out from this point till this disk contains
+    r fraction of all the regions.
+    :param region_set: List of list of points.
+    :param r: double between 0 and 1
+    :param p: double between 0 and 1
+    :param q: double between 0 and 1
+    :return: red set of regions, blue set of regions, the planted region
+    """
+    return plant_full_disk([close_region(reg) for reg in region_set], r, p, q)
 
 
+def measure_range_region(range_set, reg_geom, weights=None):
+    weight_sum = 0
+    if weights is None:
+        weights = [1.0] * len(range_set)
+    if isinstance(reg_geom, Disk):
 
+        for i in range(len(range_set)):
+            poly = Polygon(range_set[i])
+            pt = reg_geom.get_origin()
+            pt_tpl = (pt[0], pt[1])
+            if poly.distance(pt_tpl) <= reg_geom.get_radius():
+                weight_sum += weights[i]
+    elif isinstance(reg_geom, Halfplane):
+        for i in range(len(range_set)):
+            traj = Trajectory(range_set[i])
+            if reg_geom.intersects_trajectory(traj):
+                weight_sum += weights[i]
+
+    elif isinstance(reg_geom, Rectangle):
+        rect = geometry.box(reg_geom.lowX(), reg_geom.lowY(), reg_geom.upX(), reg_geom.upY())
+        for i in range(len(range_set)):
+            poly = Polygon(range_set[i])
+            if rect.intersects(poly):
+                weight_sum += weights[i]
+    else:
+        raise ValueError()
+    return weight_sum
+
+
+
+def plant_full_square_region(regions, r, p, q, max_count=32):
+    """
+    Choose a point at random from a region and then expand a square out from this point till this region contains
+    r fraction of all the regions.
+
+    :param regions: List of list of points.
+    :param r: double between 0 and 1
+    :param p: double between 0 and 1
+    :param q: double between 0 and 1
+    :param max_count: The maximum number of times we will attempt to find the right sized region.
+    :return: red set of regions, blue set of regions, the planted region
+    """
+    return plant_full_square([close_region(reg) for reg in regions], r, p, q, max_count)
 
 def max_disk_trajectory(net, red_sample, blue_sample, min_disk_r, max_disk_r, alpha, disc, fast_disk=True):
     """
@@ -675,3 +698,5 @@ def max_disk_region(net, red_sample, red_weight, blue_sample, blue_weight, min_d
         if curr_disk_r >= max_disk_r:
             break
     return reg, mx
+
+
