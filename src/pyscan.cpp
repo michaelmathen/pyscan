@@ -169,10 +169,12 @@ double evaluate_halfplane_labeled(pyscan::halfspace2_t const& d1, pyscan::lpoint
 //            return tmp;
 //        }
 //    };
+//
 //}} // namespace pybind11::detail
 
 PYBIND11_MODULE(libpyscan, pyscan_module){
     namespace py = pybind11;
+
 
 
     pyscan_module.def("hull", pyscan::graham_march);
@@ -282,6 +284,9 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
             .def("__repr__", &pyscan::Point<3>::str)
             .def("__eq__", &pyscan::Point<3>::operator==);
 
+    py::implicitly_convertible<std::tuple<double, double> , pyscan::Point<2> >();
+    py::implicitly_convertible<std::tuple<double, double, double> , pyscan::Point<3> >();
+    
     pyscan_module.def("to_segment", &pyscan::to_Segment);
 
     pyscan_module.def("aeq", &pyscan::util::aeq);
