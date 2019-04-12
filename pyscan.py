@@ -535,7 +535,7 @@ def close_region(region):
         if region[-1] == region[0]:
             return region
         else:
-            return region.append(region[0])
+            return region + [region[0]]
     else:
         return region
 
