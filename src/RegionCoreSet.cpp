@@ -168,7 +168,7 @@ namespace pyscan {
 
     point_list_t polygon_grid_hull(point_list_t pts, double min_radius, double alpha) {
         /*diag = 2 * r so (2 * r)^2 = 2 * gr^2 => 2 * r^2 = gr^2 => sqrt(2) * r = gr*/
-        if (pts.size() == 1) {
+        if (pts.size() <= 1) {
             return pts;
         }
 
@@ -176,6 +176,9 @@ namespace pyscan {
 
 
         if (alpha > min_radius * std::sqrt(2)) {
+            if (internal_pts.empty()) {
+                internal_pts.emplace_back(pts[0]);
+            }
             return internal_pts;
         } else {
             double chord_l = std::sqrt(4 * alpha * min_radius - 2 * alpha * alpha);

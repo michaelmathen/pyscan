@@ -551,7 +551,13 @@ namespace pyscan {
             const lpoint_list_t &blue,
             const discrepancy_func_t &f) {
 
-        auto bb = bbox(net, red, blue);
+        Rectangle max_rect;
+        double max_stat = 0.0;
+        auto bbop = bbox(net, red, blue);
+        if (!bbop.has_value()) {
+            return std::make_tuple(max_rect, max_stat);
+        }
+        auto bb = bbop.value();
 
         double red_tot = computeTotal(red);
         double blue_tot = computeTotal(blue);
@@ -559,8 +565,7 @@ namespace pyscan {
         SparseGrid<lpt2_t> grid_red(bb, red, alpha), grid_blue(bb, blue, alpha);
         auto grid_r = grid_net.get_grid_size();
         size_t sub_grid_size = lround(ceil(alpha / max_r));
-        Rectangle max_rect;
-        double max_stat = 0.0;
+
         for (auto center_cell = grid_net.begin(); center_cell != grid_net.end();) {
             std::vector<lpt2_t> net_chunk;
             std::vector<lpt2_t> red_chunk;

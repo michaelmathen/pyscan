@@ -15,6 +15,7 @@
 #include <functional>
 #include <unordered_map>
 #include <queue>
+#include <optional>
 
 #include "Utilities.hpp"
 
@@ -454,17 +455,33 @@ namespace pyscan {
     using bbox_t = std::tuple<double, double, double, double>;
 
     template<typename Pt>
-    bbox_t bbox(std::vector<Pt> const& pts) {
+    std::optional<bbox_t> bbox(std::vector<Pt> const& pts) {
+        if (pts.empty()) {
+            return std::nullopt;
+        }
         auto [mnx, mxx] = std::minmax_element(pts.begin(), pts.end(), cmpX);
         auto [mny, mxy] = std::minmax_element(pts.begin(), pts.end(), cmpY);
         return std::make_tuple((*mnx)(0), (*mny)(1), (*mxx)(0), (*mxy)(1));
     }
 
     template<typename Pt, typename ...Args>
-    bbox_t bbox(std::vector<Pt> const& pts, Args ...rest) {
-        auto [mnx1, mny1, mxx1, mxy1] = bbox(rest...);
-        auto [mnx2, mny2, mxx2, mxy2] = bbox(pts);
-        return std::make_tuple(std::min(mnx1, mnx2), std::min(mny1, mny2), std::max(mxx1, mxx2), std::max(mxy1, mxy2));
+    std::optional<bbox_t> bbox(std::vector<Pt> const& pts, Args ...rest) {
+        if (!pts.empty()) {
+            auto opt_bbox = bbox(rest...);
+            auto opt_bbox2 = bbox(pts);
+            if (opt_bbox.has_value() && opt_bbox2.has_value()) {
+                auto[mnx1, mny1, mxx1, mxy1] = opt_bbox.value();
+                auto[mnx2, mny2, mxx2, mxy2] = opt_bbox2.value();
+                return std::make_tuple(std::min(mnx1, mnx2), std::min(mny1, mny2), std::max(mxx1, mxx2),
+                                       std::max(mxy1, mxy2));
+            } else if (opt_bbox.has_value()) {
+                return opt_bbox;
+            } else {
+                return opt_bbox2;
+            }
+        } else {
+            return bbox(rest...);
+        }
     }
 
 

@@ -356,16 +356,23 @@ namespace pyscan {
             const std::vector<T> &blue,
             double min_res,
             const discrepancy_func_t &f) {
-
-        auto bb = bbox(point_net, red, blue);
+        Disk cur_max;
+        double max_stat = 0.0;
+        if (point_net.empty()) {
+            return std::make_tuple(Disk(), 0.0);
+        }
+        auto bb_op = bbox(point_net, red, blue);
+        if (!bb_op.has_value()) {
+            return std::make_tuple(cur_max, max_stat);
+        }
+        auto bb = bb_op.value();
         double red_tot = computeTotal(red);
         double blue_tot = computeTotal(blue);
         SparseGrid<pt2_t> grid_net(bb, point_net, min_res);
         auto grid_r = grid_net.get_grid_size();
         SparseGrid<T> grid_red(bb, red, min_res), grid_blue(bb, blue, min_res);
 
-        Disk cur_max;
-        double max_stat = 0.0;
+
         for (auto center_cell = grid_net.begin(); center_cell != grid_net.end();) {
             std::vector<pt2_t> net_chunk;
             std::vector<T> red_chunk;
@@ -512,7 +519,12 @@ namespace pyscan {
             double min_res,
             const discrepancy_func_t &f) {
 
-        auto bb = bbox(point_net, red, blue);
+
+        auto bb_op = bbox(point_net, red, blue);
+        if (point_net.empty() || !bb_op.has_value()) {
+            return std::make_tuple(Disk(), 0.0);
+        }
+        auto bb = bb_op.value();
 
         double red_tot = computeTotal(red);
         double blue_tot = computeTotal(blue);
