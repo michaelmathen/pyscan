@@ -112,6 +112,7 @@
 <li class="toctree-l2"><a class="reference internal" href="TrajectoryFullScanning.html#Rectangle-Scanning">Rectangle Scanning</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../sss.html">Spatial scan statistics: approximations and performance study</a></li>
 </ul>
 </ul>
 </li>
@@ -465,7 +466,7 @@ effecting the spatial error.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span><span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span></span><span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
 <span class="n">core_set_pts</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">hull</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span>
 <span class="n">plot_approx</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">pts</span><span class="p">,</span> <span class="n">core_set_pts</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -493,7 +494,7 @@ scanning even more than the previous method.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span><span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span></span><span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
 <span class="n">core_set_pts</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">halfplane_kernel</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
 <span class="n">plot_approx</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">pts</span><span class="p">,</span> <span class="n">core_set_pts</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -519,7 +520,7 @@ usually produces a larger number of points per trajectory.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span><span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span></span><span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
 <span class="n">core_set_pts</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">dp_compress</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
 <span class="n">plot_approx</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">pts</span><span class="p">,</span> <span class="n">core_set_pts</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -549,7 +550,7 @@ trajectory and approaches the halfplane method.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span> <span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span> <span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
 <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="k">for</span> <span class="n">min_r</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span> <span class="o">/</span> <span class="mi">10</span><span class="p">]:</span>
     <span class="n">chord_l</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">min_r</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
@@ -580,7 +581,7 @@ currently has issues with stability.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span><span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span></span><span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
 <span class="n">core_set_pts</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">lifting_kernel</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
 <span class="n">plot_approx</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">pts</span><span class="p">,</span> <span class="n">core_set_pts</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -602,16 +603,16 @@ currently has issues with stability.</p>
 methods.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [9]:
+<span></span>In [7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span><span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span></span><span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
 <span class="n">core_set_pts</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">grid_trajectory</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
 <span class="n">plot_approx</span><span class="p">(</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pts</span><span class="p">,</span> <span class="n">core_set_pts</span><span class="p">)</span>
 <span class="n">core_set_pts</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">grid_kernel</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
 <span class="n">plot_approx</span><span class="p">(</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">pts</span><span class="p">,</span> <span class="n">core_set_pts</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;gridding.png&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -633,7 +634,7 @@ nice general method which can be used as a basis for other methods.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span><span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span></span><span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
 <span class="n">core_set_pts</span> <span class="o">=</span> <span class="n">pyscan</span><span class="o">.</span><span class="n">even_sample_error</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 <span class="n">plot_approx</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">pts</span><span class="p">,</span> <span class="n">core_set_pts</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
