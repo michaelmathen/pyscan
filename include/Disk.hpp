@@ -45,6 +45,15 @@ namespace pyscan {
             radius = sqrt((x1 - a) * (x1 - a) + (y1 - b) * (y1 - b));
         }
 
+        Disk(const pt2_t &p1, const pt2_t &p2, double r_) : origin(0.0, 0.0, 1.0), radius(r_) {
+            double h = 1 / 2.0 * sqrt(4 * r_ * r_ - p1.square_dist(p2));
+            pt2_t midpoint = 1 / 2.0 * (p1 + p2);
+            pt2_t par = p1.direction(p2);
+            double px = -par(1);
+            double py = par(0);
+            origin = Point<2>(midpoint(0) + h * px, midpoint(1) + h * py, 1.0);
+        }
+
         inline double getRadius() const {
             return radius;
         }

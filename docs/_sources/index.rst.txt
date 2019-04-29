@@ -83,6 +83,7 @@ Contents
    api.rst
    point.rst
    range.rst
+   trajectory.rst
    scanning.rst
    python_utility.rst
    examples.rst
@@ -91,9 +92,10 @@ Contents
    examples/RegionSimplification.ipynb
    examples/RegionScanning.ipynb
    examples/RegionScanningCont.ipynb
-..  examples/TrajectoryApproximation.ipynb
-..  examples/TrajectoryPartialScanning.ipynb
-..  examples/TrajectoryFullScanning.ipynb
+   examples/TrajectoryApproximation.ipynb
+   examples/TrajectoryPartialScanning.ipynb
+   examples/TrajectoryFullScanning.ipynb
+   sss.rst
 
 
 

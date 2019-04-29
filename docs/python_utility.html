@@ -74,6 +74,9 @@
 <li class="toctree-l1"><a class="reference internal" href="api.html">Api</a></li>
 <li class="toctree-l1"><a class="reference internal" href="point.html">Point</a></li>
 <li class="toctree-l1"><a class="reference internal" href="range.html">Ranges</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trajectory.html">Trajectory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trajectory.html#trajectory-simplification">Trajectory Simplification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trajectory.html#trajectories-to-points">Trajectories to Points</a></li>
 <li class="toctree-l1"><a class="reference internal" href="scanning.html">Scanning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="scanning.html#labeled-scanning">Labeled Scanning</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Utility</a></li>
@@ -92,6 +95,24 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="examples/RegionScanning.html">Region Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/RegionScanningCont.html">Region Scanning Part 2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/TrajectoryApproximation.html">Trajectory Approximation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/TrajectoryApproximation.html#Halfplane-Compression">Halfplane Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/TrajectoryApproximation.html#Disk(or-Rectangle)-Compression">Disk(or Rectangle) Compression</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples/TrajectoryPartialScanning.html">Trajectory Partial Scanning</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/TrajectoryPartialScanning.html#Halfplane-Partial-Scanning">Halfplane Partial Scanning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/TrajectoryPartialScanning.html#Disk-Partial-Scanning">Disk Partial Scanning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples/TrajectoryFullScanning.html">Trajectory Full Scanning</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/TrajectoryFullScanning.html#Halfplane-Scanning">Halfplane Scanning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/TrajectoryFullScanning.html#Disk-Scanning">Disk Scanning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/TrajectoryFullScanning.html#Rectangle-Scanning">Rectangle Scanning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sss.html">Spatial scan statistics: approximations and performance study</a></li>
 </ul>
 </ul>
 </li>
@@ -139,6 +160,15 @@
 <span id="utility-label"></span><h1>Utility<a class="headerlink" href="#utility" title="Permalink to this headline">¶</a></h1>
 <p>These methods are mostly utility methods written in python in pyscan.py.</p>
 <span class="target" id="module-pyscan"></span><dl class="function">
+<dt id="pyscan.close_region">
+<code class="descclassname">pyscan.</code><code class="descname">close_region</code><span class="sig-paren">(</span><em>region</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#close_region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.close_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensures that this region starts and ends at the same point. This is useful for using trajectory methods
+for regions.
+:param region: List of points
+:return: list of points</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="pyscan.evaluate_range">
 <code class="descclassname">pyscan.</code><code class="descname">evaluate_range</code><span class="sig-paren">(</span><em>range</em>, <em>mp</em>, <em>bp</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#evaluate_range"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.evaluate_range" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluates this range to compute the total discrepancy over a set of points.</p>
@@ -321,7 +351,7 @@ q fraction of the points in the region being red and p fraction of the points ou
 
 <dl class="function">
 <dt id="pyscan.plant_full_disk">
-<code class="descclassname">pyscan.</code><code class="descname">plant_full_disk</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>disc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_full_disk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_full_disk" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pyscan.</code><code class="descname">plant_full_disk</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_full_disk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_full_disk" title="Permalink to this definition">¶</a></dt>
 <dd><p>Choose a point at random from a trajectory and then expand outward from there until we find a disk contains r fraction
 of the trajectories.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -329,7 +359,7 @@ of the trajectories.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>trajectories</strong> – List of trajectories</li>
+<li><strong>trajectories</strong> – List of trajectories. This can be rearanged.</li>
 <li><strong>r</strong> – Fraction of trajectories in region.</li>
 <li><strong>p</strong> – Fraction of red trajectories outside of region.</li>
 <li><strong>q</strong> – Fraction of red trajectories inside of region.</li>
@@ -345,8 +375,20 @@ of the trajectories.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="pyscan.plant_full_disk_region">
+<code class="descclassname">pyscan.</code><code class="descname">plant_full_disk_region</code><span class="sig-paren">(</span><em>region_set</em>, <em>r</em>, <em>p</em>, <em>q</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_full_disk_region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_full_disk_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose a point at random from a region and then expand a disk out from this point till this disk contains
+r fraction of all the regions.
+:param region_set: List of list of points. This argument is modified by adding a point at the end in some cases.
+:param r: double between 0 and 1
+:param p: double between 0 and 1
+:param q: double between 0 and 1
+:return: red set of regions, blue set of regions, the planted region</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="pyscan.plant_full_halfplane">
-<code class="descclassname">pyscan.</code><code class="descname">plant_full_halfplane</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>disc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_full_halfplane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_full_halfplane" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pyscan.</code><code class="descname">plant_full_halfplane</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_full_halfplane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_full_halfplane" title="Permalink to this definition">¶</a></dt>
 <dd><p>Choose a random direction and then finds a halfplane with this normal containing r fraction of the total trajectories.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -370,7 +412,7 @@ of the trajectories.</p>
 
 <dl class="function">
 <dt id="pyscan.plant_full_square">
-<code class="descclassname">pyscan.</code><code class="descname">plant_full_square</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>disc</em>, <em>max_count=32</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_full_square"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_full_square" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pyscan.</code><code class="descname">plant_full_square</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>max_count=32</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_full_square"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_full_square" title="Permalink to this definition">¶</a></dt>
 <dd><p>Choose a point at random from a trajectory and then expand a square out from this point till this region contains
 r fraction of all the trajectories.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -388,6 +430,31 @@ r fraction of all the trajectories.</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">red set of trajectories, blue set of trajectories, the planted region, and the exact partial discrepancy.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.plant_full_square_region">
+<code class="descclassname">pyscan.</code><code class="descname">plant_full_square_region</code><span class="sig-paren">(</span><em>regions</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>max_count=32</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_full_square_region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_full_square_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose a point at random from a region and then expand a square out from this point till this region contains
+r fraction of all the regions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>regions</strong> – List of list of points. These lists are modified. In some cases the regions will have a point appended at the end to close them.</li>
+<li><strong>r</strong> – double between 0 and 1</li>
+<li><strong>p</strong> – double between 0 and 1</li>
+<li><strong>q</strong> – double between 0 and 1</li>
+<li><strong>max_count</strong> – The maximum number of times we will attempt to find the right sized region.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">red set of regions, blue set of regions, the planted region</p>
 </td>
 </tr>
 </tbody>
@@ -420,7 +487,7 @@ q fraction of the points in the region being red and p fraction of the points ou
 
 <dl class="function">
 <dt id="pyscan.plant_partial_disk">
-<code class="descclassname">pyscan.</code><code class="descname">plant_partial_disk</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>eps</em>, <em>disc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_partial_disk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_partial_disk" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pyscan.</code><code class="descname">plant_partial_disk</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>eps</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_partial_disk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_partial_disk" title="Permalink to this definition">¶</a></dt>
 <dd><p>Choose a point at random from a trajectory and then expand outward from there. Computes the fraction of length inside the disk
 for each segment and then does bisection on this amount since it is a monotonic function to compute within eps fraction.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -446,7 +513,7 @@ for each segment and then does bisection on this amount since it is a monotonic 
 
 <dl class="function">
 <dt id="pyscan.plant_partial_halfplane">
-<code class="descclassname">pyscan.</code><code class="descname">plant_partial_halfplane</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>eps</em>, <em>disc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_partial_halfplane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_partial_halfplane" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pyscan.</code><code class="descname">plant_partial_halfplane</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>eps</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_partial_halfplane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_partial_halfplane" title="Permalink to this definition">¶</a></dt>
 <dd><p>Choose a random direction and expand the region along this direction till we contain r fraction of the total
 trajectory arc length.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -472,7 +539,7 @@ trajectory arc length.</p>
 
 <dl class="function">
 <dt id="pyscan.plant_partial_rectangle">
-<code class="descclassname">pyscan.</code><code class="descname">plant_partial_rectangle</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>eps</em>, <em>disc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_partial_rectangle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_partial_rectangle" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pyscan.</code><code class="descname">plant_partial_rectangle</code><span class="sig-paren">(</span><em>trajectories</em>, <em>r</em>, <em>p</em>, <em>q</em>, <em>eps</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyscan.html#plant_partial_rectangle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyscan.plant_partial_rectangle" title="Permalink to this definition">¶</a></dt>
 <dd><p>This plants a region containing r fraction of the total arc length of all trajectories. q fraction of the trajectories
 crossing this region are assigned to be anomalous and p fraction of trajectories not crossing this region are assigned
 to be anomalous.</p>
@@ -486,11 +553,10 @@ to be anomalous.</p>
 <li><strong>p</strong> – double between 0 and 1</li>
 <li><strong>q</strong> – double between 0 and 1</li>
 <li><strong>eps</strong> – This defines the maximum difference between r and the fraction of the trajectories that are in the found region.</li>
-<li><strong>disc</strong> – The discrepancy function to evaluate exactly on this region.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">red set of trajectories, blue set of trajectories, the planted region, and the exact partial discrepancy.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">red set of trajectories, blue set of trajectories, the planted region.</p>
 </td>
 </tr>
 </tbody>

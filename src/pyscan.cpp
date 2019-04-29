@@ -9,7 +9,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-
+#include "AnnuliScanning.hpp"
 #include "JeffCodes.hpp"
 
 #include "ConvexHull.hpp"
@@ -361,8 +361,9 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
     pyscan_module.def("max_disk_scale", &pyscan::max_disk_scale);
     pyscan_module.def("max_disk_scale_labeled", &pyscan::max_disk_scale_labeled);
     pyscan_module.def("max_disk_scale_labeled_alt", &pyscan::max_disk_scale_labeled_alt);
-    pyscan_module.def("max_rect_labeled", &pyscan::max_rect_labeled);
+    pyscan_module.def("max_annuli", &pyscan::max_disk_annuli);
 
+    pyscan_module.def("max_rect_labeled", &pyscan::max_rect_labeled);
     pyscan_module.def("max_rectangle", &pyscan::max_rectangle);
 
 

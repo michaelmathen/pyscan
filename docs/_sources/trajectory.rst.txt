@@ -44,7 +44,7 @@ Trajectory
 
 Trajectory Simplification
 ============================
-See :any:`TrajectoryApproximation` for examples of these function being used.
+These methods can be used to take get spatial approximations for trajectories to allow for the full scanning model to be applied.
 
 .. py:function:: dp_compress(traj, alpha)
    

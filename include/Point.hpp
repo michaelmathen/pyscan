@@ -154,6 +154,11 @@ namespace pyscan {
             return res; //* std::copysign(1.0, other[dim]);
         }
 
+        inline Point<dim> direction(const Point<dim> & other) const {
+            auto pt = other.operator-(*this);
+            return pt.normalize();
+        }
+
         inline double square_dist(const Point<dim> &p) const {
             double res = 0.0;
             for (size_t i = 0; i < dim; ++i) {

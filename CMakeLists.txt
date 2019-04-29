@@ -83,7 +83,7 @@ set(SOURCE_FILES
         src/IntervalScan.cpp
         src/RegionCoreSet.cpp
         src/JeffCodes.cpp
-
+        src/AnnuliScanning.cpp
         #src/kernel.cpp
         )
 
@@ -105,6 +105,7 @@ set(HEADER include/BloomFilter.hpp
         include/TrajectoryScan.hpp
         include/Sampling.hpp
         include/HamTree.hpp
+        inlcude/AnnuliScanning.hpp
         include/IntervalScan.hpp
         include/Utilities.hpp)
 

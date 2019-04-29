@@ -10,8 +10,7 @@ The base data types.
 * :any:`Point3`
 * :any:`WPoint3`
 * :any:`LPoint3`
-
-.. * :any:`Trajectory`
+* :any:`Trajectory`
 
 There are several types of regions of interest.
 
