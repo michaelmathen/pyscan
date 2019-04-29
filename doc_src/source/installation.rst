@@ -3,14 +3,16 @@ Installation
 
 You can get pyscan from https://github.com/michaelmathen/pyscan.git. To compile you will need the following dependencies.
 
-*  boost.python
-*  python python 3.x
+*  boost
+*  python 3.x
 *  cmake
+*  CGAL https://www.cgal.org/
 
-In addition, this library needs a modern version of gcc or clang that supports the c++17 standard. The `Google Test Framework <https://github.com/google/googletest>`_. will be downloaded to build unit tests.::
+In addition, this library needs a modern version of gcc or clang that supports the c++17 standard. The `Google Test Framework <https://github.com/google/googletest>`_. will be downloaded to build unit tests and pybind will be downloaded as a submodule to provide the python/C++ interface.::
 
     git clone https://github.com/michaelmathen/pyscan.git
     cd pyscan
+    git submodule update --init
     mkdir build
     cd build
     cmake ..
