@@ -38,6 +38,8 @@ Examples
       </div>
     </div>
 
+.. raw:: html
+
     <div class="container-fluid">
         <div class="row equal-height">
         <div class="col-md-3 col-xs-12">
@@ -57,7 +59,7 @@ Examples
                 </div>
             </a>
         </div>
-      </div>
+
         <div class="col-md-3 col-xs-12">
  	<a href="examples/TrajectoryApproximation.html" class="thumbnail">
                 <img src="_static/images/trajectory_approx.png" class="img-responsive center-block">
@@ -68,6 +70,8 @@ Examples
         </div>
       </div>
     </div>
+
+.. raw:: html
 
   <div class="container-fluid">
         <div class="row equal-height">
@@ -88,7 +92,7 @@ Examples
                 </div>
             </a>
         </div>
-    </div>
+   </div>
 
 
  
