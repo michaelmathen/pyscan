@@ -107,9 +107,9 @@ namespace pyscan {
         auto bb = bb_op.value();
         double red_tot = computeTotal(red);
         double blue_tot = computeTotal(blue);
-        SparseGrid<pt2_t> grid_net(bb, point_net, annuli_res.front());
+        SparseGrid<pt2_t> grid_net(bb, point_net, annuli_res.back());
         auto grid_r = grid_net.get_grid_size();
-        SparseGrid<wpt2_t> grid_red(bb, red, annuli_res.front()), grid_blue(bb, blue, annuli_res.front());
+        SparseGrid<wpt2_t> grid_red(bb, red, annuli_res.back()), grid_blue(bb, blue, annuli_res.back());
 
 
         for (auto center_cell = grid_net.begin(); center_cell != grid_net.end();) {
