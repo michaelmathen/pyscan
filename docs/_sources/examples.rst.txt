@@ -79,7 +79,7 @@ Examples
          <a href="examples/TrajectoryPartialScanning.html" class="thumbnail">
         <img src="_static/images/TrajectoryPartial.png" class="img-responsive center-block">
                 <div class="caption text-center">
-                <h6>Region Core Sets</h6>
+                <h6>Trajectory Partial Scanning Model</h6>
                 </div>
             </a>
        </div>
@@ -88,7 +88,7 @@ Examples
             <a href="examples/TrajectoryFullScanning.html" class="thumbnail">
                 <img src="_static/images/TrajectoryFull.png" class="img-responsive center-block">
                 <div class="caption text-center">
-                <h6>Region Scanning with Constraints</h6>
+                <h6>Full Trajectory Scanning Model</h6>
                 </div>
             </a>
         </div>
