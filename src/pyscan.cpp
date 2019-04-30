@@ -361,7 +361,8 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
     pyscan_module.def("max_disk_scale", &pyscan::max_disk_scale);
     pyscan_module.def("max_disk_scale_labeled", &pyscan::max_disk_scale_labeled);
     pyscan_module.def("max_disk_scale_labeled_alt", &pyscan::max_disk_scale_labeled_alt);
-    pyscan_module.def("max_annuli", &pyscan::max_disk_annuli);
+    pyscan_module.def("max_annuli", &pyscan::max_annuli);
+    pyscan_module.def("max_annuli_scale", &pyscan::max_annuli_scale);
 
     pyscan_module.def("max_rect_labeled", &pyscan::max_rect_labeled);
     pyscan_module.def("max_rectangle", &pyscan::max_rectangle);
