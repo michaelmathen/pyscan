@@ -212,9 +212,10 @@ Labeled Scanning
    :param disc_f: Discrepancy function to maximize over.
    :rtype: Tuple of the found rectangle and the maximum disc_f value
 
+.. _smooth-scanning-label:
+
 Kernelized Scanning
 ===========================================
-.. _smooth-scanning-label:
 
 These methods use different scan statistics then the purely combinatorial versions.
 
