@@ -147,7 +147,7 @@ namespace pyscan {
             }
             p_o = p;
             q_o = q;
-            std::cout << "p = " << gsl_vector_get(s->x, 0) << " q = " << gsl_vector_get(s->x, 1) << "f = " << s->f <<std::endl;
+            //std::cout << "p = " << gsl_vector_get(s->x, 0) << " q = " << gsl_vector_get(s->x, 1) << "f = " << s->f <<std::endl;
         } while (status == GSL_CONTINUE && iter < 100);
 
         std::cout << std::endl;
