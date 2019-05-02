@@ -4,9 +4,13 @@
  * email: michaelmathen@gmail.com
  * website: https://mmath.dev/
  */
-
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include <vector>
 #include <tuple>
+#include <functional>
+#include <memory>
+#include <gsl/gsl_multimin.h>
 
 #include "AnnuliScanning.hpp"
 #include "SparseGrid.hpp"
@@ -14,14 +18,151 @@
 
 
 namespace pyscan {
-    using disk_list_t = std::vector<Disk>;
 
+
+    kernel_func_t gauss_kernel(double deviation){
+        return [deviation] (double dist) {
+            return 1 / sqrt(2 * M_PI) * exp(- dist * dist / (2 * deviation * deviation));
+        };
+    }
+
+
+//    kernel_func_t rectangle_kernel(double deviation) {
+//        return [deviation] (double dist) {
+//            return ;
+//        };
+//    }
+//
+//    kernel_func_t triangle_kernel(double deviation);
+//
+//    kernel_func_t epanechnikov_kernel(double deviation);
+//
+
+
+    double
+    unwrap_f(const gsl_vector *v, void *params)
+    {
+        auto fp = static_cast<KDisc*>(params);
+
+        double p = gsl_vector_get(v, 0);
+        double q = gsl_vector_get(v, 1);
+
+        return fp->get_function()(p, q);
+    }
+
+    /* The gradient of f, df = (df/dx, df/dy). */
+    void
+    unwrap_df (const gsl_vector *v, void *params,
+           gsl_vector *df)
+    {
+        auto fp = static_cast<KDisc*>(params);
+
+        double p = gsl_vector_get(v, 0);
+        double q = gsl_vector_get(v, 1);
+
+        auto [dfp, dfq] = fp->get_differential()(p, q);
+        gsl_vector_set(df, 0, dfp);
+        gsl_vector_set(df, 1, dfq);
+    }
+
+    /* Compute both f and df together. */
+    void
+    unwrap_fdf (const gsl_vector *x, void *params,
+            double *f, gsl_vector *df)
+    {
+        *f = unwrap_f(x, params);
+        unwrap_df(x, params, df);
+    }
+
+    std::tuple<double, double, double> find_pq_poi(
+            double p_init,
+            double q_init,
+            const discrepancy_kfunc_t& disc_f) {
+        size_t iter = 0;
+        int status;
+
+        const gsl_multimin_fdfminimizer_type *T;
+        gsl_multimin_fdfminimizer *s;
+
+        gsl_vector *x;
+        gsl_multimin_function_fdf my_func;
+
+        my_func.n = 2;
+        my_func.f = unwrap_f;
+        my_func.df = unwrap_df;
+        my_func.fdf = unwrap_fdf;
+        my_func.params = (void*)&disc_f;
+
+        /*Initialize the vector x to be p_init and q_init*/
+        x = gsl_vector_alloc (2);
+        gsl_vector_set (x, 0, p_init);
+        gsl_vector_set (x, 1, q_init);
+
+        T = gsl_multimin_fdfminimizer_conjugate_fr;
+        s = gsl_multimin_fdfminimizer_alloc (T, 2);
+
+        /*
+         * The initial step-size is chosen as 0.01, and the line minimization parameter is set at 0.0001.
+         */
+        gsl_multimin_fdfminimizer_set (s, &my_func, x, 0.01, 1e-4);
+
+        do
+        {
+            iter++;
+            status = gsl_multimin_fdfminimizer_iterate (s);
+
+            if (status)
+                break;
+            /*
+             * The program terminates when the norm of the gradient has been reduced below 0.001.
+             */
+            status = gsl_multimin_test_gradient (s->gradient, 1e-3);
+            std::cout << "p = " << gsl_vector_get(s->x, 0) << " q = " << gsl_vector_get(s->x, 1) << "f = " << s->f <<std::endl;
+        }
+        while (status == GSL_CONTINUE && iter < 100);
+
+        double p = gsl_vector_get(s->x, 0);
+        double q = gsl_vector_get(s->x, 1);
+
+        gsl_multimin_fdfminimizer_free (s);
+        gsl_vector_free (x);
+        return std::make_tuple(p, q, s->f);
+    }
+
+    std::vector<double> propagate_annuli(const wpoint_list_t& pts, const pt2_t & center, const std::vector<double>& radii) {
+        size_t i = 0;
+        std::vector<double> valr_j(radii.size(), 0.0);
+        for (auto& p : pts) {
+            auto curr_dist = center.dist(p);
+            while (i < radii.size() && curr_dist > radii[i]) {
+                i++;
+            }
+            if (i >= radii.size()) {
+                break;
+            }
+            if (center.dist(p) < radii[i]) {
+                valr_j[i] += p.get_weight();
+            }
+        }
+        return valr_j;
+    }
 
     std::tuple<Disk, double> max_annuli(const point_list_t &pts,
                                         wpoint_list_t mpts,
                                         wpoint_list_t bpts,
                                         const std::vector<double> &radii,
-                                        const discrepancy_func_t &func) {
+                                        const KDisc& disc) {
+
+
+        double p_init = .6, q_init = .5;
+        Disk max_disk;
+        double max_v = 0;
+
+        if (pts.size() < 2 || radii.empty()) {
+            return std::make_tuple(max_disk, max_v);
+        }
+
+        auto disc_local = disc.get_copy();
         for (auto r_it = radii.begin(); r_it != radii.end(); ++r_it) {
 
             for (auto nit1 = pts.begin(); nit1 != pts.end() - 1; ++nit1) {
@@ -41,13 +182,25 @@ namespace pyscan {
                         std::sort(bpts.begin(), bpts.end(), [&](const pt2_t& p1, const pt2_t& p2) {
                             return center.square_dist(p1) < center.square_dist(p2);
                         });
-                        /*
-                         * TODO write stuff here.
-                         */
+                        // Accumulate to an annulus
+                        auto mr_j = propagate_annuli(mpts, center, radii);
+                        auto br_j = propagate_annuli(bpts, center, radii);
+
+                        disc_local->set_params(mr_j, br_j, radii);
+//                        auto fval = disc_local->get_function()(p_init, q_init);
+//                        std::cout << fval << std::endl;
+//                        std::cout << mr_j << " " << br_j << std::endl;
+
+                        auto [p, q, fval] = find_pq_poi(p_init, q_init, *(disc_local.get()));
+                        if (max_v < fval) {
+                            max_v = fval;
+                            max_disk = Disk(center(0), center(1), *r_it);
+                        }
                     }
                 }
             }
         }
+        return std::make_tuple(max_disk, max_v);
     }
 
     std::tuple<Disk, double> max_annuli_restricted(
@@ -56,10 +209,12 @@ namespace pyscan {
             wpoint_list_t mpts,
             wpoint_list_t bpts,
             const std::vector<double> &radii,
-            double mtotal,
-            double btotal,
-            const discrepancy_func_t &func) {
+            const KDisc &disc) {
 
+        double p_init = .5, q_init = .6;
+        Disk max_disk;
+        double max_v = 0;
+        auto disc_local = disc.get_copy();
         for (auto r_it = radii.begin(); r_it != radii.end(); ++r_it) {
 
             for (auto nit1 = pts.begin(); nit1 != pts.end() - 1; ++nit1) {
@@ -78,13 +233,19 @@ namespace pyscan {
                     std::sort(bpts.begin(), bpts.end(), [&](const pt2_t &p1, const pt2_t &p2) {
                         return center.square_dist(p1) < center.square_dist(p2);
                     });
-                    /*
-                     * TODO write stuff here.
-                     */
+                    auto mr_j = propagate_annuli(mpts, center, radii);
+                    auto br_j = propagate_annuli(bpts, center, radii);
+                    disc_local->set_params(mr_j, br_j, radii);
+                    auto [p, q, fval] = find_pq_poi(p_init, q_init, *(disc_local.get()));
+                    if (max_v < fval) {
+                        max_v = fval;
+                        max_disk = Disk(center(0), center(1), *r_it);
+                    }
                 }
             }
         }
 
+        return std::make_tuple(max_disk, max_v);
     }
 
 
@@ -93,7 +254,7 @@ namespace pyscan {
             const wpoint_list_t &red,
             const wpoint_list_t &blue,
             const std::vector<double>& annuli_res,
-            const discrepancy_func_t &f) {
+            const KDisc& f) {
 
         Disk cur_max;
         double max_stat = 0.0;
@@ -105,8 +266,6 @@ namespace pyscan {
             return std::make_tuple(cur_max, max_stat);
         }
         auto bb = bb_op.value();
-        double red_tot = computeTotal(red);
-        double blue_tot = computeTotal(blue);
         SparseGrid<pt2_t> grid_net(bb, point_net, annuli_res.back());
         auto grid_r = grid_net.get_grid_size();
         SparseGrid<wpt2_t> grid_red(bb, red, annuli_res.back()), grid_blue(bb, blue, annuli_res.back());
@@ -149,8 +308,7 @@ namespace pyscan {
                 for (auto pt1 = range.first; pt1 != range.second; ++pt1) {
                     auto [local_max_disk, local_max_stat] =
                     max_annuli_restricted(pt1->second, net_chunk, red_chunk, blue_chunk,
-                                        annuli_res,
-                                        red_tot, blue_tot, f);
+                                        annuli_res,f);
                     if (local_max_stat > max_stat) {
                         cur_max = local_max_disk;
                         max_stat = local_max_stat;

@@ -233,6 +233,23 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
             .def("__repr__", &pyscan::Point<3>::str)
             .def("__eq__", &pyscan::Point<3>::operator==);
 
+    /////////////////////////////////////////////////////////////////////
+    //Kernel Scanning Wrappers//////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////
+
+    py::class_<pyscan::kernel_func_t >(pyscan_module, "Kernel_f");
+
+
+    py::class_<pyscan::KDisc>(pyscan_module, "KDisc");
+
+    py::class_<pyscan::Bernouli_kf, pyscan::KDisc>(pyscan_module, "Bernoulli_K")
+            .def(py::init<pyscan::kernel_func_t>());
+
+
+    pyscan_module.def("max_annuli", &pyscan::max_annuli);
+    pyscan_module.def("max_annuli_scale", &pyscan::max_annuli_scale);
+
+    pyscan_module.def("gaussian_kernel", &pyscan::gauss_kernel);
 
     ////////////////////////////////////////////////////////////////////
     //TrajectoryScan.hpp wrappers///////////////////////////////////////
@@ -361,8 +378,6 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
     pyscan_module.def("max_disk_scale", &pyscan::max_disk_scale);
     pyscan_module.def("max_disk_scale_labeled", &pyscan::max_disk_scale_labeled);
     pyscan_module.def("max_disk_scale_labeled_alt", &pyscan::max_disk_scale_labeled_alt);
-    pyscan_module.def("max_annuli", &pyscan::max_annuli);
-    pyscan_module.def("max_annuli_scale", &pyscan::max_annuli_scale);
 
     pyscan_module.def("max_rect_labeled", &pyscan::max_rect_labeled);
     pyscan_module.def("max_rectangle", &pyscan::max_rectangle);

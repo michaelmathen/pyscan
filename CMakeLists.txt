@@ -7,6 +7,9 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
+
+#Need this for GSL
+set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -Wall -Wextra -g -O1 -fno-omit-frame-pointer")
 set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O2 -march=native -DNDEBUG")
 set(CMAKE_C_FLAGS_DEBUG "-fPIC -Wall -Wextra -g -O1 -fno-omit-frame-pointer")
@@ -16,7 +19,9 @@ add_subdirectory(thirdparty/pybind11)
 
 
 find_package(Boost REQUIRED)
-find_package(CGAL)
+find_package(CGAL REQUIRED)
+find_package(GSL REQUIRED)
+
 #include( ${CGAL_USE_FILE} )
 #set(CGAL_DONT_OVERRIDE_CMAKE_FLAGS TRUE CACHE BOOL "Force CGAL to maintain CMAKE flags")
 #include(${CGAL_USE_FILE})
@@ -56,7 +61,9 @@ set(THIRDPARTY_LIBRARIES
         #${CMAKE_BINARY_DIR}/thirdparty/discrepancy/libdiscrepancy.so
         ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/libappext.so
         ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/libann.so
-        CGAL::CGAL)
+        CGAL::CGAL
+        GSL::gsl
+        GSL::gslcblas)
 
 include_directories(
         ${Boost_INCLUDE_DIRS}
