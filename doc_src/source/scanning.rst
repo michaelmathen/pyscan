@@ -126,7 +126,7 @@ Scanning
 .. _labeled-scanning-label:
 
 Labeled Scanning
-===========================
+===========================================
 
 
 .. py:function:: pyscan.max_halfplane_labeled(net, lmpts, lbpts, disc_f)
@@ -211,3 +211,47 @@ Labeled Scanning
    :param lbpts: List of LPoints
    :param disc_f: Discrepancy function to maximize over.
    :rtype: Tuple of the found rectangle and the maximum disc_f value
+
+Kernelized Scanning
+===========================================
+.. _smooth-scanning-label:
+
+These methods use different scan statistics then the purely combinatorial versions.
+
+.. py:function:: pyscan.gaussian_kernel(bandwidth)
+   
+   Constructs a gaussian kernel to be used with the smooth scanning function of form :math:`1/\sqrt{2 \pi} \exp(-u^2/(2 b^2))` where b is bandwidth.
+   
+   :param bandwidth: double (kernel bandwidth)
+
+.. py:function:: pyscan.Bernouli_K(kernel)
+
+   Constructs a discrepancy object that can be used to scan in the smooth scanning functions. The kernel parameter defines how distance is measured and 
+   how the bandwidth is determined.
+
+   :param kernel: The kernel used to determine distance.
+
+
+.. py:function:: pyscan.max_annuli(net, mpts, bpts, radii, disc_f)
+
+   Scans the set of annuli with radii defined by radii and the points in the net. For each annuli we maximizes the function disc_f with respect to the mpts and bpts. 
+
+   :param net: List of Points
+   :param mpts: List of WPoints
+   :param bpts: List of WPoints
+   :param min_res: A float that corresponds to minimum radius to consider.
+   :param disc_f: KDisc object to maximize over.
+   :rtype: Tuple of a disk of radius equal to radii[-1] centered at the annuli and the maximum disc_f value
+
+.. py:function:: pyscan.max_annuli_scale(net, mpts, bpts, radii, disc_f)
+
+   Scans the set of annuli with radii defined by radii and the points in the net. For each annuli we maximizes the function disc_f with respect to the mpts and bpts. This version ignores far away
+   points, so in theory can be much faster than the previous version. 
+
+   :param net: List of Points
+   :param mpts: List of WPoints
+   :param bpts: List of WPoints
+   :param min_res: A float that corresponds to minimum radius to consider.
+   :param disc_f: KDisc object to maximize over.
+   :rtype: Tuple of a disk of radius equal to radii[-1] centered at the annuli and the maximum disc_f value
+

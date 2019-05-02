@@ -79,6 +79,7 @@
 <li class="toctree-l1"><a class="reference internal" href="trajectory.html#trajectories-to-points">Trajectories to Points</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Scanning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="#labeled-scanning">Labeled Scanning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#kernelized-scanning">Kernelized Scanning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="python_utility.html">Utility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/BasicExample.html">Planting Example</a></li>
@@ -128,6 +129,7 @@
       aria-labelledby="dLabelLocalToc"><ul>
 <li><a class="reference internal" href="#">Scanning</a></li>
 <li><a class="reference internal" href="#labeled-scanning">Labeled Scanning</a></li>
+<li><a class="reference internal" href="#kernelized-scanning">Kernelized Scanning</a></li>
 </ul>
 </ul>
 </li>
@@ -584,6 +586,88 @@
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tuple of the found rectangle and the maximum disc_f value</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="kernelized-scanning">
+<h1>Kernelized Scanning<a class="headerlink" href="#kernelized-scanning" title="Permalink to this headline">¶</a></h1>
+<p id="smooth-scanning-label">These methods use different scan statistics then the purely combinatorial versions.</p>
+<dl class="function">
+<dt id="pyscan.gaussian_kernel">
+<code class="descclassname">pyscan.</code><code class="descname">gaussian_kernel</code><span class="sig-paren">(</span><em>bandwidth</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.gaussian_kernel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a gaussian kernel to be used with the smooth scanning function of form <span class="math">\(1/\sqrt{2 \pi} \exp(-u^2/(2 b^2))\)</span> where b is bandwidth.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>bandwidth</strong> – double (kernel bandwidth)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.Bernouli_K">
+<code class="descclassname">pyscan.</code><code class="descname">Bernouli_K</code><span class="sig-paren">(</span><em>kernel</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.Bernouli_K" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a discrepancy object that can be used to scan in the smooth scanning functions. The kernel parameter defines how distance is measured and
+how the bandwidth is determined.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>kernel</strong> – The kernel used to determine distance.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.max_annuli">
+<code class="descclassname">pyscan.</code><code class="descname">max_annuli</code><span class="sig-paren">(</span><em>net</em>, <em>mpts</em>, <em>bpts</em>, <em>radii</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.max_annuli" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scans the set of annuli with radii defined by radii and the points in the net. For each annuli we maximizes the function disc_f with respect to the mpts and bpts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – List of Points</li>
+<li><strong>mpts</strong> – List of WPoints</li>
+<li><strong>bpts</strong> – List of WPoints</li>
+<li><strong>min_res</strong> – A float that corresponds to minimum radius to consider.</li>
+<li><strong>disc_f</strong> – KDisc object to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tuple of a disk of radius equal to radii[-1] centered at the annuli and the maximum disc_f value</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.max_annuli_scale">
+<code class="descclassname">pyscan.</code><code class="descname">max_annuli_scale</code><span class="sig-paren">(</span><em>net</em>, <em>mpts</em>, <em>bpts</em>, <em>radii</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.max_annuli_scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scans the set of annuli with radii defined by radii and the points in the net. For each annuli we maximizes the function disc_f with respect to the mpts and bpts. This version ignores far away
+points, so in theory can be much faster than the previous version.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – List of Points</li>
+<li><strong>mpts</strong> – List of WPoints</li>
+<li><strong>bpts</strong> – List of WPoints</li>
+<li><strong>min_res</strong> – A float that corresponds to minimum radius to consider.</li>
+<li><strong>disc_f</strong> – KDisc object to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tuple of a disk of radius equal to radii[-1] centered at the annuli and the maximum disc_f value</p>
 </td>
 </tr>
 </tbody>

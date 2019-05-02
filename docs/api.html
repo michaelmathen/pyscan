@@ -175,11 +175,12 @@
 <li><a class="reference internal" href="range.html#pyscan.Disk" title="pyscan.Disk"><code class="xref any py py-class docutils literal"><span class="pre">Disk</span></code></a></li>
 <li><a class="reference internal" href="range.html#pyscan.Rectangle" title="pyscan.Rectangle"><code class="xref any py py-class docutils literal"><span class="pre">Rectangle</span></code></a></li>
 </ul>
-<p>Scanning functions can be divided into unlabeled and labeled scanning. The unlabeled scanning functions are generally faster, but the labeled scanning function can be used for trajectory data sets or for
-encoding other information into the points.</p>
+<p>We have a variety of types of scanning algorithms. Unlabeled scanning algorithms solve the classic bichromatic discrepancy problem or the approximate scan statistic problem. The labeled versions allow the user to mark points depending on the object they came from. This allows region scanning or trajectory scanning problems to be reinterpreted as labeled scanning problems. We also have
+recently begun work on kernelized scan statistics. In this project formulation the region is defined as a kernel with a certain bandwidth and the scan statistic must be redefined to deal with correlation that can occur between points. (paper upcoming here)</p>
 <ul class="simple">
 <li><a class="reference internal" href="scanning.html#scanning-label"><span class="std std-ref">Scanning</span></a></li>
 <li><a class="reference internal" href="scanning.html#labeled-scanning-label"><span class="std std-ref">Labeled Scanning</span></a></li>
+<li><span class="xref std std-ref">smooth-scanning-label</span></li>
 </ul>
 <p>We also have some older codes that were used for experiments in <a class="reference internal" href="index.html#ampvz06" id="id1">[AMP+06]</a> that have been wrapped for use in the python framework.</p>
 <ul class="simple">

@@ -19,11 +19,12 @@ There are several types of regions of interest.
 * :any:`Disk`
 * :any:`Rectangle`
 
-Scanning functions can be divided into unlabeled and labeled scanning. The unlabeled scanning functions are generally faster, but the labeled scanning function can be used for trajectory data sets or for 
-encoding other information into the points. 
+We have a variety of types of scanning algorithms. Unlabeled scanning algorithms solve the classic bichromatic discrepancy problem or the approximate scan statistic problem. The labeled versions allow the user to mark points depending on the object they came from. This allows region scanning or trajectory scanning problems to be reinterpreted as labeled scanning problems. We also have 
+recently begun work on kernelized scan statistics. In this project formulation the region is defined as a kernel with a certain bandwidth and the scan statistic must be redefined to deal with correlation that can occur between points. (paper upcoming here)
 
 * :ref:`scanning-label`
 * :ref:`labeled-scanning-label`
+* :ref:`smooth-scanning-label`
 
 We also have some older codes that were used for experiments in :cite:`AMPVZ06` that have been wrapped for use in the python framework.
 
