@@ -79,7 +79,7 @@ namespace pyscan {
             double q_init,
             const discrepancy_kfunc_t& disc_f) {
         size_t iter = 0;
-        int status;
+        int status = GSL_CONTINUE;
 
         const gsl_multimin_fdfminimizer_type *T;
         gsl_multimin_fdfminimizer *s;
@@ -106,9 +106,11 @@ namespace pyscan {
          */
         gsl_multimin_fdfminimizer_set (s, &my_func, x, 0.01, 1e-4);
 
+        double p_o = p_init, q_o = q_init;
         do
         {
             iter++;
+
             status = gsl_multimin_fdfminimizer_iterate (s);
 
             if (status)
@@ -116,11 +118,39 @@ namespace pyscan {
             /*
              * The program terminates when the norm of the gradient has been reduced below 0.001.
              */
-            status = gsl_multimin_test_gradient (s->gradient, 1e-3);
-            std::cout << "p = " << gsl_vector_get(s->x, 0) << " q = " << gsl_vector_get(s->x, 1) << "f = " << s->f <<std::endl;
-        }
-        while (status == GSL_CONTINUE && iter < 100);
+            double p = gsl_vector_get(s->x, 0);
+            double q = gsl_vector_get(s->x, 1);
 
+            bool trig = true;
+            if (p <= 0) {
+                p = 1e-4;
+            } else if (p > 1) {
+                p = 1 - 1e-4;
+            } else if (q <= 0) {
+                q = 1e-4;
+            } else if (q >= 1) {
+                q = 1 - 1e-4;
+            } else if (std::isnan(q) || std::isnan(p)) {
+                //restart at the last location.
+                p = p_o;
+                q = q_o;
+            } else {
+                trig = false;
+            }
+
+            if (trig) {
+                gsl_vector_set (x, 0, p);
+                gsl_vector_set (x, 1, q);
+                gsl_multimin_fdfminimizer_set (s, &my_func, x, 0.01, 1e-4);
+            } else {
+                status = gsl_multimin_test_gradient(s->gradient, 1e-5);
+            }
+            p_o = p;
+            q_o = q;
+            std::cout << "p = " << gsl_vector_get(s->x, 0) << " q = " << gsl_vector_get(s->x, 1) << "f = " << s->f <<std::endl;
+        } while (status == GSL_CONTINUE && iter < 100);
+
+        std::cout << std::endl;
         double p = gsl_vector_get(s->x, 0);
         double q = gsl_vector_get(s->x, 1);
 
@@ -211,7 +241,7 @@ namespace pyscan {
             const std::vector<double> &radii,
             const KDisc &disc) {
 
-        double p_init = .5, q_init = .6;
+        double p_init = .6, q_init = .5;
         Disk max_disk;
         double max_v = 0;
         auto disc_local = disc.get_copy();

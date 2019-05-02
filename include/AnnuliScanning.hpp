@@ -59,7 +59,6 @@ namespace pyscan {
             const kernel_func_t& kernel) {
         double val = 0;
         double prev_dist = 0;
-
         for (size_t i = 0; i < radii.size(); i++) {
             double fr = kernel((prev_dist + radii[i]) / 2.0);
             double gr = fr * p + (1 - fr) * q;
