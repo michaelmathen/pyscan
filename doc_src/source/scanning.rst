@@ -217,7 +217,7 @@ Labeled Scanning
 Kernelized Scanning
 ===========================================
 
-These methods use different scan statistics then the purely combinatorial versions.
+These methods use different scan statistics than the purely combinatorial versions.
 
 .. py:function:: pyscan.gaussian_kernel(bandwidth)
    
