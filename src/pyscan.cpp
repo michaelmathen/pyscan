@@ -21,7 +21,7 @@
 #include "TrajectoryScan.hpp"
 #include "ConvexHull.hpp"
 #include "TrajectoryCoreSet.hpp"
-#include "HamTree.hpp"
+#include "PartitionSample.hpp"
 #include "RegionCoreSet.hpp"
 
 

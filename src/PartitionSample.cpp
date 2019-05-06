@@ -6,7 +6,7 @@
 #include <random>
 #include "Sampling.hpp"
 #include "HalfSpaceScan.hpp"
-#include "HamTree.hpp"
+#include "PartitionSample.hpp"
 
 
 namespace pyscan {
@@ -118,6 +118,46 @@ namespace pyscan {
         }
         return sample;
     }
+
+//    def approxHamSandwitch(pt_sets, eps):
+//        """
+//        Takes a set of sets of points in 2 dimensions and
+//                attempts to find a polynomial that splits eacfh one approximately.
+//        Approximately in this case is dictated by the parameter eps.
+//        So an eps=1/8 set would find a plane that splits each set between 7/16, 8/16. An eps = 1/4
+//        will find an approximate split 3/8 and 5/8.
+//        """
+//    #degree = int(.5 + math.ceil(1 / 2.0 * (math.sqrt(len(pt_sets) * 8 + 9) - 3)))
+//        degree = len(pt_sets) - 1
+//    #degree = int(degree + .5)
+//        while True:
+//        pts = [pt_set[random.randint(0, pt_set.shape[0] - 1), :] for pt_set in pt_sets]
+//        coef = poly2dFit(np.vstack(pts), degree)
+//        new_pt_sets = []
+//        bad_pt_set = []
+//        for pt_set in pt_sets:
+//        polynomial_values = poly2dEval(pt_set, coef, degree)
+//        mask = polynomial_values >= 0.0
+//        eps_frac = float(mask.sum()) / len(pt_set)
+//
+//        if eps > abs(1/2.0 - eps_frac):
+//        new_pt_sets.append(pt_set[mask, :])
+//        new_pt_sets.append(pt_set[np.logical_not(mask), :])
+//        else:
+//        bad_pt_set.append(pt_set)
+//        if len(new_pt_sets) > len(pt_sets): # disected more than half
+//        return coef, new_pt_sets, bad_pt_set
+
+
+
+//    wpoint_list_t polynomial_sample(const wpoint_list_t &pts, size_t s_size) {
+//        /*
+//         * Constructs a polynomial partitioning of the points pts.
+//         */
+//        while (1) {
+//
+//        }
+//    }
 
     //lpoint_list_t ham_tree_sample(const lpoint_list_t &pts, size_t s_size);
 }

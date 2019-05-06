@@ -2,8 +2,8 @@
 // Created by mmath on 12/9/18.
 //
 
-#ifndef PYSCAN_HAMTREE_HPP
-#define PYSCAN_HAMTREE_HPP
+#ifndef PYSCAN_PARTITIONSAMPLE_HPP
+#define PYSCAN_PARTITIONSAMPLE_HPP
 #include "Point.hpp"
 
 namespace pyscan {
@@ -14,4 +14,4 @@ namespace pyscan {
 
    // lpoint_list_t ham_tree_sample(const lpoint_list_t &pts, size_t s_size);
 }
-#endif //PYSCAN_HAMTREE_HPP
+#endif //PYSCAN_PARTITIONSAMPLE_HPP

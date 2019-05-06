@@ -86,7 +86,7 @@ set(SOURCE_FILES
         src/TrajectoryCoreSet.cpp
         src/ConvexHull.cpp
         src/Segment.cpp
-        src/HamTree.cpp
+        src/PartitionSample.cpp
         src/IntervalScan.cpp
         src/RegionCoreSet.cpp
         src/JeffCodes.cpp
@@ -111,7 +111,7 @@ set(HEADER include/BloomFilter.hpp
         include/ConvexHull.hpp
         include/TrajectoryScan.hpp
         include/Sampling.hpp
-        include/HamTree.hpp
+        include/PartitionSample.hpp
         inlcude/AnnuliScanning.hpp
         include/IntervalScan.hpp
         include/Utilities.hpp)
