@@ -595,7 +595,7 @@
 </div>
 <div class="section" id="kernelized-scanning">
 <span id="smooth-scanning-label"></span><h1>Kernelized Scanning<a class="headerlink" href="#kernelized-scanning" title="Permalink to this headline">¶</a></h1>
-<p>These methods use different scan statistics then the purely combinatorial versions.</p>
+<p>These methods use different scan statistics than the purely combinatorial versions.</p>
 <dl class="function">
 <dt id="pyscan.gaussian_kernel">
 <code class="descclassname">pyscan.</code><code class="descname">gaussian_kernel</code><span class="sig-paren">(</span><em>bandwidth</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.gaussian_kernel" title="Permalink to this definition">¶</a></dt>
@@ -662,7 +662,34 @@ points, so in theory can be much faster than the previous version.</p>
 <li><strong>net</strong> – List of Points</li>
 <li><strong>mpts</strong> – List of WPoints</li>
 <li><strong>bpts</strong> – List of WPoints</li>
-<li><strong>min_res</strong> – A float that corresponds to minimum radius to consider.</li>
+<li><strong>min_res</strong> – A float that corresponds to the radius to consider.</li>
+<li><strong>disc_f</strong> – KDisc object to maximize over.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tuple of a disk of radius equal to radii[-1] centered at the annuli and the maximum disc_f value</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyscan.max_annuli_scale_multi">
+<code class="descclassname">pyscan.</code><code class="descname">max_annuli_scale_multi</code><span class="sig-paren">(</span><em>net</em>, <em>mpts</em>, <em>bpts</em>, <em>res_scales</em>, <em>max_radii</em>, <em>disc_f</em><span class="sig-paren">)</span><a class="headerlink" href="#pyscan.max_annuli_scale_multi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scans the set of annuli with radii less than max_radii. The algorithm uses the res_scales to define levels in the annuli for approximating the kernel values. For each annuli we maximizes the
+function disc_f with respect to the mpts and bpts. This version ignores far away points and uses a more efficient method for scanning all the annuli. In theory the runtime of this method should
+be as good or even better than the previous algorithm, but in practice is probably slightly slower.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>net</strong> – List of Points</li>
+<li><strong>mpts</strong> – List of WPoints</li>
+<li><strong>bpts</strong> – List of WPoints</li>
+<li><strong>res_scales</strong> – A list of floats that correspond to the relative sizes of the different annuli.</li>
+<li><strong>max_radii</strong> – A float that corresponds to the maximum radius to consider. This will relate to the bandwidth of the kernel used.</li>
 <li><strong>disc_f</strong> – KDisc object to maximize over.</li>
 </ul>
 </td>

@@ -217,7 +217,7 @@ Labeled Scanning
 Kernelized Scanning
 ===========================================
 
-These methods use different scan statistics then the purely combinatorial versions.
+These methods use different scan statistics than the purely combinatorial versions.
 
 .. py:function:: pyscan.gaussian_kernel(bandwidth)
    
@@ -252,7 +252,21 @@ These methods use different scan statistics then the purely combinatorial versio
    :param net: List of Points
    :param mpts: List of WPoints
    :param bpts: List of WPoints
-   :param min_res: A float that corresponds to minimum radius to consider.
+   :param min_res: A float that corresponds to the radius to consider.
    :param disc_f: KDisc object to maximize over.
    :rtype: Tuple of a disk of radius equal to radii[-1] centered at the annuli and the maximum disc_f value
 
+
+.. py:function:: pyscan.max_annuli_scale_multi(net, mpts, bpts, res_scales, max_radii, disc_f)
+
+   Scans the set of annuli with radii less than max_radii. The algorithm uses the res_scales to define levels in the annuli for approximating the kernel values. For each annuli we maximizes the 
+   function disc_f with respect to the mpts and bpts. This version ignores far away points and uses a more efficient method for scanning all the annuli. In theory the runtime of this method should
+   be as good or even better than the previous algorithm, but in practice is probably slightly slower.
+
+   :param net: List of Points
+   :param mpts: List of WPoints
+   :param bpts: List of WPoints
+   :param res_scales: A list of floats that correspond to the relative sizes of the different annuli.
+   :param max_radii: A float that corresponds to the maximum radius to consider. This will relate to the bandwidth of the kernel used.
+   :param disc_f: KDisc object to maximize over.
+   :rtype: Tuple of a disk of radius equal to radii[-1] centered at the annuli and the maximum disc_f value
