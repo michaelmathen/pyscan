@@ -138,5 +138,13 @@ namespace pyscan {
             const wpoint_list_t &blue,
             const std::vector<double>& annuli_res,
             const KDisc& f);
+
+    std::tuple<Disk, double> max_annuli_scale_multi(
+            const point_list_t &point_net,
+            const std::vector<wpt2_t> &red,
+            const std::vector<wpt2_t> &blue,
+            std::vector<double> res_scales,
+            double max_radii,
+            const KDisc& disc);
 }
 #endif //PYSCAN_ANNULISCANNING_HPP

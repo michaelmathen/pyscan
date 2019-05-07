@@ -233,6 +233,179 @@ namespace pyscan {
         return std::make_tuple(max_disk, max_v);
     }
 
+    inline static bool colinear(const pt2_t &pt1, const pt2_t &pt2, const pt2_t &pt3) {
+        double x1 = pt1(0), x2 = pt2(0), x3 = pt3(0);
+        double y1 = pt1(1), y2 = pt2(1), y3 = pt3(1);
+
+        return util::aeq(util::det2(x2 - x1, y2 - y1, x2 - x3, y2 - y3), 0.0);
+    }
+
+    inline static bool valid_pt(const pt2_t &p1, const pt2_t &p2, const pt2_t &p) {
+        return !(p1.approx_eq(p) || p2.approx_eq(p) || colinear(p1, p2, p));
+    }
+
+    using annuli_t = std::vector<Disk>;
+
+    inline static void get_annuli(
+            const pt2_t& p1, const pt2_t& p2,
+            const point_list_t& net,
+            const std::vector<double>& res_ratio,
+            double max_r,
+            size_t curr_res,
+            std::vector<annuli_t>& rings) {
+
+        double orthoX = p2(1) - p1(1);
+        double orthoY = p1(0) - p2(0);
+        double cX = (p1(0) + p2(0)) / 2.0;
+        double cY = (p1(1) + p2(1)) / 2.0;
+        auto get_order = [orthoX, orthoY, cX, cY](const Disk &x) {
+            auto origin = x.getOrigin();
+            return orthoX * (origin(0) - cX) + orthoY * (origin(1) - cY);
+        };
+
+        rings.reserve(net.size());
+        std::for_each(net.begin(), net.end(), [&](const pt2_t &p) {
+            if (valid_pt(p1, p2, p)) {
+                Disk tmp(p1, p2, p);
+                double curr_res_ratio = tmp.getRadius() / res_ratio[curr_res];
+                double outer_radius = curr_res_ratio * res_ratio.back();
+                if (outer_radius <= max_r) {
+                    annuli_t annulus;
+                    for (auto r : res_ratio) {
+                        auto center = tmp.getOrigin();
+                        annulus.emplace_back(Disk(center(0), center(1), curr_res_ratio * r));
+                    }
+                    rings.emplace_back(annulus);
+                }
+            }
+        });
+
+        std::sort(rings.begin(), rings.end(), [&](const annuli_t &a, const annuli_t &b) {
+            return get_order(a[0]) < get_order(b[0]);
+        });
+    }
+
+
+    // Find a lower bound disk and an upper bound disk.
+    std::vector<double> initialize_intervals(
+            const wpoint_list_t& wpts,
+            size_t curr_res,
+            double orthoX,
+            double orthoY,
+            const std::vector<annuli_t>& annuli) {
+
+        std::vector<double> intervals(annuli.size(), 0.0);
+        for (auto& wpt : wpts) {
+            //Get the first disk that contains this point
+            auto lb = std::lower_bound(annuli.begin(), annuli.end(), wpt,
+                    [orthoX, orthoY, curr_res](const std::vector<Disk>& d_seq, const pt2_t& pt){
+                auto& d1 = d_seq[curr_res];
+                //If the disk contains this point then we are less than this disk.
+                if (d1.contains(pt)) {
+                   return false;
+                } else {
+                    //If the disk does not contain the point then we compare the disk origin to see if it is before
+                    //this value.
+                    double project_p = pt(0) * orthoX + pt(1) * orthoY;
+                    auto origin = d1.getOrigin();
+                    double project_d = orthoX * origin(0) + orthoY * origin(1) ;
+                    return project_d < project_p;
+                }
+            });
+
+            if (lb == annuli.end() || !(*lb)[curr_res].contains(wpt)) {
+                //No disk in the sequence contains the pt.
+                continue;
+            }
+
+            //Get the disk after the last disk that contains it.
+            auto ub = std::upper_bound(annuli.begin(), annuli.end(), wpt,
+                    [orthoX, orthoY, curr_res](const pt2_t& pt, const std::vector<Disk>& d_seq) {
+                auto& d1 = d_seq[curr_res];
+                //If the disk contains this point then we are greater than this disk.
+                if (d1.contains(pt)) {
+                    return true;
+                } else {
+                    //If the disk does not contain the point then we compare the disk origin to see if it is before
+                    //this value.
+                    double project_p = pt(0) * orthoX + pt(1) * orthoY;
+                    auto origin = d1.getOrigin();
+                    double project_d = orthoX * origin(0) + orthoY * origin(1) ;
+                    return project_p < project_d;
+                }
+            });
+            intervals[lb - annuli.begin()] += wpt.get_weight();
+            if (ub != annuli.end()) {
+                intervals[ub - annuli.begin()] -= wpt.get_weight();
+            }
+        }
+        return intervals;
+    }
+
+    inline static std::tuple<Disk, double> max_annuli_multi(
+            const pt2_t &p1, const pt2_t &p2,
+            const point_list_t &net,
+            const wpoint_list_t &red,
+            const wpoint_list_t &blue,
+            size_t curr_res,
+            const std::vector<double>& annuli_res,
+            double max_r,
+            KDisc& disc) {
+
+        Disk max_disk;
+        double max_v = 0;
+        if (p1.approx_eq(p2)) {
+            return std::make_tuple(max_disk, 0.0);
+        }
+
+        double orthoX = p2(1) - p1(1);
+        double orthoY = p1(0) - p2(0);
+
+        std::vector<annuli_t> rings;
+        // Check to see how slow this is. We might be losing a lot of time, by sorting these big objects.
+        // Sort a set of ordered objects first and then reorder afterwards.
+        get_annuli(p1, p2, net, annuli_res, max_r, curr_res, rings);
+        if (rings.empty()) {
+            return std::make_tuple(max_disk, 0.0);
+        }
+
+        std::vector<std::vector<double>> red_resolution_deltas(annuli_res.size());
+        std::vector<std::vector<double>> blue_resolution_deltas(annuli_res.size());
+        for (size_t i = 0; i < annuli_res.size(); i++) {
+            red_resolution_deltas[i] = initialize_intervals(red, i, orthoX, orthoY, rings);
+            blue_resolution_deltas[i] = initialize_intervals(blue, i, orthoX, orthoY, rings);
+        }
+
+        std::vector<double> curr_radii(annuli_res.size());
+        std::vector<double> curr_mr(annuli_res.size(), 0.0);
+        std::vector<double> curr_br(annuli_res.size(), 0.0);
+
+        double p = .6, q = .5;
+        for (size_t i = 0; i < rings.size(); i++) {
+            //Initialize the current set of radii.
+            for (size_t j = 0; j < annuli_res.size(); j++){
+                curr_radii[j] = rings[i][j].getRadius();
+                curr_mr[j] += red_resolution_deltas[j][i];
+                curr_br[j] += blue_resolution_deltas[j][i];
+            }
+            disc.set_params(curr_mr, curr_br, curr_radii);
+            double fval;
+            std::tie(p, q, fval) = find_pq_poi(p, q, disc);
+            if (std::isnan(p) || std::isnan(q) || 0 >= p || p >= 1 || 0 >= q || q >= 1) {
+                p = .6;
+                q = .5;
+            }
+            if (max_v < fval) {
+                max_v = fval;
+                //Set the biggest disk
+                max_disk = rings[i].back();
+            }
+        }
+
+        return std::make_tuple(max_disk, max_v);
+    }
+
+
     std::tuple<Disk, double> max_annuli_restricted(
             pt2_t const& pt,
             const point_list_t &pts,
@@ -346,6 +519,91 @@ namespace pyscan {
                 }
             }
 
+
+            auto last = center_cell->first;
+            do {
+                ++center_cell;
+            } while (center_cell != grid_net.end() && center_cell->first == last);
+        }
+
+        return std::make_tuple(cur_max, max_stat);
+    }
+
+    std::tuple<Disk, double> max_annuli_scale_multi(
+            const point_list_t &point_net,
+            const std::vector<wpt2_t> &red,
+            const std::vector<wpt2_t> &blue,
+            std::vector<double> res_scales,
+            double max_radii,
+            const KDisc& disc) {
+
+        auto disc_local = disc.get_copy();
+        Disk cur_max;
+        double max_stat = 0.0;
+        if (point_net.empty()) {
+            return std::make_tuple(Disk(), 0.0);
+        }
+        auto bb_op = bbox(point_net, red, blue);
+        if (!bb_op.has_value()) {
+            return std::make_tuple(cur_max, max_stat);
+        }
+        auto bb = bb_op.value();
+        SparseGrid<pt2_t> grid_net(bb, point_net, max_radii);
+        auto grid_r = grid_net.get_grid_size();
+        SparseGrid<wpt2_t> grid_red(bb, red, max_radii), grid_blue(bb, blue, max_radii);
+
+
+        for (auto center_cell = grid_net.begin(); center_cell != grid_net.end();) {
+            std::vector<pt2_t> net_chunk;
+            std::vector<wpt2_t> red_chunk;
+            std::vector<wpt2_t> blue_chunk;
+            net_chunk.clear();
+            red_chunk.clear();
+            blue_chunk.clear();
+            size_t i, j;
+            std::tie(i, j) = grid_net.get_cell(center_cell->second);
+            size_t start_k = i < 2 ? 0 : i - 2;
+            size_t start_l = j < 2 ? 0 : j - 2;
+            size_t end_k = i + 2 < grid_r ? i + 2 : grid_r;
+            size_t end_l = j + 2 < grid_r ? j + 2 : grid_r;
+            auto range = grid_net(i, j);
+
+            for (size_t k = start_k; k <= end_k; ++k) {
+                for (size_t l = start_l; l <= end_l; ++l) {
+                    auto net_range = grid_net(k, l);
+                    for (auto it = net_range.first; it != net_range.second; ++it) {
+                        net_chunk.emplace_back(it->second);
+                    }
+
+                    auto red_range = grid_red(k, l);
+                    for (auto it = red_range.first; it != red_range.second; ++it)
+                        red_chunk.emplace_back(it->second);
+
+
+                    auto blue_range = grid_blue(k, l);
+                    for (auto it = blue_range.first; it != blue_range.second; ++it)
+                        blue_chunk.emplace_back(it->second);
+                }
+            }
+
+            if (net_chunk.size() >= 3) {
+                for (auto pt1 = range.first; pt1 != range.second; ++pt1) {
+                    for (auto &pt2: net_chunk) {
+                        if (pt1->second.approx_eq(pt2)) continue;
+
+                        for (size_t m = 0; m < res_scales.size(); m++) {
+                            auto [local_max_disk, local_max_stat] =
+                            max_annuli_multi(pt1->second, pt2, net_chunk, red_chunk, blue_chunk,
+                                             m, res_scales, max_radii, *(disc_local.get()));
+                            if (local_max_stat > max_stat) {
+                                cur_max = local_max_disk;
+                                max_stat = local_max_stat;
+                            }
+
+                        }
+                    }
+                }
+            }
 
             auto last = center_cell->first;
             do {

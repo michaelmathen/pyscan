@@ -248,6 +248,7 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
 
     pyscan_module.def("max_annuli", &pyscan::max_annuli);
     pyscan_module.def("max_annuli_scale", &pyscan::max_annuli_scale);
+    pyscan_module.def("max_annuli_scale_multi", &pyscan::max_annuli_scale_multi);
 
     pyscan_module.def("gaussian_kernel", &pyscan::gauss_kernel);
 
