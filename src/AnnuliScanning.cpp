@@ -150,7 +150,6 @@ namespace pyscan {
             //std::cout << "p = " << gsl_vector_get(s->x, 0) << " q = " << gsl_vector_get(s->x, 1) << "f = " << s->f <<std::endl;
         } while (status == GSL_CONTINUE && iter < 100);
 
-        std::cout << std::endl;
         double p = gsl_vector_get(s->x, 0);
         double q = gsl_vector_get(s->x, 1);
 
@@ -260,7 +259,7 @@ namespace pyscan {
         double cY = (p1(1) + p2(1)) / 2.0;
         auto get_order = [orthoX, orthoY, cX, cY](const Disk &x) {
             auto origin = x.getOrigin();
-            return orthoX * (origin(0) - cX) + orthoY * (origin(1) - cY);
+            return orthoX * (origin(0) - cX) + orthoY * (origin(1) - cY) ;
         };
 
         rings.reserve(net.size());
@@ -285,55 +284,92 @@ namespace pyscan {
         });
     }
 
+    /*
+     * Finds the min_element of the Iterator
+     */
+    template<typename It, typename Unary>
+    It min_search_lower(It begin, It end, Unary const& f) {
+        auto exact_min = std::min_element(begin, end, [&f] (auto const& v1, auto const& v2){
+            return f(v1) < f(v2);
+        });
+
+        auto tmp_b = begin;
+        auto tmp_e = end;
+        //If begin is monotonically increasing segment.
+        while ((end - begin) >= 4) {
+            auto mid = (end - begin) / 2 + begin;
+            //In this case we are either the middle or to the left of the middle.
+            if (f(*mid) < f(*(mid + 1))) {
+                end = mid + 1;
+            } else if (f(*mid) > f(*(mid + 1))) {
+                begin = mid + 1;
+            } else {
+                break;
+            }
+        }
+        auto fast_min = std::min_element(begin, end, [&f] (auto const& v1, auto const& v2){
+            return f(v1) < f(v2);
+        });
+        if (exact_min != fast_min) {
+            std::cout << f(*exact_min) << " " << f(*fast_min) << std::endl;
+            for (auto it = tmp_b; it != tmp_e; ++it) {
+                std::cout << f(*it) << " ";
+            }
+            std::cout << std::endl;
+            assert(false);
+        }
+        return exact_min;
+    }
+
+    /*
+     * Sets begin to the first negative value and end to the first positive value or end of the range.
+     * If it can't find a negative range then we set
+     */
+    template<typename It, typename Unary>
+    std::tuple<It, It> find_negative_range(It begin, It end, Unary const& f) {
+        auto min_element = min_search_lower(begin, end, f);
+        if (min_element == end || f(*min_element) > 0) {
+            return std::make_tuple(end, end);
+        }
+
+        auto interval_start = std::lower_bound(begin, min_element, 0.0, [&f] (auto const& v1, double v2) {
+            // 0 < f(v1)
+            // T, T, T, F, F, ...
+            return v2 > f(v1);
+        });
+
+        auto interval_end = std::upper_bound(begin, min_element, 0.0, [&f] (double v1, auto const& v2) {
+            //  0 > f(v2)
+            // T, T, T, F, F, ...
+            return v1 < f(v2);
+        });
+        return std::make_tuple(interval_start, interval_end);
+    }
 
     // Find a lower bound disk and an upper bound disk.
     std::vector<double> initialize_intervals(
             const wpoint_list_t& wpts,
             size_t curr_res,
-            double orthoX,
-            double orthoY,
             const std::vector<annuli_t>& annuli) {
 
         std::vector<double> intervals(annuli.size(), 0.0);
         for (auto& wpt : wpts) {
             //Get the first disk that contains this point
-            auto lb = std::lower_bound(annuli.begin(), annuli.end(), wpt,
-                    [orthoX, orthoY, curr_res](const std::vector<Disk>& d_seq, const pt2_t& pt){
+            auto interval_test = [&](const std::vector<Disk>& d_seq){
                 auto& d1 = d_seq[curr_res];
-                //If the disk contains this point then we are less than this disk.
-                if (d1.contains(pt)) {
-                   return false;
-                } else {
-                    //If the disk does not contain the point then we compare the disk origin to see if it is before
-                    //this value.
-                    double project_p = pt(0) * orthoX + pt(1) * orthoY;
-                    auto origin = d1.getOrigin();
-                    double project_d = orthoX * origin(0) + orthoY * origin(1) ;
-                    return project_d < project_p;
-                }
-            });
+                auto center = d1.getOrigin();
 
-            if (lb == annuli.end() || !(*lb)[curr_res].contains(wpt)) {
+                return center.dist(wpt) - d1.getRadius();
+            };
+            auto [lb, ub] = find_negative_range(annuli.begin(), annuli.end(), interval_test);
+//            for (auto it = lb; it != ub; it++) {
+//                std::cout << interval_test(*it) << " ";
+//            }
+//            std::cout << std::endl;
+            if (lb == annuli.end()) {
                 //No disk in the sequence contains the pt.
                 continue;
             }
-
-            //Get the disk after the last disk that contains it.
-            auto ub = std::upper_bound(annuli.begin(), annuli.end(), wpt,
-                    [orthoX, orthoY, curr_res](const pt2_t& pt, const std::vector<Disk>& d_seq) {
-                auto& d1 = d_seq[curr_res];
-                //If the disk contains this point then we are greater than this disk.
-                if (d1.contains(pt)) {
-                    return true;
-                } else {
-                    //If the disk does not contain the point then we compare the disk origin to see if it is before
-                    //this value.
-                    double project_p = pt(0) * orthoX + pt(1) * orthoY;
-                    auto origin = d1.getOrigin();
-                    double project_d = orthoX * origin(0) + orthoY * origin(1) ;
-                    return project_p < project_d;
-                }
-            });
             intervals[lb - annuli.begin()] += wpt.get_weight();
             if (ub != annuli.end()) {
                 intervals[ub - annuli.begin()] -= wpt.get_weight();
@@ -361,6 +397,7 @@ namespace pyscan {
         double orthoX = p2(1) - p1(1);
         double orthoY = p1(0) - p2(0);
 
+
         std::vector<annuli_t> rings;
         // Check to see how slow this is. We might be losing a lot of time, by sorting these big objects.
         // Sort a set of ordered objects first and then reorder afterwards.
@@ -372,8 +409,8 @@ namespace pyscan {
         std::vector<std::vector<double>> red_resolution_deltas(annuli_res.size());
         std::vector<std::vector<double>> blue_resolution_deltas(annuli_res.size());
         for (size_t i = 0; i < annuli_res.size(); i++) {
-            red_resolution_deltas[i] = initialize_intervals(red, i, orthoX, orthoY, rings);
-            blue_resolution_deltas[i] = initialize_intervals(blue, i, orthoX, orthoY, rings);
+            red_resolution_deltas[i] = initialize_intervals(red, i, rings);
+            blue_resolution_deltas[i] = initialize_intervals(blue, i, rings);
         }
 
         std::vector<double> curr_radii(annuli_res.size());
@@ -533,7 +570,7 @@ namespace pyscan {
             const point_list_t &point_net,
             const std::vector<wpt2_t> &red,
             const std::vector<wpt2_t> &blue,
-            std::vector<double> res_scales,
+            const std::vector<double>& res_scales,
             double max_radii,
             const KDisc& disc) {
 

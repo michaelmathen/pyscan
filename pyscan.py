@@ -6,6 +6,21 @@ import math
 
 
 
+def bounding_box(pts):
+    if not pts:
+        return None
+    min_x = pts[0][0]
+    max_x = pts[0][0]
+    min_y = pts[0][1]
+    max_y = pts[0][1]
+    for pt in pts:
+        min_x = min(min_x, pt[0])
+        max_x = max(max_x, pt[0])
+        min_y = min(min_y, pt[1])
+        max_y = max(max_y, pt[1])
+    return ((min_x, min_y), (max_x, max_y))
+
+
 def to_weighted(points):
     return [WPoint(1.0, pt[0], pt[1], 1.0) for pt in points]
 
@@ -531,6 +546,70 @@ def paired_plant_region(traj_start, traj_end, r, q, region_plant_f):
     red, blue = zip(*(q_fraction + remainder + out_region))
     return red, blue, reg
 
+
+
+def plant_kernel_disk_region(pts, r, p, q, eps=.0001):
+    """
+    Plants a region using the bernoulli model with the given p and q parameters.
+    Need the fraction in the q set to be r.
+
+    Returns the bandwidth of the anomaly.
+    :param pts:
+    :param r:
+    :param p:
+    :param q:
+    :param eps: The error on the planted r parameter.
+    :return:
+    """
+    if not pts:
+        return None
+    ((min_x, min_y), (max_x, max_y)) = bounding_box(pts)
+
+
+    def sq_dist(x, pt):
+        return (x[0] - pt[0])**2 + (x[1] - pt[1])**2
+
+    px = random.random() * (max_x - min_x) + min_x
+    py = random.random() * (max_y - min_y) + min_y
+
+    #Find the correct bandwidth by doing bisection
+    seeds = [random.random() for p in pts]
+    bandwidth_upper = 2 * max((max_x - min_x), (max_y - min_y))
+    bandwidth_lower = 0.0
+
+    while True:
+        bandwidth = (bandwidth_upper + bandwidth_lower) / 2
+        def kernel(x):
+            return math.exp(-sq_dist(x, (px, py)) / bandwidth**2)
+
+        q_count = 0
+        for i, pt in enumerate(pts):
+            if seeds[i] < kernel(pt):
+                q_count += 1
+
+        if r - eps <= q_count / len(pts) <= r + eps:
+            break
+        if r + eps < q_count / len(pts):
+            bandwidth_upper = bandwidth
+        else:
+            bandwidth_lower = bandwidth
+
+    measured_set = []
+    baseline_set = []
+    for i, pt in enumerate(pts):
+        if seeds[i] < kernel(pt):
+            if random.random() < q:
+                measured_set.append(pt)
+            else:
+                baseline_set.append(pt)
+        else:
+            if random.random() < p:
+                measured_set.append(pt)
+            else:
+                baseline_set.append(pt)
+    return measured_set, baseline_set, bandwidth
+
+        
 
 def close_region(region):
     """

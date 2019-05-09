@@ -143,7 +143,7 @@ namespace pyscan {
             const point_list_t &point_net,
             const std::vector<wpt2_t> &red,
             const std::vector<wpt2_t> &blue,
-            std::vector<double> res_scales,
+            const std::vector<double>& res_scales,
             double max_radii,
             const KDisc& disc);
 }
