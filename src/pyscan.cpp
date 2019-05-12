@@ -330,6 +330,8 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
             return pyscan::regularized_kulldorff(m / m_tot, b / b_tot, .0001);
     });
 
+    pyscan_module.def("bernoulli", pyscan::get_bernoulli);
+
     pyscan_module.def("evaluate", &pyscan::evaluate);
     pyscan_module.def("size_region", &pyscan::sized_region);
     pyscan_module.def("linear_f", &pyscan::linear_f);

@@ -92,7 +92,7 @@ set(SOURCE_FILES
         src/JeffCodes.cpp
         src/AnnuliScanning.cpp
         #src/kernel.cpp
-        )
+        src/GriddedScanning.hpp)
 
 #set(SOURCE_JEFF_FILES
 #        )

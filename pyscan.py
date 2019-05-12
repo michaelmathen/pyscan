@@ -569,8 +569,10 @@ def plant_kernel_disk_region(pts, r, p, q, eps=.0001):
     def sq_dist(x, pt):
         return (x[0] - pt[0])**2 + (x[1] - pt[1])**2
 
-    px = random.random() * (max_x - min_x) + min_x
-    py = random.random() * (max_y - min_y) + min_y
+    [p1, p2] = random.sample(pts, 2)
+    alpha = random.random()
+    px = p1[0] * alpha + p2[0] * (1 - alpha)
+    py = p1[1] * alpha + p2[1] * (1 - alpha)
 
     #Find the correct bandwidth by doing bisection
     seeds = [random.random() for p in pts]
@@ -580,36 +582,60 @@ def plant_kernel_disk_region(pts, r, p, q, eps=.0001):
     while True:
         bandwidth = (bandwidth_upper + bandwidth_lower) / 2
         def kernel(x):
-            return math.exp(-sq_dist(x, (px, py)) / bandwidth**2)
+            return math.exp(-sq_dist(x, (px, py)) / (2 * bandwidth**2))
 
-        q_count = 0
+        p_count = 0
         for i, pt in enumerate(pts):
             if seeds[i] < kernel(pt):
-                q_count += 1
+                p_count += 1
 
-        if r - eps <= q_count / len(pts) <= r + eps:
+        if r - eps <= p_count / len(pts) <= r + eps:
             break
-        if r + eps < q_count / len(pts):
+        if r + eps < p_count / len(pts):
             bandwidth_upper = bandwidth
         else:
             bandwidth_lower = bandwidth
 
     measured_set = []
     baseline_set = []
+    p_count = 0
+    q_count = 0
     for i, pt in enumerate(pts):
         if seeds[i] < kernel(pt):
-            if random.random() < q:
-                measured_set.append(pt)
-            else:
-                baseline_set.append(pt)
-        else:
+            p_count += 1
             if random.random() < p:
                 measured_set.append(pt)
             else:
                 baseline_set.append(pt)
-    return measured_set, baseline_set, bandwidth
+        else:
+            q_count += 1
+            if random.random() < q:
+                measured_set.append(pt)
+            else:
+                baseline_set.append(pt)
 
-        
+    return measured_set, baseline_set, bandwidth, (px, py)
+
+
+
+def disc_bernoulli_kern(measured, baseline, p, q, bandwidth, center):
+    def sq_dist(x, pt):
+        return (x[0] - pt[0])**2 + (x[1] - pt[1])**2
+    def kernel(x):
+        return math.exp(-sq_dist(x, center) / bandwidth**2)
+
+    act_disc = 0
+    for pt in measured:
+        fr = kernel(pt)
+        gr = p * fr + (1 - fr) * q
+        act_disc += math.log(gr)
+    for pt in baseline:
+        fr = kernel(pt)
+        gr = p * fr + (1 - fr) * q
+        act_disc += math.log(1 - gr)
+    return -act_disc
+
+
 
 def close_region(region):
     """
@@ -673,6 +699,32 @@ try:
 except:
     pass
 
+try:
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    def plot_points(ax, pts, c):
+        xs = []
+        ys = []
+        for pt in pts:
+            xs.append(pt[0] )
+            ys.append(pt[1])
+        ax.scatter(xs, ys, color=c, marker='.')
+
+    def plot_kernel(ax, pts, pt, bandwidth, res=20):
+        (mnx, mny), (mxx, mxy) = bounding_box(pts)
+        mxx = np.linspace(mnx, mxx, res)
+        mxy = np.linspace(mny, mxy, res)
+        xv, yv = np.meshgrid(mxx, mxy)
+
+        def kernel(x, y):
+            return np.exp(-(np.power(x - pt[0], 2.0) + np.power(y - pt[1], 2.0) ) / bandwidth**2)
+        ax.contour(xv, yv, kernel(xv, yv))
+
+
+
+except:
+    pass
 
 def plant_full_square_region(regions, r, p, q, max_count=32):
     """

@@ -22,7 +22,7 @@ namespace pyscan {
 
     kernel_func_t gauss_kernel(double deviation){
         return [deviation] (double dist) {
-            return 1 / sqrt(2 * M_PI) * exp(- dist * dist / (2 * deviation * deviation));
+            return exp(- dist * dist / (2 * deviation * deviation));
         };
     }
 
@@ -155,7 +155,10 @@ namespace pyscan {
 
         gsl_multimin_fdfminimizer_free (s);
         gsl_vector_free (x);
-        return std::make_tuple(p, q, s->f);
+        double f_val = disc_f.lrt(p, q);
+        //std::cout << f_val << " " << p << " " << q << " " << std::endl;
+
+        return std::make_tuple(p, q, f_val);
     }
 
     std::vector<double> propagate_annuli(const wpoint_list_t& pts, const pt2_t & center, const std::vector<double>& radii) {
@@ -185,7 +188,7 @@ namespace pyscan {
 
         double p_init = .6, q_init = .5;
         Disk max_disk;
-        double max_v = 0;
+        double max_v = -std::numeric_limits<double>::infinity();
 
         if (pts.size() < 2 || radii.empty()) {
             return std::make_tuple(max_disk, max_v);
@@ -453,7 +456,7 @@ namespace pyscan {
 
         double p_init = .6, q_init = .5;
         Disk max_disk;
-        double max_v = 0;
+        double max_v = -std::numeric_limits<double>::infinity();
         auto disc_local = disc.get_copy();
         for (auto r_it = radii.begin(); r_it != radii.end(); ++r_it) {
 
@@ -497,7 +500,7 @@ namespace pyscan {
             const KDisc& f) {
 
         Disk cur_max;
-        double max_stat = 0.0;
+        double max_stat = -std::numeric_limits<double>::infinity();
         if (point_net.empty() || annuli_res.empty()) {
             return std::make_tuple(Disk(), 0.0);
         }
@@ -544,7 +547,7 @@ namespace pyscan {
                 }
             }
 
-            if (net_chunk.size() >= 3) {
+            if (net_chunk.size() >= 2) {
                 for (auto pt1 = range.first; pt1 != range.second; ++pt1) {
                     auto [local_max_disk, local_max_stat] =
                     max_annuli_restricted(pt1->second, net_chunk, red_chunk, blue_chunk,

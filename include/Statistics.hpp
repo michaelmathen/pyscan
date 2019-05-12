@@ -58,6 +58,32 @@ namespace pyscan {
         return (mr - br) * (mr - br) / (br * (1 - br));
     }
 
+    inline double bound(double rho, double value) {
+        return std::min(1 - rho, std::max(rho, value));
+    }
+
+
+    inline discrepancy_func_t get_bernoulli(double G, double rho) {
+
+        auto bernoulli = [G, rho] (double m_sub, double m_total, double b_sub, double b_total) {
+            double br = b_sub / b_total;
+            double mr = m_sub / m_total;
+
+            //Bound the function.
+            // This changes the behaviour when the region is very large or small to prevent the function's lipshitz
+            // parameter from blowing up.
+            br = bound(br, rho);
+            mr = bound(mr, rho);
+            double bd1 = bound(1 - G * mr / br, rho);
+            double bd2 = bound(1 - G * (1 - mr) / (1 - br), rho);
+
+            double k_term = mr * log(mr / br) + (1 - mr) * log((1 - mr) / (1 - br + rho));
+            return k_term + (br / G - mr) * log(bd1) + ((1 - br) / G - 1 + mr) * log(bd2);
+        };
+        discrepancy_func_t b_f = bernoulli;
+        return b_f;
+    }
+
     inline double linear(double mr, double br) {
         return  fabs(mr - br);
     }

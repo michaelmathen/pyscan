@@ -33,12 +33,16 @@ namespace pyscan {
         pq_disc_t f;
         pqdf_disc_t df;
         kernel_func_t kern;
+        std::vector<double> m_annuli;
+        std::vector<double> b_annuli;
+        std::vector<double> radii;
+
         KDisc(const kernel_func_t& kernelFunc) : kern(kernelFunc) {}
 
         virtual void set_params(
-                const std::vector<double>& m_annuli,
-                const std::vector<double>& b_annuli,
-                const std::vector<double>& radii) = 0;
+                std::vector<double> m_annuli,
+                std::vector<double> b_annuli,
+                std::vector<double> radii) = 0;
 
 
         virtual pq_disc_t& get_function() {
@@ -49,6 +53,8 @@ namespace pyscan {
             return df;
         }
         virtual std::shared_ptr<KDisc> get_copy() const = 0;
+
+        virtual double lrt(double p, double q) const = 0;
     };
 
     inline double bernoulli_f(
@@ -95,21 +101,44 @@ namespace pyscan {
 
         Bernouli_kf(const kernel_func_t &kernel) : KDisc(kernel) {}
         void set_params(
-                const std::vector<double>& m_annuli,
-                const std::vector<double>& b_annuli,
-                const std::vector<double>& radii) {
+                std::vector<double> m_annuli,
+                std::vector<double> b_annuli,
+                std::vector<double> radii) {
             f = [&](double p, double q) {
                 return bernoulli_f(p, q, m_annuli, b_annuli, radii, kern);
             };
             df = [&](double p, double q) {
                 return bernoulli_df(p, q, m_annuli, b_annuli, radii, kern);
             };
+            this->m_annuli = m_annuli;
+            this->b_annuli = b_annuli;
+            this->radii = radii;
+
         }
 
         std::shared_ptr<KDisc> get_copy() const {
             auto ptr = std::shared_ptr<KDisc>(new Bernouli_kf(this->kern));
             ptr->kern = this->kern;
             return ptr;
+        }
+
+        double lrt(double p, double q) const {
+            double prev_dist = 0;
+            double lrt_val = 0;
+            double mr = 0;
+            double br = 0;
+            for (size_t i = 0; i < radii.size(); i++) {
+                mr += m_annuli[i];
+                br += b_annuli[i];
+            }
+            double scale = mr / (mr + br);
+            for (size_t i = 0; i < radii.size(); i++) {
+                double fr = kern((prev_dist + radii[i]) / 2.0);
+                double gr = fr * p + (1 - fr) * q;
+                lrt_val += m_annuli[i] * log(gr / scale) + b_annuli[i] * log((1 - gr) / (1 - scale));
+                prev_dist = radii[i];
+            }
+            return lrt_val;
         }
     };
 
