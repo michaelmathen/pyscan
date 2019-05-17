@@ -20,12 +20,6 @@
 namespace pyscan {
 
 
-    kernel_func_t gauss_kernel(double deviation){
-        return [deviation] (double dist) {
-            return exp(- dist * dist / (2 * deviation * deviation));
-        };
-    }
-
 
 //    kernel_func_t rectangle_kernel(double deviation) {
 //        return [deviation] (double dist) {
@@ -147,7 +141,6 @@ namespace pyscan {
             }
             p_o = p;
             q_o = q;
-            //std::cout << "p = " << gsl_vector_get(s->x, 0) << " q = " << gsl_vector_get(s->x, 1) << "f = " << s->f <<std::endl;
         } while (status == GSL_CONTINUE && iter < 100);
 
         double p = gsl_vector_get(s->x, 0);
@@ -156,7 +149,6 @@ namespace pyscan {
         gsl_multimin_fdfminimizer_free (s);
         gsl_vector_free (x);
         double f_val = disc_f.lrt(p, q);
-        //std::cout << f_val << " " << p << " " << q << " " << std::endl;
 
         return std::make_tuple(p, q, f_val);
     }
@@ -218,7 +210,7 @@ namespace pyscan {
                         auto mr_j = propagate_annuli(mpts, center, radii);
                         auto br_j = propagate_annuli(bpts, center, radii);
 
-                        disc_local->set_params(mr_j, br_j, radii);
+                        disc_local->set_params(std::move(mr_j), std::move(br_j), radii);
 //                        auto fval = disc_local->get_function()(p_init, q_init);
 //                        std::cout << fval << std::endl;
 //                        std::cout << mr_j << " " << br_j << std::endl;
@@ -288,40 +280,61 @@ namespace pyscan {
     }
 
     /*
-     * Finds the min_element of the Iterator
+     * We want to search a function that increases to a local max then decreases to a local min and then increases to a
+     * new local max on the boundary of the function.
+     *
+     * So there are two places a point can exist inside of the disk. Either at that first value or at the new local min.
+     *
      */
     template<typename It, typename Unary>
-    It min_search_lower(It begin, It end, Unary const& f) {
-        auto exact_min = std::min_element(begin, end, [&f] (auto const& v1, auto const& v2){
-            return f(v1) < f(v2);
-        });
-
-        auto tmp_b = begin;
-        auto tmp_e = end;
+    It max_search(It begin, It end, Unary const& f)  {
+//        auto exact_max = std::max_element(begin, end, [&f] (auto const& v1, auto const& v2){
+//            return f(v1) < f(v2);
+//        });
+//
+//        auto tmp_b = begin;
+//        auto tmp_e = end;
         //If begin is monotonically increasing segment.
         while ((end - begin) >= 4) {
             auto mid = (end - begin) / 2 + begin;
             //In this case we are either the middle or to the left of the middle.
             if (f(*mid) < f(*(mid + 1))) {
-                end = mid + 1;
-            } else if (f(*mid) > f(*(mid + 1))) {
                 begin = mid + 1;
+            } else if (f(*mid) > f(*(mid + 1))) {
+                end = mid + 1;
             } else {
                 break;
             }
         }
-        auto fast_min = std::min_element(begin, end, [&f] (auto const& v1, auto const& v2){
+        auto fast_max = std::max_element(begin, end, [&f] (auto const& v1, auto const& v2){
             return f(v1) < f(v2);
         });
-        if (exact_min != fast_min) {
-            std::cout << f(*exact_min) << " " << f(*fast_min) << std::endl;
-            for (auto it = tmp_b; it != tmp_e; ++it) {
-                std::cout << f(*it) << " ";
-            }
-            std::cout << std::endl;
-            assert(false);
-        }
-        return exact_min;
+//        bool in_interval = false;
+//        size_t interval_count = 0;
+//        for (auto it = tmp_b; it != tmp_e; ++it) {
+//            if (f(*it) <= 0) {
+//                if (!in_interval) {
+//                    interval_count += 1;
+//                    in_interval = true;
+//                }
+//            } else {
+//                in_interval = false;
+//            }
+//        }
+//        if (interval_count == 2) {
+//            std::cout << interval_count << " ";
+//            for (auto it = tmp_b; it != tmp_e; ++it) {
+//                std::cout << f(*it) << " ";
+//            }
+//            std::cout << std::endl;
+//        }
+//            for (auto it = tmp_b; it != tmp_e; ++it) {
+//                std::cout << f(*it) << " ";
+//            }
+//            std::cout << std::endl;
+//        }
+
+        return fast_max;
     }
 
     /*
@@ -329,47 +342,65 @@ namespace pyscan {
      * If it can't find a negative range then we set
      */
     template<typename It, typename Unary>
-    std::tuple<It, It> find_negative_range(It begin, It end, Unary const& f) {
-        auto min_element = min_search_lower(begin, end, f);
-        if (min_element == end || f(*min_element) > 0) {
+    std::tuple<It, It> find_range(It begin, It end, Unary const& f) {
+        auto max_element = max_search(begin, end, f);
+        if (max_element == end || f(*max_element) < 0) {
             return std::make_tuple(end, end);
         }
 
-        auto interval_start = std::lower_bound(begin, min_element, 0.0, [&f] (auto const& v1, double v2) {
-            // 0 < f(v1)
-            // T, T, T, F, F, ...
-            return v2 > f(v1);
+        auto interval_start = std::lower_bound(begin, max_element, 0.0, [&f] (auto const& v1, double v2) {
+            return f(v1) < v2;
         });
 
-        auto interval_end = std::upper_bound(begin, min_element, 0.0, [&f] (double v1, auto const& v2) {
-            //  0 > f(v2)
-            // T, T, T, F, F, ...
-            return v1 < f(v2);
+        auto interval_end = std::upper_bound(max_element, end, 0.0, [&f] (double v1, auto const& v2) {
+            return  v1 > f(v2);
         });
         return std::make_tuple(interval_start, interval_end);
     }
 
+    //s points and roughly n disks with r annuli
+    //idea 1. Find the mid disk first in log (n) time then scan to find left and right boundary for each disk.
+    // takes O(n) time for each point.
+
+
     // Find a lower bound disk and an upper bound disk.
     std::vector<double> initialize_intervals(
+            const pt2_t& p1,
+            const pt2_t& p2,
             const wpoint_list_t& wpts,
             size_t curr_res,
+            const std::vector<double>& annuli_scale,
             const std::vector<annuli_t>& annuli) {
+
+        double orthoX = p2(1) - p1(1);
+        double orthoY = p1(0) - p2(0);
+        double scale = sqrt(orthoX * orthoX + orthoY * orthoY);
+
+        double cX = (p1(0) + p2(0)) / 2.0;
+        double cY = (p1(1) + p2(1)) / 2.0;
+
+        pt2_t disk_seq_center(cX, cY, 1.0);
+        double c_dist = p1.square_dist(p2) / 4.0;
+
+        auto get_projected_pt = [orthoX, orthoY, scale, cX, cY](const pt2_t& x) {
+            return pt2_t(orthoX * (x(0) - cX) / scale + cX, orthoY * (x(1) - cX) / scale + cY, 1.0);
+        };
 
         std::vector<double> intervals(annuli.size(), 0.0);
         for (auto& wpt : wpts) {
             //Get the first disk that contains this point
-            auto interval_test = [&](const std::vector<Disk>& d_seq){
+            auto projected_pt = get_projected_pt(wpt);
+            double thresh = 1 / annuli_scale[curr_res] * wpt.square_dist(projected_pt) - c_dist;
+            // Two options.
+            auto interval_dist = [&](const std::vector<Disk>& d_seq){
                 auto& d1 = d_seq[curr_res];
                 auto center = d1.getOrigin();
-
-                return center.dist(wpt) - d1.getRadius();
+                return center.square_dist(disk_seq_center) - 1 / annuli_scale[curr_res] * projected_pt.square_dist(center)
+                       - thresh;
             };
-            auto [lb, ub] = find_negative_range(annuli.begin(), annuli.end(), interval_test);
-//            for (auto it = lb; it != ub; it++) {
-//                std::cout << interval_test(*it) << " ";
-//            }
-//            std::cout << std::endl;
-            if (lb == annuli.end()) {
+            auto [lb, ub] = find_range(annuli.begin(), annuli.end(), interval_dist);
+
+            if (lb == ub) {
                 //No disk in the sequence contains the pt.
                 continue;
             }
@@ -377,6 +408,19 @@ namespace pyscan {
             if (ub != annuli.end()) {
                 intervals[ub - annuli.begin()] -= wpt.get_weight();
             }
+//            } else {
+//                This is for if the scale is greater than 1, but I didn't want to handle this case.
+//                auto interval_dist = [&](const std::vector<Disk>& d_seq){
+//                    auto& d1 = d_seq[curr_res];
+//                    auto center = d1.getOrigin();
+//                    return thresh - center.square_dist(disk_seq_center) + 1 / annuli_scale[curr_res] * projected_pt.square_dist(center);
+//                };
+//                auto [lb, ub] = find_range(annuli.begin(), annuli.end(), interval_dist);
+//                if (*lb == )
+//                intervals[0] += wpt.get_weight();
+//                intervals[lb - annuli.begin()] -= wpt.get_weight();
+//                intervals[ub - annuli.begin()] += wpt.get_weight();
+//            }
         }
         return intervals;
     }
@@ -386,7 +430,6 @@ namespace pyscan {
             const point_list_t &net,
             const wpoint_list_t &red,
             const wpoint_list_t &blue,
-            size_t curr_res,
             const std::vector<double>& annuli_res,
             double max_r,
             KDisc& disc) {
@@ -397,14 +440,11 @@ namespace pyscan {
             return std::make_tuple(max_disk, 0.0);
         }
 
-        double orthoX = p2(1) - p1(1);
-        double orthoY = p1(0) - p2(0);
-
-
         std::vector<annuli_t> rings;
         // Check to see how slow this is. We might be losing a lot of time, by sorting these big objects.
         // Sort a set of ordered objects first and then reorder afterwards.
-        get_annuli(p1, p2, net, annuli_res, max_r, curr_res, rings);
+        get_annuli(p1, p2, net, annuli_res, max_r, annuli_res.size() - 1, rings);
+
         if (rings.empty()) {
             return std::make_tuple(max_disk, 0.0);
         }
@@ -412,8 +452,8 @@ namespace pyscan {
         std::vector<std::vector<double>> red_resolution_deltas(annuli_res.size());
         std::vector<std::vector<double>> blue_resolution_deltas(annuli_res.size());
         for (size_t i = 0; i < annuli_res.size(); i++) {
-            red_resolution_deltas[i] = initialize_intervals(red, i, rings);
-            blue_resolution_deltas[i] = initialize_intervals(blue, i, rings);
+            red_resolution_deltas[i] = initialize_intervals(p1, p2, red, i, annuli_res, rings);
+            blue_resolution_deltas[i] = initialize_intervals(p1, p2, blue, i, annuli_res, rings);
         }
 
         std::vector<double> curr_radii(annuli_res.size());
@@ -573,13 +613,15 @@ namespace pyscan {
             const point_list_t &point_net,
             const std::vector<wpt2_t> &red,
             const std::vector<wpt2_t> &blue,
-            const std::vector<double>& res_scales,
+            std::vector<double> res_scales,
             double max_radii,
             const KDisc& disc) {
 
-        auto disc_local = disc.get_copy();
         Disk cur_max;
         double max_stat = 0.0;
+        if (res_scales.empty()) {
+            return std::make_tuple(cur_max, max_stat);
+        }
         if (point_net.empty()) {
             return std::make_tuple(Disk(), 0.0);
         }
@@ -587,6 +629,12 @@ namespace pyscan {
         if (!bb_op.has_value()) {
             return std::make_tuple(cur_max, max_stat);
         }
+        std::sort(res_scales.begin(), res_scales.end());
+        for (size_t i = 0; i < res_scales.size(); i++) {
+            res_scales[i] = res_scales[i] / res_scales.back();
+        }
+
+        auto disc_local = disc.get_copy();
         auto bb = bb_op.value();
         SparseGrid<pt2_t> grid_net(bb, point_net, max_radii);
         auto grid_r = grid_net.get_grid_size();
@@ -631,15 +679,12 @@ namespace pyscan {
                     for (auto &pt2: net_chunk) {
                         if (pt1->second.approx_eq(pt2)) continue;
 
-                        for (size_t m = 0; m < res_scales.size(); m++) {
-                            auto [local_max_disk, local_max_stat] =
-                            max_annuli_multi(pt1->second, pt2, net_chunk, red_chunk, blue_chunk,
-                                             m, res_scales, max_radii, *(disc_local.get()));
-                            if (local_max_stat > max_stat) {
-                                cur_max = local_max_disk;
-                                max_stat = local_max_stat;
-                            }
-
+                        auto[local_max_disk, local_max_stat] =
+                        max_annuli_multi(pt1->second, pt2, net_chunk, red_chunk, blue_chunk,
+                                res_scales, max_radii, *(disc_local.get()));
+                        if (local_max_stat > max_stat) {
+                            cur_max = local_max_disk;
+                            max_stat = local_max_stat;
                         }
                     }
                 }

@@ -243,14 +243,18 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
     py::class_<pyscan::KDisc>(pyscan_module, "KDisc");
 
     py::class_<pyscan::Bernouli_kf, pyscan::KDisc>(pyscan_module, "Bernoulli_K")
-            .def(py::init<pyscan::kernel_func_t>());
+            .def(py::init<pyscan::kernel_func_t, double>());
 
 
     pyscan_module.def("max_annuli", &pyscan::max_annuli);
     pyscan_module.def("max_annuli_scale", &pyscan::max_annuli_scale);
     pyscan_module.def("max_annuli_scale_multi", &pyscan::max_annuli_scale_multi);
 
-    pyscan_module.def("gaussian_kernel", &pyscan::gauss_kernel);
+    pyscan_module.attr("GAUSSIAN_KERNEL") = pyscan::kernel_func_t(
+            [](double dist, double bandwidth) {
+                return exp(- dist * dist / (bandwidth * bandwidth));
+    });
+
 
     ////////////////////////////////////////////////////////////////////
     //TrajectoryScan.hpp wrappers///////////////////////////////////////
