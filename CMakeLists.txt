@@ -27,51 +27,63 @@ find_package(GSL REQUIRED)
 #include(${CGAL_USE_FILE})
 
 
-execute_process(COMMAND ${CMAKE_COMMAND} .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/ )
-if(result)
-    message(FATAL_ERROR "CMake step for ANN: ${result}")
-endif()
-execute_process(COMMAND ${CMAKE_COMMAND} --build .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/ )
-if(result)
-    message(FATAL_ERROR "build failed for ANN: ${result}")
-endif()
+#execute_process(COMMAND ${CMAKE_COMMAND} .
+#        RESULT_VARIABLE result
+#        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/ )
+#if(result)
+#    message(FATAL_ERROR "CMake step for ANN: ${result}")
+#endif()
+#execute_process(COMMAND ${CMAKE_COMMAND} --build .
+#        RESULT_VARIABLE result
+#        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/ )
+#if(result)
+#    message(FATAL_ERROR "build failed for ANN: ${result}")
+#endif()
 
-execute_process(COMMAND ${CMAKE_COMMAND} .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/ )
-if(result)
-    message(FATAL_ERROR "CMake step for coreset: ${result}")
-endif()
-
-
-execute_process(COMMAND ${CMAKE_COMMAND} --build .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset )
-if(result)
-    message(FATAL_ERROR "build failed for coreset: ${result}")
-endif()
-
-add_subdirectory(thirdparty/discrepancy)
-set(THIRDPARTY_LIBRARIES
-        discrepancy
-        #${CMAKE_BINARY_DIR}/thirdparty/discrepancy/libdiscrepancy.so
-        ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/libappext.so
-        ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/libann.so
-        CGAL::CGAL
-        GSL::gsl
-        GSL::gslcblas)
+#execute_process(COMMAND ${CMAKE_COMMAND} .
+#        RESULT_VARIABLE result
+#        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/ )
+#if(result)
+#    message(FATAL_ERROR "CMake step for coreset: ${result}")
+#endif()
+#
+#
+#execute_process(COMMAND ${CMAKE_COMMAND} --build .
+#        RESULT_VARIABLE result
+#        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset )
+#if(result)
+#    message(FATAL_ERROR "build failed for coreset: ${result}")
+#endif()
 
 include_directories(
         ${Boost_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/thirdparty/discrepancy/include
+        ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/include
         ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/include
         ${CMAKE_SOURCE_DIR}/thirdparty/discrepancy/include
 )
+
+link_directories(
+        ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/
+        ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/ )
+
+add_subdirectory(thirdparty/discrepancy)
+add_subdirectory(thirdparty/kernel/ANN/)
+add_subdirectory(thirdparty/kernel/coreset/)
+
+
+set(THIRDPARTY_LIBRARIES
+        discrepancy
+        #${CMAKE_BINARY_DIR}/thirdparty/discrepancy/libdiscrepancy.so
+        appext
+        ann
+        #${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/libappext
+        #${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/libann
+        CGAL::CGAL
+        GSL::gsl
+        GSL::gslcblas)
+
 
 set(SOURCE_FILES
         src/BloomFilter.cpp

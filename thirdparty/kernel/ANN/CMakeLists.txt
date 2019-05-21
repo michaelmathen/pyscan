@@ -26,12 +26,5 @@ set(SOURCE_FILES
         )
 
 
-set(HEADER include/ANN/ANN.h
-            include/ANN/ANNperf.h
-            include/ANN/ANNx.h)
-
-
-include_directories( ${CMAKE_SOURCE_DIR}/include )
-
 add_library(ann SHARED ${SOURCE_FILES})
 #target_link_libraries(pyscan)
