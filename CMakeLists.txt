@@ -27,33 +27,6 @@ find_package(GSL REQUIRED)
 #include(${CGAL_USE_FILE})
 
 
-#execute_process(COMMAND ${CMAKE_COMMAND} .
-#        RESULT_VARIABLE result
-#        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/ )
-#if(result)
-#    message(FATAL_ERROR "CMake step for ANN: ${result}")
-#endif()
-#execute_process(COMMAND ${CMAKE_COMMAND} --build .
-#        RESULT_VARIABLE result
-#        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/ )
-#if(result)
-#    message(FATAL_ERROR "build failed for ANN: ${result}")
-#endif()
-
-#execute_process(COMMAND ${CMAKE_COMMAND} .
-#        RESULT_VARIABLE result
-#        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/ )
-#if(result)
-#    message(FATAL_ERROR "CMake step for coreset: ${result}")
-#endif()
-#
-#
-#execute_process(COMMAND ${CMAKE_COMMAND} --build .
-#        RESULT_VARIABLE result
-#        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset )
-#if(result)
-#    message(FATAL_ERROR "build failed for coreset: ${result}")
-#endif()
 
 include_directories(
         ${Boost_INCLUDE_DIRS}
@@ -75,11 +48,8 @@ add_subdirectory(thirdparty/kernel/coreset/)
 
 set(THIRDPARTY_LIBRARIES
         discrepancy
-        #${CMAKE_BINARY_DIR}/thirdparty/discrepancy/libdiscrepancy.so
         appext
         ann
-        #${CMAKE_SOURCE_DIR}/thirdparty/kernel/coreset/libappext
-        #${CMAKE_SOURCE_DIR}/thirdparty/kernel/ANN/libann
         CGAL::CGAL
         GSL::gsl
         GSL::gslcblas)
@@ -106,8 +76,6 @@ set(SOURCE_FILES
         #src/kernel.cpp
         src/GriddedScanning.hpp)
 
-#set(SOURCE_JEFF_FILES
-#        )
 
 set(HEADER include/BloomFilter.hpp
         include/DiskScan.hpp
@@ -168,7 +136,6 @@ endif()
 
 SET(TEST_LINK_LIBRARIES gtest_main ${THIRDPARTY_LIBRARIES})
 
-#add_library(discrepancy_obj OBJECT ${SOURCE_JEFF_FILES})
 add_library(src_obj OBJECT ${SOURCE_FILES})
 ########################################
 #Compile various tests##################
@@ -198,5 +165,4 @@ endforeach()
 #######################################################
 configure_file(pyscan.py ${CMAKE_CURRENT_BINARY_DIR}/pyscan.py COPYONLY)
 pybind11_add_module(libpyscan SHARED $<TARGET_OBJECTS:src_obj> ${PY_SOURCE_FILES})
-#add_library(pyscan SHARED $<TARGET_OBJECTS:src_obj> ${PY_SOURCE_FILES})
 target_link_libraries(libpyscan PRIVATE ${THIRDPARTY_LIBRARIES})
