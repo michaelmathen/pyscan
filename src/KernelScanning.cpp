@@ -12,7 +12,7 @@
 #include <memory>
 #include <gsl/gsl_multimin.h>
 
-#include "AnnuliScanning.hpp"
+#include "KernelScanning.hpp"
 #include "SparseGrid.hpp"
 #include "Utilities.hpp"
 

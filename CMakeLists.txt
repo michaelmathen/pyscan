@@ -72,7 +72,7 @@ set(SOURCE_FILES
         src/IntervalScan.cpp
         src/RegionCoreSet.cpp
         src/JeffCodes.cpp
-        src/AnnuliScanning.cpp
+        src/KernelScanning.cpp
         #src/kernel.cpp
         src/GriddedScanning.hpp)
 

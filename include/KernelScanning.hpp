@@ -5,8 +5,8 @@
  * website: https://mmath.dev/
  */
 
-#ifndef PYSCAN_ANNULISCANNING_HPP
-#define PYSCAN_ANNULISCANNING_HPP
+#ifndef PYSCAN_KERNELSCANNING_HPP
+#define PYSCAN_KERNELSCANNING_HPP
 
 #include "Disk.hpp"
 #include "Point.hpp"
@@ -178,4 +178,4 @@ namespace pyscan {
             double max_radii,
             const KDisc& disc);
 }
-#endif //PYSCAN_ANNULISCANNING_HPP
+#endif //PYSCAN_KERNELSCANNING_HPP

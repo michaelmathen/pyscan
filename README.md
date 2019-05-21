@@ -3,8 +3,9 @@ This is a python wrapper around several anomaly detection algorithms written in 
 Computing Approximate Statistical Discrepancy.
 To compile this you will need:
 
-* boost.python
 * python python 3.x
+* cgal
+* gsl
 * cmake
 
 ## Instructions

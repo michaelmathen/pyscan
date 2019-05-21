@@ -9,7 +9,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "AnnuliScanning.hpp"
+#include "KernelScanning.hpp"
 #include "JeffCodes.hpp"
 
 #include "ConvexHull.hpp"
