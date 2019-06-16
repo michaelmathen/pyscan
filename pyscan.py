@@ -633,7 +633,10 @@ def disc_bernoulli_kern(measured, baseline, p, q, bandwidth, center):
         fr = kernel(pt)
         gr = p * fr + (1 - fr) * q
         act_disc += math.log(1 - gr)
-    return -act_disc
+
+    scale = len(measured) / (len(measured) + len(baseline))
+    null_val = len(measured) * math.log(scale) + len(baseline) * math.log(1 - scale)
+    return act_disc - null_val
 
 
 
@@ -711,7 +714,7 @@ try:
             ys.append(pt[1])
         ax.scatter(xs, ys, color=c, marker='.')
 
-    def plot_kernel(ax, pts, pt, bandwidth, res=20):
+    def plot_kernel(ax, pts, pt, bandwidth, res=20, transform=None):
         (mnx, mny), (mxx, mxy) = bounding_box(pts)
         mxx = np.linspace(mnx, mxx, res)
         mxy = np.linspace(mny, mxy, res)
@@ -719,9 +722,8 @@ try:
 
         def kernel(x, y):
             return np.exp(-(np.power(x - pt[0], 2.0) + np.power(y - pt[1], 2.0) ) / bandwidth**2)
-        ax.contour(xv, yv, kernel(xv, yv))
-
-
+        ax.contourf(xv, yv, kernel(xv, yv), alpha=.3, antialiased=True, transform=transform, cmap="Blues")
+        ax.contour(xv, yv, kernel(xv, yv), linewidths=4.0, antialiased=True, transform=transform)
 
 except:
     pass

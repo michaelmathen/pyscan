@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "Point.hpp"
-#include "SparseGrid.hpp"
+#include "Gridding.hpp"
 
 /*
  *

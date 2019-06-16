@@ -1,6 +1,6 @@
 #include "DiskScan.hpp"
 #include "HalfSpaceScan.hpp"
-#include "SparseGrid.hpp"
+#include "Gridding.hpp"
 #include "Range.hpp"
 
 #include <unordered_map>

@@ -454,7 +454,7 @@ namespace pyscan {
     }
 
     inline bool cmpY(Point<2> const& p1, Point<2> const& p2) {
-        return p1(0) < p2(0);
+        return p1(1) < p2(1);
     }
 
     using bbox_t = std::tuple<double, double, double, double>;

@@ -23,7 +23,7 @@
 #include "TrajectoryCoreSet.hpp"
 #include "PartitionSample.hpp"
 #include "RegionCoreSet.hpp"
-
+#include "SatScan.hpp"
 
 
 #define PY_WRAP(FNAME) py::def("FNAME", &pyscan:: FNAME)
@@ -240,20 +240,29 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
     py::class_<pyscan::kernel_func_t >(pyscan_module, "Kernel_f");
 
 
-    py::class_<pyscan::KDisc>(pyscan_module, "KDisc");
+//    py::class_<pyscan::KDisc>(pyscan_module, "KDisc");
+//
+//    py::class_<pyscan::Bernouli_kf, pyscan::KDisc>(pyscan_module, "Bernoulli_K")
+//            .def(py::init<pyscan::kernel_func_t, double>());
+//
+//
+//    pyscan_module.def("max_annuli", &pyscan::max_annuli);
+//    pyscan_module.def("max_annuli_scale", &pyscan::max_annuli_scale);
+//    pyscan_module.def("max_annuli_scale_multi", &pyscan::max_annuli_scale_multi);
 
-    py::class_<pyscan::Bernouli_kf, pyscan::KDisc>(pyscan_module, "Bernoulli_K")
-            .def(py::init<pyscan::kernel_func_t, double>());
+//    py::class_<pyscan::Bernoulli_Disk>(pyscan_module, "Bernoulli");
+    pyscan_module.def("max_kernel", &pyscan::max_kernel);
+    pyscan_module.def("max_kernel_prune_far", &pyscan::max_kernel_prune_far);
+    pyscan_module.def("max_kernel_adaptive", &pyscan::max_kernel_adaptive);
+    pyscan_module.def("max_kernel_slow2", &pyscan::max_kernel_slow2);
 
+    pyscan_module.def("max_kernel_slow", &pyscan::max_kernel_slow);
+    pyscan_module.def("measure_kernel", &pyscan::measure_kernel);
 
-    pyscan_module.def("max_annuli", &pyscan::max_annuli);
-    pyscan_module.def("max_annuli_scale", &pyscan::max_annuli_scale);
-    pyscan_module.def("max_annuli_scale_multi", &pyscan::max_annuli_scale_multi);
-
-    pyscan_module.attr("GAUSSIAN_KERNEL") = pyscan::kernel_func_t(
-            [](double dist, double bandwidth) {
-                return exp(- dist * dist / (bandwidth * bandwidth));
-    });
+//    pyscan_module.attr("GAUSSIAN_KERNEL") = pyscan::kernel_func_t(
+//            [](double dist, double bandwidth) {
+//                return exp(- dist * dist / (bandwidth * bandwidth));
+//    });
 
 
     ////////////////////////////////////////////////////////////////////
@@ -335,6 +344,7 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
     });
 
     pyscan_module.def("bernoulli", pyscan::get_bernoulli);
+    pyscan_module.def("rbernoulli", pyscan::get_bernoulli_single_sample);
 
     pyscan_module.def("evaluate", &pyscan::evaluate);
     pyscan_module.def("size_region", &pyscan::sized_region);
@@ -433,5 +443,11 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
     pyscan_module.def("scan_grid", &pyscan::scan_grid);
     pyscan_module.def("find_rect", &pyscan::find_rect);
 
+
+    //Satscan comparison function
+    pyscan_module.def("satscan_grid", pyscan::satscan_grid);
+    pyscan_module.def("satscan_points", pyscan::satscan_points);
+
+    pyscan_module.def("kernel_centers", pyscan::kernel_centers_approximate);
 
 }

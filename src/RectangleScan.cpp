@@ -7,7 +7,7 @@
 //#include <zlib.h>
 #include <memory>
 
-#include "SparseGrid.hpp"
+#include "Gridding.hpp"
 #include "Range.hpp"
 #include "RectangleScan.hpp"
 #include "FunctionApprox.hpp"

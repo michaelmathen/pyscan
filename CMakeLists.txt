@@ -72,9 +72,10 @@ set(SOURCE_FILES
         src/IntervalScan.cpp
         src/RegionCoreSet.cpp
         src/JeffCodes.cpp
-        src/KernelScanning.cpp
+        src/SatScan.cpp
+        src/KernelScanning.cpp)
         #src/kernel.cpp
-        src/GriddedScanning.hpp)
+
 
 
 set(HEADER include/BloomFilter.hpp
@@ -85,7 +86,7 @@ set(HEADER include/BloomFilter.hpp
         include/RectangleScan.hpp
         include/RegionCoreSet.hpp
         include/Segment.hpp
-        include/SparseGrid.hpp
+        include/Gridding.hpp
         include/Statistics.hpp
         include/Test_Utilities.hpp
         include/ConvexHull.hpp
@@ -94,6 +95,8 @@ set(HEADER include/BloomFilter.hpp
         include/PartitionSample.hpp
         inlcude/AnnuliScanning.hpp
         include/IntervalScan.hpp
+        src/KernelScanning.hpp
+        include/SatScan.hpp
         include/Utilities.hpp)
 
 set(PY_SOURCE_FILES

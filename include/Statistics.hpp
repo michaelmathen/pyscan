@@ -63,28 +63,47 @@ namespace pyscan {
     }
 
 
-    inline discrepancy_func_t get_bernoulli(double M_total, double B_total, double rho) {
+    inline discrepancy_func_t get_bernoulli(double rho) {
         //G = 1.0;
-        auto bernoulli = [M_total, B_total, rho] (double m_sub, double m_total, double b_sub, double b_total) {
-            double br = b_sub / b_total;
-            double mr = m_sub / m_total;
-            double G = M_total / B_total;
+        auto bernoulli = [rho] (double m_sub, double m_total, double b_sub, double b_total) {
+
+            double p = m_sub / (b_sub + m_sub);
+            double q = (m_total - m_sub) / (b_total - b_sub + m_total - m_sub);
+            return m_sub * log(p)
+                   + b_sub * log(1 - p)
+                   + (m_total - m_sub) * log(q)
+                   + (b_total - b_sub) * log(1 - q)
+                   - m_total * log(m_total / (b_total + m_total))
+                   - b_total * log(1 - m_total/ (m_total + b_total));
+        };
+        discrepancy_func_t b_f = bernoulli;
+        return b_f;
+    }
+
+    inline discrepancy_func_t get_bernoulli_single_sample(double rho) {
+        //G = 1.0;
+        auto bernoulli = [rho] (double m_sub, double m_total, double b_sub, double b_total) {
             //Bound the function.
             // This changes the behaviour when the region is very large or small to prevent the function's lipshitz
             // parameter from blowing up.
-            br = bound(br, rho);
-            mr = bound(mr, rho);
-            double bd1 = bound(1 - (mr * M_total) / (br * B_total), rho);
-            double bd2 = bound(1 - (M_total - mr * M_total) / (B_total - br * B_total), rho);
+//            return m_sub * log(m_sub / m_total) + (m_total - m_sub) * log(1 - m_sub/m_total) +
+//                    b_sub * log(b_sub / m_sub) + (b_total - b_sub) * log(1 - b_sub / b_total)
+//                    - m_total * log(m_sub / m_total) - b_total * log(b_sub / b_total);
+            //mu(Z) = b_sub
+            //n_z = m_sub
+            //n_G = m_total
+            //mu(G) = b_total
+            //double m_r = m_sub / m_total;
+            //double b_r = b_sub / b_total;
+            double p = m_sub / (b_sub);
+            double q = (m_total - m_sub) / (b_total - b_sub);
 
-//            std::cout << bd1 << std::endl;
-//            std::cout << bd2 << std::endl;
-
-            double k_term = mr * log(mr / br) + (1 - mr) * log((1 - mr) / (1 - br));
-//            std::cout << k_term << std::endl;
-//            std::cout << (br / G - mr) * log(bd1) + ((1 - br) / G - 1 + mr) * log(bd2) << std::endl;
-//            std::cout << std::endl;
-            return k_term + (br * B_total - mr * M_total) / M_total * log(bd1) + (B_total - br * B_total + mr * M_total - M_total) / M_total * log(bd2);
+            return m_sub * log(p)
+                   + (b_sub - m_sub) * log(1 - p)
+                   + (m_total - m_sub) * log(q)
+                   + (b_total - m_total -(b_sub - m_sub)) * log(1 - q)
+                   - m_total * log(m_total / b_total)
+                   - (b_total - m_total) * log(1 - m_total / b_total);
         };
         discrepancy_func_t b_f = bernoulli;
         return b_f;

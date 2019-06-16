@@ -63,6 +63,13 @@ inline double computeTotal(const std::vector<WPoint < dim>>& pts) {
     return res;
 }
 
+template <typename It>
+inline double computeTotal(It b, It e) {
+    double res = 0.0;
+    for (;b!=e; b++) res += b->get_weight();
+    return res;
+}
+
 template <int dim>
 inline double computeTotal(const std::vector<LPoint < dim>>& pts) {
     double res = 0.0;
