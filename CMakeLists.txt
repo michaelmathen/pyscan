@@ -73,7 +73,7 @@ set(SOURCE_FILES
         src/RegionCoreSet.cpp
         src/JeffCodes.cpp
         src/SatScan.cpp
-        src/KernelScanning.cpp)
+        src/KernelScanning.cpp src/TaylorKernel.cpp src/TaylorKernel.hpp)
         #src/kernel.cpp
 
 
