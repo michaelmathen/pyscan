@@ -1,6 +1,10 @@
 # pyscan
-This is a python wrapper around several anomaly detection algorithms written in c++. These algorithms are from the paper 
-Computing Approximate Statistical Discrepancy.
+This is a python wrapper around a large number of anomaly detection algorithms written in c++. These algorithms are from several papers:
+https://arxiv.org/abs/1906.09381
+https://arxiv.org/abs/1906.01693
+https://arxiv.org/abs/1804.11287
+https://dl.acm.org/citation.cfm?id=2996939
+
 To compile this you will need:
 
 * python python 3.x
