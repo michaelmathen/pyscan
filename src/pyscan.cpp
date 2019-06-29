@@ -446,7 +446,7 @@ PYBIND11_MODULE(libpyscan, pyscan_module){
 
     //Satscan comparison function
     pyscan_module.def("satscan_grid", pyscan::satscan_grid);
-    pyscan_module.def("satscan_points", pyscan::satscan_points);
+    pyscan_module.def("satscan_labeled", pyscan::satscan_grid_labeled);
 
     pyscan_module.def("kernel_centers", pyscan::kernel_centers_approximate);
 

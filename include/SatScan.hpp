@@ -20,9 +20,11 @@ namespace pyscan {
             double disk_r,
             discrepancy_func_t const& func);
 
-    std::tuple<Disk, double> satscan_points(
-            wpoint_list_t measured,
-            wpoint_list_t baseline,
+    std::tuple<Disk, double> satscan_grid_labeled(
+            const lpoint_list_t &measured,
+            const lpoint_list_t &baseline,
+            double grid_res,
+            double disk_r,
             discrepancy_func_t const& func);
 
 }
