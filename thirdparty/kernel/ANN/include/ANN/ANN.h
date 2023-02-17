@@ -57,7 +57,7 @@
 #include <iostream>			// I/O streams
 #include <ostream>
 #include <math.h>			// math includes
-#include <values.h>			// special values
+#include "values.h"			// special values
 
 #define ANNversion	"0.1"		// ANN version number
 

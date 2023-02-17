@@ -11,9 +11,11 @@ set(CMAKE_CXX_STANDARD 17)
 #Need this for GSL
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -Wall -Wextra -g -O1 -fno-omit-frame-pointer")
-set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O2 -march=native -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O2 -march=native -DNDEBUG") #work for intel chip
+# set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O2 -mcpu=apple-m1 -DNDEBUG") #work for mac m1 chip
 set(CMAKE_C_FLAGS_DEBUG "-fPIC -Wall -Wextra -g -O1 -fno-omit-frame-pointer")
-set(CMAKE_C_FLAGS_RELEASE "-fPIC -w -O2 -march=native -DNDEBUG")
+set(CMAKE_C_FLAGS_RELEASE "-fPIC -w -O2 -march=native -DNDEBUG") #work for intel chip
+# set(CMAKE_C_FLAGS_RELEASE "-fPIC -w -O2 -mcpu=apple-m1 -DNDEBUG") #work for mac m1 chip
 
 add_subdirectory(thirdparty/pybind11)
 
@@ -73,7 +75,7 @@ set(SOURCE_FILES
         src/RegionCoreSet.cpp
         src/JeffCodes.cpp
         src/SatScan.cpp
-        src/KernelScanning.cpp src/TaylorKernel.cpp src/TaylorKernel.hpp)
+        src/KernelScanning.cpp src/TaylorKernel.cpp include/TaylorKernel.hpp)
         #src/kernel.cpp
 
 

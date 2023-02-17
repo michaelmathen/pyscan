@@ -138,3 +138,10 @@ venv.bak/
 
 *.pyc
 *.csv
+
+#build folder
+build/
+
+#other
+.DS*
+.vscode/
