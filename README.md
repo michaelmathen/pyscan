@@ -28,5 +28,20 @@ To compile this you will need:
 You should then be able to use this library as a standard python module by doing:
 import pyscan
 
+### For Mac M1 Chip User
+In CMakeLists.txt, you need to comment out 
+```
+set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O2 -march=native -DNDEBUG")
+set(CMAKE_C_FLAGS_RELEASE "-fPIC -w -O2 -march=native -DNDEBUG")
+```
+and uncomment
+```
+set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -w -O2 -mcpu=apple-m1 -DNDEBUG")
+set(CMAKE_C_FLAGS_RELEASE "-fPIC -w -O2 -mcpu=apple-m1 -DNDEBUG")
+```
+
+Make sure use this library on arm64 running Python with the same Python version that built the library. 
+
+
 ## Website
 https://michaelmathen.github.io/pyscan/

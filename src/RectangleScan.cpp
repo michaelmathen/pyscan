@@ -6,6 +6,7 @@
 #include <unordered_set>
 //#include <zlib.h>
 #include <memory>
+#include <unordered_map>
 
 #include "Gridding.hpp"
 #include "Range.hpp"

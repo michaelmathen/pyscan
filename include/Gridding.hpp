@@ -8,6 +8,7 @@
 #include <vector>
 #include <type_traits>
 #include <cmath>
+#include <unordered_map>
 
 /*
  * This class implements high level behaviour of a regular grid over R^2. We can use this to implement features of

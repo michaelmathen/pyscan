@@ -34,7 +34,7 @@
 #include <cstdio>			// standard I/O
 #include <iostream>			// C++ I/O streams
 #include <math.h>			// math routines
-#include <values.h>
+#include "values.h"
 
 //----------------------------------------------------------------------
 // kd-tree stats object
